@@ -1,0 +1,30 @@
+
+#ifdef _SPLASHDAMAGE
+#endif
+
+#ifdef _SPLASHDAMAGE
+#else
+#endif
+
+#if !defined(_SPLASHDAMAGE)
+#endif
+
+#elif defined(_SPLASHDAMAGE)
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#endif
+
+#ifdef _ETQW
+#endif
+
+#ifdef _ETQW
+#else
+#endif
+
+#if !defined(_ETQW)
+#endif
+
+CHCP=65001
+CHCP=936
+
+https://blog.csdn.net/qq_42059060/article/details/131833291
