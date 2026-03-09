@@ -888,6 +888,10 @@ class idDeclManager
 		// List and print decls.
 		virtual void			ListType(const idCmdArgs &args, declType_t type) = 0;
 		virtual void			PrintType(const idCmdArgs &args, declType_t type) = 0;
+#ifdef _SPLASHDAMAGE
+	    virtual void			ListType( const idCmdArgs &args, const char* typeName ) = 0;
+	    virtual void			PrintType( const idCmdArgs &args, const char* typeName ) = 0;
+#endif
 
 		// Creates a new default decl of the given type with the given name in
 		// the given file used by editors to create a new decls.

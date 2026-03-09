@@ -103,6 +103,10 @@ class idCmdSystem
 		virtual void		ArgCompletion_FolderExtension(const idCmdArgs &args, void(*callback)(const char *s), const char *folder, bool stripFolder, ...) = 0;
 		// Base for decl name auto-completion.
 		virtual void		ArgCompletion_DeclName(const idCmdArgs &args, void(*callback)(const char *s), int type) = 0;
+#ifdef _SPLASHDAMAGE
+	    // Base for decl name auto-completion.
+	    virtual void		ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName ) = 0;
+#endif
 
 		// Adds to the command buffer in tokenized form ( CMD_EXEC_NOW or CMD_EXEC_APPEND only )
 		virtual void		BufferCommandArgs(cmdExecution_t exec, const idCmdArgs &args) = 0;

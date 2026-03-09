@@ -10,6 +10,7 @@
 // western european keyboards are inserted in this table so that those keys
 // are bindable (otherwise they get bound as one of the special keys in this
 // table)
+#if !defined(_SPLASHDAMAGE)
 typedef enum keyNum_e {
     K_INVALID = 0x00,
 
@@ -172,5 +173,6 @@ typedef enum keyNum_e {
 
     K_NUM_KEYS = 0xFF
 } keyNum_t;
+#endif
 
 #endif

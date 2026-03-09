@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 // western european keyboards are inserted in this table so that those keys
 // are bindable (otherwise they get bound as one of the special keys in this
 // table)
+#if !defined(_SPLASHDAMAGE)
 typedef enum {
 	K_TAB = 9,
 	K_ENTER = 13,
@@ -190,6 +191,7 @@ typedef enum {
 	K_RIGHT_ALT = 253,	// used by some languages as "Alt-Gr"
 	K_LAST_KEY  = 254	// this better be < 256!
 } keyNum_t;
+#endif
 
 
 class idKeyInput
@@ -220,7 +222,6 @@ class idKeyInput
 };
 
 #ifdef _SPLASHDAMAGE
-typedef keyNum_t keyNum_e; // original in sys/keynum.h
 
 class sdKeyCommand
 {

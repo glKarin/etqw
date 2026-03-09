@@ -6,6 +6,7 @@ rem vcpkg install SDL2 curl OpenAL-soft zlib
 
 rem Replace your `vcpkg` path
 set VCPKG_PATH=D:\project\c\vcpkg
+set VCPKG_PATH=E:\dev\vs\vcpkg
 
 rem Setup build arch: x64 | x86
 set BUILD_ARCH=x64

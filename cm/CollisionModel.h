@@ -260,6 +260,11 @@ class idCollisionModelManager
 		virtual int				Contacts(contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec6 &dir, const float depth,
 		                const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
 		                cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis) = 0;
+#ifdef _SPLASHDAMAGE
+	    virtual int				Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec3 *dir, const float depth,
+	                                          const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
+	                                          idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) = 0;
+#endif
 
 		// Tests collision detection.
 		virtual void			DebugOutput(const idVec3 &origin) = 0;
