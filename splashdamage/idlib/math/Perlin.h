@@ -78,9 +78,9 @@ const int NOISE_LARGE_PWR2	= 4096;
 
 class sdPerlin2 {
 private:
-	unsigned long	initialized;
+	unsigned /* 64long */int	initialized;
 
-	unsigned long	permutationTable[ NOISE_WRAP_INDEX* 2 + 2 ];		// permutation table
+	unsigned /* 64long */int	permutationTable[ NOISE_WRAP_INDEX* 2 + 2 ];		// permutation table
 	float			gradientTable1d[ NOISE_WRAP_INDEX * 2 + 2 ];		// 1d gradient lookup table.
 	float			gradientTable2d[ NOISE_WRAP_INDEX * 2 + 2 ][ 2 ];	// 2d gradient lookup table.
 	float			gradientTable3d[ NOISE_WRAP_INDEX * 2 + 2 ][ 3 ];	// 3d gradient lookup table.

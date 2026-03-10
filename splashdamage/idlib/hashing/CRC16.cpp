@@ -26,7 +26,7 @@ static unsigned short crctable[256];
 
 void make_crc_table( void ) {
 	int i, j;
-	unsigned long poly, c;
+	unsigned /* 64long */int poly, c;
 	/* terms of polynomial defining this crc (except x^16): */
 	static const byte p[] = {0,5,12};
 

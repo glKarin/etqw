@@ -40,9 +40,9 @@ struct idTestFloat {
 						idTestFloat( void ) {}
 						idTestFloat( float f ) { value = f; }
 						idTestFloat( int i ) { value = i; }
-						idTestFloat( long i ) { value = i; }
+						idTestFloat( long /* 64long */long i ) { value = i; }
 						idTestFloat( unsigned int i ) { value = i; }
-						idTestFloat( unsigned long i ) { value = i; }
+						idTestFloat( unsigned long /* 64long */long i ) { value = i; }
 						idTestFloat( idUnionFloat f ) { value = f.value; }
 
 	operator			float & ( void ) { return value; }
@@ -244,7 +244,7 @@ inline float strtof( const char * str ) { return (float)atof( str ); }
 #define union_float float
 #define union_double double
 #define C_FLOAT_TO_INT( x )		(int)(x)
-#define C_FLOAT_TO_LONG( x )	(long)(x)
+#define C_FLOAT_TO_LONG( x )	(long /* 64long */long)(x)
 
 #endif
 

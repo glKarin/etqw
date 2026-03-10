@@ -36,7 +36,7 @@ public:
 
 	double			GetDoubleValue( void );				// double value of TT_NUMBER
 	float			GetFloatValue( void );				// float value of TT_NUMBER
-	unsigned long	GetUnsignedLongValue( void );		// unsigned long value of TT_NUMBER
+	unsigned /* 64long */int	GetUnsignedLongValue( void );		// unsigned long value of TT_NUMBER
 	int				GetIntValue( void );				// int value of TT_NUMBER
 	int				WhiteSpaceBeforeToken( void ) const;// returns length of whitespace before token
 	void			ClearTokenWhiteSpace( void );		// forget whitespace before token
@@ -46,11 +46,11 @@ public:
 	// only to be used by parsers
 	void			AppendDirty( const wchar_t a );		// append character without adding trailing zero
 
-	void			SetIntValue( unsigned long intvalue );
+	void			SetIntValue( unsigned /* 64long */int intvalue );
 	void			SetFloatValue( double floatvalue );
 
 private:
-	unsigned long	intvalue;							// integer value
+	unsigned /* 64long */int	intvalue;							// integer value
 	double			floatvalue;							// floating point value
 	const wchar_t *	whiteSpaceStart_p;					// start of white space before token, only used by idLexer
 	const wchar_t *	whiteSpaceEnd_p;					// end of white space before token, only used by idLexer
@@ -117,7 +117,7 @@ ID_INLINE float idWToken::GetFloatValue( void ) {
 	return (float) GetDoubleValue();
 }
 
-ID_INLINE unsigned long	idWToken::GetUnsignedLongValue( void ) {
+ID_INLINE unsigned /* 64long */int	idWToken::GetUnsignedLongValue( void ) {
 	if ( type != TT_NUMBER ) {
 		return 0;
 	}
@@ -140,7 +140,7 @@ ID_INLINE void idWToken::AppendDirty( const wchar_t a ) {
 	data[len++] = a;
 }
 
-ID_INLINE void idWToken::SetIntValue( unsigned long intvalue ) {
+ID_INLINE void idWToken::SetIntValue( unsigned /* 64long */int intvalue ) {
 	this->intvalue = intvalue;
 }
 

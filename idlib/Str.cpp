@@ -2166,8 +2166,8 @@ char* va_floatstring( const char *fmt, ... )
     buf = string[bufferIndex];
     bufferIndex = (bufferIndex + 1) & 3;
 
-    long i;
-    unsigned long u;
+    /* 64long */int i;
+    unsigned /* 64long */int u;
     double f;
     char *str;
     int index;
@@ -2205,27 +2205,27 @@ char* va_floatstring( const char *fmt, ... )
                 break;
             case 'd':
             case 'i':
-                i = va_arg( argPtr, long );
+                i = va_arg( argPtr, /* 64long */int );
                 index += sprintf( buf+index, format.c_str(), i );
                 break;
             case 'u':
-                u = va_arg( argPtr, unsigned long );
+                u = va_arg( argPtr, unsigned /* 64long */int );
                 index += sprintf( buf+index, format.c_str(), u );
                 break;
             case 'o':
-                u = va_arg( argPtr, unsigned long );
+                u = va_arg( argPtr, unsigned /* 64long */int );
                 index += sprintf( buf+index, format.c_str(), u );
                 break;
             case 'x':
-                u = va_arg( argPtr, unsigned long );
+                u = va_arg( argPtr, unsigned /* 64long */int );
                 index += sprintf( buf+index, format.c_str(), u );
                 break;
             case 'X':
-                u = va_arg( argPtr, unsigned long );
+                u = va_arg( argPtr, unsigned /* 64long */int );
                 index += sprintf( buf+index, format.c_str(), u );
                 break;
             case 'c':
-                i = va_arg( argPtr, long );
+                i = va_arg( argPtr, /* 64long */int );
                 index += sprintf( buf+index, format.c_str(), (char) i );
                 break;
             case 's':

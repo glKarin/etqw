@@ -122,7 +122,7 @@ class idToken : public idStr
 #ifdef _SPLASHDAMAGE
     	idToken( const idToken &token );
     	unsigned short	GetBinaryIndex( void ) const;			// token index in a binary stream
-	    void			SetIntValue( unsigned long intvalue );
+	    void			SetIntValue( unsigned /* 64long */int intvalue );
 	    void			SetFloatValue( double floatvalue );
 #endif
 	private:
@@ -236,7 +236,7 @@ ID_INLINE idToken::idToken( const idToken &token )
     *this = token;
 }
 
-ID_INLINE void idToken::SetIntValue( unsigned long intvalue )
+ID_INLINE void idToken::SetIntValue( unsigned /* 64long */int intvalue )
 {
     this->intvalue = intvalue;
 }

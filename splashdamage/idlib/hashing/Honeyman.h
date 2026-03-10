@@ -14,10 +14,10 @@
 ===============================================================================
 */
 
-void Honeyman_InitChecksum( unsigned long &crcvalue );
-void Honeyman_UpdateChecksum( unsigned long &crcvalue, const byte data );
-void Honeyman_UpdateChecksum( unsigned long &crcvalue, const void *data, int length );
-void Honeyman_FinishChecksum( unsigned long &crcvalue );
-unsigned long Honeyman_BlockChecksum( const void *data, int length );
+void Honeyman_InitChecksum( unsigned /* 64long */int &crcvalue );
+void Honeyman_UpdateChecksum( unsigned /* 64long */int &crcvalue, const byte data );
+void Honeyman_UpdateChecksum( unsigned /* 64long */int &crcvalue, const void *data, int length );
+void Honeyman_FinishChecksum( unsigned /* 64long */int &crcvalue );
+unsigned /* 64long */int Honeyman_BlockChecksum( const void *data, int length );
 
 #endif /* !__HONEYMAN_H__ */

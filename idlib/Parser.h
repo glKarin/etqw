@@ -310,10 +310,6 @@ class idParser
 		static define_t *FindDefine(define_t *defines, const char *name);
 		static define_t *DefineFromString(const char *string);
 		define_t 		*CopyFirstDefine(void);
-		
-#ifdef _SPLASHDAMAGE
-	    int				EvaluateTokens( idToken *tokens, signed long int *intvalue, double *floatvalue, int integer );
-#endif
 
 		int				Directive_include(void);
 #ifdef _SPLASHDAMAGE
