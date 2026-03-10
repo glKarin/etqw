@@ -1617,8 +1617,8 @@ struct PBXFile
     
     PBXFile(const char* new_filename) : filename(new_filename)
     {
-        unsigned long fileHash = ++lastUsed;
-        unsigned long buildFileHash = ++lastUsed;
+        unsigned long long fileHash = ++lastUsed;
+        unsigned long long buildFileHash = ++lastUsed;
         
         sprintf(file_reference, "%llX", fileHash);
         file_reference.CapLength(24);
