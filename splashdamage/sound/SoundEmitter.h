@@ -4,6 +4,9 @@
 #ifndef __SOUNDEMITTER_H__
 #define __SOUNDEMITTER_H__
 
+#ifdef _SPLASHDAMAGE
+#include  "sound/sound.h"
+#else
 /*
 ===============================================================================
 
@@ -63,5 +66,6 @@ public:
 
 	virtual void						SetChannelOffset( const soundChannel_t channel, int ms ) = 0;
 };
+#endif
 
 #endif /* !__SOUNDEMITTER_H__ */

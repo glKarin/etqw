@@ -4,6 +4,9 @@
 #ifndef __SOUNDWORLD_H__
 #define __SOUNDWORLD_H__
 
+#ifdef _SPLASHDAMAGE
+#include  "sound/sound.h"
+#else
 #include "SoundEmitter.h"
 
 /*
@@ -87,5 +90,6 @@ public:
 
 	virtual void			BeginLevelLoad( void ) = 0;
 };
+#endif
 
 #endif /* !__SOUNDWORLD_H__ */

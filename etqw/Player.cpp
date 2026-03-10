@@ -1759,7 +1759,7 @@ void idPlayer::CancelToolTips( void ) {
 	nextTooltipTime = 0;
 	gameLocal.localPlayerProperties.SetToolTipInfo( L"", -1, NULL );
 
-	gameSoundWorld->PlayShaderDirectly( NULL, SND_PLAYER_TOOLTIP );
+	gameSoundWorld->PlayShaderDirectly( (const idSoundShader*)NULL, SND_PLAYER_TOOLTIP );
 }
 
 /*
@@ -2721,7 +2721,7 @@ void idPlayer::ClearTargetLock( void ) {
 
 	SetTargetEntity( NULL );
 	if ( gameLocal.IsLocalViewPlayer( this ) ) {
-		gameSoundWorld->PlayShaderDirectly( NULL, SND_PLAYER_TARGETLOCK );
+		gameSoundWorld->PlayShaderDirectly( (const idSoundShader*)NULL, SND_PLAYER_TARGETLOCK );
 	}
 }
 
@@ -2999,7 +2999,7 @@ void idPlayer::SetTargetEntity( idEntity* entity ) {
 	const sdWeaponLockInfo* lockInfo = GetCurrentLockInfo();
 	if ( targetEntity == NULL || lockInfo == NULL ) {
 		if ( gameLocal.IsLocalViewPlayer( this ) ) {
-			gameSoundWorld->PlayShaderDirectly( NULL, SND_PLAYER_TARGETLOCK );
+			gameSoundWorld->PlayShaderDirectly( (const idSoundShader*)NULL, SND_PLAYER_TARGETLOCK );
 		}
 		return;
 	}

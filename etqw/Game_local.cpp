@@ -3232,7 +3232,7 @@ void idGameLocal::MapShutdown( void ) {
 	renderSystem->SyncRenderSystem();
 
 	if ( gameSoundWorld != NULL ) {
-		gameSoundWorld->PlayShaderDirectly( NULL, SND_PLAYER_TOOLTIP );
+		gameSoundWorld->PlayShaderDirectly( (const idSoundShader*)NULL, SND_PLAYER_TOOLTIP );
 		gameSoundWorld->FadeSoundClasses( 0, 0, 0.5f );
 		gameSoundWorld->PlaceListener( playerView.GetCurrentView().vieworg, playerView.GetCurrentView().viewaxis, -1, time );
 	}

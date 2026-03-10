@@ -4,6 +4,9 @@
 #ifndef __SOUNDSHADER_H__
 #define __SOUNDSHADER_H__
 
+#ifdef _SPLASHDAMAGE
+#include  "sound/sound.h"
+#else
 #include "../framework/declManager.h"
 
 /*
@@ -135,5 +138,6 @@ private:
 	void					Init( void );
 	bool					ParseShader( idParser &src );
 };
+#endif
 
 #endif /* !__SOUNDSHADER_H__ */

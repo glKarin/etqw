@@ -4,6 +4,9 @@
 #ifndef __SOUNDSYSTEM_H__
 #define __SOUNDSYSTEM_H__
 
+#ifdef _SPLASHDAMAGE
+#include  "sound/sound.h"
+#else
 #include "../renderer/Cinematic.h"
 
 /*
@@ -102,5 +105,6 @@ public:
 };
 
 extern idSoundSystem	*soundSystem;
+#endif
 
 #endif /* !__SOUNDSYSTEM_H__ */
