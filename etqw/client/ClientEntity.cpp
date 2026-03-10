@@ -1343,7 +1343,7 @@ bool sdClientAnimated::ModelCallback( renderEntity_t* renderEntity, const render
 	rvClientEntityPtr<rvClientEntity> safeEnt;
 #pragma warning( push )
 #pragma warning( disable: 4311 )
-	safeEnt.SetSpawnId( (int)renderEntity->callbackData );
+	safeEnt.SetSpawnId( (intptr_t/*//k 64 int*/)renderEntity->callbackData );
 #pragma warning( pop )
 	rvClientEntity* ent = safeEnt.GetEntity();//gameLocal.clientEntities[ *(int *)renderEntity->callbackData ];
 	if ( !ent ) {

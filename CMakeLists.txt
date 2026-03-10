@@ -3149,7 +3149,7 @@ endif()
 if(ETQW)
 	# ETQW game source
 	set(src_etqw ${base_game_src})
-	set(prey_game_src
+	set(etqw_game_src
 			Waypoints/LocationMarker.cpp
 			anim/Anim_FrameCommands.cpp
 			botai/aas/AAS.cpp
@@ -3323,12 +3323,12 @@ if(ETQW)
 			script/Script_Interface.cpp
 			script/Script_ScriptObject.cpp
 			script/Script_SysCall.cpp
-			script/compiledscript/CompiledScript_Base.cpp
-			script/compiledscript/CompiledScript_Class.cpp
-			script/compiledscript/CompiledScript_Event.cpp
-			script/compiledscript/CompiledScript_TypeInfo.cpp
-			script/compiledscript/CompiledScripts_Types.cpp
-			script/compiledscript/Precompiled.cpp
+#			script/compiledscript/CompiledScript_Base.cpp
+#			script/compiledscript/CompiledScript_Class.cpp
+#			script/compiledscript/CompiledScript_Event.cpp
+#			script/compiledscript/CompiledScript_TypeInfo.cpp
+#			script/compiledscript/CompiledScripts_Types.cpp
+#			script/compiledscript/Precompiled.cpp
 			sdnet/SDNetManager.cpp
 			sdnet/SDNetProperties.cpp
 			structures/CommandMapPost.cpp

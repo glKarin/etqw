@@ -97,6 +97,79 @@ strColor_t g_color_table[COLOR_BITS+1] = {
     {	idVec4( 1.0f,  1.0f,  0.75f, 1.0f ), "^N" }, 			// N							30
     {	idVec4( 1.0f,  1.0f,  0.5f,  1.0f ), "^O" }, 			// O							31
 };
+
+dword g_dword_color_table[COLOR_BITS+1] = {
+#if defined( _XENON ) || ( defined( MACOS_X ) && defined( __ppc__ ) )
+    0x000000FF, // S_COLOR_DEFAULT
+    0xFF0000FF, // S_COLOR_RED
+    0x00FF00FF, // S_COLOR_GREEN
+    0xFFFF00FF, // S_COLOR_YELLOW
+    0x0000FFFF, // S_COLOR_BLUE
+    0x00FFFFFF, // S_COLOR_CYAN
+    0xFF00FFFF, // S_COLOR_MAGENT
+    0xFFFFFFFF, // S_COLOR_WHITE
+    0x7F7F7FFF, // S_COLOR_GRAY
+    0x121212FF, // S_COLOR_BLACK
+    0xBFBFBFFF,
+    0x404040FF,
+    0x007F00FF,
+    0x7F7F00FF,
+    0x00007FFF,
+    0x7F0000FF,
+    0x7F3F00FF,
+    0xFF9919FF,
+    0x007F7FFF,
+    0x7F007FFF,
+    0xFF7F00FF,
+    0x7F00FFFF,
+    0x3399CCFF,
+    0xCCFFCCFF,
+    0x006633FF,
+    0xFF0033FF,
+    0xB21919FF,
+    0x993300FF,
+    0xCC9933FF,
+    0x999933FF,
+    0xFFFFBFFF,
+    0xFFFF7FFF
+#elif defined( _WIN32 ) || defined( __linux__ ) || ( defined( MACOS_X ) && !defined( __ppc__ ) )
+    0xFF000000, // S_COLOR_DEFAULT
+    0xFF0000FF, // S_COLOR_RED
+    0xFF00FF00, // S_COLOR_GREEN
+    0xFF00FFFF, // S_COLOR_YELLOW
+    0xFFFF0000, // S_COLOR_BLUE
+    0xFFFFFF00, // S_COLOR_CYAN
+    0xFFFF00FF, // S_COLOR_MAGENT
+    0xFFFFFFFF, // S_COLOR_WHITE
+    0xFF7F7F7F, // S_COLOR_GRAY
+    0xFF212121, // S_COLOR_BLACK
+    0xFFBFBFBF,
+    0xFF040404,
+    0xFF007F00,
+    0xFF007F7F,
+    0xFF7F0000,
+    0xFF00007F,
+    0xFF003F7F,
+    0xFF1999FF,
+    0xFF7F7F00,
+    0xFF7F007F,
+    0xFF007FFF,
+    0xFFFF007F,
+    0xFFCC9933,
+    0xFFCCFFCC,
+    0xFF336600,
+    0xFF3300FF,
+    0xFF1919B2,
+    0xFF003399,
+    0xFF3399CC,
+    0xFF339999,
+    0xFFBFFFFF,
+    0xFF7FFFFF
+#else
+#error OS define is required!
+#endif
+};
+
 #else
 idVec4	g_color_table[16] = {
 	idVec4(0.0f, 0.0f, 0.0f, 1.0f),
@@ -218,6 +291,20 @@ void idStr::FreeData(void)
 		data = baseBuffer;
 	}
 }
+
+#ifdef _SPLASHDAMAGE
+void idStr::SetStaticBuffer( char *buffer, int length )
+{
+    bool	staticBuffer = alloced < 0;
+    if ( data && !staticBuffer ) {
+        stringDataAllocator->Free( data );
+    }
+    data = buffer;
+    alloced = -length;
+    len = 0;
+}
+
+#endif
 
 /*
 ============
@@ -873,6 +960,24 @@ void idStr::StripTrailingWhitespace(void)
 }
 
 #ifdef _SPLASHDAMAGE
+/*
+============
+idStr::StripLeadingWhiteSpace
+============
+*/
+void idStr::StripLeadingWhiteSpace( void )
+{
+    int i;
+
+    // cast to unsigned char to prevent stripping off high-ASCII characters
+    for ( i = 0; i < Length() && (unsigned char)(data[ i ]) <= ' '; i++ );
+
+    if ( i > 0 && i != Length() ) {
+        memmove( data, data + i, len - i + 1 );
+        len -= i;
+    }
+}
+
 /*
 ============
 idStr::StripTrailingWhiteSpace
@@ -2045,6 +2150,168 @@ char *va(const char *fmt, ...)
 	return buf;
 }
 
+#ifdef _SPLASHDAMAGE
+/*
+=================
+va_floatstring
+=================
+*/
+char* va_floatstring( const char *fmt, ... )
+{
+    va_list argPtr;
+    static int bufferIndex = 0;
+    static char string[4][16384];	// in case called by nested functions
+    char *buf;
+
+    buf = string[bufferIndex];
+    bufferIndex = (bufferIndex + 1) & 3;
+
+    long i;
+    unsigned long u;
+    double f;
+    char *str;
+    int index;
+    idStr tmp, format;
+
+    index = 0;
+
+    va_start( argPtr, fmt );
+    while( *fmt ) {
+        switch( *fmt ) {
+        case '%':
+            format = "";
+            format += *fmt++;
+            while ( (*fmt >= '0' && *fmt <= '9') ||
+                    *fmt == '.' || *fmt == '-' || *fmt == '+' || *fmt == '#') {
+                format += *fmt++;
+            }
+            format += *fmt;
+            switch( *fmt ) {
+            case 'f':
+            case 'e':
+            case 'E':
+            case 'g':
+            case 'G':
+                f = va_arg( argPtr, double );
+                if ( format.Length() <= 2 ) {
+                    // high precision floating point number without trailing zeros
+                    sprintf( tmp, "%1.10f", f );
+                    tmp.StripTrailing( '0' );
+                    tmp.StripTrailing( '.' );
+                    index += sprintf( buf+index, "%s", tmp.c_str() );
+                } else {
+                    index += sprintf( buf+index, format.c_str(), f );
+                }
+                break;
+            case 'd':
+            case 'i':
+                i = va_arg( argPtr, long );
+                index += sprintf( buf+index, format.c_str(), i );
+                break;
+            case 'u':
+                u = va_arg( argPtr, unsigned long );
+                index += sprintf( buf+index, format.c_str(), u );
+                break;
+            case 'o':
+                u = va_arg( argPtr, unsigned long );
+                index += sprintf( buf+index, format.c_str(), u );
+                break;
+            case 'x':
+                u = va_arg( argPtr, unsigned long );
+                index += sprintf( buf+index, format.c_str(), u );
+                break;
+            case 'X':
+                u = va_arg( argPtr, unsigned long );
+                index += sprintf( buf+index, format.c_str(), u );
+                break;
+            case 'c':
+                i = va_arg( argPtr, long );
+                index += sprintf( buf+index, format.c_str(), (char) i );
+                break;
+            case 's':
+                str = va_arg( argPtr, char * );
+                index += sprintf( buf+index, format.c_str(), str );
+                break;
+            case '%':
+                index += sprintf( buf+index, format.c_str() );
+                break;
+            default:
+                common->Error( "FS_WriteFloatString: invalid format %s", format.c_str() );
+                break;
+            }
+            fmt++;
+            break;
+        case '\\':
+            fmt++;
+            switch( *fmt ) {
+            case 't':
+                index += sprintf( buf+index, "\t" );
+                break;
+            case 'v':
+                index += sprintf( buf+index, "\v" );
+                break;
+            case 'n':
+                index += sprintf( buf+index, "\n" );
+                break;
+            case '\\':
+                index += sprintf( buf+index, "\\" );
+                break;
+            default:
+                common->Error( "FS_WriteFloatString: unknown escape character \'%c\'", *fmt );
+                break;
+            }
+            fmt++;
+            break;
+        default:
+            index += sprintf( buf+index, "%c", *fmt );
+            fmt++;
+            break;
+        }
+    }
+    va_end( argPtr );
+
+    return buf;
+}
+
+/*
+============
+idStr::EraseRange
+============
+*/
+void idStr::EraseRange( int start, int len )
+{
+    if( IsEmpty() || len == 0 ) {
+        return;
+    }
+
+    if( start < 0 ) {
+        start = 0;
+    }
+
+    if( start >= this->len ) {
+        return;
+    }
+
+    int totalLength = Length();
+    if( len == INVALID_POSITION ) {
+        len = totalLength - start;
+    }
+
+    if( len == totalLength ) {
+        // erase the whole thing
+        Empty();
+        return;
+    }
+
+
+    if( totalLength - start - len ) {
+        memmove( &data[ start ], &data[ start + len ], totalLength - start - len );
+    }
+
+    data[ totalLength - len ] = '\0';
+    this->len -= len;
+}
+#endif
 
 
 /*
@@ -2144,6 +2411,81 @@ void idStr::SetStringAllocator( stringDataAllocator_t* allocator )
     }
     stringDataAllocator = allocator;
     stringAllocatorIsShared = true;
+}
+
+/*
+============
+idStr::IsValidEmailAddress
+============
+*/
+bool idStr::IsValidEmailAddress( const char* address )
+{
+    int count = 0;
+    const char* c;
+    const char* domain;
+    static const char* rfc822 = "()<>@,;:\\\"[]";
+
+    // validate name
+    for ( c = address; *c != '\0'; c++ ) {
+        if ( *c == '\"' && ( c == address || *(c - 1) == '.' || *(c - 1) == '\"' ) ) {
+            while ( *++c ) {
+                if ( *c == '\"' ) {
+                    break;
+                }
+                if ( *c == '\\' && ( *++c == ' ' ) ) {
+                    continue;
+                }
+                if ( *c <= ' ' || *c >= 127 ) {
+                    return 0;
+                }
+            }
+            if ( *c++ == '\0' ) {
+                return false;
+            }
+            if ( *c == '@' ) {
+                break;
+            }
+            if ( *c == '.' ) {
+                return false;
+            }
+            continue;
+        }
+        if ( *c == '@' ) {
+            break;
+        }
+        if ( *c <= ' ' || *c >= 127 ) {
+            return false;
+        }
+        if ( FindChar( rfc822, *c ) != INVALID_POSITION ) {
+            return false;
+        }
+    }
+
+    if ( c == address || *(c - 1 ) == '.' ) {
+        return false;
+    }
+
+    // validate domain
+    if ( *( domain = ++c ) == '\0' ) {
+        return false;
+    }
+
+    do {
+        if ( *c == '.' ) {
+            if ( c == domain || *(c - 1) == '.' ) {
+                return false;
+            }
+            count++;
+        }
+        if ( *c <= ' ' || *c >= 127 ) {
+            return false;
+        }
+        if ( FindChar( rfc822, *c ) != INVALID_POSITION ) {
+            return false;
+        }
+    } while ( *++c );
+
+    return ( count >= 1 );
 }
 #endif
 
@@ -2687,6 +3029,34 @@ const char*	idStr::MS2HMS( double ms, const hmsFormat_t& formatSpec )
         return va( "%02i:%02i", min, sec );
     }
     return va( "%02i:%02i:%02i", hour, min, sec );
+}
+
+
+/*
+============
+idStr::CollapseColors
+============
+*/
+idStr& idStr::CollapseColors( void )
+{
+    int colorBegin = -1;
+    int lastColor = -1;
+    for( int i = 0; i < len; i++ ) {
+        while( idStr::IsColor( &data[ i ] ) && i < len ) {
+            if( colorBegin == -1 ) {
+                colorBegin = i;
+            }
+            lastColor = i;
+            i += 2;
+        }
+        if( colorBegin != -1 && lastColor != colorBegin ) {
+            EraseRange( colorBegin, lastColor - colorBegin );
+            i -= lastColor - colorBegin;
+        }
+        colorBegin = -1;
+        lastColor = -1;
+    }
+    return *this;
 }
 #endif
 

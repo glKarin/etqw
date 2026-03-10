@@ -104,6 +104,8 @@ class idCmdSystem
 		// Base for decl name auto-completion.
 		virtual void		ArgCompletion_DeclName(const idCmdArgs &args, void(*callback)(const char *s), int type) = 0;
 #ifdef _SPLASHDAMAGE
+    	virtual void		PushFrameCommand( const char* command ) = 0;
+    	
 	    // Base for decl name auto-completion.
 	    virtual void		ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName ) = 0;
 #endif
@@ -141,6 +143,10 @@ class idCmdSystem
 #endif
 #if defined(_RAVEN) || 1
 		static void			ArgCompletion_GuiName( const idCmdArgs &args, void(*callback)(const char *s) );
+#endif
+#ifdef _SPLASHDAMAGE
+    	static void			ArgCompletion_EntitiesName( const idCmdArgs &args, argCompletionCallback_t );
+    	static void			ArgCompletion_AtmosphereName( const idCmdArgs &args, argCompletionCallback_t );
 #endif
 };
 

@@ -39,6 +39,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _SPLASHDAMAGE
 using namespace sdUtility;
+
+class sdDeclRenderBinding;
+class sdDeclRenderProgram;
 #endif
 
 class idImage;
@@ -292,6 +295,27 @@ typedef struct {
 //HUMANHEAD END
 #endif
 
+#ifdef _SPLASHDAMAGE
+struct stageVector_t {
+	int							registers[4];
+	const sdDeclRenderBinding*	renderBinding;
+};
+const int MAX_STAGE_VECTORS = 32;
+
+struct stageTexture_t {
+	idImage*					image;
+	const sdDeclRenderBinding*	renderBinding;
+};
+const int MAX_STAGE_TEXTURES = 16;
+
+struct stageTextureMatrix_t {
+	int							matrix[2][3];
+	const sdDeclRenderBinding*	renderBinding_s;
+	const sdDeclRenderBinding*	renderBinding_t;
+};
+const int MAX_STAGE_TEXTUREMATRICES = 3;
+#endif
+
 typedef struct {
 	int					conditionRegister;	// if registers[conditionRegister] == 0, skip stage
 	stageLighting_t		lighting;			// determines which passes interact with lights
@@ -323,7 +347,14 @@ typedef struct {
 
     specData_t			specular;	//HUMANHEAD bjk: specular exponent
 #endif
+
+#ifdef _SPLASHDAMAGE
+    stageTexture_t*				textures;
+#endif
 } shaderStage_t;
+#ifdef _SPLASHDAMAGE
+typedef shaderStage_t materialStage_t;
+#endif
 
 typedef enum {
 	MC_BAD,
@@ -402,6 +433,34 @@ typedef enum {
     //HUMANHEAD PCF rww 05/11/06 - can be used explicitly by surfaces which use alpha coverage but do not want collision anyway
     MF_SKIPCLIP                 = BIT(9)
 		//HUMANHEAD END
+#endif
+#ifdef _SPLASHDAMAGE
+	,
+    MF_NOAMBIENT					= BIT(7),	// No cubemap ambient light on this shader
+    MF_NOATMOSPHERE					= BIT(7),	// No extinction/inscattering on this shader
+    MF_FORCETANGENTS				= BIT(8),	// Force tangents and normal calculation
+    MF_CLUSTERTRANSFORM				= BIT(9),	// the vertex shader will do the final offseting for the cluster model
+    MF_FORCEATMOSPHERE				= BIT(10),	// No extinction/inscattering on this shader
+    MF_FLIPBACKSIDENORMALS			= BIT(11),	// hack to make foliage light better, for twosided materials give one side flipped normals
+    MF_FULLSCREENPOSTPROCESS		= BIT(12),	// Don't modify depth and always pass the depth test for post processing materials (using SS_POSTPROCESS sort)
+    MF_NOHWSKINNING					= BIT(13),	// Don't use hardware skinning, use the SIMD code instead
+    MF_OCCLUSION_OCCLUDE			= BIT(14),
+    MF_OCCLUSION_QUERY				= BIT(15),
+    MF_NOSURFACEMERGE				= BIT(16),	// Don't merge MD5 mesh surface which have this set
+    MF_SHADOWMAPPED					= BIT(17),	// This light uses shadow maps
+    MF_VERTEXPOSITIONONLY			= BIT(18),	// Ignore UV, color, etc data from source models when loaded
+    MF_ONLYATMOSPHEREINTERACTION	= BIT(19),
+    MF_NOATMOSPHEREINTERACTION		= BIT(20),
+    MF_ADVERT						= BIT(21),
+    MF_FORCESOURCENORMALS			= BIT(22),
+    MF_BAKEDINATMOSLIGHTCOL			= BIT(23),
+    MF_TRANSLUCENTINTERACTION		= BIT(24),
+    MF_RECEIVESLIGHTINGONBACKSIDES	= BIT(25),
+    MF_LOWRANGEUVCOMPRESS			= BIT(26),
+    MF_UPDATECURRENTRENDER			= BIT(27),
+    MF_SHADOWSCASTONLYFROMSTATICOBJECTS = BIT(28),
+    MF_HASMEGA						= BIT(29),
+    MF_NOIMPLICITSTAGES				= BIT(30),
 #endif
 } materialFlags_t;
 
@@ -578,6 +637,19 @@ typedef enum {
 	// won't collect light from any angle
 #endif
 } surfaceFlags_t;
+
+#ifdef _SPLASHDAMAGE
+// portal flags
+typedef enum {
+    PORTAL_VIS,						// block visibility, splits surfaces
+    PORTAL_OUTSIDE,					// defines a border between an outside and an inside area
+    PORTAL_BLOCKAMBIENT,			// defines ambient light sectors
+    PORTAL_AUDIO,					// defines sound sectors
+    PORTAL_PLAYZONE,				// defines playzone areas
+    PORTAL_OCCTEST,					// enables occlusion testing on portal
+    NUM_PORTAL_FLAGS
+} portalFlags_t;
+#endif
 
 class idSoundEmitter;
 

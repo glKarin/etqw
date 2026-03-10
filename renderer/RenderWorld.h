@@ -44,6 +44,7 @@ If you have questions concerning this license or the applicable additional terms
 #define PROC_FILEVERSION				"4" // jmarshall: changed to string. 
 #define	PROC_FILE_DOOM3_ID				"mapProcFile003"
 #elif defined(_SPLASHDAMAGE)
+#include "Material.h"
 #define	PROC_FILE_ID			"mapProcFile010"
 #else
 #define	PROC_FILE_ID				"mapProcFile003"
@@ -182,6 +183,8 @@ enum
 #ifdef _SPLASHDAMAGE
 class sdDeclImposter;
 class sdDeclAmbientCubeMap;
+class idDemoFile;
+class sdDeclAtmosphere;
 
 const int MAX_SURFACE_BITS = 64;
 
@@ -516,7 +519,11 @@ typedef struct renderLight_s {
     // light polytope doesn't get pushed down the tree, instead, only add to the specified areas
     int						numAreas;
 	int						areas[ MAX_LIGHT_AREAS ];
+	
+    struct atmosLightProjection_t *atmosLightProjection;
+    
 	idRenderModel 			*prelightModel;
+	dword					minSpecShadowColor;
 #endif
 } renderLight_t;
 
@@ -534,6 +541,9 @@ typedef struct renderEffect_s {
 	float					startTime;
 	int						suppressSurfaceInViewID;
 	int						allowSurfaceInViewID;
+#ifdef _SPLASHDAMAGE
+    unsigned short			suppressLightsInViewID;
+#endif
 	int						groupID;
 
 	idVec3					origin;
@@ -631,6 +641,14 @@ typedef struct renderView_s {
     float					foliageDepthHack;
     
     int						forceClear;
+
+    struct renderViewFlags_t {
+        bool				cramZNear			: 1;	// for cinematics, we want to set ZNear much lower
+        bool				forceUpdate			: 1;	// for an update
+        bool				forceViewIDOnly		: 1;	// only render entities with a matching viewID
+        bool				forceDefsVisible	: 1;
+    };
+    renderViewFlags_t		flags;
 #endif
 
 } renderView_t;
@@ -640,8 +658,15 @@ typedef struct renderView_s {
 typedef struct {
 	int					areas[2];		// areas connected by this portal
 	const idWinding		*w;				// winding points have counter clockwise ordering seen from areas[0]
+#ifdef _SPLASHDAMAGE
+    idPlane				plane;
+    //idVec3				center;
+#endif
 	int					blockingBits;	// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
 	qhandle_t			portalHandle;
+#ifdef _SPLASHDAMAGE
+    //int					portalFlags;
+#endif
 } exitPortal_t;
 
 
@@ -737,8 +762,18 @@ class idRenderWorld
 		virtual	void			FreeLightDef(qhandle_t lightHandle) = 0;
 		virtual const renderLight_t *GetRenderLight(qhandle_t lightHandle) const = 0;
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+// RAVEN BEGIN
+    	// jscott: handling of effects
+        virtual qhandle_t		AddEffectDef( const renderEffect_t *reffect, int time ) = 0;
+        virtual bool			UpdateEffectDef( qhandle_t effectHandle, const renderEffect_t *reffect, int time ) = 0;
+        virtual void			StopEffectDef( qhandle_t effectHandle ) = 0;
+        virtual void			FreeEffectDef( qhandle_t effectHandle ) = 0;
+// RAVEN END
+#endif
 
 #ifdef _SPLASHDAMAGE
+    	virtual void			RestartEffectDef( qhandle_t effectHandle ) = 0;
     	virtual void			FreeStoppedEffectDefs( void ) = 0;
     	
 // Game side occlusion tests
@@ -746,6 +781,7 @@ class idRenderWorld
     	virtual void			UpdateOcclusionTestDef( qhandle_t occtestHandle, const occlusionTest_t *occtest ) = 0;
     	virtual bool			IsVisibleOcclusionTestDef( qhandle_t occtestHandle ) = 0;
     	virtual	void			FreeOcclusionTestDef( qhandle_t occtestHandle ) = 0;
+    	virtual int				CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) = 0;
 #endif
 		// Force the generation of all light / surface interactions at the start of a level
 		// If this isn't called, they will all be dynamically generated
@@ -799,17 +835,12 @@ class idRenderWorld
 		virtual void			SetRenderView(const renderView_t *renderView) = 0;
 
 #ifdef _RAVEN
+        virtual const class rvRenderEffectLocal* GetEffectDef( qhandle_t effectHandle ) const = 0;
+        virtual bool			EffectDefHasSound( const renderEffect_s *reffect ) = 0;
+        
     // jscott: for portal skies
         virtual bool			HasSkybox( int areaNum ) = 0;
         virtual void			FindVisibleAreas( idVec3 origin, int areaNum, bool *visibleAreas ) = 0;
-
-    // jscott: handling of effects
-        virtual qhandle_t		AddEffectDef( const renderEffect_t *reffect, int time ) = 0;
-        virtual bool			UpdateEffectDef( qhandle_t effectHandle, const renderEffect_t *reffect, int time ) = 0;
-        virtual void			StopEffectDef( qhandle_t effectHandle ) = 0;
-        virtual const class rvRenderEffectLocal* GetEffectDef( qhandle_t effectHandle ) const = 0;
-        virtual void			FreeEffectDef( qhandle_t effectHandle ) = 0;
-        virtual bool			EffectDefHasSound( const renderEffect_s *reffect ) = 0;
 
         virtual void			DebugClear(int time) = 0;		// a time of 0 will clear all lines and text
     // jscott: want to be able to specify depth test
@@ -840,11 +871,15 @@ class idRenderWorld
 		virtual int				GetPortalState(qhandle_t portal) = 0;
 		
 #ifdef _SPLASHDAMAGE
-    virtual void			UpdatePortalOccTestView( int viewID ) = 0;
+		virtual void			UpdatePortalOccTestView( int viewID ) = 0;
 #endif
 		// returns true only if a chain of portals without the given connection bits set
 		// exists between the two areas (a door doesn't separate them, etc)
 		virtual	bool			AreasAreConnected(int areaNum1, int areaNum2, portalConnection_t connection) = 0;
+#ifdef _SPLASHDAMAGE
+	    virtual	bool			AreasAreConnected( int areaNum1, int areaNum2, portalFlags_t flag ) = 0;
+	    virtual	bool			AreasAreConnected( int areaNum1, int areaNum2 ) = 0;
+#endif
 
 		// returns the number of portal areas in a map, so game code can build information
 		// tables for the different areas
@@ -864,6 +899,13 @@ class idRenderWorld
 		// returns one portal from an area
 		virtual exitPortal_t	GetPortal(int areaNum, int portalNum) = 0;
 
+#ifdef _SPLASHDAMAGE
+    	virtual int				GetAreaPortalFlags( int areaNum ) const = 0;
+    	
+	    // set the ambient lighting & atmosphere to use for this area
+	    virtual void			SetAreaAmbientCubeMap( int areaNum, const sdDeclAmbientCubeMap *cubeMapDecl ) = 0;
+    	virtual void			SetCubemapSunProperties( const sdDeclAmbientCubeMap *cubeMapDecl, const idVec3 &sunDir, const idVec3 &sunColor ) = 0;
+#endif
 		//-------------- Tracing  -----------------
 
 		// Checks a ray trace against any gui surfaces in an entity, returning the
@@ -912,6 +954,9 @@ class idRenderWorld
 		virtual void			DebugClearLines(int time) = 0;		// a time of 0 will clear all lines and text
 		virtual void			DebugLine(const idVec4 &color, const idVec3 &start, const idVec3 &end, const int lifetime = 0, const bool depthTest = false) = 0;
 		virtual void			DebugArrow(const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime = 0) = 0;
+#ifdef _SPLASHDAMAGE
+    	virtual void			DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime/* = 0*/, bool depthTest/* = false*/ ) = 0;
+#endif
 		virtual void			DebugWinding(const idVec4 &color, const idWinding &w, const idVec3 &origin, const idMat3 &axis, const int lifetime = 0, const bool depthTest = false) = 0;
 		virtual void			DebugCircle(const idVec4 &color, const idVec3 &origin, const idVec3 &dir, const float radius, const int numSteps, const int lifetime = 0, const bool depthTest = false) = 0;
 		virtual void			DebugSphere(const idVec4 &color, const idSphere &sphere, const int lifetime = 0, bool depthTest = false) = 0;
@@ -932,7 +977,14 @@ class idRenderWorld
 		virtual void			DrawText(const char *text, const idVec3 &origin, float scale, const idVec4 &color, const idMat3 &viewAxis, const int align = 1, const int lifetime = 0, bool depthTest = false) = 0;
 		
 #ifdef _SPLASHDAMAGE
+	    // Atmosphere / Ambient Systems.
+	    virtual void			SetAtmosphere( const sdDeclAtmosphere* atmosphere ) = 0;
+
+    	virtual const sdDeclAtmosphere*	GetAtmosphere() const = 0;
+
     	virtual void			SetupMatrices( const renderView_t* renderView, float* projectionMatrix, float* modelViewMatrix, const bool allowJitter ) = 0;
+
+    	virtual struct atmosLightProjection_t *FindAtmosLightProjection( int lightID ) = 0;
 #endif
 
 #ifdef _HUMANHEAD

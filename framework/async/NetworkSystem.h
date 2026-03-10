@@ -141,6 +141,11 @@ class idNetworkSystem
     	virtual void			ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info );
     	virtual void			ServerGetClientNetId( int clientNum, sdNetClientId& netClientId );
     	virtual void			ServerKickClient( int clientNum, const char* reason, bool localizedReason );
+    	
+//mal: allow the network to access some engine side bot functions....
+    	virtual int				AllocateClientSlotForBot( int maxPlayersOnServer );
+    	virtual int				ServerSetBotUserCommand( int clientNum, int frameNum, const usercmd_t& cmd );
+    	virtual int				ServerSetBotUserName( int clientNum, const char* playerName );
 #endif
 
 		virtual void			ClientSendReliableMessage(const idBitMsg &msg);
@@ -155,15 +160,34 @@ class idNetworkSystem
 	    virtual bool			IsDedicated( void );
 	    virtual bool			IsLANServer( void );
     	virtual bool			IsActive( void );
+    	
+    	virtual netadr_t		ClientGetServerAddress( void ) const;
     	virtual void			EnableVoip( voiceMode_t mode );
     	virtual void			DisableVoip( void );
+
+    	virtual int				GetLastVoiceSentTime( void );
     	virtual int				GetLastVoiceReceivedTime( int clientIndex );
     	
     	virtual int				ClientGetFrameTime( void );
 
+
+    	virtual int				GetDemoState( int& time, int& position, int& length, int& startPosition, int& endPosition, int &cutStartMarker, int &cutEndMarker );
+    	virtual const char*		GetDemoName( void );
+    	
+    	virtual bool			CanPlayDemo( const char* fileName );
+    
     	virtual const idDict&	GetUserInfo( int clientNum );
 
     	virtual bool			IsRankedServer( void );
+
+    	virtual void			StartSoundTest( int duration );
+    	virtual bool			IsSoundTestActive( void );
+    	virtual bool			IsSoundTestPlaybackActive( void );
+    	virtual float			GetSoundTestProgress( void );
+    	
+    	virtual voiceMode_t		GetVoiceMode( void );
+
+    	virtual void			RegisterServerInterest( const netadr_t& address );
 #endif
 
 #ifdef _RAVEN

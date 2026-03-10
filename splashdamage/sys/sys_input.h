@@ -4,8 +4,16 @@
 #ifndef __SYS_INPUT__
 #define __SYS_INPUT__
 
-#include "../framework/KeyInput.h"
+//#include "../framework/KeyInput.h"
 #include "keynum.h"
+
+struct sysEvent_s;
+typedef struct sysEvent_s sdSysEvent;
+class idWStr;
+class idStr;
+typedef unsigned char byte;
+class idKey;
+
 
 /*
 ==============================================================
@@ -178,7 +186,7 @@ public:
 ======================================================================
 */
 
-#include "../framework/KeyInput.h"
+//#include "../framework/KeyInput.h"
 
 typedef enum {
 	C_BUTTON1,
@@ -265,7 +273,7 @@ public:
 	void					SetAxis( int axis, float value ) { this->axis[ axis ] = value; }
 	const float*			GetAxisArray() const { return axis; }
 
-	idKey&					GetButton( int index ) { return idKeyInput::GetKeyByIndex( buttons[ index ] ); }
+	idKey&					GetButton( int index ); // { return idKeyInput::GetKeyByIndex( buttons[ index ] ); }
 	void					InitButtons( void );
 
 protected:
@@ -305,6 +313,7 @@ protected:
 	controllerApiState_e	state;
 };
 
+#if 0
 class sdDeviceMappingCallback : public idCVarCallback {
 	virtual void OnChanged( void );
 };
@@ -353,5 +362,6 @@ public:
 protected:
 	idList< sdController* >							controllers;
 };
+#endif
 
 #endif /* !__SYS_INPUT__ */

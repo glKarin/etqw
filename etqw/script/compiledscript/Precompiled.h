@@ -27,4 +27,8 @@ typedef unsigned int			dword;		// 32 bits
 typedef unsigned int			uint;
 typedef unsigned long			ulong;
 
+#ifdef _ETQW
+#define UINT_PTR						uintptr_t
+#else
 #define UINT_PTR						unsigned long
+#endif

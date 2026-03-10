@@ -116,6 +116,10 @@ typedef struct srfTriangles_s
 	bool						perfectHull;			// true if there aren't any dangling edges
 	bool						deformedSurface;		// if true, indexes, silIndexes, mirrorVerts, and silEdges are
 	// pointers into the original surface, and should not be freed
+	
+#ifdef _SPLASHDAMAGE
+    int							numAllocedVerts;
+#endif
 
 	int							numVerts;				// number of vertices
 	idDrawVert 				*verts;					// vertices, allocated with special allocator
@@ -287,6 +291,9 @@ class idRenderModel
 
 		// dump any ambient caches on the model surfaces
 		virtual void				FreeVertexCache() = 0;
+#ifdef _SPLASHDAMAGE
+    	virtual void				DirtyVertexAmbientCache() = 0;
+#endif
 
 		// returns the name of the model
 		virtual const char			*Name() const = 0;
@@ -416,11 +423,16 @@ class idRenderModel
 #endif
 
 #ifdef _SPLASHDAMAGE
+
+    	virtual void				SetBounds( idBounds const &bb ) = 0;
 	    // Purges any partial loadable images referenced by this model
 	    virtual void				PurgePartialLoadableImages( void ) = 0;
 	    
 	    // Schedules loading of any partial loadable images referenced by this model
 	    virtual void				LoadPartialLoadableImages( bool blocking = false ) = 0;
+
+	    // All surfaces have finished any pending partial image loads
+	    virtual bool				IsFinishedPartialLoading( void ) const = 0;
     	virtual int					NumMeshes( const int lod = 0 ) const = 0;
     	virtual idBounds			CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim ) = 0;
 #endif

@@ -11,7 +11,7 @@
 
 #ifdef _ETQW //karin: include
 #include "decllib/declTypeHolder.h"
-#include ".framework/DeclParseHelper.h"
+#include "framework/DeclParseHelper.h"
 #else
 #include "../../decllib/declTypeHolder.h"
 #include "../../framework/DeclParseHelper.h"

@@ -27,6 +27,7 @@ sdClientProjectile::sdClientProjectile
 sdClientProjectile::sdClientProjectile( void ) {
 }
 
+#if !defined(_ETQW) //karin: missing declarations in SDK
 /*
 =================
 sdClientProjectile::~sdClientProjectile
@@ -193,3 +194,4 @@ void sdClientProjectile::DefaultDamageEffect( const trace_t &collision, const id
 		gameLocal.ProjectDecal( collision.c.point, -collision.c.normal, 8.0f, true, spawnArgs.GetFloat( "decal_size", "6.0" ), decal );
 	}
 }
+#endif

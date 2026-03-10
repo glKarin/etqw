@@ -279,6 +279,8 @@ class idFileSystem
 		// Builds a full OS path from the given components.
 		virtual const char 	*BuildOSPath(const char *base, const char *game, const char *relativePath) = 0;
 #ifdef _SPLASHDAMAGE
+	    // Returns a full OS path where the initial base of the file system exists
+	    virtual const char *	GetBasePath() const = 0;
 	    // Returns a full OS path where user visible files can be written to
 	    virtual const char *	GetUserPath() const = 0;
 	    // Returns the current game path
@@ -352,15 +354,18 @@ class idFileSystem
 		virtual void			FindDLL(const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum
 		= false // karin: for compat with dhewm3
 		) = 0;
+#ifdef _SPLASHDAMAGE
+    	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck ) = 0;
+#endif
 		// case sensitive filesystems use an internal directory cache
 		// the cache is cleared when calling OpenFileWrite and RemoveFile
 		// in some cases you may need to use this directly
 		virtual void			ClearDirCache(void) = 0;
 
 #ifdef _SPLASHDAMAGE
-    	virtual idFile_Memory*	OpenMemoryFile( const char* name ) = 0;
+    	virtual class idFile_Memory*	OpenMemoryFile( const char* name ) = 0;
 
-    	virtual idFile_Buffered* OpenBufferedFile( idFile* file ) = 0;
+    	virtual class idFile_Buffered* OpenBufferedFile( idFile* file ) = 0;
 #endif
 		// is D3XP installed? even if not running it atm
 		virtual bool			HasD3XP(void) = 0;
@@ -401,6 +406,18 @@ class idFileSystem
 
         // jscott: new functions for tools
         virtual idFile *		GetNewFileMemory( void ) = 0;
+#endif
+
+#ifdef _SPLASHDAMAGE
+	    // is the pack currently referenced?
+	    virtual bool			IsAddonPackReferenced( const char* pak ) = 0;
+	    // ensure that the pack is loaded after the next pure restart
+	    virtual void			ReferenceAddonPack( const char* pak ) = 0;
+    
+	    // textures
+	    virtual void			ReadTGA( const char *name, byte **pic, int *width, int *height, unsigned *timestamp = 0, bool markPaksReferenced = true ) = 0;
+    	virtual void			WriteTGA( const char* name, const byte* pic, int width, int height ) = 0;
+    	virtual void			FreeTGA( byte* pic ) = 0;
 #endif
 };
 

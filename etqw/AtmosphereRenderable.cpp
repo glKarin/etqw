@@ -454,7 +454,7 @@ bool sdAtmosphereRenderable::glowSpriteCB( renderEntity_t *re, const renderView_
 	if ( v ) {
 #pragma warning( push )
 #pragma warning( disable: 4311 )
-		sdAtmosphereRenderable *atmos = static_cast<sdAtmosphereRenderable *>(renderSystem->PtrForUID( (int)re->callbackData ));
+		sdAtmosphereRenderable *atmos = static_cast<sdAtmosphereRenderable *>(renderSystem->PtrForUID( (intptr_t/*//k 64 int*/)re->callbackData ));
 #pragma warning( pop )
 		if ( atmos != NULL ) {
 			return atmos->_glowSpriteCB( re, v, lastModifiedGameTime );

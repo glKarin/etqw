@@ -2642,7 +2642,7 @@ void Mem_FreeAligned( void *ptr, const char *fileName, const int lineNumber )
     }
     Mem_FreeDebugMemory( ptr, fileName, lineNumber, true );
 }
-#else
+#endif
 /*
 ==================
 Mem_Alloc16
@@ -2675,7 +2675,6 @@ void Mem_Free16(void *ptr, const char *fileName, const int lineNumber)
 	assert((((int)ptr) & 15) == 0);
 	Mem_FreeDebugMemory(ptr, fileName, lineNumber, true);
 }
-#endif
 
 /*
 ==================

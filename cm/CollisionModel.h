@@ -75,6 +75,9 @@ typedef struct {
 	idVec3					point;			// point of contact
 	idVec3					normal;			// contact plane normal
 	float					dist;			// contact plane distance
+#ifdef _SPLASHDAMAGE
+    float					separation;		// contact feature separation at initial position
+#endif
 	int						contents;		// contents at other side of surface
 	const idMaterial 		*material;		// surface material
 #ifdef _SPLASHDAMAGE
@@ -122,7 +125,8 @@ public:
 #ifdef _SPLASHDAMAGE
     // Gets the bounds of the model, excluding/including surfaces of the appropriate surface type
     virtual void				GetBounds( idBounds& bounds, int surfaceMask, bool inclusive ) const = 0;
-    
+    // Gets all contents flags of brushes and polygons of the model ored together.
+    virtual int					GetContents( void ) const = 0;
     // Gets a vertex of the model.
     virtual const idVec3&		GetVertex( int vertexNum ) const = 0;
     // Gets an edge of the model.
@@ -222,6 +226,9 @@ class idCollisionModelManager
 	    virtual void				FreeModel( idCollisionModel *model ) = 0;
 	    // Purge all unused models.
 	    virtual void				PurgeModels( void ) = 0;
+	    
+	    // Sets up a trace model for collision with other trace models.
+	    virtual idCollisionModel *	ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes ) = 0;
 #endif
 
 		// Gets the clip handle for a model.

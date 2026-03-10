@@ -17,8 +17,8 @@ static char THIS_FILE[] = __FILE__;
 #include "decllib/declTypeHolder.h"
 #else
 #include "../../decllib/declTypeHolder.h"
-#endif
 #include "../../renderer/Image.h"
+#endif
 
 #include "../../sys/sys_local.h"
 

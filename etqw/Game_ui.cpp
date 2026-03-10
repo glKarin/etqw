@@ -334,7 +334,11 @@ void idGameLocal::CreateDemoList( sdUIList* list ) {
 		for( int i = 0; i < files->GetNumFiles(); i++ ) {
 			file = files->GetFile( i );
 			if( networkSystem->CanPlayDemo( file.c_str() ) ) {
+#ifdef _ETQW //karin: compat ID_TIME_T(int)
+				ID_TIME_T timeStamp;
+#else
 				unsigned int timeStamp;
+#endif
 
 				fullPath = files->GetBasePath();
 				fullPath += "/" + file;

@@ -329,6 +329,10 @@ class idImage
 
 		int					classification;			// just for resource profiling
 
+#ifdef _SPLASHDAMAGE
+    	int					sourceWidth, sourceHeight;				// after power of two, before downsample
+#endif
+
 		// data for listImages
 		int					uploadWidth, uploadHeight, uploadDepth;	// after power of two, downsample, and MAX_TEXTURE_SIZE
 		int					internalFormat;

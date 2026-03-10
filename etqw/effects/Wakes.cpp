@@ -163,8 +163,13 @@ void sdWakeLayer::AddNode( const idVec3 &origin, const idVec3 &emitLeft, float a
 		negNewScale = 1.0f;
 	}
 
+#ifdef _ETQW //karin: abs(float)
+	posNewScale = (float)fabs( posNewScale );
+	negNewScale = (float)fabs( negNewScale );
+#else
 	posNewScale = abs( posNewScale );
 	negNewScale = abs( negNewScale );
+#endif
 
 	posNewScale = Min( posNewScale, 1.0f );
 	posNewScale = Max( posNewScale, 0.0f );

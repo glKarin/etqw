@@ -365,7 +365,11 @@ class idMapFile
 		bool					NeedsReload();
 
 		int						AddEntity(idMapEntity *mapentity);
+#ifdef _SPLASHDAMAGE
+    	idMapEntity *			FindEntity( const char *name ) const;
+#else
 		idMapEntity 			*FindEntity(const char *name);
+#endif
 		void					RemoveEntity(idMapEntity *mapEnt);
 		void					RemoveEntities(const char *classname);
 		void					RemoveAllEntities();

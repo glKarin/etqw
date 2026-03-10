@@ -67,8 +67,13 @@ class idSysLocal : public idSys
 		virtual void			DLL_Unload(uintptr_t dllHandle);
 		virtual void			DLL_GetFileName(const char *baseName, char *dllName, int maxLength);
 
+#ifdef _SPLASHDAMAGE
+	    virtual const sdSysEvent*	GenerateMouseButtonEvent( int button, bool down );
+	    virtual const sdSysEvent*	GenerateMouseMoveEvent( int deltax, int deltay );
+#else
 		virtual sysEvent_t		GenerateMouseButtonEvent(int button, bool down);
 		virtual sysEvent_t		GenerateMouseMoveEvent(int deltax, int deltay);
+#endif
 
 		virtual void			OpenURL(const char *url, bool quit);
 		virtual void			StartProcess(const char *exeName, bool quit);
@@ -80,5 +85,8 @@ class idSysLocal : public idSys
         virtual void			LGLCD_UploadImage(unsigned char *pixels, int w, int h, bool highPriority, bool flipColor) { (void)pixels; (void)w; (void)h; (void)highPriority; (void)flipColor; }
 #endif
 };
+#ifdef _SPLASHDAMAGE
+#include "../framework/KeyInput.h"
+#endif
 
 #endif /* !__SYS_LOCAL__ */

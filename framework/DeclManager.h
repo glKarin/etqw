@@ -960,11 +960,16 @@ class idDeclManager
 #endif
 
 #ifdef _SPLASHDAMAGE
+    	virtual int						GetNumMaterials( void ) = 0;
     	virtual void					CacheFromDict( const idDict& dict ) = 0;
 		virtual	const rvDeclEffect *	FindEffect( const char *name, bool makeDefault = true ) = 0;
 	    virtual idDeclTypeInterface*	GetDeclType( const char* typeName ) const = 0;
 	    virtual idDeclTypeInterface*	GetDeclType( qhandle_t typeHandle ) const = 0;
     	virtual qhandle_t				GetDeclTypeHandle( const char* typeName ) const = 0;
+    	virtual const char*				GetDeclTypeName( qhandle_t typeHandle ) const = 0;
+    	
+	    virtual void					AddDependency( const idDecl* decl, const idDecl* dependency ) = 0;
+	    virtual void					AddDependency( const idDecl* decl, const char* fileName ) = 0;
     	virtual void					AddDependencies( const idDecl* decl, const idParser& parser ) = 0;
 #endif
 

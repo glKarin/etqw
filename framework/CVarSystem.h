@@ -188,6 +188,16 @@ class idCVar
 		void					ClearModified(void) {
 			internalVar->flags &= ~CVAR_MODIFIED;
 		}
+		
+#ifdef _SPLASHDAMAGE
+	    bool					IsDefaultValue( void ) {
+	        return internalVar->InternalIsDefaultValue();
+	    }
+    
+	    bool					IsGuiLocked( void ) const {
+	        return ( internalVar->flags & CVAR_GUILOCKED ) != 0;
+	    }
+#endif
 
 		const char 			*GetString(void) const {
 			return internalVar->value;
@@ -256,6 +266,9 @@ class idCVar
 	    virtual void			InternalRegisterCallback( idCVarCallback* callback ) {}
 	    virtual void			InternalUnRegisterCallback( idCVarCallback* callback ) {}
 	    virtual void			InternalUpdateLatched( void ) {}
+	    virtual bool			InternalIsDefaultValue() const {
+	        return false;
+	    }
 #endif
 		virtual void			InternalSetString(const char *newValue) {}
 		virtual void			InternalSetBool(const bool newValue) {}

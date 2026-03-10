@@ -39,183 +39,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _SPLASHDAMAGE
 #include "../splashdamage/common/common.h"
-//#include "sys/sys_input.h"
-typedef enum imeEvent_e {
-	IMEV_COMPOSITION_START,
-	IMEV_COMPOSITION_END,
-	IMEV_COMPOSITION_UPDATE,
-	IMEV_COMPOSITION_COMMIT,
-} imeEvent_t;
-
-typedef enum mouseButton_e {
-	M_INVALID = 0,
-
-	M_MOUSE1 = 1,
-	M_MOUSE2,
-	M_MOUSE3,
-	M_MOUSE4,
-	M_MOUSE5,
-	M_MOUSE6,
-	M_MOUSE7,
-	M_MOUSE8,
-	M_MOUSE9,
-	M_MOUSE10,
-	M_MOUSE11,
-	M_MOUSE12,
-
-	M_MWHEELDOWN,
-	M_MWHEELUP,
-
-	M_NUM_MOUSEBUTTONS,
-} mouseButton_t;
-typedef enum {
-	K_TAB = 9,
-	K_ENTER = 13,
-	K_ESCAPE = 27,
-	K_SPACE = 32,
-
-	K_BACKSPACE = 127,
-
-	K_COMMAND = 128,
-	K_CAPSLOCK,
-	K_SCROLL,
-	K_POWER,
-	K_PAUSE,
-
-	K_UPARROW = 133,
-	K_DOWNARROW,
-	K_LEFTARROW,
-	K_RIGHTARROW,
-
-	// The 3 windows keys
-	K_LWIN = 137,
-	K_RWIN,
-	K_MENU,
-
-	K_ALT = 140,
-	K_CTRL,
-	K_SHIFT,
-	K_INS,
-	K_DEL,
-	K_PGDN,
-	K_PGUP,
-	K_HOME,
-	K_END,
-
-	K_F1 = 149,
-	K_F2,
-	K_F3,
-	K_F4,
-	K_F5,
-	K_F6,
-	K_F7,
-	K_F8,
-	K_F9,
-	K_F10,
-	K_F11,
-	K_F12,
-	K_INVERTED_EXCLAMATION = 161,	// upside down !
-	K_F13,
-	K_F14,
-	K_F15,
-
-	K_KP_HOME = 165,
-	K_KP_UPARROW,
-	K_KP_PGUP,
-	K_KP_LEFTARROW,
-	K_KP_5,
-	K_KP_RIGHTARROW,
-	K_KP_END,
-	K_KP_DOWNARROW,
-	K_KP_PGDN,
-	K_KP_ENTER,
-	K_KP_INS,
-	K_KP_DEL,
-	K_KP_SLASH,
-	K_SUPERSCRIPT_TWO = 178,		// superscript 2
-	K_KP_MINUS,
-	K_ACUTE_ACCENT = 180,			// accute accent
-	K_KP_PLUS,
-	K_KP_NUMLOCK,
-	K_KP_STAR,
-	K_KP_EQUALS,
-
-	K_MASCULINE_ORDINATOR = 186,
-	// K_MOUSE enums must be contiguous (no char codes in the middle)
-	K_MOUSE1 = 187,
-	K_MOUSE2,
-	K_MOUSE3,
-	K_MOUSE4,
-	K_MOUSE5,
-	K_MOUSE6,
-	K_MOUSE7,
-	K_MOUSE8,
-
-	K_MWHEELDOWN = 195,
-	K_MWHEELUP,
-
-	K_JOY1 = 197,
-	K_JOY2,
-	K_JOY3,
-	K_JOY4,
-	K_JOY5,
-	K_JOY6,
-	K_JOY7,
-	K_JOY8,
-	K_JOY9,
-	K_JOY10,
-	K_JOY11,
-	K_JOY12,
-	K_JOY13,
-	K_JOY14,
-	K_JOY15,
-	K_JOY16,
-	K_JOY17,
-	K_JOY18,
-	K_JOY19,
-	K_JOY20,
-	K_JOY21,
-	K_JOY22,
-	K_JOY23,
-	K_JOY24,
-	K_JOY25,
-	K_JOY26,
-	K_JOY27,
-	K_GRAVE_A = 224,	// lowercase a with grave accent
-	K_JOY28,
-	K_JOY29,
-	K_JOY30,
-	K_JOY31,
-	K_JOY32,
-
-	K_AUX1 = 230,
-	K_CEDILLA_C = 231,	// lowercase c with Cedilla
-	K_GRAVE_E = 232,	// lowercase e with grave accent
-	K_AUX2,
-	K_AUX3,
-	K_AUX4,
-	K_GRAVE_I = 236,	// lowercase i with grave accent
-	K_AUX5,
-	K_AUX6,
-	K_AUX7,
-	K_AUX8,
-	K_TILDE_N = 241,	// lowercase n with tilde
-	K_GRAVE_O = 242,	// lowercase o with grave accent
-	K_AUX9,
-	K_AUX10,
-	K_AUX11,
-	K_AUX12,
-	K_AUX13,
-	K_AUX14,
-	K_GRAVE_U = 249,	// lowercase u with grave accent
-	K_AUX15,
-	K_AUX16,
-
-	K_PRINT_SCR	= 252,	// SysRq / PrintScr
-	K_RIGHT_ALT = 253,	// used by some languages as "Alt-Gr"
-	K_LAST_KEY  = 254	// this better be < 256!
-} keyNum_t;
-typedef keyNum_t keyNum_e; // original in sys/keynum.h
 #else
 
 // Win32
@@ -437,6 +260,50 @@ typedef enum {
 	MAX_JOYSTICK_AXIS
 } joystickAxis_t;
 
+#ifdef _SPLASHDAMAGE
+typedef enum {
+    AXIS_1,
+    AXIS_2,
+    AXIS_3,
+    AXIS_4,
+    AXIS_5,
+    AXIS_6,
+    AXIS_7,
+    AXIS_8,
+    MAX_CONTROLLER_AXIS,
+} controllerAxis_t;
+
+/*typedef enum imeEvent_e {
+	IMEV_COMPOSITION_START,
+	IMEV_COMPOSITION_END,
+	IMEV_COMPOSITION_UPDATE,
+	IMEV_COMPOSITION_COMMIT,
+} imeEvent_t;
+
+typedef enum mouseButton_e {
+	M_INVALID = 0,
+
+	M_MOUSE1 = 1,
+	M_MOUSE2,
+	M_MOUSE3,
+	M_MOUSE4,
+	M_MOUSE5,
+	M_MOUSE6,
+	M_MOUSE7,
+	M_MOUSE8,
+	M_MOUSE9,
+	M_MOUSE10,
+	M_MOUSE11,
+	M_MOUSE12,
+
+	M_MWHEELDOWN,
+	M_MWHEELUP,
+
+	M_NUM_MOUSEBUTTONS,
+} mouseButton_t;*/
+#include "sys/sys_input.h"
+#endif
+
 typedef enum {
 	SE_NONE,				// evTime is still valid
 	SE_KEY,					// evValue is a key code, evValue2 is the down flag
@@ -571,8 +438,6 @@ struct cpuInfo_t {
     int physicalNum;			// physical number of CPUs
     int hyperThreadedStatus;	// one of the above HT_ constants
 };
-
-class sdSysEvent;
 #endif
 
 template<class type> class idList;		// for Sys_ListFiles
@@ -757,6 +622,18 @@ typedef struct {
 	unsigned char	ip[4];
 	unsigned short	port;
 } netadr_t;
+
+#ifdef _SPLASHDAMAGE
+ID_INLINE bool operator==( const netadr_t& lhs, const netadr_t& rhs )
+{
+    return ( ( lhs.type == rhs.type ) &&
+             ( lhs.ip[ 0 ] == rhs.ip[ 0 ] ) &&
+             ( lhs.ip[ 1 ] == rhs.ip[ 1 ] ) &&
+             ( lhs.ip[ 2 ] == rhs.ip[ 2 ] ) &&
+             ( lhs.ip[ 3 ] == rhs.ip[ 3 ] ) &&
+             ( lhs.port == rhs.port ) );
+}
+#endif
 
 #define	PORT_ANY			-1
 
@@ -978,6 +855,10 @@ void				Sys_TriggerEvent(int index = TRIGGER_EVENT_ZERO);
 ==============================================================
 */
 
+#ifdef _SPLASHDAMAGE
+class sdIME;
+#endif
+
 class idSys
 {
 	public:
@@ -991,6 +872,12 @@ class idSys
     	virtual void			GetCPUInfo( cpuInfo_t& info ) = 0;
     	virtual int				Milliseconds() = 0;
     	virtual time_t			RealTime( sysTime_t* sysTime ) = 0;
+    	virtual const char*		TimeToSystemStr( const sysTime_t& sysTime ) = 0;
+    	virtual const char*		TimeAndDateToSystemStr( const sysTime_t& sysTime ) = 0;
+    	virtual time_t			TimeDiff( const sysTime_t& from, const sysTime_t& to ) = 0;
+    	virtual void			SecondsToTime( const time_t t, sysTime_t& out, bool localTime = false ) = 0;
+    	
+    	virtual const char *	GetCurCallStackStr( int depth ) = 0;
 #endif
 		virtual const char 	*GetProcessorString(void) = 0;
 		virtual const char 	*FPU_GetState(void) = 0;
@@ -1011,6 +898,11 @@ class idSys
 		virtual uintptr_t		DLL_Load(const char *dllName) = 0;
 		virtual void 			*DLL_GetProcAddress(uintptr_t dllHandle, const char *procName) = 0;
 		virtual void			DLL_Unload(uintptr_t dllHandle) = 0;
+#ifdef _SPLASHDAMAGE
+    	virtual void *			DLL_Load( const char *dllName, bool checkFullPathMatch ) = 0;
+    	virtual void *			DLL_GetProcAddress( void* dllHandle, const char *procName ) = 0;
+    	virtual void			DLL_Unload( void* dllHandle ) = 0;
+#endif
 		virtual void			DLL_GetFileName(const char *baseName, char *dllName, int maxLength) = 0;
 
 #ifdef _SPLASHDAMAGE
@@ -1034,11 +926,27 @@ class idSys
         //HUMANHEAD END
 #endif
 #ifdef _SPLASHDAMAGE
+    	virtual void			ProcessOSEvents() = 0;
+    	
     	virtual const sdSysEvent*	GenerateGuiEvent( int value ) = 0;
     	virtual void			FreeEvent( const sdSysEvent* event ) = 0;
+    	
+    	virtual idWStr			GetClipboardData( void ) = 0;
     	virtual void			SetClipboardData( const wchar_t *string ) = 0;
+
     	virtual void			SetServerInfo( const char* key, const char* value ) = 0;
     	virtual void			FlushServerInfo( void ) = 0;
+    	
+    	virtual idKeyboard&		Keyboard() = 0;
+    	virtual sdIME&			IME() = 0;
+
+	    // switch to the user's locale
+	    virtual void			SetSystemLocale() = 0;
+    	
+	    // switch to the default C locale
+	    virtual void			SetDefaultLocale() = 0;
+    	virtual const char *	NetAdrToString( const netadr_t& a ) const = 0;
+    	virtual bool			StringToNetAdr( const char *s, netadr_t *a, bool doDNSResolve ) const = 0;
 #endif
 };
 

@@ -108,6 +108,25 @@ void idLib::ShutDown(void)
 	Mem_Shutdown();
 }
 
+#ifdef _SPLASHDAMAGE
+/*
+===============
+idLib::Printf
+===============
+*/
+void idLib::Printf( const char *fmt, ... )
+{
+    va_list		argptr;
+    char		text[MAX_STRING_CHARS];
+
+    va_start( argptr, fmt );
+    idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+    va_end( argptr );
+
+    common->Printf( "%s", text );
+}
+#endif
+
 
 /*
 ===============================================================================
@@ -132,6 +151,10 @@ idVec4	colorBrown	= idVec4(0.40f, 0.35f, 0.08f, 1.00f);
 idVec4	colorLtGrey	= idVec4(0.75f, 0.75f, 0.75f, 1.00f);
 idVec4	colorMdGrey	= idVec4(0.50f, 0.50f, 0.50f, 1.00f);
 idVec4	colorDkGrey	= idVec4(0.25f, 0.25f, 0.25f, 1.00f);
+#ifdef _SPLASHDAMAGE
+const idVec4	colorLtBlue	= idVec4( 0.40f, 0.70f, 1.00f, 1.00f );
+const idVec4	colorDkRed	= idVec4( 0.70f, 0.00f, 0.00f, 1.00f );
+#endif
 
 static dword colorMask[2] = { 255, 0 };
 

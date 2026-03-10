@@ -1521,7 +1521,11 @@ int idMapFile::AddEntity(idMapEntity *mapEnt)
 idMapFile::FindEntity
 ===============
 */
+#ifdef _SPLASHDAMAGE
+idMapEntity *idMapFile::FindEntity( const char *name ) const
+#else
 idMapEntity *idMapFile::FindEntity(const char *name)
+#endif
 {
 	for (int i = 0; i < entities.Num(); i++) {
 		idMapEntity *ent = entities[i];

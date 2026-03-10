@@ -337,9 +337,11 @@ class idStr
 		idStr 				&StripQuotes(void);							// strip quotes around string
 		void				Replace(const char *old, const char *nw);
 #ifdef _SPLASHDAMAGE
+    	void				StripLeadingWhiteSpace( void );					// strip leading white space characters
    	 	void				StripTrailingWhiteSpace( void );				// strip trailing white space characters
     	void				ReplaceFirst( const char *old, const char *nw );
     	void				ReplaceChar( char oldChar, char newChar );
+    	void				EraseRange( int start, int len = INVALID_POSITION );
 #endif
 
 		// file name methods
@@ -364,6 +366,8 @@ class idStr
 		bool				CheckExtension(const char *ext);
 #ifdef _SPLASHDAMAGE
     	idStr&				CleanFilename( void );							// strips bad characters
+    	bool				IsValidEmailAddress( void );
+    	idStr&				CollapseColors( void );							// removes redundant color codes
 #endif
 
 		// char * methods to replace library functions
@@ -401,6 +405,8 @@ class idStr
 		static bool			CheckExtension(const char *name, const char *ext);
 		static const char 	*FloatArrayToString(const float *array, const int length, const int precision);
 #ifdef _SPLASHDAMAGE
+    	static bool			IsValidEmailAddress( const char* address );
+
     	static const char*	MS2HMS( double ms, const hmsFormat_t& formatSpec = defaultHMSFormat );
 #endif
 
@@ -426,6 +432,7 @@ class idStr
     	static bool			CharIsHex( int c );
     	static const char*	StrForColorIndex( int i );
     	static int			HexForChar( int c );
+    	void				SetStaticBuffer( char *buffer, int l );
 #endif
 
 		friend int			sprintf(idStr &dest, const char *fmt, ...);
@@ -509,6 +516,9 @@ class idStr
 };
 
 char 					*va(const char *fmt, ...) id_attribute((format(printf,1,2)));
+#ifdef _SPLASHDAMAGE
+char *					va_floatstring( const char *fmt, ... );
+#endif
 
 
 ID_INLINE void idStr::EnsureAlloced(int amount, bool keepold)
@@ -1435,6 +1445,11 @@ ID_INLINE bool idStr::CharIsHex( int c )
 ID_INLINE int idStr::HexForChar( int c )
 {
     return ( c > '9' ? ( c >= 'a' ? ( c - 'a' + 10 ) : ( c - '7' ) ) : ( c - '0' ) );
+}
+
+ID_INLINE bool idStr::IsValidEmailAddress( void )
+{
+    return IsValidEmailAddress( data );
 }
 #endif
 

@@ -191,6 +191,8 @@ typedef enum {
 	K_RIGHT_ALT = 253,	// used by some languages as "Alt-Gr"
 	K_LAST_KEY  = 254	// this better be < 256!
 } keyNum_t;
+#else
+#include "sys/keynum.h"
 #endif
 
 

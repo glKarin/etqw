@@ -342,6 +342,16 @@ public:
 	CLASS_PROTOTYPE( sdClientProjectile );
 
 							sdClientProjectile( void );
+#ifdef _ETQWxxx //karin: missing declarations in SDK
+	virtual ~sdClientProjectile();
+	void Spawn( void );
+	void Think( void );
+	bool Collide( const trace_t &collision, const idVec3 &velocity );
+	bool CollideEffect( idEntity* ent, const trace_t &collision, const idVec3 &velocity );
+	void Explode( const trace_t *collision, const char *sndExplode );
+	bool ClientReceiveEvent( const idVec3 &origin, int event, int time, const idBitMsg &msg );
+	void DefaultDamageEffect( const trace_t &collision, const idVec3 &velocity );
+#endif
 
 	void					AddOwner( idEntity* owner ) { _owners.Alloc() = owner; }
 	void					Launch( idEntity* owner, const idVec3& tracerMuzzleOrigin, const idMat3& tracerMuzzleAxis );

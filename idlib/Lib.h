@@ -280,6 +280,11 @@ extern	idVec4 colorLtGrey;
 extern	idVec4 colorMdGrey;
 extern	idVec4 colorDkGrey;
 
+#ifdef _SPLASHDAMAGE
+extern	const idVec4 colorLtBlue;
+extern	const idVec4 colorDkRed;
+#endif
+
 // packs color floats in the range [0,1] into an integer
 dword	PackColor(const idVec3 &color);
 void	UnpackColor(const dword color, idVec3 &unpackedColor);

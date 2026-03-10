@@ -310,7 +310,11 @@ class idCommon
 		virtual idWStr				LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments = idWStrList() ) = 0;
 		virtual void				PrintLoadingMessage( const char *msg ) = 0;
 
+		virtual int					GetNumVideoModes( void ) const = 0;
+		virtual vidmode_t&			GetVideoMode( int index ) const = 0;
+
 		virtual idSoundWorld*		GetGameSoundWorld( void ) = 0;
+		virtual idSoundWorld*		GetMenuSoundWorld( void ) = 0;
 #endif
 };
 

@@ -306,8 +306,15 @@ class idRenderSystem
     	
     	virtual void			SyncRenderSystem( void )  = 0;
     	
+    	virtual int				GetNumMSAAModes( void ) const = 0;
+    	virtual const char *	GetMSAAMode( int idx, int &val ) const = 0;
 	    virtual void			LockThreads( void ) = 0;
 	    virtual void			UnlockThreads( void ) = 0;
+    	virtual int				GetSyncNum( void ) = 0;
+	    
+	    virtual int				RegisterPtr( void *ptr ) = 0;
+	    virtual void			UnregisterPtr( int uid ) = 0;
+    	virtual void*			PtrForUID( int uid ) = 0;
 #endif
 
 #ifdef _RAVEN
