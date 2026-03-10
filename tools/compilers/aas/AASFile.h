@@ -37,13 +37,97 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+#ifdef _SPLASHDAMAGE
+#define AAS_FILE_ID							"ETQWAAS"
+#define AAS_FILE_ID_BINARY					"ETQWAASB"
+#define AAS_FILE_VERSION					"2.2"
+
+#define AAS_FILEID					AAS_FILE_ID
+#define AAS_FILEVERSION					AAS_FILE_VERSION
+#else
 #define AAS_FILEID					"DewmAAS"
 #ifdef _RAVEN // quake4 aas file
 #define AAS_FILEVERSION				"1.08"
 #else
 #define AAS_FILEVERSION				"1.07"
 #endif
+#endif
 
+#ifdef _SPLASHDAMAGE
+// travel flags
+#define TFL_INVALID							BIT(0)		// invalid
+#define TFL_INVALID_GDF						BIT(1)		// not valid for GDF
+#define TFL_INVALID_STROGG					BIT(2)		// not valid for STROGG
+#define TFL_AIR								BIT(3)		// travel through air
+#define TFL_WATER							BIT(4)		// travel through water
+#define TFL_WALK							BIT(5)		// walking
+#define TFL_WALKOFFLEDGE					BIT(6)		// walking off a ledge
+#define TFL_WALKOFFBARRIER					BIT(7)		// walking off a barrier
+#define TFL_BARRIERJUMP						BIT(8)		// jumping onto a barrier
+#define TFL_JUMP							BIT(9)		// jumping
+#define TFL_LADDER							BIT(10)		// climbing a ladder
+#define TFL_SWIM							BIT(11)		// swimming
+#define TFL_WATERJUMP						BIT(12)		// jump out of the water
+#define TFL_TELEPORT						BIT(13)		// teleportation
+#define TFL_ELEVATOR						BIT(14)		// travel by elevator
+
+#define TFL_VALID_GDF						( ~( TFL_INVALID | TFL_INVALID_GDF ) )
+#define TFL_VALID_STROGG					( ~( TFL_INVALID | TFL_INVALID_STROGG ) )
+#define TFL_VALID_GDF_AND_STROGG			( ~( TFL_INVALID ) )
+
+#define TFL_VALID_WALK_GDF					( TFL_WALK | TFL_AIR | TFL_WATER | TFL_INVALID_STROGG )
+#define TFL_VALID_WALK_STROGG				( TFL_WALK | TFL_AIR | TFL_WATER | TFL_INVALID_GDF )
+#define TFL_VALID_WALK_GDF_AND_STROGG		( TFL_WALK | TFL_AIR | TFL_WATER | TFL_INVALID_GDF | TFL_INVALID_STROGG )
+
+// edge flags
+#define AAS_EDGE_WALL						BIT(0)		// wall
+#define AAS_EDGE_LEDGE						BIT(1)		// ledge
+#define AAS_EDGE_WALL_CORNER				BIT(2)		// edge extending from a wall corner
+#define AAS_EDGE_LEDGE_CORNER				BIT(3)		// edge extending from a ledge corner
+#define AAS_EDGE_STEP_TOP					BIT(4)		// step top edge
+#define AAS_EDGE_STEP_BOTTOM				BIT(5)		// step bottom edge
+#define AAS_EDGE_VERTICAL					BIT(6)		// mostly vertical edge
+#define AAS_EDGE_WATER						BIT(7)		// water edge
+#define AAS_EDGE_LADDER						BIT(8)		// ladder edge
+
+// area flags
+#define AAS_AREA_LEDGE						BIT(0)		// if entered the AI bbox partly floats above a ledge
+#define AAS_AREA_REACHABLE_WALK				BIT(1)		// area is reachable by walking or swimming
+#define AAS_AREA_OUTSIDE					BIT(2)		// area is outside
+#define AAS_AREA_HIGH_CEILING				BIT(3)		// area has a ceiling that is high enough to perform certain movements
+#define AAS_AREA_NOPUSH						BIT(4)		// push into area failed because the area winding is malformed
+#define AAS_AREA_CONTENTS_SOLID				BIT(8)		// solid, not a valid area
+#define AAS_AREA_CONTENTS_WATER				BIT(9)		// area contains water
+#define AAS_AREA_CONTENTS_CLUSTERPORTAL		BIT(10)		// area is a cluster portal
+#define AAS_AREA_CONTENTS_OBSTACLE			BIT(11)		// area contains (part of) a binary obstacle
+#define AAS_AREA_CONTENTS_TELEPORTER		BIT(12)		// area contains (part of) a teleporter trigger
+#define AAS_AREA_FLOOD_VISITED				BIT(15)		// area visited during a flood routine.  this is a temporary flag that should be removed before the routine exits
+
+// node flags
+#define AAS_NODE_FLAG_NONE					0
+#define AAS_NODE_FLAG_FLOOR_PLANE			BIT(0)		// this node stores a floor plane
+#define AAS_NODE_FLAG_COLUMN_HEIGHT			BIT(1)		// the top most bits of the flags are used to store a height
+#define AAS_NODE_FLAG_COLUMN_HEIGHT_BITS	( sizeof( ((aasNode_t*)0)->flags ) * 8 - 2 )
+#define AAS_NODE_FLAG_COLUMN_HEIGHT_SHIFT	( sizeof( ((aasNode_t*)0)->flags ) * 8 - AAS_NODE_FLAG_COLUMN_HEIGHT_BITS )
+#define AAS_NODE_FLAG_COLUMN_HEIGHT_MAX		( ( 1 << AAS_NODE_FLAG_COLUMN_HEIGHT_BITS ) - 1 )
+#define AAS_NODE_FLAG_COLUMN_HEIGHT_OFFSET	( ( 1 << ( AAS_NODE_FLAG_COLUMN_HEIGHT_BITS - 1 ) ) )
+
+// obstacle PVS run-length encoding
+#define AAS_PVS_RLE_IMMEDIATE_BITS			7
+#define AAS_PVS_RLE_1ST_COUNT_BITS			6
+#define AAS_PVS_RLE_2ND_COUNT_BITS			8
+#define AAS_PVS_RLE_RUN_GRANULARITY			1
+#define AAS_PVS_RLE_RUN_BIT					(1 << 7)
+#define AAS_PVS_RLE_RUN_LONG_BIT			(1 << 6)
+
+// area travel time offset and reachability number encoding
+#define AAS_REACH_MAX_NUMBER_BITS			8
+#define AAS_REACH_MAX_PER_AREA				( 1 << AAS_REACH_MAX_NUMBER_BITS )
+#define AAS_REACH_NUMBER_SHIFT				( sizeof( ((aasReachability_t*)0)->areaTTOfsAndNumber ) * 8 - AAS_REACH_MAX_NUMBER_BITS )
+#define AAS_REACH_NUMBER_MASK				( ( 1 << AAS_REACH_MAX_NUMBER_BITS ) - 1 )
+#define AAS_AREA_TRAVEL_TIME_OFFSET_MASK	( ( 1 << AAS_REACH_NUMBER_SHIFT ) - 1 )
+
+#else
 // travel flags
 #define TFL_INVALID					BIT(0)		// not valid
 #define TFL_WALK					BIT(1)		// walking
@@ -84,6 +168,7 @@ If you have questions concerning this license or the applicable additional terms
 #define AREACONTENTS_CLUSTERPORTAL	BIT(2)		// area is a cluster portal
 #define AREACONTENTS_OBSTACLE		BIT(3)		// area contains (part of) a dynamic obstacle
 #define AREACONTENTS_TELEPORTER		BIT(4)		// area contains (part of) a teleporter trigger
+#endif
 
 // bits for different bboxes
 #define AREACONTENTS_BBOX_BIT		24
@@ -92,6 +177,50 @@ If you have questions concerning this license or the applicable additional terms
 #define MAX_AAS_TREE_DEPTH			128
 
 #define MAX_AAS_BOUNDING_BOXES		4
+
+#ifdef _SPLASHDAMAGE
+#define AAS_MAX_NAME_LENGTH					128
+
+// reachability to another area
+struct aasReachability_t {
+    unsigned short				travelFlags;		// type of travel required to get to the area
+    unsigned short				travelTime;			// travel time of the inter area movement
+    unsigned short				fromAreaNum;		// number of area the reachability starts
+    unsigned short				toAreaNum;			// number of area the reachability leads to
+    short						start[3];			// start point of inter area movement
+    short						end[3];				// end point of inter area movement
+    unsigned int				areaTTOfsAndNumber;	// travel times in fromAreaNum from reachabilities that lead towards this area to this reachability, and the reachability number
+    aasReachability_t *			next;				// next reachability in list
+    aasReachability_t *			rev_next;			// next reachability in reversed list
+
+    // v is the vector, d is the direction to snap towards
+    void						SetStart( const idVec3 &v, const idVec3 &d )
+    {
+        for ( int i = 0; i < 3; i++ ) start[i] = idMath::Ftoi( v[i] + idMath::Rint( d[i] ) );
+    }
+    void						SetEnd( const idVec3 &v, const idVec3 &d )
+    {
+        for ( int i = 0; i < 3; i++ ) end[i]   = idMath::Ftoi( v[i] + idMath::Rint( d[i] ) );
+    }
+
+    const idVec3				GetStart() const
+    {
+        return idVec3( start[0], start[1], start[2] );
+    }
+    const idVec3				GetEnd() const
+    {
+        return idVec3( end[0], end[1], end[2] );
+    }
+};
+
+typedef byte aasObstaclePVS_t;
+
+// names
+struct aasName_t {
+    char						name[AAS_MAX_NAME_LENGTH];
+    int							index;
+};
+#endif
 
 // reachability to another area
 class idReachability
@@ -152,6 +281,9 @@ typedef idVec3 aasVertex_t;
 // edge
 typedef struct aasEdge_s {
 	int							vertexNum[2];		// numbers of the vertexes of this edge
+#ifdef _SPLASHDAMAGE
+    int							flags;
+#endif
 } aasEdge_t;
 
 // area boundary face
@@ -184,6 +316,17 @@ struct rvMarker;
 
 // area with a boundary of faces
 typedef struct aasArea_s {
+#ifdef _SPLASHDAMAGE
+	unsigned short				travelFlags;		// travel flags for traveling through this area
+	unsigned short				flags;				// several area flags
+	int							numEdges;			// number of edges in the boundary of the face
+	int							firstEdge;			// first edge in the edge index
+	short						cluster;			// cluster the area belongs to, if negative it's a portal
+	unsigned short				clusterAreaNum;		// number of the area in the cluster
+	unsigned int				obstaclePVSOffset;	// offset into obstacle PVS
+	aasReachability_t *			reach;				// reachabilities that start from this area
+	aasReachability_t *			rev_reach;			// reachabilities that lead to this area
+#else
 	int							numFaces;			// number of faces used for the boundary of the area
 	int							firstFace;			// first face in the face index used for the boundary of the area
 	idBounds					bounds;				// bounds of the area
@@ -205,7 +348,16 @@ typedef struct aasArea_s {
 	// cdr: Obstacle Avoidance
 	rvMarker*					firstMarker;		// first obstacle avoidance threat in this area (0 if none)
 #endif
+#endif
 } aasArea_t;
+
+#ifdef _SPLASHDAMAGE
+#if D3_SIZEOFPTR == 4
+assert_sizeof( aasArea_t, 28 );
+#else
+assert_sizeof( aasArea_t, 36 );
+#endif
+#endif
 
 // nodes of the bsp tree
 typedef struct aasNode_s {
@@ -274,6 +426,21 @@ typedef struct aasTrace_s {
 	}
 } aasTrace_t;
 
+#ifdef _SPLASHDAMAGE
+struct aasTraceHeight_t {
+    int							maxPoints;
+    int							numPoints;			// number of areas the trace went through
+    idVec3 *					points;				// points where the trace entered each new area
+};
+
+struct aasTraceFloor_t {
+    float						fraction;			// fraction of trace completed
+    idVec3						endpos;				// end position of trace
+    int							lastAreaNum;		// number of last area the trace went through
+    int							lastEdgeNum;		// number of last edge the trace went through or edge that stopped the trace
+};
+#endif
+
 // settings
 class idAASSettings
 {
@@ -306,13 +473,21 @@ class idAASSettings
 #ifdef _RAVEN
 // RAVEN BEGIN 
 // rjohnson: added more debug drawing
-	idVec4						debugColor;
-	bool						debugDraw;
+		idVec4						debugColor;
+		bool						debugDraw;
 // bkreimeier
-	bool						generateAllFaces;
+		bool						generateAllFaces;
 // cdr: AASTactical
-	bool						generateTacticalFeatures;
+		bool						generateTacticalFeatures;
 // RAVEN END
+#endif
+
+#ifdef _SPLASHDAMAGE
+	    // collision settings
+	    idBounds					boundingBox;
+    	float						groundSpeed;				// in units per second
+    	float						waterSpeed;					// in units per second
+    	float						obstaclePVSRadius;
 #endif
 
 	public:
@@ -449,6 +624,21 @@ class idAASFile
 		const aasCluster_t 		&GetCluster(int index) const {
 			return clusters[index];
 		}
+		
+#ifdef _SPLASHDAMAGE
+	    const aasObstaclePVS_t &	GetObstaclePVS( int index ) const {
+	        return obstaclePVS[index];
+	    }
+	    const aasReachability_t &	GetReachability( int index ) const {
+	        return reachabilities[index];
+	    }
+	    int							GetNumReachabilityNames() const {
+	        return reachabilityNames.Num();
+	    }
+	    const aasName_t &			GetReachabilityName( int index ) const {
+	        return reachabilityNames[index];
+	    }
+#endif
 
 		const idAASSettings 		&GetSettings(void) const {
 			return settings;
@@ -464,6 +654,19 @@ class idAASFile
 			areas[index].travelFlags &= ~flag;
 		}
 
+#ifdef _SPLASHDAMAGE
+    	virtual int					FindReachabilityByName( const char *name ) const = 0;
+	    void						SetReachabilityTravelFlag( int index, int flag ) {
+	        reachabilities[index].travelFlags |= flag;
+	    }
+	    void						RemoveReachabilityTravelFlag( int index, int flag ) {
+	        reachabilities[index].travelFlags &= ~flag;
+	    }
+    	virtual size_t				MemorySize() const = 0;
+    	virtual bool				PushPointIntoArea( int areaNum, idVec3 &point ) const = 0;
+    	virtual bool				TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const = 0;
+    	virtual bool				TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const = 0;
+#endif
 		virtual idVec3				EdgeCenter(int edgeNum) const = 0;
 		virtual idVec3				FaceCenter(int faceNum) const = 0;
 		virtual idVec3				AreaCenter(int areaNum) const = 0;
@@ -517,6 +720,11 @@ class idAASFile
 	idList<int>					featureIndexes;
 	idList<aasFeature_t>		features;
 // jmarshall end
+#endif
+#ifdef _SPLASHDAMAGE
+    	idList<aasReachability_t>	reachabilities;
+    	idList<aasObstaclePVS_t>	obstaclePVS;
+    	idList<aasName_t>			reachabilityNames;
 #endif
 		idAASSettings				settings;
 };

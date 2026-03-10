@@ -2,6 +2,9 @@
 //
 
 
+#ifdef _SPLASHDAMAGE
+#include "tools/compilers/aas/AASFileManager.h"
+#else
 #ifndef __AASFILEMANAGER_H__
 #define __AASFILEMANAGER_H__
 
@@ -26,3 +29,4 @@ public:
 extern idAASFileManager *		AASFileManager;
 
 #endif /* !__AASFILEMANAGER_H__ */
+#endif

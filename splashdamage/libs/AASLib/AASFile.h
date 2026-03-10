@@ -2,6 +2,9 @@
 //
 
 
+#ifdef _SPLASHDAMAGE
+#include "tools/compilers/aas/AASFile.h"
+#else
 #ifndef __AASFILE_H__
 #define __AASFILE_H__
 
@@ -410,3 +413,4 @@ protected:
 };
 
 #endif /* !__AASFILE_H__ */
+#endif
