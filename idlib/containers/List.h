@@ -1110,6 +1110,28 @@ ID_INLINE type *idList<type>::Find(type const &obj) const
 	return NULL;
 }
 
+#ifdef _SPLASHDAMAGE
+/*
+================
+idList<type>::Find
+
+Searches for the specified data in the list and returns its address. Returns NULL if the data is not found.
+================
+*/
+template< class type >
+ID_INLINE type *idList<type>::FindElement( type const & obj ) const
+{
+    int i;
+
+    i = FindIndex( obj );
+    if ( i >= 0 ) {
+        return &list[ i ];
+    }
+
+    return NULL;
+}
+#endif
+
 /*
 ================
 idList<type>::FindNull

@@ -580,3 +580,13 @@ idCollisionModel *idClipModel::GetCollisionModel( int index ) const {
 	}
 	return NULL;
 }
+
+#ifdef _ETQW //karin: missing in SDK
+void idClipModel::Save(idSaveGame *savefile) const {
+
+}
+
+void idClipModel::Restore(idRestoreGame *savefile) {
+
+}
+#endif

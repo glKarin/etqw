@@ -427,6 +427,10 @@ const float MAX_BOUND_SIZE = 65536.0f;
 
 #endif /* !GAME_DLL */
 
+#ifdef _SPLASHDAMAGE
+#include "idlib/LibImpl.h"
+#endif
+
 //-----------------------------------------------------
 
 #endif	/* __cplusplus */

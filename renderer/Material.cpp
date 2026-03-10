@@ -223,6 +223,7 @@ void idMaterial::FreeData()
 	}
 }
 
+#if !defined(_ETQW) //karin: call in game
 /*
 ==============
 idMaterial::GetEditorImage
@@ -264,6 +265,7 @@ idImage *idMaterial::GetEditorImage(void) const
 
 	return editorImage;
 }
+#endif
 
 
 // info parms

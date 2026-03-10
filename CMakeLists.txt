@@ -1961,6 +1961,7 @@ if(SPLASHDAMAGE OR ETQW)
 			splashdamage/idlib/hashing/Honeyman.cpp
 			splashdamage/idlib/math/Mat3x4.cpp
 			splashdamage/idlib/math/Perlin.cpp
+			splashdamage/idlib/math/Random.cpp
 			splashdamage/idlib/math/Radians.cpp
 			#splashdamage/idlib/math/Simd_Xenon.cpp
 			splashdamage/idlib/text/LexerBinary.cpp
@@ -3352,7 +3353,7 @@ if(ETQW)
 			vehicles/VehicleWeapon.cpp
 			vehicles/Vehicle_RigidBody.cpp
 			vehicles/Walker.cpp
-			weapons/ClientProjectile.cpp
+			# weapons/ClientProjectile.cpp
 			AORManager.cpp
 			AnimatedEntity.cpp
 			AntiLag.cpp
@@ -3390,6 +3391,9 @@ if(ETQW)
 	)
 	list(APPEND src_etqw ${etqw_game_src})
 	set_src_dir(src_etqw "etqw" ${src_etqw})
+	list(APPEND src_etqw splashdamage/decllib/DeclType.cpp
+			splashdamage/framework/BuildVersion.cpp
+	)
 	add_globbed_headers(src_etqw "etqw")
 
 	add_library(etqwgame SHARED ${src_etqw})

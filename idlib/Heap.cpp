@@ -95,10 +95,9 @@ class idHeap
 #ifdef _SPLASHDAMAGE
 	    void *			AllocateAligned( const size_t bytes, align_t align );
 	    void			FreeAligned( void *p );
-#else
+#endif
 		void 			*Allocate16(const dword bytes);  // allocate 16 byte aligned memory
 		void			Free16(void *p);				// free 16 byte aligned memory
-#endif
 		dword			Msize(void *p);				// return size of data block
 		void			Dump(void);
 
@@ -446,7 +445,8 @@ void idHeap::FreeAligned( void *p )
 {
     free( (void *) *((int *) (( (byte *) p ) - sizeof( uintptr_t ))) );
 }
-#else
+#endif
+
 /*
 ================
 idHeap::Allocate16
@@ -491,7 +491,6 @@ void idHeap::Free16(void *p)
 {
 	free((void *) *((intptr_t *)(((byte *) p) - sizeof(intptr_t))));
 }
-#endif
 
 /*
 ================
@@ -1398,8 +1397,8 @@ void *Mem_ClearedAllocAligned( const size_t size, const align_t align )
     SIMDProcessor->Memset( mem, 0, size );
     return mem;
 }
+#endif
 
-#else
 /*
 ==================
 Mem_Alloc16
@@ -1447,7 +1446,6 @@ void Mem_Free16(void *ptr)
 	assert((((intptr_t)ptr) & 15) == 0);
 	mem_heap->Free16(ptr);
 }
-#endif
 
 /*
 ==================

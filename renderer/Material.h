@@ -1163,4 +1163,39 @@ class idMaterial : public idDecl
 
 typedef idList<const idMaterial *> idMatList;
 
+#ifdef _ETQW //karin: call in game
+/*
+==============
+idMaterial::GetEditorImage
+==============
+*/
+ID_INLINE idImage *idMaterial::GetEditorImage(void) const
+{
+	if (editorImage) {
+		return editorImage;
+	}
+
+	// if we don't have an editorImageName, use the first stage image
+	if (!editorImageName.Length()) {
+		// _D3XP :: First check for a diffuse image, then use the first
+		if (numStages && stages) {
+			int i;
+
+			for (i = 0; i < numStages; i++) {
+				if (stages[i].lighting == SL_DIFFUSE) {
+					editorImage = stages[i].texture.image;
+					break;
+				}
+			}
+
+			if (!editorImage) {
+				editorImage = stages[0].texture.image;
+			}
+		}
+	}
+
+	return editorImage;
+}
+#endif
+
 #endif /* !__MATERIAL_H__ */

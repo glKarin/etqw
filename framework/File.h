@@ -365,4 +365,24 @@ private:
 };
 #endif
 
+
+#ifdef _SPLASHDAMAGE //karin: call in idlib
+/*
+=================
+idFile_Memory::SetData
+=================
+*/
+ID_INLINE void idFile_Memory::SetData(const char *data, int length)
+{
+	maxSize = 0;
+	fileSize = length;
+	allocated = 0;
+	granularity = 16384;
+
+	mode = (1 << 0/*FS_READ*/);
+	filePtr = const_cast<char *>(data);
+	curPtr = const_cast<char *>(data);
+}
+#endif
+
 #endif /* !__FILE_H__ */

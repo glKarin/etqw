@@ -276,4 +276,16 @@ ID_INLINE void idCmdSystem::ArgCompletion_GuiName( const idCmdArgs &args, void(*
 }
 #endif
 
+#ifdef _SPLASHDAMAGE
+ID_INLINE void idCmdSystem::ArgCompletion_EntitiesName( const idCmdArgs &args, argCompletionCallback_t callback )
+{
+    cmdSystem->ArgCompletion_FolderExtension( args, callback, "maps/", true, ".entities", NULL );
+}
+
+ID_INLINE void idCmdSystem::ArgCompletion_AtmosphereName( const idCmdArgs &args, argCompletionCallback_t callback )
+{
+    cmdSystem->ArgCompletion_DeclName( args, callback, "atmosphere" );
+}
+#endif
+
 #endif /* !__CMDSYSTEM_H__ */

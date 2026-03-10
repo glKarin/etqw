@@ -2995,72 +2995,6 @@ char *idStr::RemoveEscapes( char *string, int escapes ) {
 	return string;
 }
 
-#ifdef _SPLASHDAMAGE
-/*
-============
-idStr::MS2HMS
-============
-*/
-const char*	idStr::MS2HMS( double ms, const hmsFormat_t& formatSpec )
-{
-    if ( ms < 0.0 ) {
-        ms = 0.0;
-    }
-
-    int sec = idMath::Ftoi( MS2SEC( ms ) );
-
-    if( sec == 0 && formatSpec.showZeroSeconds == false ) {
-        return "";
-    }
-
-    int min = sec / 60;
-    int hour = min / 60;
-
-    sec -= min * 60;
-    min -= hour * 60;
-
-    // don't show minutes if they're zeroed
-    if( min == 0 && hour == 0 && formatSpec.showZeroMinutes == false && formatSpec.showZeroHours == false ) {
-        return va( "%02i", sec );
-    }
-
-    // don't show hours if they're zeroed
-    if( hour == 0 && formatSpec.showZeroHours == false ) {
-        return va( "%02i:%02i", min, sec );
-    }
-    return va( "%02i:%02i:%02i", hour, min, sec );
-}
-
-
-/*
-============
-idStr::CollapseColors
-============
-*/
-idStr& idStr::CollapseColors( void )
-{
-    int colorBegin = -1;
-    int lastColor = -1;
-    for( int i = 0; i < len; i++ ) {
-        while( idStr::IsColor( &data[ i ] ) && i < len ) {
-            if( colorBegin == -1 ) {
-                colorBegin = i;
-            }
-            lastColor = i;
-            i += 2;
-        }
-        if( colorBegin != -1 && lastColor != colorBegin ) {
-            EraseRange( colorBegin, lastColor - colorBegin );
-            i -= lastColor - colorBegin;
-        }
-        colorBegin = -1;
-        lastColor = -1;
-    }
-    return *this;
-}
-#endif
-
-
 /*
 ============
 idStr::ReplaceChar
@@ -3077,9 +3011,7 @@ idStr &idStr::ReplaceChar( const char from, const char to ) {
 	}
 	return *this;
 }
-#endif
 
-#ifdef _RAVEN
 /*
 ===================
 idStr::StripDoubleQuotes
@@ -3101,6 +3033,71 @@ void idStr::StripDoubleQuotes(void)
 	}
 
 	*this = string;
+}
+#endif
+
+#ifdef _SPLASHDAMAGE
+/*
+============
+idStr::MS2HMS
+============
+*/
+const char*	idStr::MS2HMS( double ms, const hmsFormat_t& formatSpec )
+{
+	if ( ms < 0.0 ) {
+		ms = 0.0;
+	}
+
+	int sec = idMath::Ftoi( MS2SEC( ms ) );
+
+	if( sec == 0 && formatSpec.showZeroSeconds == false ) {
+		return "";
+	}
+
+	int min = sec / 60;
+	int hour = min / 60;
+
+	sec -= min * 60;
+	min -= hour * 60;
+
+	// don't show minutes if they're zeroed
+	if( min == 0 && hour == 0 && formatSpec.showZeroMinutes == false && formatSpec.showZeroHours == false ) {
+		return va( "%02i", sec );
+	}
+
+	// don't show hours if they're zeroed
+	if( hour == 0 && formatSpec.showZeroHours == false ) {
+		return va( "%02i:%02i", min, sec );
+	}
+	return va( "%02i:%02i:%02i", hour, min, sec );
+}
+
+
+/*
+============
+idStr::CollapseColors
+============
+*/
+idStr& idStr::CollapseColors( void )
+{
+	int colorBegin = -1;
+	int lastColor = -1;
+	for( int i = 0; i < len; i++ ) {
+		while( idStr::IsColor( &data[ i ] ) && i < len ) {
+			if( colorBegin == -1 ) {
+				colorBegin = i;
+			}
+			lastColor = i;
+			i += 2;
+		}
+		if( colorBegin != -1 && lastColor != colorBegin ) {
+			EraseRange( colorBegin, lastColor - colorBegin );
+			i -= lastColor - colorBegin;
+		}
+		colorBegin = -1;
+		lastColor = -1;
+	}
+	return *this;
 }
 #endif
 

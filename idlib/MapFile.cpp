@@ -2068,6 +2068,8 @@ void idMapBrush::AdjustOrigin( idVec3 &delta ) {
 }
 // RAVEN END
 
+#endif
+
 #ifdef _SPLASHDAMAGE
 /*
 ===============
@@ -2078,46 +2080,46 @@ Parse the bot_entities file, and setup the info for the bot thread.
 */
 bool idMapFile::ParseBotEntities( const char *filename )
 {
-    idLexer src( LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
-    idToken token;
-    idMapEntity *botEnt;
-    idStr fullName;
-    name = filename;
-    name.StripFileExtension();
-    fullName = name;
+	idLexer src( LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES );
+	idToken token;
+	idMapEntity *botEnt;
+	idStr fullName;
+	name = filename;
+	name.StripFileExtension();
+	fullName = name;
 
-    version = -1.0f;
+	version = -1.0f;
 
-    if ( !src.IsLoaded() ) {
-        // now try an entity file
-        fullName.SetFileExtension( BOT_ENTITY_FILE_EXT );
-        src.LoadFile( fullName );
-    }
+	if ( !src.IsLoaded() ) {
+		// now try an entity file
+		fullName.SetFileExtension( BOT_ENTITY_FILE_EXT );
+		src.LoadFile( fullName );
+	}
 
-    if ( !src.IsLoaded() ) {
-        return false;
-    }
+	if ( !src.IsLoaded() ) {
+		return false;
+	}
 
-    if ( src.CheckTokenString( "Version" ) ) {
-        src.ReadTokenOnLine( &token );
-        version = token.GetFloatValue();
-    }
+	if ( src.CheckTokenString( "Version" ) ) {
+		src.ReadTokenOnLine( &token );
+		version = token.GetFloatValue();
+	}
 
-    if ( version != BOT_MAP_VERSION ) {
-        idLib::common->Warning( "%s is an old version, and can't be used. Recompile your map to generate a new one!", fullName.c_str() );
-        return false;
-    }
+	if ( version != BOT_MAP_VERSION ) {
+		idLib::common->Warning( "%s is an old version, and can't be used. Recompile your map to generate a new one!", fullName.c_str() );
+		return false;
+	}
 
-    while( 1 ) {
-        botEnt = idMapEntity::ParseActions( src );
+	while( 1 ) {
+		botEnt = idMapEntity::ParseActions( src );
 
-        if ( !botEnt ) {
-            break;
-        }
-        entities.Append( botEnt );
-    }
+		if ( !botEnt ) {
+			break;
+		}
+		entities.Append( botEnt );
+	}
 
-    return true;
+	return true;
 }
 
 /*
@@ -2127,17 +2129,15 @@ idMapFile::Write
 */
 bool idMapFile::WriteBuffer( idStr& buffer )
 {
-    buffer += va( "Version %f\n", (float) CURRENT_MAP_VERSION );
+	buffer += va( "Version %f\n", (float) CURRENT_MAP_VERSION );
 
-    int i;
-    for ( i = 0; i < entities.Num(); i++ ) {
-        entities[i]->Write( buffer, i );
-    }
+	int i;
+	for ( i = 0; i < entities.Num(); i++ ) {
+		entities[i]->Write( buffer, i );
+	}
 
-    return true;
+	return true;
 }
-
-#endif
 
 #endif
 
