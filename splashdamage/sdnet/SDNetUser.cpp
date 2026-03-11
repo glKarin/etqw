@@ -3,8 +3,9 @@
 
 #include "SDNetUser_local.h"
 
-sdNetUser_Local::sdNetUser_Local() {
-    userState = US_INACTIVE;
+sdNetUser_Local::sdNetUser_Local()
+    : userState(US_INACTIVE)
+{
 }
 
 sdNetUser_Local::~sdNetUser_Local() {

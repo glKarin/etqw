@@ -10,6 +10,8 @@
 //
 //===============================================================
 
+#include "idlib/precompiled.h"
+
 struct messageHistoryEntry_t {
 	idWStr			message;
 	time_t			timeStamp;
@@ -17,7 +19,7 @@ struct messageHistoryEntry_t {
 
 class sdNetMessageHistory {
 public:
-	static const int						MAX_ENTRIES = 30;
+	static const int						MAX_ENTRIES/* = 30*/;
 	static const wchar_t* const				MESSAGE_STORE_VERSION;
 	static const wchar_t* const				MESSAGE_STORE_HEADER;
 

@@ -378,6 +378,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
     #include "../prey/Game_local.h"
 #endif
 
+#elif defined(_SPLASHDAMAGE)
 #else
 
     #if defined(_CDOOM)

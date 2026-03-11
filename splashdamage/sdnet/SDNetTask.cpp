@@ -3,9 +3,10 @@
 
 #include "SDNetTask_local.h"
 
-sdNetTask_Local::sdNetTask_Local() {
-    taskStatus = TS_INITIAL;
-    errorCode = SDNET_NO_ERROR;
+sdNetTask_Local::sdNetTask_Local()
+    : taskStatus(TS_INITIAL),
+    errorCode(SDNET_NO_ERROR)
+{
 }
 
 sdNetTask_Local::~sdNetTask_Local() {

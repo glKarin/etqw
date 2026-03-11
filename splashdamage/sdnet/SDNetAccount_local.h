@@ -12,10 +12,10 @@
 //
 //===============================================================
 
-#include "SDNetAccount_Auth.h"
-
 #include "idlib/precompiled.h"
 #include "SDNet.h"
+
+#include "SDNetAccount_Auth.h"
 
 class sdNetAccount_Local : public sdNetAccount {
 public:

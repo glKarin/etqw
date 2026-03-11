@@ -10,12 +10,12 @@
 //
 //===============================================================
 
-#include "SDNetUser.h"
-
 #include "idlib/precompiled.h"
 
-#include "SDNetProfile.h"
+#include "SDNetProfile_local.h"
 #include "SDNetAccount_local.h"
+
+#include "SDNetUser.h"
 
 class sdNetUser_Local : public sdNetUser {
 public:
@@ -45,7 +45,7 @@ private:
 	userState_e userState;
 	idStr username;
 	idStr rawUsername;
-	sdNetProfile profile;
+	sdNetProfile_Local profile;
 	sdNetAccount_Local account;
 };
 

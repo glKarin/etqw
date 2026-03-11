@@ -3418,4 +3418,35 @@ if(ETQW)
 				ARCHIVE DESTINATION "${libdir}"
 		)
 	endif()
+
+
+
+
+	# ETQW test source
+	set(etqw_test_src
+			splashdamage/sdnet/SDNetAccount.cpp
+			splashdamage/sdnet/SDNetFriend.cpp
+			splashdamage/sdnet/SDNetMessage.cpp
+			splashdamage/sdnet/SDNetMessageHistory.cpp
+			splashdamage/sdnet/SDNetProfile.cpp
+			splashdamage/sdnet/SDNetTask.cpp
+			splashdamage/sdnet/SDNetTeamMember.cpp
+			splashdamage/sdnet/SDNetUser.cpp
+			splashdamage/sdnet/SDNetFriendsManager.cpp
+			splashdamage/sdnet/SDNetSession.cpp
+			splashdamage/sdnet/SDNetStatsManager.cpp
+			splashdamage/sdnet/SDNetSessionManager.cpp
+			splashdamage/sdnet/SDNetTeamManager.cpp
+	)
+
+	add_library(etqwgametest SHARED ${etqw_test_src})
+	set(etqwgametest_compile_definitions "GAME_DLL;_SPLASHDAMAGE")
+	set_target_properties(etqwgametest PROPERTIES COMPILE_DEFINITIONS "${etqwgametest_compile_definitions}")
+	target_include_directories(etqwgametest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/etqw")
+	set_target_properties(etqwgametest PROPERTIES LINK_FLAGS "${ldflags}")
+	target_link_libraries(etqwgametest idlib_splashdamage)
+	target_include_directories(etqwgametest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
+	if(NOT MSVC)
+		target_compile_options(etqwgametest PRIVATE -Wno-format-security)
+	endif()
 endif()
