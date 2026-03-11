@@ -5,6 +5,7 @@
 #ifndef _BSE_PARTICLE_H_INC_
 #define _BSE_PARTICLE_H_INC_
 
+#if !defined(_SPLASHDAMAGE)
 #include "../renderer/ModelManager.h"
 #include "../renderer/RenderWorld.h"
 
@@ -822,6 +823,7 @@ private:
 			static bool sInited;
 			static void InitStatic( void );
 };
+#endif
 
 #endif //_BSE_PARTICLE_H_INC_
 

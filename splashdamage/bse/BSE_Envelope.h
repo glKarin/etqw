@@ -5,6 +5,7 @@
 #ifndef _BSE_ENVELOPE_H_INC_
 #define _BSE_ENVELOPE_H_INC_
 
+#if !defined(_SPLASHDAMAGE)
 #include "../decllib/declTable.h"
 #include "../decllib/declTypeHolder.h"
 
@@ -214,5 +215,6 @@ private:
 			idVec3		mStart;
 			idVec3		mEnd;
 };
+#endif
 
 #endif // _BSE_ENVELOPE_H_INC_

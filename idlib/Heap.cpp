@@ -443,7 +443,7 @@ idHeap::Free
 */
 void idHeap::FreeAligned( void *p )
 {
-    free( (void *) *((int *) (( (byte *) p ) - sizeof( uintptr_t ))) );
+    free( (void *) *((intptr_t *) (( (byte *) p ) - sizeof( uintptr_t ))) );
 }
 #endif
 

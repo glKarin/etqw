@@ -5,6 +5,7 @@
 #ifndef _BSE_SPAWN_DOMAINS_H_INC_
 #define _BSE_SPAWN_DOMAINS_H_INC_
 
+#if !defined(_SPLASHDAMAGE)
 enum
 {
 	SPF_NONE_0 = 0,
@@ -222,5 +223,6 @@ void SpawnSpiral2( float *result, const rvParticleParms &parms, idVec3 *normal =
 void SpawnSpiral3( float *result, const rvParticleParms &parms, idVec3 *normal = NULL, const idVec3 * = NULL );
 
 void SpawnModel3( float *result, const rvParticleParms &parms, idVec3 *normal = NULL, const idVec3 * = NULL );
+#endif
 
 #endif // _BSE_SPAWN_DOMAINS_H_INC_

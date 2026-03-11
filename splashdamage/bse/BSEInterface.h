@@ -1,6 +1,10 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#ifdef _SPLASHDAMAGE
+#include "raven/bse/BSEInterface.h"
+#include "raven/bse/bse_effecttemplate.h"
+#else
 #ifndef _BSE_INTERFACE_H_INC_
 #define _BSE_INTERFACE_H_INC_
 
@@ -83,3 +87,4 @@ public:
 extern	rvBSEManager			*bse;
 
 #endif // _BSE_INTERFACE_H_INC_
+#endif

@@ -5,6 +5,7 @@
 #ifndef _BSE_H_INC_
 #define _BSE_H_INC_
 
+#if !defined(_SPLASHDAMAGE)
 #include "../sound/SoundEmitter.h"
 
 // BSE - Basic System for Effects
@@ -625,6 +626,7 @@ public:
 	static		float						mEffectRates[EC_MAX];
 	float								pauseTime;	// -1 means pause at the next time update
 };
+#endif
 
 #endif // _BSE_H_INC_
 
