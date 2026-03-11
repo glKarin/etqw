@@ -181,38 +181,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE
 #define AAS_MAX_NAME_LENGTH					128
 
-// reachability to another area
-struct aasReachability_t {
-    unsigned short				travelFlags;		// type of travel required to get to the area
-    unsigned short				travelTime;			// travel time of the inter area movement
-    unsigned short				fromAreaNum;		// number of area the reachability starts
-    unsigned short				toAreaNum;			// number of area the reachability leads to
-    short						start[3];			// start point of inter area movement
-    short						end[3];				// end point of inter area movement
-    unsigned int				areaTTOfsAndNumber;	// travel times in fromAreaNum from reachabilities that lead towards this area to this reachability, and the reachability number
-    aasReachability_t *			next;				// next reachability in list
-    aasReachability_t *			rev_next;			// next reachability in reversed list
-
-    // v is the vector, d is the direction to snap towards
-    void						SetStart( const idVec3 &v, const idVec3 &d )
-    {
-        for ( int i = 0; i < 3; i++ ) start[i] = idMath::Ftoi( v[i] + idMath::Rint( d[i] ) );
-    }
-    void						SetEnd( const idVec3 &v, const idVec3 &d )
-    {
-        for ( int i = 0; i < 3; i++ ) end[i]   = idMath::Ftoi( v[i] + idMath::Rint( d[i] ) );
-    }
-
-    const idVec3				GetStart() const
-    {
-        return idVec3( start[0], start[1], start[2] );
-    }
-    const idVec3				GetEnd() const
-    {
-        return idVec3( end[0], end[1], end[2] );
-    }
-};
-
 typedef byte aasObstaclePVS_t;
 
 // names
@@ -223,14 +191,23 @@ struct aasName_t {
 #endif
 
 // reachability to another area
+#ifdef _SPLASHDAMAGE
+struct idReachability
+#else
 class idReachability
+#endif
 {
 	public:
 		int							travelType;			// type of travel required to get to the area
 		short						toAreaNum;			// number of the reachable area
 		short						fromAreaNum;		// number of area the reachability starts
+#ifdef _SPLASHDAMAGE
+		short						start[3];			// start point of inter area movement
+		short						end[3];				// end point of inter area movement
+#else
 		idVec3						start;				// start point of inter area movement
 		idVec3						end;				// end point of inter area movement
+#endif
 		int							edgeNum;			// edge crossed by this reachability
 		unsigned short				travelTime;			// travel time of the inter area movement
 		byte						number;				// reachability number within the fromAreaNum (must be < 256)
@@ -238,9 +215,38 @@ class idReachability
 		idReachability 			*next;				// next reachability in list
 		idReachability 			*rev_next;			// next reachability in reversed list
 		unsigned short 			*areaTravelTimes;	// travel times within the fromAreaNum from reachabilities that lead towards this area
+
+#ifdef _SPLASHDAMAGE
+		unsigned short				travelFlags;		// type of travel required to get to the area
+		unsigned int				areaTTOfsAndNumber;	// travel times in fromAreaNum from reachabilities that lead towards this area to this reachability, and the reachability number
+#endif
 	public:
 		void						CopyBase(idReachability &reach);
+
+#ifdef _SPLASHDAMAGE
+	    // v is the vector, d is the direction to snap towards
+	    void						SetStart( const idVec3 &v, const idVec3 &d )
+	    {
+	        for ( int i = 0; i < 3; i++ ) start[i] = idMath::Ftoi( v[i] + idMath::Rint( d[i] ) );
+	    }
+	    void						SetEnd( const idVec3 &v, const idVec3 &d )
+	    {
+	        for ( int i = 0; i < 3; i++ ) end[i]   = idMath::Ftoi( v[i] + idMath::Rint( d[i] ) );
+	    }
+
+	    const idVec3				GetStart() const
+	    {
+	        return idVec3( start[0], start[1], start[2] );
+	    }
+	    const idVec3				GetEnd() const
+	    {
+	        return idVec3( end[0], end[1], end[2] );
+	    }
+#endif
 };
+#ifdef _SPLASHDAMAGE
+typedef idReachability aasReachability_t;
+#endif
 
 class idReachability_Walk : public idReachability
 {
@@ -317,18 +323,14 @@ struct rvMarker;
 // area with a boundary of faces
 typedef struct aasArea_s {
 #ifdef _SPLASHDAMAGE
-	unsigned short				travelFlags;		// travel flags for traveling through this area
-	unsigned short				flags;				// several area flags
 	int							numEdges;			// number of edges in the boundary of the face
 	int							firstEdge;			// first edge in the edge index
-	short						cluster;			// cluster the area belongs to, if negative it's a portal
-	unsigned short				clusterAreaNum;		// number of the area in the cluster
+
 	unsigned int				obstaclePVSOffset;	// offset into obstacle PVS
-	aasReachability_t *			reach;				// reachabilities that start from this area
-	aasReachability_t *			rev_reach;			// reachabilities that lead to this area
 #else
 	int							numFaces;			// number of faces used for the boundary of the area
 	int							firstFace;			// first face in the face index used for the boundary of the area
+#endif
 	idBounds					bounds;				// bounds of the area
 	idVec3						center;				// center of the area an AI can move towards
 	unsigned short				flags;				// several area flags
@@ -338,7 +340,6 @@ typedef struct aasArea_s {
 	int							travelFlags;		// travel flags for traveling through this area
 	idReachability 			*reach;				// reachabilities that start from this area
 	idReachability 			*rev_reach;			// reachabilities that lead to this area
-
 #ifdef _RAVEN
 	float						ceiling;			// top of the area
 	// cdr: AASTactical
@@ -348,16 +349,7 @@ typedef struct aasArea_s {
 	// cdr: Obstacle Avoidance
 	rvMarker*					firstMarker;		// first obstacle avoidance threat in this area (0 if none)
 #endif
-#endif
 } aasArea_t;
-
-#ifdef _SPLASHDAMAGE
-#if D3_SIZEOFPTR == 4
-assert_sizeof( aasArea_t, 28 );
-#else
-assert_sizeof( aasArea_t, 36 );
-#endif
-#endif
 
 // nodes of the bsp tree
 typedef struct aasNode_s {
@@ -592,8 +584,8 @@ class idAASFile
 		int							GetNumAreas(void) const {
 			return areas.Num();
 		}
-#ifdef _RAVEN
-		aasArea_t 			&GetArea(int index)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+		aasArea_t 					&GetArea(int index)
 #else
 		const aasArea_t 			&GetArea(int index)
 #endif
