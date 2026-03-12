@@ -475,7 +475,11 @@ void	idRenderWorldLocal::WriteRenderLight(qhandle_t handle, const renderLight_t 
 	session->writeDemo->WriteVec3(light->end);
 	session->writeDemo->WriteInt(light->prelightModel ? 1 : 0);
 	session->writeDemo->WriteInt(light->lightId);
+#ifdef _SPLASHDAMAGE
+	session->writeDemo->WriteInt(light->material ? 1 : 0);
+#else
 	session->writeDemo->WriteInt(light->shader ? 1 : 0);
+#endif
 
 	for (int i = 0; i < MAX_ENTITY_SHADER_PARMS; i++)
 		session->writeDemo->WriteFloat(light->shaderParms[i]);
@@ -490,9 +494,15 @@ void	idRenderWorldLocal::WriteRenderLight(qhandle_t handle, const renderLight_t 
 		session->writeDemo->WriteHashString(light->prelightModel->Name());
 	}
 
+#ifdef _SPLASHDAMAGE
+	if (light->material) {
+		session->writeDemo->WriteHashString(light->material->GetName());
+	}
+#else
 	if (light->shader) {
 		session->writeDemo->WriteHashString(light->shader->GetName());
 	}
+#endif
 
 #ifdef _RAVEN //karin: quake4 using handle
 	if (light->referenceSoundHandle > 0) {
@@ -557,10 +567,17 @@ void	idRenderWorldLocal::ReadRenderLight()
 		light.prelightModel = renderModelManager->FindModel(session->readDemo->ReadHashString());
 	}
 
+#ifdef _SPLASHDAMAGE
+	light.material = NULL;
+	if (shader) {
+		light.material = declManager->FindMaterial(session->readDemo->ReadHashString());
+	}
+#else
 	light.shader = NULL;
 	if (shader) {
 		light.shader = declManager->FindMaterial(session->readDemo->ReadHashString());
 	}
+#endif
 
 #ifdef _RAVEN //karin: quake4 using handle
 	light.referenceSoundHandle = -1;
@@ -603,7 +620,11 @@ void	idRenderWorldLocal::WriteRenderEntity(qhandle_t handle, const renderEntity_
 	session->writeDemo->WriteInt(handle);
 
 	session->writeDemo->WriteInt(ent->hModel ? 1 : 0);
+#ifdef _SPLASHDAMAGE
+	session->writeDemo->WriteInt(ent->spawnID);
+#else
 	session->writeDemo->WriteInt(ent->entityNum);
+#endif
 	session->writeDemo->WriteInt(ent->bodyId);
 	session->writeDemo->WriteVec3(ent->bounds[0]);
 	session->writeDemo->WriteVec3(ent->bounds[1]);
@@ -732,7 +753,11 @@ void	idRenderWorldLocal::ReadRenderEntity()
 	}
 
 	session->readDemo->ReadInt(hModel);
+#ifdef _SPLASHDAMAGE
+	session->readDemo->ReadInt(ent.spawnID);
+#else
 	session->readDemo->ReadInt(ent.entityNum);
+#endif
 	session->readDemo->ReadInt(ent.bodyId);
 	session->readDemo->ReadVec3(ent.bounds[0]);
 	session->readDemo->ReadVec3(ent.bounds[1]);

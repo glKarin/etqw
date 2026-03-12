@@ -302,7 +302,7 @@ class idRenderSystem
 		// returns false if the image wasn't found
 		virtual bool			UploadImage(const char *imageName, const byte *data, int width, int height) = 0;
 #ifdef _SPLASHDAMAGE
-    	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height, bool generateMipMaps = false, bool copy = true ) = 0;
+    	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height, bool generateMipMaps/* = false*/, bool copy = true ) = 0;
     	
     	virtual void			SyncRenderSystem( void )  = 0;
     	

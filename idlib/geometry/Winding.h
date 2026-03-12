@@ -73,10 +73,9 @@ class idWinding
 #ifdef _SPLASHDAMAGE
 	    void			BaseForPlane( const idVec3 &normal, const float dist, const float radius );
 	    void			BaseForPlane( const idPlane &plane, const float radius );
-#else
+#endif
 		void			BaseForPlane(const idVec3 &normal, const float dist);
 		void			BaseForPlane(const idPlane &plane);
-#endif
 
 		// splits the winding into a front and back winding, the winding itself stays unchanged
 		// returns a SIDE_?
@@ -357,12 +356,11 @@ ID_INLINE void idWinding::BaseForPlane( const idPlane &plane, const float radius
 {
     BaseForPlane( plane.Normal(), plane.Dist(), radius );
 }
-#else
+#endif
 ID_INLINE void idWinding::BaseForPlane(const idPlane &plane)
 {
 	BaseForPlane(plane.Normal(), plane.Dist());
 }
-#endif
 
 ID_INLINE bool idWinding::EnsureAlloced(int n, bool keep)
 {

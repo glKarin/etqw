@@ -909,7 +909,11 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces(const struct aseModel_s *ase
 
 	if (ase->materials.Num() == 0) {
 		// if we don't have any materials, dump everything into a single surface
+#ifdef _SPLASHDAMAGE
+		surf.material = tr.defaultMaterial;
+#else
 		surf.shader = tr.defaultMaterial;
+#endif
 		surf.id = 0;
 		this->AddSurface(surf);
 
@@ -922,7 +926,11 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces(const struct aseModel_s *ase
 			mergeTo[i] = i;
 			object = ase->objects[i];
 			material = ase->materials[object->materialRef];
+#ifdef _SPLASHDAMAGE
+			surf.material = declManager->FindMaterial(material->name);
+#else
 			surf.shader = declManager->FindMaterial(material->name);
+#endif
 			surf.id = this->NumSurfaces();
 			this->AddSurface(surf);
 		}
@@ -1260,7 +1268,11 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces(const struct st_lwObject *lw
 		// don't merge any
 		for (lwoSurf = lwo->surf, i = 0; lwoSurf; lwoSurf = lwoSurf->next, i++) {
 			mergeTo[i] = i;
+#ifdef _SPLASHDAMAGE
+			surf.material = declManager->FindMaterial(lwoSurf->name);
+#else
 			surf.shader = declManager->FindMaterial(lwoSurf->name);
+#endif
 			surf.id = this->NumSurfaces();
 			this->AddSurface(surf);
 		}
@@ -1292,7 +1304,11 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces(const struct st_lwObject *lw
 			if (j == this->NumSurfaces()) {
 				// didn't merge
 				mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+				surf.material = im1;
+#else
 				surf.shader = im1;
+#endif
 				surf.id = this->NumSurfaces();
 				this->AddSurface(surf);
 			}
@@ -2590,7 +2606,11 @@ void idRenderModelStatic::TouchData(void)
 
 		// re-find the material to make sure it gets added to the
 		// level keep list
+#ifdef _SPLASHDAMAGE
+		declManager->FindMaterial(surf->material->GetName());
+#else
 		declManager->FindMaterial(surf->shader->GetName());
+#endif
 	}
 }
 
@@ -2813,7 +2833,11 @@ bool idRenderModelStatic::ConvertOBJToModelSurfaces( const objModel_t* model )
 			mergeTo[i] = i;
 			mesh = model->objects[i];
 
+#ifdef _SPLASHDAMAGE
+			surf.material = declManager->FindMaterial( mesh->material );
+#else
 			surf.shader = declManager->FindMaterial( mesh->material );
+#endif
 			surf.id = this->NumSurfaces();
 			this->AddSurface( surf );
 		}
@@ -2836,7 +2860,11 @@ bool idRenderModelStatic::ConvertOBJToModelSurfaces( const objModel_t* model )
 				for( j = 0; j < this->NumSurfaces(); j++ )
 				{
 					modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+					im2 = modelSurf->material;
+#else
 					im2 = modelSurf->shader;
+#endif
 					if( im1 == im2 )
 					{
 						// merge this
@@ -2849,7 +2877,11 @@ bool idRenderModelStatic::ConvertOBJToModelSurfaces( const objModel_t* model )
 			{
 				// didn't merge
 				mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+				surf.material = im1;
+#else
 				surf.shader = im1;
+#endif
 				surf.id = this->NumSurfaces();
 				this->AddSurface( surf );
 			}
@@ -3183,7 +3215,11 @@ bool idRenderModelStatic::ConvertDAEToModelSurfaces( const ColladaParser* dae )
 	if( dae->mMaterialLibrary.Num() == 0 )
 	{
 		// if we don't have any materials, dump everything into a single surface
+#ifdef _SPLASHDAMAGE
+		surf.material = tr.defaultMaterial;
+#else
 		surf.shader = tr.defaultMaterial;
+#endif
 		surf.id = 0;
 		this->AddSurface( surf );
 		for( i = 0 ; i < dae->mNodeLibrary.Num() ; i++ )
@@ -3215,7 +3251,11 @@ bool idRenderModelStatic::ConvertDAEToModelSurfaces( const ColladaParser* dae )
 				matName.StripTrailingOnce( "-material" );
 			}
 
+#ifdef _SPLASHDAMAGE
+			surf.material = declManager->FindMaterial( matName );
+#else
 			surf.shader = declManager->FindMaterial( matName );
+#endif
 			surf.id = this->NumSurfaces();
 			this->AddSurface( surf );
 		}
@@ -3254,7 +3294,11 @@ bool idRenderModelStatic::ConvertDAEToModelSurfaces( const ColladaParser* dae )
 				for( j = 0 ; j < this->NumSurfaces() ; j++ )
 				{
 					modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+					im2 = modelSurf->material;
+#else
 					im2 = modelSurf->shader;
+#endif
 					if( im1 == im2 )
 					{
 						// merge this
@@ -3267,7 +3311,11 @@ bool idRenderModelStatic::ConvertDAEToModelSurfaces( const ColladaParser* dae )
 			{
 				// didn't merge
 				mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+				surf.material = im1;
+#else
 				surf.shader = im1;
+#endif
 				surf.id = this->NumSurfaces();
 				this->AddSurface( surf );
 			}
@@ -3675,7 +3723,11 @@ bool idRenderModelStatic::ConvertMD5MeshToModelSurfaces( const idMd5MeshFile* md
         {
             mergeTo[i] = i;
 
+#ifdef _SPLASHDAMAGE
+            surf.material = declManager->FindMaterial( md5meshes[i].shader );
+#else
             surf.shader = declManager->FindMaterial( md5meshes[i].shader );
+#endif
             surf.id = this->NumSurfaces();
             this->AddSurface( surf );
         }
@@ -3695,8 +3747,12 @@ bool idRenderModelStatic::ConvertMD5MeshToModelSurfaces( const idMd5MeshFile* md
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                    modelSurf = &this->surfaces[j];
+                	modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+                    im2 = modelSurf->material;
+#else
                     im2 = modelSurf->shader;
+#endif
                     if( im1 == im2 )
                     {
                         // merge this
@@ -3708,8 +3764,12 @@ bool idRenderModelStatic::ConvertMD5MeshToModelSurfaces( const idMd5MeshFile* md
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-                mergeTo[i] = j;
+            	mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+                surf.material = im1;
+#else
                 surf.shader = im1;
+#endif
                 surf.id = this->NumSurfaces();
                 this->AddSurface( surf );
             }
@@ -4059,7 +4119,11 @@ bool idRenderModelStatic::ConvertPSKToModelSurfaces( const idModelPsk* psk )
         {
             mergeTo[i] = i;
 
+#ifdef _SPLASHDAMAGE
+            surf.material = declManager->FindMaterial( matList[i] );
+#else
             surf.shader = declManager->FindMaterial( matList[i] );
+#endif
             surf.id = this->NumSurfaces();
             this->AddSurface( surf );
         }
@@ -4079,8 +4143,12 @@ bool idRenderModelStatic::ConvertPSKToModelSurfaces( const idModelPsk* psk )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                    modelSurf = &this->surfaces[j];
+                	modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+                    im2 = modelSurf->material;
+#else
                     im2 = modelSurf->shader;
+#endif
                     if( im1 == im2 )
                     {
                         // merge this
@@ -4092,8 +4160,12 @@ bool idRenderModelStatic::ConvertPSKToModelSurfaces( const idModelPsk* psk )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-                mergeTo[i] = j;
+            	mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+                surf.material = im1;
+#else
                 surf.shader = im1;
+#endif
                 surf.id = this->NumSurfaces();
                 this->AddSurface( surf );
             }
@@ -4440,7 +4512,11 @@ bool idRenderModelStatic::ConvertIQMToModelSurfaces( const idModelIqm* iqm )
         {
             mergeTo[i] = i;
 
+#ifdef _SPLASHDAMAGE
+            surf.material = declManager->FindMaterial( iqm->GetText(iqm->meshes[i].material) );
+#else
             surf.shader = declManager->FindMaterial( iqm->GetText(iqm->meshes[i].material) );
+#endif
             surf.id = this->NumSurfaces();
             this->AddSurface( surf );
         }
@@ -4460,8 +4536,12 @@ bool idRenderModelStatic::ConvertIQMToModelSurfaces( const idModelIqm* iqm )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                    modelSurf = &this->surfaces[j];
+                	modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+                    im2 = modelSurf->material;
+#else
                     im2 = modelSurf->shader;
+#endif
                     if( im1 == im2 )
                     {
                         // merge this
@@ -4473,8 +4553,12 @@ bool idRenderModelStatic::ConvertIQMToModelSurfaces( const idModelIqm* iqm )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-                mergeTo[i] = j;
+            	mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+                surf.material = im1;
+#else
                 surf.shader = im1;
+#endif
                 surf.id = this->NumSurfaces();
                 this->AddSurface( surf );
             }
@@ -4815,7 +4899,11 @@ bool idRenderModelStatic::ConvertSMDToModelSurfaces( const idModelSmd* smd )
         {
             mergeTo[i] = i;
 
+#ifdef _SPLASHDAMAGE
+            surf.material = declManager->FindMaterial( matList[i] );
+#else
             surf.shader = declManager->FindMaterial( matList[i] );
+#endif
             surf.id = this->NumSurfaces();
             this->AddSurface( surf );
         }
@@ -4835,8 +4923,12 @@ bool idRenderModelStatic::ConvertSMDToModelSurfaces( const idModelSmd* smd )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                    modelSurf = &this->surfaces[j];
+                	modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+                    im2 = modelSurf->material;
+#else
                     im2 = modelSurf->shader;
+#endif
                     if( im1 == im2 )
                     {
                         // merge this
@@ -4848,8 +4940,12 @@ bool idRenderModelStatic::ConvertSMDToModelSurfaces( const idModelSmd* smd )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-                mergeTo[i] = j;
+            	mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+                surf.material = im1;
+#else
                 surf.shader = im1;
+#endif
                 surf.id = this->NumSurfaces();
                 this->AddSurface( surf );
             }
@@ -5190,7 +5286,11 @@ bool idRenderModelStatic::ConvertGLTFToModelSurfaces( const idModelGLTF* gltf )
         {
             mergeTo[i] = i;
 
+#ifdef _SPLASHDAMAGE
+            surf.material = declManager->FindMaterial( matList[i] );
+#else
             surf.shader = declManager->FindMaterial( matList[i] );
+#endif
             surf.id = this->NumSurfaces();
             this->AddSurface( surf );
         }
@@ -5210,8 +5310,12 @@ bool idRenderModelStatic::ConvertGLTFToModelSurfaces( const idModelGLTF* gltf )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                    modelSurf = &this->surfaces[j];
+                	modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+                    im2 = modelSurf->material;
+#else
                     im2 = modelSurf->shader;
+#endif
                     if( im1 == im2 )
                     {
                         // merge this
@@ -5223,8 +5327,12 @@ bool idRenderModelStatic::ConvertGLTFToModelSurfaces( const idModelGLTF* gltf )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-                mergeTo[i] = j;
+            	mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+                surf.material = im1;
+#else
                 surf.shader = im1;
+#endif
                 surf.id = this->NumSurfaces();
                 this->AddSurface( surf );
             }
@@ -5575,7 +5683,11 @@ bool idRenderModelStatic::ConvertFBXToModelSurfaces( const idModelFbx* fbx )
         {
             mergeTo[i] = i;
 
+#ifdef _SPLASHDAMAGE
+            surf.material = declManager->FindMaterial( matList[i] );
+#else
             surf.shader = declManager->FindMaterial( matList[i] );
+#endif
             surf.id = this->NumSurfaces();
             this->AddSurface( surf );
         }
@@ -5595,8 +5707,12 @@ bool idRenderModelStatic::ConvertFBXToModelSurfaces( const idModelFbx* fbx )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                    modelSurf = &this->surfaces[j];
+                	modelSurf = &this->surfaces[j];
+#ifdef _SPLASHDAMAGE
+                    im2 = modelSurf->material;
+#else
                     im2 = modelSurf->shader;
+#endif
                     if( im1 == im2 )
                     {
                         // merge this
@@ -5608,8 +5724,12 @@ bool idRenderModelStatic::ConvertFBXToModelSurfaces( const idModelFbx* fbx )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-                mergeTo[i] = j;
+            	mergeTo[i] = j;
+#ifdef _SPLASHDAMAGE
+                surf.material = im1;
+#else
                 surf.shader = im1;
+#endif
                 surf.id = this->NumSurfaces();
                 this->AddSurface( surf );
             }

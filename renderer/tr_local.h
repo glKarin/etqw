@@ -963,7 +963,7 @@ class idRenderSystemLocal : public idRenderSystem
 #endif
 #ifdef _SPLASHDAMAGE
 		virtual bool UploadImage(const char *imageName, const byte *data, int width, int height,
-		                         bool generateMipMaps = false, bool copy = true);
+		                         bool generateMipMaps, bool copy = true);
 
 		virtual void SyncRenderSystem(void);
 

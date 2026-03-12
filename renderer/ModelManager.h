@@ -74,8 +74,8 @@ class idRenderModelManager
 		virtual	idRenderModel 	*CheckModel(const char *modelName) = 0;
 
 #ifdef _SPLASHDAMAGE
-    // returns NULL if not loaded
-    virtual	idRenderModel *	GetModel( const char *modelName ) = 0;
+	    // returns NULL if not loaded
+	    virtual	idRenderModel *	GetModel( const char *modelName ) = 0;
 #endif
 
 		// returns the default cube model

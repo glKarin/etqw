@@ -394,11 +394,18 @@ void R_DeriveLightData(idRenderLightLocal *light)
 #ifdef _D3BFG_CULLING
     if(harm_r_occlusionCulling.GetBool())
     {
-        // decide which light shader we are going to use
+    	// decide which light shader we are going to use
+#ifdef _SPLASHDAMAGE
+    	if( light->parms.material )
+    	{
+    		light->lightShader = light->parms.material;
+    	}
+#else
         if( light->parms.shader )
         {
             light->lightShader = light->parms.shader;
         }
+#endif
         else if( !light->lightShader )
         {
             if( light->parms.pointLight )
@@ -550,10 +557,16 @@ void R_DeriveLightData(idRenderLightLocal *light)
     else
     {
 #endif
-	// decide which light shader we are going to use
+    	// decide which light shader we are going to use
+#ifdef _SPLASHDAMAGE
+    	if (light->parms.material) {
+    		light->lightShader = light->parms.material;
+    	}
+#else
 	if (light->parms.shader) {
 		light->lightShader = light->parms.shader;
 	}
+#endif
 
 	if (!light->lightShader) {
 		if (light->parms.pointLight) {

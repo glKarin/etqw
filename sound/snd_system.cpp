@@ -2552,3 +2552,27 @@ void idSoundSystemLocal::SB_HideSubtitle(void)
 	SFB_HandleSubtitle(true, NULL);
 }
 #endif
+
+#ifdef _SPLASHDAMAGE
+bool idSoundSystemLocal::QuerySpeakers( int numSpeakers ) const {
+	return false;
+}
+
+void idSoundSystemLocal::RefreshSoundDevices( void ) {
+}
+
+const idWStrList* idSoundSystemLocal::ListSoundPlaybackDevices() const {
+	return NULL;
+}
+
+const idWStrList* idSoundSystemLocal::ListSoundCaptureDevices() const {
+	return NULL;
+}
+
+void idSoundSystemLocal::FreeDeviceList( const idWStrList* list ) const {
+}
+
+int idSoundSystemLocal::GetAudioDeviceHash( const wchar_t* name ) const {
+	return 0;
+}
+#endif

@@ -2757,12 +2757,14 @@ int idRenderSystemLocal::GetSyncNum(void) {
 }
 
 int idRenderSystemLocal::RegisterPtr(void *ptr) {
+	return 0;
 }
 
 void idRenderSystemLocal::UnregisterPtr(int uid) {
 }
 
 void * idRenderSystemLocal::PtrForUID(int uid) {
+	return NULL;
 }
 
 class idRenderModel * idRenderSystemLocal::InstantiateDynamicModel(class idRenderModel *model, struct renderEntity_s *ent) {

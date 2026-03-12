@@ -1050,9 +1050,19 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 	tr.pc.c_entityDefCallbacks++;
 
 	if (tr.viewDef) {
+#ifdef _SPLASHDAMAGE
+		int lastModifiedGameTime = 0;
+		update = def->parms.callback(&def->parms, &tr.viewDef->renderView, lastModifiedGameTime);
+#else
 		update = def->parms.callback(&def->parms, &tr.viewDef->renderView);
+#endif
 	} else {
+#ifdef _SPLASHDAMAGE
+		int lastModifiedGameTime = 0;
+		update = def->parms.callback(&def->parms, NULL, lastModifiedGameTime);
+#else
 		update = def->parms.callback(&def->parms, NULL);
+#endif
 	}
 
 	if (!def->parms.hModel) {
@@ -1259,7 +1269,7 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 			oldFloatTime = tr.viewDef->floatTime;
 			oldTime = tr.viewDef->renderView.time;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 			tr.viewDef->floatTime = tr.viewDef->renderView.time * 0.001;
 #else
 			tr.viewDef->floatTime = game->GetTimeGroupTime(space->entityDef->parms.timeGroup) * 0.001;
@@ -1320,7 +1330,7 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 		oldFloatTime = tr.viewDef->floatTime;
 		oldTime = tr.viewDef->renderView.time;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		tr.viewDef->floatTime = tr.viewDef->renderView.time * 0.001;
 #else
 		tr.viewDef->floatTime = game->GetTimeGroupTime(1) * 0.001;
@@ -1395,7 +1405,11 @@ static void R_AddAmbientDrawsurfs(viewEntity_t *vEntity)
 			continue;
 		}
 
+#ifdef _SPLASHDAMAGE
+		shader = surf->material;
+#else
 		shader = surf->shader;
+#endif
 		shader = R_RemapShaderBySkin(shader, def->parms.customSkin, def->parms.customShader);
 
 		R_GlobalShaderOverride(&shader);
@@ -1522,7 +1536,7 @@ void R_AddModelSurfaces(void)
 		float oldFloatTime = 0.0f;
 		int oldTime = 0.0f;
 
-#if !defined(_RAVEN)
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
 		game->SelectTimeGroup(vEntity->entityDef->parms.timeGroup);
 #endif
 
@@ -1530,7 +1544,7 @@ void R_AddModelSurfaces(void)
 			oldFloatTime = tr.viewDef->floatTime;
 			oldTime = tr.viewDef->renderView.time;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 			tr.viewDef->floatTime = tr.viewDef->renderView.time * 0.001;
 #else
 			tr.viewDef->floatTime = game->GetTimeGroupTime(vEntity->entityDef->parms.timeGroup) * 0.001;

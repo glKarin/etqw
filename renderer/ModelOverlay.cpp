@@ -153,12 +153,22 @@ void idRenderModelOverlay::CreateOverlay(const idRenderModel *model, const idPla
 		const modelSurface_t *surf = model->Surface(surfNum);
 		float d;
 
-		if (!surf->geometry || !surf->shader) {
+#ifdef _SPLASHDAMAGE
+		if (!surf->geometry || !surf->material)
+#else
+		if (!surf->geometry || !surf->shader)
+#endif
+		{
 			continue;
 		}
 
 		// some surfaces can explicitly disallow overlays
-		if (!surf->shader->AllowOverlays()) {
+#ifdef _SPLASHDAMAGE
+		if (!surf->material->AllowOverlays())
+#else
+		if (!surf->shader->AllowOverlays())
+#endif
+		{
 			continue;
 		}
 
@@ -329,7 +339,11 @@ void idRenderModelOverlay::AddOverlaySurfacesToModel(idRenderModel *baseModel)
 		} else {
 			newSurf = &staticModel->surfaces.Alloc();
 			newSurf->geometry = NULL;
+#ifdef _SPLASHDAMAGE
+			newSurf->material = materials[k]->material;
+#else
 			newSurf->shader = materials[k]->material;
+#endif
 			newSurf->id = -1 - k;
 		}
 

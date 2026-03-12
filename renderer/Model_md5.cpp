@@ -308,7 +308,11 @@ void idMD5Mesh::UpdateSurface(const struct renderEntity_s *ent, const idJointMat
 	tr.pc.c_deformedVerts += deformInfo->numOutputVerts;
 	tr.pc.c_deformedIndexes += deformInfo->numIndexes;
 
+#ifdef _SPLASHDAMAGE
+	surf->material = shader;
+#else
 	surf->shader = shader;
+#endif
 
 	if (surf->geometry) {
 		// if the number of verts and indexes are the same we can re-use the triangle surface
@@ -884,7 +888,11 @@ idRenderModel *idRenderModelMD5::InstantiateDynamicModel(const struct renderEnti
 			mesh->surfaceNum = staticModel->NumSurfaces();
 			surf = &staticModel->surfaces.Alloc();
 			surf->geometry = NULL;
+#ifdef _SPLASHDAMAGE
+			surf->material = NULL;
+#else
 			surf->shader = NULL;
+#endif
 			surf->id = i;
 		}
 

@@ -394,6 +394,9 @@ If you have questions concerning this license or the applicable additional terms
 #define ENGINE_VERSION_MAJOR			1
 #define ENGINE_VERSION_MINOR			5
 
+//karin: compat for DOOM3
+#define ENGINE_VERSION					"ETQW 1.5"	// printed in console
+
 // paths
 #define	CD_BASEDIR						"etqw"
 #define	BASE_GAMEDIR					"base"

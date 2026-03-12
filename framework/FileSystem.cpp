@@ -425,6 +425,25 @@ class idFileSystemLocal : public idFileSystem
 		virtual void			SetIsFileLoadingAllowed(bool mode) { (void)mode; }
 		virtual idFile *		GetNewFileMemory( void );
 #endif
+#ifdef _SPLASHDAMAGE
+		virtual sdAddonMetaDataList* ListAddonMetaData( const char* metaDataTag );
+		virtual void			FreeAddonMetaDataList( sdAddonMetaDataList* list );
+
+		virtual const char *	GetBasePath() const;
+		virtual const char *	GetUserPath() const;
+		virtual const char *	GetGamePath() const;
+    	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck );
+
+		virtual class idFile_Memory*	OpenMemoryFile( const char* name );
+		virtual class idFile_Buffered* OpenBufferedFile( idFile* file );
+
+		virtual bool			IsAddonPackReferenced( const char* pak );
+		virtual void			ReferenceAddonPack( const char* pak );
+
+		virtual void			ReadTGA( const char *name, byte **pic, int *width, int *height, unsigned *timestamp = 0, bool markPaksReferenced = true );
+		virtual void			WriteTGA( const char* name, const byte* pic, int width, int height );
+		virtual void			FreeTGA( byte* pic );
+#endif
 
 	private:
 		friend void			*BackgroundDownloadThread(void *parms);
@@ -5111,4 +5130,53 @@ idFile * idFileSystemLocal::GetNewFileMemory( void )
 	_fileMemory.Clear(false);
 	return &_fileMemory;
 }
+#endif
+
+#ifdef _SPLASHDAMAGE
+sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataTag ) {
+	return NULL;
+}
+
+void idFileSystemLocal::FreeAddonMetaDataList( sdAddonMetaDataList* list ) {
+}
+
+const char * idFileSystemLocal::GetBasePath() const {
+	return "base";
+}
+
+const char * idFileSystemLocal::GetUserPath() const {
+	return "base";
+}
+
+const char * idFileSystemLocal::GetGamePath() const {
+	return "base";
+}
+
+void idFileSystemLocal::FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck ) {
+}
+
+class idFile_Memory* idFileSystemLocal::OpenMemoryFile( const char* name ) {
+	return NULL;
+}
+
+class idFile_Buffered* idFileSystemLocal::OpenBufferedFile( idFile* file ) {
+	return NULL;
+}
+
+bool idFileSystemLocal::IsAddonPackReferenced( const char* pak ) {
+	return false;
+}
+
+void idFileSystemLocal::ReferenceAddonPack( const char* pak ) {
+}
+
+void idFileSystemLocal::ReadTGA( const char *name, byte **pic, int *width, int *height, unsigned *timestamp = 0, bool markPaksReferenced = true ) {
+}
+
+void idFileSystemLocal::WriteTGA( const char* name, const byte* pic, int width, int height ) {
+}
+
+void idFileSystemLocal::FreeTGA( byte* pic ) {
+}
+
 #endif

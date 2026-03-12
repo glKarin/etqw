@@ -55,6 +55,9 @@ class idRenderModelManagerLocal : public idRenderModelManager
 		virtual void			EndLevelLoad();
 
 		virtual	void			PrintMemInfo(MemInfo_t *mi);
+#ifdef _SPLASHDAMAGE
+		virtual	idRenderModel *	GetModel( const char *modelName );
+#endif
 
 	private:
 		idList<idRenderModel *>	models;
@@ -722,3 +725,8 @@ void idRenderModelManagerLocal::PrintMemInfo(MemInfo_t *mi)
 	fileSystem->CloseFile(f);
 }
 
+#ifdef _SPLASHDAMAGE
+idRenderModel *	idRenderModelManagerLocal::GetModel( const char *modelName ) {
+	return GetModel(modelName, false);
+}
+#endif

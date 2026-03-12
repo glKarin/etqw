@@ -1058,7 +1058,11 @@ void idInteraction::CreateInteraction(const idRenderModel *model)
 		}
 
 		// determine the shader for this surface, possibly by skinning
+#ifdef _SPLASHDAMAGE
+		shader = surf->material;
+#else
 		shader = surf->shader;
+#endif
 		shader = R_RemapShaderBySkin(shader, entityDef->parms.customSkin, entityDef->parms.customShader);
 
 		if (!shader) {

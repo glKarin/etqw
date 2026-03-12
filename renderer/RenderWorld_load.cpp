@@ -187,9 +187,15 @@ idRenderModel *idRenderWorldLocal::ParseModel(idLexer *src)
 
 		src->ExpectAnyToken(&token);
 
+#ifdef _SPLASHDAMAGE
+		surf.material = declManager->FindMaterial(token);
+
+		((idMaterial *)surf.material)->AddReference();
+#else
 		surf.shader = declManager->FindMaterial(token);
 
 		((idMaterial *)surf.shader)->AddReference();
+#endif
 
 		tri = R_AllocStaticTriSurf();
 		surf.geometry = tri;
@@ -292,7 +298,11 @@ idRenderModel *idRenderWorldLocal::ParseShadowModel(idLexer *src)
 	model = renderModelManager->AllocModel();
 	model->InitEmpty(token);
 
+#ifdef _SPLASHDAMAGE
+	surf.material = tr.defaultMaterial;
+#else
 	surf.shader = tr.defaultMaterial;
+#endif
 
 	tri = R_AllocStaticTriSurf();
 	surf.geometry = tri;
@@ -1051,7 +1061,12 @@ void idRenderWorldLocal::AddWorldModelEntities()
 		for (int j = 0; j < hModel->NumSurfaces(); j++) {
 			const modelSurface_t *surf = hModel->Surface(j);
 
-			if (surf->shader->GetName() == idStr("textures/smf/portal_sky")) {
+#ifdef _SPLASHDAMAGE
+			if (surf->material->GetName() == idStr("textures/smf/portal_sky"))
+#else
+			if (surf->shader->GetName() == idStr("textures/smf/portal_sky"))
+#endif
+			{
 				def->needsPortalSky = true;
 			}
 		}

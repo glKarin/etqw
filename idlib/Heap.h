@@ -742,7 +742,7 @@ class idDynamicBlock
 #ifdef _RAVEN
 template<class type, int baseBlockSize, int minBlockSize, byte memoryTag = MA_NONE>
 #elif defined(_SPLASHDAMAGE)
-template<class type, int baseBlockSize, int minBlockSize, bool threadSafe>
+template<class type, int baseBlockSize, int minBlockSize, bool threadSafe = false>
 #else
 template<class type, int baseBlockSize, int minBlockSize>
 #endif

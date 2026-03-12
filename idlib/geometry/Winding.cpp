@@ -85,23 +85,10 @@ bool idWinding::ReAllocate(int n, bool keep)
 idWinding::BaseForPlane
 =============
 */
-#ifdef _SPLASHDAMAGE
-void idWinding::BaseForPlane( const idVec3 &normal, const float dist, const float radius )
-#else
 void idWinding::BaseForPlane(const idVec3 &normal, const float dist)
-#endif
 {
 	idVec3 org, vright, vup;
 
-#ifdef _SPLASHDAMAGE
-    EnsureAlloced( 4 );
-    numPoints = 4;
-
-    normal.NormalVectors( vup, vright );
-    vup *= radius;
-    vright *= radius;
-    org = normal * dist;
-#else
 	org = normal * dist;
 
 	normal.NormalVectors(vup, vright);
@@ -110,7 +97,6 @@ void idWinding::BaseForPlane(const idVec3 &normal, const float dist)
 
 	EnsureAlloced(4);
 	numPoints = 4;
-#endif
 	p[0].ToVec3() = org - vright + vup;
 	p[0].s = p[0].t = 0.0f;
 	p[1].ToVec3() = org + vright + vup;
@@ -120,6 +106,28 @@ void idWinding::BaseForPlane(const idVec3 &normal, const float dist)
 	p[3].ToVec3() = org - vright - vup;
 	p[3].s = p[3].t = 0.0f;
 }
+#ifdef _SPLASHDAMAGE
+void idWinding::BaseForPlane( const idVec3 &normal, const float dist, const float radius )
+{
+	idVec3 org, vright, vup;
+
+    EnsureAlloced( 4 );
+    numPoints = 4;
+
+    normal.NormalVectors( vup, vright );
+    vup *= radius;
+    vright *= radius;
+    org = normal * dist;
+	p[0].ToVec3() = org - vright + vup;
+	p[0].s = p[0].t = 0.0f;
+	p[1].ToVec3() = org + vright + vup;
+	p[1].s = p[1].t = 0.0f;
+	p[2].ToVec3() = org + vright - vup;
+	p[2].s = p[2].t = 0.0f;
+	p[3].ToVec3() = org - vright - vup;
+	p[3].s = p[3].t = 0.0f;
+}
+#endif
 
 #ifdef _SPLASHDAMAGE
 /*

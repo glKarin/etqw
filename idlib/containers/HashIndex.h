@@ -111,6 +111,10 @@ public:
 public:
     void			Init( const int initialHashSize, const int initialIndexSize );
 
+	//karin: for compat DOOM3
+	int				First(const int key) const { return GetFirst(key); }
+	int				Next(const int index) const { return GetNext(index); }
+
 private:
     int				hashSize;
     Type*			hash;

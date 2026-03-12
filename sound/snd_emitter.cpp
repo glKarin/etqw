@@ -1400,3 +1400,16 @@ void idSoundEmitterLocal::ModifySound(idSoundShader* shader, const s_channelType
 }
 #endif
 
+#ifdef _SPLASHDAMAGE
+const soundShaderParms_t& idSoundEmitterLocal::GetChannelParms( const soundChannel_t channel ) {
+	return channels[channel].parms;
+}
+
+void idSoundEmitterLocal::ModifySound( const soundChannel_t channel, const soundShaderParms_t& parms ) {
+	ModifySound(channel, &parms);
+}
+
+void idSoundEmitterLocal::SetChannelOffset( const soundChannel_t channel, int ms ) {
+
+}
+#endif

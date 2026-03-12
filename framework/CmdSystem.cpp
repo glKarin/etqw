@@ -80,6 +80,10 @@ class idCmdSystemLocal : public idCmdSystem
 		commandDef_t 			*GetCommands(void) const {
 			return commands;
 		}
+#ifdef _SPLASHDAMAGE
+		virtual void		PushFrameCommand( const char* command );
+		virtual void		ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName );
+#endif
 
 	private:
 		static const int		MAX_CMD_BUFFER = 0x10000;
@@ -890,5 +894,15 @@ void idCmdSystemLocal::ArgCompletion_Models( const idCmdArgs &args, void(*callba
 		if(check)
 			callback(prefix + playerModel->GetName());
 	}
+}
+#endif
+
+#ifdef _SPLASHDAMAGE
+void idCmdSystemLocal::PushFrameCommand( const char* command ) {
+
+}
+
+void idCmdSystemLocal::ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName ) {
+
 }
 #endif

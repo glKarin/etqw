@@ -452,7 +452,12 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 		    rlight->parallel == light->parms.parallel && rlight->pointLight == light->parms.pointLight &&
 		    rlight->right == light->parms.right && rlight->start == light->parms.start &&
 		    rlight->target == light->parms.target && rlight->up == light->parms.up &&
-		    rlight->shader == light->lightShader && rlight->prelightModel == light->parms.prelightModel) {
+#ifdef _SPLASHDAMAGE
+		    rlight->material == light->lightShader && rlight->prelightModel == light->parms.prelightModel)
+#else
+		    rlight->shader == light->lightShader && rlight->prelightModel == light->parms.prelightModel)
+#endif
+		{
 			justUpdate = true;
 		} else {
 			// if we are updating shadows, the prelight model is no longer valid
@@ -1154,7 +1159,11 @@ guiPoint_t	idRenderWorldLocal::GuiTrace(qhandle_t entityHandle, const idVec3 sta
 			continue;
 		}
 
+#ifdef _SPLASHDAMAGE
+		shader = R_RemapShaderBySkin(surf->material, def->parms.customSkin, def->parms.customShader);
+#else
 		shader = R_RemapShaderBySkin(surf->shader, def->parms.customSkin, def->parms.customShader);
+#endif
 
 		if (!shader) {
 			continue;
@@ -1263,7 +1272,11 @@ bool idRenderWorldLocal::ModelTrace(modelTrace_t &trace, qhandle_t entityHandle,
 #endif
 		surf = model->Surface(i);
 
+#ifdef _SPLASHDAMAGE
+		shader = R_RemapShaderBySkin(surf->material, def->parms.customSkin, def->parms.customShader);
+#else
 		shader = R_RemapShaderBySkin(surf->shader, def->parms.customSkin, def->parms.customShader);
+#endif
 
 		if (shader->GetSurfaceFlags() & SURF_COLLISION) {
 			collisionSurface = true;
@@ -1279,7 +1292,11 @@ bool idRenderWorldLocal::ModelTrace(modelTrace_t &trace, qhandle_t entityHandle,
 #endif
 		surf = model->Surface(i);
 
+#ifdef _SPLASHDAMAGE
+		shader = R_RemapShaderBySkin(surf->material, def->parms.customSkin, def->parms.customShader);
+#else
 		shader = R_RemapShaderBySkin(surf->shader, def->parms.customSkin, def->parms.customShader);
+#endif
 
 		if (!surf->geometry || !shader) {
 			continue;
@@ -1428,7 +1445,11 @@ bool idRenderWorldLocal::Trace(modelTrace_t &trace, const idVec3 &start, const i
 #endif
 				const modelSurface_t *surf = model->Surface(j);
 
+#ifdef _SPLASHDAMAGE
+				shader = R_RemapShaderBySkin(surf->material, def->parms.customSkin, def->parms.customShader);
+#else
 				shader = R_RemapShaderBySkin(surf->shader, def->parms.customSkin, def->parms.customShader);
+#endif
 
 				// if no geometry or no shader
 				if (!surf->geometry || !shader) {
@@ -3600,6 +3621,7 @@ bool idRenderWorldLocal::AreasAreConnected( int areaNum1, int areaNum2 ) {
 }
 
 int idRenderWorldLocal::GetAreaPortalFlags( int areaNum ) const {
+	return 0;
 }
 
 void idRenderWorldLocal::SetAreaAmbientCubeMap( int areaNum, const sdDeclAmbientCubeMap *cubeMapDecl ) {
