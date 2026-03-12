@@ -3147,6 +3147,105 @@ endif()
 
 
 
+if(SPLASHDAMAGE)
+	# splashdamage engine source
+	set(splashdamage_sdnet_src
+			splashdamage/sdnet/SDNetAccount.cpp
+			splashdamage/sdnet/SDNetFriend.cpp
+			splashdamage/sdnet/SDNetMessage.cpp
+			splashdamage/sdnet/SDNetMessageHistory.cpp
+			splashdamage/sdnet/SDNetProfile.cpp
+			splashdamage/sdnet/SDNetTask.cpp
+			splashdamage/sdnet/SDNetTeamMember.cpp
+			splashdamage/sdnet/SDNetUser.cpp
+			splashdamage/sdnet/SDNetFriendsManager.cpp
+			splashdamage/sdnet/SDNetSession.cpp
+			splashdamage/sdnet/SDNetStatsManager.cpp
+			splashdamage/sdnet/SDNetSessionManager.cpp
+			splashdamage/sdnet/SDNetTeamManager.cpp
+			splashdamage/sdnet/SDNet.cpp
+	)
+	set(src_core_splashdamage
+			${src_renderer}
+			${src_framework}
+			${splashdamage_sdnet_src}
+			${src_cm}
+			${src_aas}
+			${src_roq}
+			${src_snd}
+			${src_ui}
+			${src_tools}
+			${src_renderbump}
+			${src_dmap}
+	)
+
+	set(splashdamage_bse_src
+			raven/bse/BSE_Effect.cpp
+			raven/bse/BSE_EffectTemplate.cpp
+			raven/bse/bse_electricity.cpp
+			raven/bse/BSE_Envelopes.cpp
+			raven/bse/BSE_Light.cpp
+			raven/bse/BSE_Manager.cpp
+			raven/bse/BSE_ParseParticle2.cpp
+			raven/bse/BSE_Particle.cpp
+			raven/bse/BSE_Segment.cpp
+			raven/bse/bse_render.cpp
+			raven/bse/BSE_SegmentTemplate.cpp
+			raven/bse/BSE_SpawnDomains.cpp
+			raven/renderer/Model_bse.cpp
+	)
+	add_globbed_headers(splashdamage_sdnet_src "splashdamage")
+
+	if(ANDROID)
+		set(ETQWBINARY "etqw")
+		add_library(${ETQWBINARY} SHARED
+				${src_core_splashdamage}
+				${src_sys_base}
+				${src_sys_core}
+				${src_editor_tools}
+		)
+	else()
+		set(ETQWBINARY "ETQW")
+		if(CONSOLE)
+			add_executable(${ETQWBINARY}
+					${src_core_splashdamage}
+					${src_sys_base}
+					${src_sys_core}
+					${src_editor_tools}
+			)
+		else()
+			add_executable(${ETQWBINARY} WIN32 MACOSX_BUNDLE
+					${src_core_splashdamage}
+					${src_sys_base}
+					${src_sys_core}
+					${src_editor_tools}
+			)
+		endif()
+		if(WIN32 AND MSVC AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
+			target_include_directories(${ETQWBINARY} PRIVATE ${DIRECTXSDK_INCLUDE_PATH})
+		endif()
+	endif()
+
+	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX neo FILES ${src_core_splashdamage} ${src_sys_base} ${src_sys_core} ${src_editor_tools})
+	set_target_properties(${ETQWBINARY} PROPERTIES COMPILE_DEFINITIONS "_SPLASHDAMAGE;${bse_compile_definitions};${CORE_DEFINES}")
+	set_target_properties(${ETQWBINARY} PROPERTIES LINK_FLAGS "${ldflags}")
+	target_include_directories(${ETQWBINARY} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/raven" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
+
+	target_link_libraries(${ETQWBINARY}
+			idlib_splashdamage
+			${sys_libs}
+			${local_libs}
+	)
+
+	if(NOT APPLE AND NOT WIN32 AND NOT ANDROID)
+		install(TARGETS ${ETQWBINARY}
+				RUNTIME DESTINATION "${bindir}"
+				LIBRARY DESTINATION "${libdir}"
+				ARCHIVE DESTINATION "${libdir}"
+		)
+	endif()
+endif()
+
 if(ETQW)
 	# ETQW game source
 	set(src_etqw ${base_game_src})
@@ -3437,16 +3536,17 @@ if(ETQW)
 			splashdamage/sdnet/SDNetStatsManager.cpp
 			splashdamage/sdnet/SDNetSessionManager.cpp
 			splashdamage/sdnet/SDNetTeamManager.cpp
+			splashdamage/sdnet/SDNet.cpp
 	)
 
-	add_library(etqwgametest SHARED ${etqw_test_src})
+	add_library(etqw_test SHARED ${etqw_test_src})
 	set(etqwgametest_compile_definitions "GAME_DLL;_SPLASHDAMAGE")
-	set_target_properties(etqwgametest PROPERTIES COMPILE_DEFINITIONS "${etqwgametest_compile_definitions}")
-	target_include_directories(etqwgametest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/etqw")
-	set_target_properties(etqwgametest PROPERTIES LINK_FLAGS "${ldflags}")
-	target_link_libraries(etqwgametest idlib_splashdamage)
-	target_include_directories(etqwgametest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
+	set_target_properties(etqw_test PROPERTIES COMPILE_DEFINITIONS "${etqwgametest_compile_definitions}")
+	target_include_directories(etqw_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/etqw")
+	set_target_properties(etqw_test PROPERTIES LINK_FLAGS "${ldflags}")
+	target_link_libraries(etqw_test idlib_splashdamage)
+	target_include_directories(etqw_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
 	if(NOT MSVC)
-		target_compile_options(etqwgametest PRIVATE -Wno-format-security)
+		target_compile_options(etqw_test PRIVATE -Wno-format-security)
 	endif()
 endif()

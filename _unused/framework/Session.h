@@ -37,16 +37,6 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-// Non-SDK globals
-#ifdef _MULTITHREAD
-extern bool multithreadActive;
-extern bool multithreadEnable;
-
-extern bool Sys_InRenderThread(void);
-extern void RB_ToolsRenderTask(void);
-extern xthreadId_t Sys_GetMainThread(void);
-#endif
-
 // needed by the gui system for the load game menu
 typedef struct {
 	short		health;
@@ -66,12 +56,6 @@ typedef enum {
 	MSG_CDKEY,
 	MSG_INFO,
 	MSG_WAIT
-#ifdef _SPLASHDAMAGE
-	,
-    MSG_DOWNLOAD_YESNO,
-    MSG_NEED_PASSWORD,
-    MSG_NEED_AUTH,
-#endif
 } msgBoxType_t;
 
 typedef const char *(*HandleGuiCommand_t)(const char *);
@@ -176,19 +160,15 @@ class idSession
 		idDemoFile 	*writeDemo;
 		int				renderdemoVersion;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-	    idSoundWorld*	menuSoundWorld;			// so the game soundWorld can be muted
+#ifdef _RAVEN
+	idSoundWorld*	menuSoundWorld;			// so the game soundWorld can be muted
 #endif
 #ifdef _HUMANHEAD
-        virtual bool ShouldAppendLevel(void) const = 0;
-        virtual const char * GetDeathwalkMapName(void) const = 0;
-#endif
-#ifdef _MULTITHREAD
-		virtual void UpdateScreen(byte *data, bool outOfSequence) = 0;
+	virtual bool ShouldAppendLevel(void) const = 0;
+	virtual const char * GetDeathwalkMapName(void) const = 0;
 #endif
 };
 
 extern	idSession 	*session;
 
-extern void Com_ResetCVarValue(const char *name);
 #endif /* !__SESSION_H__ */

@@ -157,6 +157,29 @@ class idRenderModelStatic : public idRenderModel
         void					    SetGameUpdatedModel(bool gum) { bIsGUM = gum; }
 #endif //HUMANHEAD END
 #endif
+#ifdef _SPLASHDAMAGE
+		virtual void				DirtyVertexAmbientCache();
+
+		// Returns the number of GUI surfaces
+		virtual int					NumGUISurfaces( void ) const;
+
+		// Returns the GUI surfaces
+		virtual const guiSurface_t*	GetGUISurface( int guiSurfaceNum ) const;
+		// Returns the id of the surface with the given name (-1 if not supported or not found)
+		virtual int					FindSurfaceId( const char *surfaceName );
+
+		virtual void				SetBounds( idBounds const &bb );
+		// Purges any partial loadable images referenced by this model
+		virtual void				PurgePartialLoadableImages( void );
+
+		// Schedules loading of any partial loadable images referenced by this model
+		virtual void				LoadPartialLoadableImages( bool blocking = false );
+
+		// All surfaces have finished any pending partial image loads
+		virtual bool				IsFinishedPartialLoading( void ) const;
+		virtual int					NumMeshes( const int lod = 0 ) const;
+		virtual idBounds			CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim );
+#endif
 
 	public:
 		idList<modelSurface_t>		surfaces;

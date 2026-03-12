@@ -30,9 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../renderer/Image.h"
-#ifdef _IMGUI
-#include "../renderer/imgui/r_imgui.h"
-#endif
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
@@ -41,14 +38,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _K_DEV
 #define _HARM_DEBUG_MULTITHREAD
 #endif
+#include <pthread.h>
 #endif
-#define HARM_ONLY_DETECT_SYS_MEMORY 1
-#ifdef __ANDROID__
-idCVar harm_g_normalizeMovementDirection("harm_g_normalizeMovementDirection", "0", CVAR_GAME | CVAR_BOOL, "Re-normalize player/walker movement direction");
-extern bool smooth_joystick;
-#endif
-
-extern void GLimp_Startup(void);
 
 typedef enum {
 	ERP_NONE,
@@ -87,13 +78,7 @@ idCVar com_asyncSound("com_asyncSound", "1", CVAR_INTEGER|CVAR_SYSTEM, ASYNCSOUN
 #endif
 idCVar com_forceGenericSIMD("com_forceGenericSIMD", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "force generic platform independent SIMD");
 idCVar com_developer("developer", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "developer mode");
-idCVar com_allowConsole("com_allowConsole",
-#ifdef __ANDROID__
-		"1"
-#else
-						"0"
-#endif
-						, CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "allow toggling console with the tilde key");
+idCVar com_allowConsole("com_allowConsole", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "allow toggling console with the tilde key");
 idCVar com_speeds("com_speeds", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show engine timings");
 idCVar com_showFPS("com_showFPS", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_ARCHIVE|CVAR_NOCHEAT, "show frames rendered per second");
 idCVar com_showMemoryUsage("com_showMemoryUsage", "0", CVAR_BOOL|CVAR_SYSTEM|CVAR_NOCHEAT, "show total and per frame memory usage");
@@ -109,7 +94,7 @@ idCVar com_videoRam("com_videoRam", "64", CVAR_INTEGER | CVAR_SYSTEM | CVAR_NOCH
 
 idCVar com_product_lang_ext("com_product_lang_ext", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Extension to use when creating language files.");
 
-idCVar harm_com_consoleHistory("harm_com_consoleHistory", "2", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Save/load console history(0 = disable; 1 = loading in engine initialization, and saving in engine shutdown; 2 = loading in engine initialization, and saving in every e executing).");
+idCVar harm_com_consoleHistory("harm_com_consoleHistory", "1", CVAR_INTEGER | CVAR_SYSTEM | CVAR_ARCHIVE, "Save/load console history(0: disable; 1: loading in engine initialization, and saving in engine shutdown; 2: loading in engine initialization, and saving in every e executing).");
 
 // com_speeds times
 int				time_gameFrame;
@@ -132,140 +117,6 @@ unsigned int	com_msgID = -1;
 #ifdef __DOOM_DLL__
 idGame 		*game = NULL;
 idGameEdit 	*gameEdit = NULL;
-#endif
-
-#ifdef _RAVEN
-bool com_debugHudActive = false;
-#endif
-
-#if 0
-#define IDTECH4AMM_ENGINE_VERSION_FILE "idtech4amm." GAME_NAME_ID ".version"
-static void Com_DumpEngineVersion( void )
-{
-	idFile *file = fileSystem->OpenFileWrite(IDTECH4AMM_ENGINE_VERSION_FILE);
-	if(!file)
-	{
-		common->Warning("Dump idTech4A++ engine version to '%s'", IDTECH4AMM_ENGINE_VERSION_FILE);
-		return;
-	}
-
-	idStr str = va(
-			"idTech4A++ {\n"
-			"\tversion \"%s\"\n"
-			"}", _IDTECH4AMM_VERSION);
-	file->Write(str.c_str(), str.Length());
-
-	fileSystem->CloseFile(file);
-
-    common->Printf("Dump idTech4A++ engine version '%s' to '%s'\n", _IDTECH4AMM_VERSION, IDTECH4AMM_ENGINE_VERSION_FILE);
-}
-
-static int Com_LoadEngineVersion( int parts[4] = NULL )
-{
-	char *buffer = NULL;
-	int len = fileSystem->ReadFile(IDTECH4AMM_ENGINE_VERSION_FILE, (void **)&buffer);
-
-	if(len < 0)
-	{
-        common->Printf("Load idTech4A++ engine version fail from '%s'\n", IDTECH4AMM_ENGINE_VERSION_FILE);
-		return -1;
-	}
-
-	idLexer src(LEXFL_NOFATALERRORS);
-	src.LoadMemory(buffer, len, IDTECH4AMM_ENGINE_VERSION_FILE);
-
-	if(!src.IsLoaded())
-	{
-        common->Warning("Load idTech4A++ engine version fail from '%s'", IDTECH4AMM_ENGINE_VERSION_FILE);
-		fileSystem->FreeFile(buffer);
-		return -1;
-	}
-
-	idToken token;
-	if(!src.ExpectTokenString("idTech4A") || !src.ExpectTokenString("++"))
-	{
-        common->Warning("Load idTech4A++ engine version invalid from '%s'", IDTECH4AMM_ENGINE_VERSION_FILE);
-		fileSystem->FreeFile(buffer);
-		return -1;
-	}
-
-	idStr version;
-	if(!src.ExpectTokenString("{"))
-    {
-        common->Warning("Load idTech4A++ engine version invalid from '%s'", IDTECH4AMM_ENGINE_VERSION_FILE);
-        fileSystem->FreeFile(buffer);
-        return -1;
-    }
-	while(src.ReadToken(&token))
-	{
-		if(!token.Cmp("}"))
-			break;
-
-		if(!token.Icmp("version"))
-		{
-			if(!src.ReadTokenOnLine(&token))
-                continue;
-
-			version = token.c_str();
-			break;
-		}
-
-		src.SkipRestOfLine();
-	}
-
-	if(version.IsEmpty())
-	{
-        common->Warning("Unable parse idTech4A++ engine version from '%s'", IDTECH4AMM_ENGINE_VERSION_FILE);
-		fileSystem->FreeFile(buffer);
-		return -1;
-	}
-	int major;
-	int minor;
-	int last;
-	int patch;
-
-	if(sscanf(token.c_str(), "%d.%d.%dharmattan%d", &major, &minor, &last, &patch) != 4)
-	{
-        common->Warning("Parse idTech4A++ engine version fail: %s", token.c_str());
-		fileSystem->FreeFile(buffer);
-		return -1;
-	}
-
-	common->Printf("Load idTech4A++ engine version is %d.%d.%dharmattan%d\n", major, minor, last, patch);
-	fileSystem->FreeFile(buffer);
-
-    if(parts)
-    {
-        parts[0] = major;
-        parts[1] = minor;
-        parts[2] = last;
-        parts[3] = patch;
-    }
-
-	return patch;
-}
-
-static void Com_CheckVersion( void )
-{
-    int patch;
-    if((patch = Com_LoadEngineVersion()) >= 0)
-    {
-        if(patch > _IDTECH4AMM_PATCH)
-        {
-            common->Printf("idTech4A++ version is old\n");
-        }
-        else if(patch < _IDTECH4AMM_PATCH)
-        {
-            common->Printf("idTech4A++ version is update\n");
-        }
-        else
-        {
-            common->Printf("idTech4A++ version is newest\n");
-        }
-    }
-    if(patch != _IDTECH4AMM_PATCH)
-        Com_DumpEngineVersion();
-}
 #endif
 
 // writes si_version to the config file - in a kinda obfuscated way
@@ -354,6 +205,7 @@ class idCommonLocal : public idCommon
 		idStrList					warningList;
 		idStrList					errorList;
 
+		//k 64
 		uintptr_t						gameDLL;
 
 		idLangDict					languageDict;
@@ -367,31 +219,19 @@ class idCommonLocal : public idCommon
 		virtual int GetUserCmdMSec(void) { return 16; } 
 		virtual int GetUserCmdHz(void) { return 60; }
 
-        virtual void				ModViewThink ( void ) { }
-        virtual void				RunAlwaysThinkGUIs ( int time ) { (void)time; }
-        virtual void				DebuggerCheckBreakpoint ( idInterpreter* interpreter, idProgram* program, int instructionPointer ) { (void)interpreter; (void)program; (void)instructionPointer; }
-        virtual bool				DoingDeclValidation( void ) { return false; }
-        virtual void				LoadToolsDLL( void ) { }
-        virtual int					GetRModeForMachineSpec( int machineSpec ) const { (void)machineSpec; return 0; };
-        virtual void				SetDesiredMachineSpec( int machineSpec ) { (void)machineSpec; };
+	virtual void				ModViewThink ( void ) { }
+	virtual void				RunAlwaysThinkGUIs ( int time ) { (void)time; }
+	virtual void				DebuggerCheckBreakpoint ( idInterpreter* interpreter, idProgram* program, int instructionPointer ) { (void)interpreter; (void)program; (void)instructionPointer; }
+	virtual bool				DoingDeclValidation( void ) { return false; }
+	virtual void				LoadToolsDLL( void ) { }
 #endif
 #ifdef _HUMANHEAD
-        virtual void				FixupKeyTranslations(const char *src, char *dst, int lengthAllocated) { (void) src; (void)dst; (void)lengthAllocated; }
-        virtual void				MaterialKeyForBinding(const char *binding, char *keyMaterial, char *key, bool &isBound);
-        virtual void				SetGameSensitivityFactor(float factor) { (void) factor; }
-#endif
-#ifdef _SPLASHDAMAGE
-		virtual void				PacifierUpdate( void );
-
-		// arguments is a list of strings that will be formatted into the result
-		virtual idWStr				LocalizeText( const char* declName, const idWStrList& arguments = idWStrList() );
-		virtual idWStr				LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments = idWStrList() );
-
-		virtual int					GetNumVideoModes( void ) const;
-		virtual vidmode_t&			GetVideoMode( int index ) const;
-
-		virtual idSoundWorld*		GetGameSoundWorld( void );
-		virtual idSoundWorld*		GetMenuSoundWorld( void );
+	virtual void				FixupKeyTranslations(const char *src, char *dst, int lengthAllocated) { (void) src; (void)dst; (void)lengthAllocated; }
+	virtual void				MaterialKeyForBinding(const char *binding, char *keyMaterial, char *key, bool &isBound) {
+		(void)binding; (void)keyMaterial; (void)key;
+		isBound = false;
+	}
+	virtual void				SetGameSensitivityFactor(float factor) { (void) factor; }
 #endif
 };
 
@@ -642,7 +482,7 @@ void idCommonLocal::VPrintf(const char *fmt, va_list args)
 		// update the console if we are in a long-running command, like dmap
 		if (com_refreshOnPrint) {
 #ifdef _MULTITHREAD
-			if(!multithreadActive || !Sys_InRenderThread())
+			if(!multithreadActive/* || !IN_RENDER_THREAD()*/)
 #endif
 			session->UpdateScreen();
 		}
@@ -1420,13 +1260,6 @@ Com_Editor_f
 */
 static void Com_Editor_f(const idCmdArgs &args)
 {
-#ifdef _MULTITHREAD //karin: not support tools with OpenGL on multithread
-    if(multithreadActive && multithreadEnable)
-    {
-        common->Printf("Not support editor on multi-threading\n");
-        return;
-    }
-#endif
 	RadiantInit();
 }
 
@@ -1451,13 +1284,6 @@ Com_EditGUIs_f
 */
 static void Com_EditGUIs_f(const idCmdArgs &args)
 {
-#ifdef _MULTITHREAD //karin: not support tools with OpenGL on multithread
-    if(multithreadActive && multithreadEnable)
-    {
-        common->Printf("Not support GUI editor on multi-threading\n");
-        return;
-    }
-#endif
 	GUIEditorInit();
 }
 
@@ -1468,13 +1294,6 @@ Com_MaterialEditor_f
 */
 static void Com_MaterialEditor_f(const idCmdArgs &args)
 {
-#ifdef _MULTITHREAD //karin: not support tools with OpenGL on multithread
-    if(multithreadActive && multithreadEnable)
-    {
-        common->Printf("Not support material editor on multi-threading\n");
-        return;
-    }
-#endif
 	// Turn off sounds
 	soundSystem->SetMute(true);
 	MaterialEditorInit();
@@ -1668,11 +1487,7 @@ static void Com_Crash_f(const idCmdArgs &args)
 		return;
 	}
 
-#ifdef __GNUC__
-	__builtin_trap();
-#else
-	* ( int * ) 0 = 0x12345678;
-#endif
+	*(int *) 0 = 0x12345678;
 }
 
 /*
@@ -1810,7 +1625,6 @@ void Com_ExecMachineSpec_f(const idCmdArgs &args)
 		cvarSystem->SetCVarInteger("r_multiSamples", 0, CVAR_ARCHIVE);
 	}
 
-#if ! HARM_ONLY_DETECT_SYS_MEMORY
 	if (Sys_GetVideoRam() < 128) {
 		cvarSystem->SetCVarBool("image_ignoreHighQuality", true, CVAR_ARCHIVE);
 		cvarSystem->SetCVarInteger("image_downSize", 1, CVAR_ARCHIVE);
@@ -1820,7 +1634,6 @@ void Com_ExecMachineSpec_f(const idCmdArgs &args)
 		cvarSystem->SetCVarInteger("image_downSizeBump", 1, CVAR_ARCHIVE);
 		cvarSystem->SetCVarInteger("image_downSizeBumpLimit", 256, CVAR_ARCHIVE);
 	}
-#endif
 
 	if (Sys_GetSystemRam() < 512) {
 		cvarSystem->SetCVarBool("image_ignoreHighQuality", true, CVAR_ARCHIVE);
@@ -2745,8 +2558,8 @@ void idCommonLocal::InitCommands(void)
 	cmdSystem->AddCommand("dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName);
 	cmdSystem->AddCommand("renderbump", RenderBump_f, CMD_FL_TOOL, "renders a bump map", idCmdSystem::ArgCompletion_ModelName);
 	cmdSystem->AddCommand("renderbumpFlat", RenderBumpFlat_f, CMD_FL_TOOL, "renders a flat bump map", idCmdSystem::ArgCompletion_ModelName);
-#if !defined(_HUMANHEAD) //k: for generate AAS file of mp game map and bot on DOOM3 and Quake4.
-	cmdSystem->AddCommand("runSingleAAS", RunSingleAAS_f, CMD_FL_GAME, "compiles an AAS file of single type for a map for multiplayer-game", idCmdSystem::ArgCompletion_MapName);
+#ifdef _RAVEN //k: for generate AAS file of mp game map and bot.
+	cmdSystem->AddCommand("harm_runAAS", RunAAS_f, CMD_FL_GAME, "compiles an AAS file for a map for Quake 4 multiplayer-game", idCmdSystem::ArgCompletion_MapName);
 #endif
 	cmdSystem->AddCommand("runAAS", RunAAS_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName);
 	cmdSystem->AddCommand("runAASDir", RunAASDir_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName);
@@ -2781,8 +2594,6 @@ void idCommonLocal::InitCommands(void)
 	cmdSystem->AddCommand("listDictKeys", idDict::ListKeys_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all keys used by dictionaries");
 	cmdSystem->AddCommand("listDictValues", idDict::ListValues_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "lists all values used by dictionaries");
 	cmdSystem->AddCommand("testSIMD", idSIMD::Test_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "test SIMD code");
-    extern void ShowCurrentSIMD_f(const idCmdArgs &);
-    cmdSystem->AddCommand("currentSIMD", ShowCurrentSIMD_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "show current SIMD processor");
 
 	// localization
 	cmdSystem->AddCommand("localizeGuis", Com_LocalizeGuis_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "localize guis");
@@ -2800,11 +2611,6 @@ void idCommonLocal::InitCommands(void)
 #ifdef ID_DEDICATED
 	cmdSystem->AddCommand("help", Com_Help_f, CMD_FL_SYSTEM, "shows help");
 #endif
-
-#ifdef _IMGUI
-    extern void R_ImGui_Startup(void);
-    R_ImGui_Startup();
-#endif
 }
 
 /*
@@ -2818,9 +2624,6 @@ void idCommonLocal::InitRenderSystem(void)
 		return;
 	}
 
-#ifdef __ANDROID__ //karin: force setup resolution on Android
-	Sys_ForceResolution();
-#endif
 	renderSystem->InitOpenGL();
 	PrintLoadingMessage(common->GetLanguageDict()->GetString("#str_04343"));
 }
@@ -2884,20 +2687,7 @@ void idCommonLocal::Frame(void)
 
 		eventLoop->RunEventLoop();
 
-#ifdef _IMGUI
-        R_ImGui_HandleCallback();
-#endif
-
 		com_frameTime = com_ticNumber * USERCMD_MSEC;
-#ifdef _RAVEN //karin: Q4D 2025 clear debug
-		if(session->rw)
-		{
-			if (!idAsyncNetwork::IsActive()) // if (com_editors & EDITOR_REVERB) // 0x2000
-				session->rw->DebugClear(0);
-			else if (!idAsyncNetwork::client.IsActive())
-				session->rw->DebugClear(0/* com_frameTime */);
-		}
-#endif
 
 		idAsyncNetwork::RunFrame();
 
@@ -2931,7 +2721,7 @@ void idCommonLocal::Frame(void)
 
 		// the FPU stack better be empty at this point or some bad code or compiler bug left values on the stack
 		if (!Sys_FPU_StackIsEmpty()) {
-			Printf("%s", Sys_FPU_GetState());
+			Printf(Sys_FPU_GetState());
 			FatalError("idCommon::Frame: the FPU stack is not empty at the end of the frame\n");
 		}
 	}
@@ -3074,6 +2864,13 @@ void idCommonLocal::Async(void)
 	}
 }
 
+/*
+=================
+idCommonLocal::LoadGameDLL
+=================
+*/
+#if defined(__ANDROID__) //k
+
 #ifdef _RAVEN // quake4 game dll
 #define _HARM_BASE_GAME_DLL "q4game"
 #elif defined(_HUMANHEAD) // prey game dll
@@ -3082,38 +2879,19 @@ void idCommonLocal::Async(void)
 #define _HARM_BASE_GAME_DLL "game"
 #endif
 
-#ifdef _WIN32
-#define DLL_SUFFIX ".dll"
-
-#ifdef _MSC_VER
-#define DLL_PREFIX ""
-#else
-#define DLL_PREFIX "lib"
+#ifndef _ANDROID_PACKAGE_NAME
+//#define _ANDROID_PACKAGE_NAME "com.n0n3m4.DIII4A"
+#define _ANDROID_PACKAGE_NAME "com.karin.idTech4Amm"
 #endif
 
-#else
-#define DLL_SUFFIX ".so"
-#define DLL_PREFIX "lib"
+#define _ANDROID_DLL_PATH "/data/data/" _ANDROID_PACKAGE_NAME "/lib/"
 #endif
-
-#define DLL_NAME(x) DLL_PREFIX x DLL_SUFFIX
-
-#ifdef __ANDROID__
-#define _DEFAULT_LIBRARY_DIR "<apk native libraries path>"
-#else
-#define _DEFAULT_LIBRARY_DIR "<executable application path>"
-#endif
-
-static idCVar	harm_fs_gameLibPath("harm_fs_gameLibPath", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "Setup game dynamic library. e.g. "
-		"`<harm_fs_gameLibPath>/lib" _HARM_BASE_GAME_DLL DLL_SUFFIX "`, "
+//k
+#define _ANDROID_NATIVE_LIBRARY_DIR "<Android APK native library directory path>/"
+static idCVar	harm_fs_gameLibPath("harm_fs_gameLibPath", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "[Harmattan]: Special game dynamic library. e.g. "
+		"`" _ANDROID_NATIVE_LIBRARY_DIR "lib" _HARM_BASE_GAME_DLL ".so`, "
 		"default is empty will load by cvar `fs_game`."); // This cvar priority is higher than `fs_game`.
-static idCVar	harm_fs_gameLibDir("harm_fs_gameLibDir", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "Setup game dynamic library directory path(default is empty, means using `" _DEFAULT_LIBRARY_DIR "`).");
-
-/*
-=================
-idCommonLocal::LoadGameDLL
-=================
-*/
+static idCVar	harm_fs_gameLibDir("harm_fs_gameLibDir", "", CVAR_SYSTEM | CVAR_INIT | CVAR_SERVERINFO, "[Harmattan]: Special game dynamic library directory path(default is empty, means using `" _ANDROID_NATIVE_LIBRARY_DIR "`).");
 void idCommonLocal::LoadGameDLL(void)
 {
 #ifdef __DOOM_DLL__
@@ -3123,11 +2901,12 @@ void idCommonLocal::LoadGameDLL(void)
 	gameExport_t	gameExport;
 	GetGameAPI_t	GetGameAPI;
 
-#if 1 //karin: select game dll on Android
+#if defined(__ANDROID__)
 #define LOAD_RESULT(dll) ((dll) ? "done" : "fail")
 
-#ifdef __ANDROID__
-	common->Printf("Android fpu = "
+#define _K_D3_MOD
+#ifdef _K_D3_MOD
+	common->Printf("[Harmattan]: fpu = "
 #ifdef __aarch64__
 			"hard"
 #else
@@ -3138,18 +2917,17 @@ void idCommonLocal::LoadGameDLL(void)
 	#endif
 #endif
 			"\n");
-#endif
 	// First try to load user special game library.
 	// For other apk.
 	idStr fsgame = cvarSystem->GetCVarString("harm_fs_gameLibPath");
 	if(fsgame.Length())
 	{
-		common->Printf("Load game `%s` from cvar `harm_fs_gameLibPath`......\n", fsgame.c_str());
+		common->Printf("[Harmattan]: Load game `%s` from cvar `harm_fs_gameLibPath`......\n", fsgame.c_str());
 		gameDLL = sys->DLL_Load(fsgame);
-		common->Printf("Load dynamic library `%s` %s!\n", fsgame.c_str(), LOAD_RESULT(gameDLL));
+		common->Printf("[Harmattan]: Load dynamic library `%s` %s!\n", fsgame.c_str(), LOAD_RESULT(gameDLL));
 	}
 	else
-		common->Printf("cvar `harm_fs_gameLibPath` is unset.\n");
+		common->Printf("[Harmattan]: cvar `harm_fs_gameLibPath` is unset.\n");
 
 	// Second check `fs_game` cvar.
 	if(!gameDLL)
@@ -3158,106 +2936,94 @@ void idCommonLocal::LoadGameDLL(void)
 		// Check special dll path for other apk.
 		idStr dir = cvarSystem->GetCVarString("harm_fs_gameLibDir");
 		if(dir.Length())
-			common->Printf("Find game dynamic library directory in `%s` from cvar `harm_fs_gameLibDir`.\n", dir.c_str());
+			common->Printf("[Harmattan]: Find game dynamic library directory in `%s` from cvar `harm_fs_gameLibDir`.\n", dir.c_str());
 		else
 		{
-			const char *dir_str = Sys_DLLDefaultPath();
-			common->Printf("cvar `harm_fs_gameLibDir` is unset. Find game dynamic library directory in default path `%s`.\n", dir_str);
+			const char *dir_str = native_library_dir ? native_library_dir : _ANDROID_DLL_PATH;
+			common->Printf("[Harmattan]: cvar `harm_fs_gameLibDir` is unset. Find game dynamic library directory in default path `%s`.\n", dir_str);
 			dir = dir_str;
 		}
 
-			common->Printf("Load game `%s` from cvar `fs_game`.\n", fsgame.c_str());
+		if(fsgame.Length())
+		{
+			common->Printf("[Harmattan]: Load game `%s` from cvar `fs_game`.\n", fsgame.c_str());
 
 #ifdef _RAVEN // quake4 base game dll
 			if(!fsgame.Icmp("q4base") || fsgame.IsEmpty()) // load Quake4 game so.
 			{
-				common->Printf("Load Quake4 game......\n");
+				common->Printf("[Harmattan]: Load Quake4 game......\n");
 				idStr dllFile(dir);
-            dllFile.AppendPath(DLL_NAME("q4game"));
+				dllFile.AppendPath("libq4game.so");
 				gameDLL = sys->DLL_Load(dllFile);
-				common->Printf("Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
+				common->Printf("[Harmattan]: Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
 			}
 #elif defined(_HUMANHEAD) // prey2006 base game dll
-			if(!fsgame.Icmp("preybase") 
-#if !defined(__ANDROID__)
-					|| !fsgame.Icmp("base")
-#endif
-					|| fsgame.IsEmpty()) // load Prey game so.
+			if(!fsgame.Icmp("preybase") || fsgame.IsEmpty()) // load Prey game so.
 			{
-				common->Printf("Load Prey2006 game......\n");
+				common->Printf("[Harmattan]: Load Prey2006 game......\n");
 				idStr dllFile(dir);
-				dllFile.AppendPath(DLL_NAME("preygame"));
+				dllFile.AppendPath("libpreygame.so");
 				gameDLL = sys->DLL_Load(dllFile);
-				common->Printf("Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
+				common->Printf("[Harmattan]: Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
 			}
 #else // doom3 base game dll
 			if(!fsgame.Icmp("base") || fsgame.IsEmpty()) // doom3 base game dll
 			{
-				common->Printf("Load DOOM3 game......\n");
+				common->Printf("[Harmattan]: Load DOOM3 game......\n");
 				idStr dllFile(dir);
-				dllFile.AppendPath(DLL_NAME("game"));
+				dllFile.AppendPath("libgame.so");
 				gameDLL = sys->DLL_Load(dllFile);
-				common->Printf("Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
+				common->Printf("[Harmattan]: Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
 			}
 #endif
 			else if(!fsgame.IsEmpty())
 			{
-				common->Printf("Load `%s` game......\n", fsgame.c_str());
+				common->Printf("[Harmattan]: Load `%s` game......\n", fsgame.c_str());
 				idStr dllFile(dir);
-            dllFile.AppendPath(va(DLL_NAME("%s"), fsgame.c_str()));
+				dllFile.AppendPath(va("lib%s.so", fsgame.c_str()));
 				gameDLL = sys->DLL_Load(dllFile);
-				common->Printf("Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
+				common->Printf("[Harmattan]: Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
 			}
 			else // else find in fs_game cvar path.
 			{
 				fileSystem->FindDLL(_HARM_BASE_GAME_DLL, dllPath, true);
 				if (!dllPath[ 0 ]) {
-					common->Printf("Couldn't find game dynamic library\n");
+					common->Printf("[Harmattan]: couldn't find game dynamic library\n");
 				}
 				else
 				{
-					common->Printf("Loading found game DLL: '%s'......\n", dllPath);
+					common->Printf("[Harmattan]: Loading found game DLL: '%s'......\n", dllPath);
 					gameDLL = sys->DLL_Load(dllPath);
-					common->Printf("Load found dynamic library %s!\n", LOAD_RESULT(gameDLL));
+					common->Printf("[Harmattan]: Load found dynamic library %s!\n", LOAD_RESULT(gameDLL));
 				}
 			}
-#if !defined(__ANDROID__)
-        if(!gameDLL) // load <fs_game>/libgame.so
-        {
-            idStr dllFile("./");
-            const char *fs_game = cvarSystem->GetCVarString("fs_game");
-            if(!fs_game || !fs_game[0])
-                fs_game = BASE_GAMEDIR;
-            common->Printf("Load game from %s......\n", fs_game);
-            dllFile.AppendPath(fs_game);
-            dllFile.AppendPath(DLL_NAME("game"));
-            gameDLL = sys->DLL_Load(dllFile);
-            common->Printf("Load game dynamic library `%s` %p!\n", dllFile.c_str(), gameDLL);
 		}
-#endif
-		// last load base game library if all failed.
-		if(!gameDLL)
-		{
-			common->Printf("Load BASE game......\n");
-			idStr dllFile(dir);
-			dllFile.AppendPath(DLL_NAME(_HARM_BASE_GAME_DLL));
-			gameDLL = sys->DLL_Load(dllFile);
-			common->Printf("Load BASE dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
-		}
-	}
+#if 0
+		else
 #else
-    if(!gameDLL)
-    {
-        fileSystem->FindDLL("game", dllPath, true);
+			// last load base game library if all failed.
+			if(!gameDLL)
+#endif
+#endif
+			{
+				common->Printf("[Harmattan]: Load BASE game......\n");
+				idStr dllFile(dir);
+				dllFile.AppendPath("lib" _HARM_BASE_GAME_DLL ".so");
+				gameDLL = sys->DLL_Load(dllFile);
+				common->Printf("[Harmattan]: Load BASE dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
+			}
+	}
+	//k
+#else
+	fileSystem->FindDLL("game", dllPath, true);
 
-        if (!dllPath[ 0 ]) {
-            common->FatalError("couldn't find game dynamic library");
-            return;
-        }
+	if (!dllPath[ 0 ]) {
+		common->FatalError("couldn't find game dynamic library");
+		return;
+	}
 
-        common->DPrintf("Loading game DLL: '%s'\n", dllPath);
-        gameDLL = sys->DLL_Load(dllPath);
-    }
+	common->DPrintf("Loading game DLL: '%s'\n", dllPath);
+	gameDLL = sys->DLL_Load(dllPath);
 #endif
 
 	if (!gameDLL) {
@@ -3355,28 +3121,13 @@ idCommonLocal::SetMachineSpec
 */
 void idCommonLocal::SetMachineSpec(void)
 {
-	int	cpu = Sys_GetProcessorId();
-	double ghz = Sys_ClockTicksPerSecond() * 0.000000001;
+	cpuid_t	cpu = Sys_GetProcessorId();
+	double ghz = Sys_ClockTicksPerSecond() * 0.000000001f;
 	int vidRam = Sys_GetVideoRam();
 	int sysRam = Sys_GetSystemRam();
 
 	Printf("Detected\n \t%.2f GHz CPU\n\t%i MB of System memory\n\t%i MB of Video memory\n\n", ghz, sysRam, vidRam);
 
-#if HARM_ONLY_DETECT_SYS_MEMORY
-    if (sysRam >= 1024) {
-        Printf("This system qualifies for Ultra quality!\n");
-        com_machineSpec.SetInteger(3);
-    } else if (sysRam >= 512) {
-        Printf("This system qualifies for High quality!\n");
-        com_machineSpec.SetInteger(2);
-    } else if (sysRam >= 384) {
-        Printf("This system qualifies for Medium quality.\n");
-        com_machineSpec.SetInteger(1);
-    } else {
-        Printf("This system qualifies for Low quality.\n");
-        com_machineSpec.SetInteger(0);
-    }
-#else
 	if (ghz >= 2.75f && vidRam >= 512 && sysRam >= 1024) {
 		Printf("This system qualifies for Ultra quality!\n");
 		com_machineSpec.SetInteger(3);
@@ -3392,7 +3143,6 @@ void idCommonLocal::SetMachineSpec(void)
 	}
 
 	com_videoRam.SetInteger(vidRam);
-#endif
 }
 
 /*
@@ -3457,9 +3207,6 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 		// override cvars from command line
 		StartupVariable(NULL, false);
 
-        //karin: check OpenGL version from command cvar
-        GLimp_Startup();
-
 		if (!idAsyncNetwork::serverDedicated.GetInteger() && Sys_AlreadyRunning()) {
 			Sys_Quit();
 		}
@@ -3505,17 +3252,6 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 
 		if(harm_com_consoleHistory.GetInteger() != 0)
 			console->LoadHistory();
-#ifdef __ANDROID__ //karin: for in smooth joystick on Android.
-		idCVar *in_smoothJoystick = cvarSystem->Find("harm_g_normalizeMovementDirection");
-		if(in_smoothJoystick)
-		{
-			in_smoothJoystick->SetBool(smooth_joystick);
-			CVAR_READONLY(*in_smoothJoystick);
-			in_smoothJoystick->ClearModified();
-		}
-#endif
-
-        //Com_CheckVersion();
 
 		com_fullyInitialized = true;
 	}
@@ -3712,14 +3448,6 @@ void idCommonLocal::InitGame(void)
 		cmdSystem->BufferCommandText(CMD_EXEC_NOW, "s_restart\n");
 		cmdSystem->ExecuteCommandBuffer();
 	}
-#ifdef _IMGUI
-    const char *binding = idKeyInput::GetBinding(K_F10);
-    if(!binding || !binding[0])
-    {
-        common->Printf("Bind F10 to command 'idTech4AmmSettings'\n");
-        idKeyInput::SetBinding(K_F10, "idTech4AmmSettings");
-    }
-#endif
 }
 
 /*
@@ -3782,138 +3510,3 @@ void idCommonLocal::ShutdownGame(bool reloading)
 	fileSystem->Shutdown(reloading);
 }
 
-#ifdef _HUMANHEAD
-extern const char * IN_FirstKeyFromBinding(const char *binding, int *keycode = NULL);
-void idCommonLocal::MaterialKeyForBinding(const char *binding, char *keyMaterial, char *key, bool &isBound)
-{
-	// 256 length see game/Prey/prey_game.cpp::GetTip
-#define MAX_KEY_MATERIAL_LENGTH 256
-#define MAX_KEY_NAME_LENGTH 256
-	const char *k;
-	int i = -1;
-
-	//karin: only get first binding key
-	k = IN_FirstKeyFromBinding(binding, &i);
-	isBound = false;
-
-	if(k && k[0])
-	{
-		if(i == K_MOUSE1)
-			idStr::Copynz(keyMaterial, "textures/interface/tips/mouse1", MAX_KEY_MATERIAL_LENGTH);
-		else if(i == K_MOUSE2)
-			idStr::Copynz(keyMaterial, "textures/interface/tips/mouse2", MAX_KEY_MATERIAL_LENGTH);
-		else if(i == K_MOUSE3)
-			idStr::Copynz(keyMaterial, "textures/interface/tips/mouse3", MAX_KEY_MATERIAL_LENGTH);
-		else if(i == K_MWHEELDOWN)
-			idStr::Copynz(keyMaterial, "textures/interface/tips/mousedn", MAX_KEY_MATERIAL_LENGTH);
-		else if(i == K_MWHEELUP)
-			idStr::Copynz(keyMaterial, "textures/interface/tips/mouseup", MAX_KEY_MATERIAL_LENGTH);
-		else
-		{
-			isBound = strlen(k) > 1;
-			idStr::Copynz(key, k, MAX_KEY_NAME_LENGTH);
-			idStr::ToLower(key);
-		}
-	}
-
-	if(!keyMaterial[0])
-	{
-		if(isBound)
-			idStr::Copynz(keyMaterial, "textures/interface/tips/keywide", MAX_KEY_MATERIAL_LENGTH);
-		else
-			idStr::Copynz(keyMaterial, "textures/interface/tips/key", MAX_KEY_MATERIAL_LENGTH);
-	}
-#undef MAX_KEY_MATERIAL_LENGTH
-#undef MAX_KEY_NAME_LENGTH
-}
-#endif
-
-#ifdef _SPLASHDAMAGE
-void idCommonLocal::PacifierUpdate( void ) {
-	session->PacifierUpdate();
-}
-
-// arguments is a list of strings that will be formatted into the result
-idWStr idCommonLocal::LocalizeText( const char* declName, const idWStrList& arguments ) {
-	return idWStr(L"idWStr idCommonLocal::LocalizeText( const char* declName, const idWStrList& arguments )");
-}
-
-idWStr idCommonLocal::LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments ) {
-	return idWStr(L"idWStr idCommonLocal::LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments )");
-}
-
-extern vidmode_t r_vidModes[];
-extern int	s_numVidModes;
-int idCommonLocal::GetNumVideoModes( void ) const {
-	return s_numVidModes;
-}
-
-vidmode_t& idCommonLocal::GetVideoMode( int index ) const {
-	return r_vidModes[index];
-}
-
-idSoundWorld* idCommonLocal::GetGameSoundWorld( void ) {
-	return session->sw;
-}
-
-idSoundWorld* idCommonLocal::GetMenuSoundWorld( void ) {
-	return session->menuSoundWorld;
-}
-#endif
-
-#include <zlib.h>
-byte* zlib_decompress(const byte* compressed, unsigned int comp_len, int* decomp_len)
-{
-    z_stream strm;
-    int ret;
-    byte out_chunk[32768];
-
-    strm.zalloc = Z_NULL;
-    strm.zfree = Z_NULL;
-    strm.opaque = Z_NULL;
-    strm.avail_in = comp_len;
-    strm.next_in = (Bytef *)compressed;
-
-    ret = inflateInit2(&strm, 15 + 32);
-    if (ret != Z_OK) {
-        *decomp_len = ret;
-        return NULL;
-    }
-
-    byte *decompressed_data = NULL;
-    byte **decompressed = &decompressed_data;
-
-    *decompressed = NULL;
-    *decomp_len = 0;
-
-    do {
-        strm.avail_out = sizeof(out_chunk);
-        strm.next_out = out_chunk;
-
-        ret = inflate(&strm, Z_NO_FLUSH);
-
-        if (ret != Z_STREAM_END && ret != Z_OK && ret != Z_BUF_ERROR) {
-            *decomp_len = ret;
-            free(*decompressed);
-            inflateEnd(&strm);
-            return NULL;
-        }
-
-        int have = sizeof(out_chunk) - strm.avail_out;
-
-        byte *new_buf = (byte *)realloc(*decompressed, *decomp_len + have);
-        if (new_buf == NULL) {
-            *decomp_len = -99;
-            free(*decompressed);
-            inflateEnd(&strm);
-            return NULL;
-        }
-        *decompressed = new_buf;
-        memcpy(*decompressed + *decomp_len, out_chunk, have);
-        *decomp_len += have;
-
-    } while (ret != Z_STREAM_END);
-
-    inflateEnd(&strm);
-    return *decompressed;
-}

@@ -189,11 +189,6 @@ class idRenderWorldLocal : public idRenderWorld
 #endif
 
 // jscott: handling of effects
-        virtual qhandle_t		AddEffectDef(const renderEffect_t* reffect, int time);
-        virtual bool			UpdateEffectDef(qhandle_t effectHandle, const renderEffect_t* reffect, int time);
-        virtual void			StopEffectDef(qhandle_t effectHandle);
-        virtual const class rvRenderEffectLocal* GetEffectDef(qhandle_t effectHandle) const;
-        virtual void			FreeEffectDef(qhandle_t effectHandle);
         virtual bool			EffectDefHasSound(const renderEffect_s* reffect);
 
 #ifdef _RAVEN_BSE
@@ -208,6 +203,66 @@ class idRenderWorldLocal : public idRenderWorld
 
 	    idList<rvRenderEffectLocal*>	effectDefs;
         int                             procVersion; //karin: for compat doom3 proc
+#endif
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+		// RAVEN BEGIN
+    	// jscott: handling of effects
+		virtual qhandle_t		AddEffectDef(const renderEffect_t* reffect, int time);
+		virtual bool			UpdateEffectDef(qhandle_t effectHandle, const renderEffect_t* reffect, int time);
+		virtual void			StopEffectDef(qhandle_t effectHandle);
+		virtual const class rvRenderEffectLocal* GetEffectDef(qhandle_t effectHandle) const;
+		virtual void			FreeEffectDef(qhandle_t effectHandle);
+		// RAVEN END
+#endif
+
+#ifdef _SPLASHDAMAGE
+		virtual void			RestartEffectDef( qhandle_t effectHandle );
+		virtual void			FreeStoppedEffectDefs( void );
+
+		// Game side occlusion tests
+		virtual qhandle_t		AddOcclusionTestDef( const occlusionTest_t *occtest );
+		virtual void			UpdateOcclusionTestDef( qhandle_t occtestHandle, const occlusionTest_t *occtest );
+		virtual bool			IsVisibleOcclusionTestDef( qhandle_t occtestHandle );
+		virtual	void			FreeOcclusionTestDef( qhandle_t occtestHandle );
+		virtual int				CountVisibleOcclusionTestDef( qhandle_t occtestHandle );
+
+		virtual idRenderModel*	CreateDecalModel();
+		virtual void 			AddToProjectedDecal( const idFixedWinding& winding, const idVec3 &projectionOrigin, const bool parallel, const idVec4& color, idRenderModel* model, int entityNum, const idMaterial** onlyMaterials = NULL, const int numOnlyMaterials = 1 );
+		virtual void			ResetDecalModel( idRenderModel* model );
+
+		virtual void			ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime, const int currentTime );
+
+		virtual void			AddCheapDecal( qhandle_t entityHandle, const cheapDecalParameters_t &params, float time );
+
+		virtual void			ClearDecals( void );
+
+		virtual void			AddEnvBounds( idVec3 const &origin, idVec3 const &scale, const char *cubemap );
+
+		virtual void			UpdatePortalOccTestView( int viewID );
+
+		virtual	bool			AreasAreConnected( int areaNum1, int areaNum2, portalFlags_t flag );
+		virtual	bool			AreasAreConnected( int areaNum1, int areaNum2 );
+
+		virtual int				GetAreaPortalFlags( int areaNum ) const;
+
+		// set the ambient lighting & atmosphere to use for this area
+		virtual void			SetAreaAmbientCubeMap( int areaNum, const sdDeclAmbientCubeMap *cubeMapDecl );
+		virtual void			SetCubemapSunProperties( const sdDeclAmbientCubeMap *cubeMapDecl, const idVec3 &sunDir, const idVec3 &sunColor );
+
+		virtual bool			ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius, int surfCollision/* = SURF_COLLISION*/ ) const;
+
+		virtual void			DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime/**/, bool depthTest/* = false*/ );
+
+		virtual void			DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org/* = vec3_origin*/, const idMat3& axes/* = mat3_identity*/, const int lifetime );
+
+		// Atmosphere / Ambient Systems.
+		virtual void			SetAtmosphere( const sdDeclAtmosphere* atmosphere );
+
+		virtual const sdDeclAtmosphere*	GetAtmosphere() const;
+
+		virtual void			SetupMatrices( const renderView_t* renderView, float* projectionMatrix, float* modelViewMatrix, const bool allowJitter );
+
+		virtual struct atmosLightProjection_t *FindAtmosLightProjection( int lightID );
 #endif
 
 #ifdef _D3BFG_CULLING

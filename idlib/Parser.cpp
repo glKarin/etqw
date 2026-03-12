@@ -3534,7 +3534,7 @@ int idParser::SkipUntilString( const char *string, idToken* token )
     }
     return false;
 }
-#else
+#endif
 int idParser::SkipUntilString(const char *string)
 {
 	idToken token;
@@ -3547,7 +3547,6 @@ int idParser::SkipUntilString(const char *string)
 
 	return false;
 }
-#endif
 
 /*
 ================

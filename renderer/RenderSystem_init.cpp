@@ -499,10 +499,12 @@ the values from r_customWidth, amd r_customHeight
 will be used instead.
 ====================
 */
+#if !defined(_SPLASHDAMAGE)
 typedef struct vidmode_s {
 	const char *description;
 	int         width, height;
 } vidmode_t;
+#endif
 
 vidmode_t r_vidModes[] = {
 	{ "Mode  0: 320x240",		320,	240 },
@@ -542,7 +544,11 @@ vidmode_t r_vidModes[] = {
     { "Mode 31: 5120x1440",		5120,   1440 },
     { "Mode 32: 7680x2160",		7680,   2160 },
 };
+#ifdef _SPLASHDAMAGE
+int	s_numVidModes = (sizeof(r_vidModes) / sizeof(r_vidModes[0]));
+#else
 static int	s_numVidModes = (sizeof(r_vidModes) / sizeof(r_vidModes[0]));
+#endif
 
 #if MACOS_X
 bool R_GetModeInfo(int *width, int *height, int mode)
@@ -2723,6 +2729,50 @@ bool GL_CheckErrors(const char *name)
     }
     return i == 0;
 }
+
+#ifdef _SPLASHDAMAGE
+bool idRenderSystemLocal::UploadImage(const char *imageName, const byte *data, int width, int height, bool generateMipMaps, bool copy) {
+	return UploadImage(imageName, data, width, height);
+}
+
+void idRenderSystemLocal::SyncRenderSystem(void) {
+}
+
+int idRenderSystemLocal::GetNumMSAAModes(void) const {
+	return 0;
+}
+
+const char * idRenderSystemLocal::GetMSAAMode(int idx, int &val) const {
+	return "0x";
+}
+
+void idRenderSystemLocal::LockThreads(void) {
+}
+
+void idRenderSystemLocal::UnlockThreads(void) {
+}
+
+int idRenderSystemLocal::GetSyncNum(void) {
+	return 0;
+}
+
+int idRenderSystemLocal::RegisterPtr(void *ptr) {
+}
+
+void idRenderSystemLocal::UnregisterPtr(int uid) {
+}
+
+void * idRenderSystemLocal::PtrForUID(int uid) {
+}
+
+class idRenderModel * idRenderSystemLocal::InstantiateDynamicModel(class idRenderModel *model, struct renderEntity_s *ent) {
+	return model->InstantiateDynamicModel(ent, viewDef, NULL);
+}
+
+bool idRenderSystemLocal::IsSMPEnabled(void) {
+	return false;
+}
+#endif
 
 #ifdef _SHADOW_MAPPING
 // RB: shadow mapping parameters

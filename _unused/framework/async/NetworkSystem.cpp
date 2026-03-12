@@ -31,8 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "NetworkSystem.h"
 
-#include "AsyncNetwork.h"
-
 idNetworkSystem		networkSystemLocal;
 idNetworkSystem 	*networkSystem = &networkSystemLocal;
 
@@ -305,132 +303,23 @@ void idNetworkSystem::AddFriend(int clientNum) { (void)clientNum; }
 void idNetworkSystem::RemoveFriend(int clientNum) { (void)clientNum; }
 #endif
 
-#ifdef _SPLASHDAMAGE
-void idNetworkSystem::ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info ) {
-
+#ifdef _RAVEN // bot
+/*
+==================
+idNetworkSystem::AllocateClientSlotForBot
+==================
+*/
+int idNetworkSystem::AllocateClientSlotForBot(const char* botName, int maxPlayersOnServer) {
+	return idAsyncNetwork::server.AllocOpenClientSlotForAI(botName, maxPlayersOnServer);
 }
 
-void idNetworkSystem::ServerGetClientNetId( int clientNum, sdNetClientId& netClientId ) {
-
+/*
+==================
+idNetworkSystem::ServerSetBotUserCommand
+==================
+*/
+int idNetworkSystem::ServerSetBotUserCommand(int clientNum, int frameNum, const usercmd_t& cmd) {
+	return idAsyncNetwork::server.ServerSetBotUserCommand(clientNum, frameNum, cmd);
 }
-
-void idNetworkSystem::ServerKickClient( int clientNum, const char* reason, bool localizedReason ) {
-
-}
-
-int idNetworkSystem::AllocateClientSlotForBot( int maxPlayersOnServer ) {
-
-}
-
-int idNetworkSystem::ServerSetBotUserCommand( int clientNum, int frameNum, const usercmd_t& cmd ) {
-
-}
-
-int idNetworkSystem::ServerSetBotUserName( int clientNum, const char* playerName ) {
-
-}
-
-void idNetworkSystem::WriteClientUserCmds( int clientNum, idBitMsg& msg ) {
-}
-
-void idNetworkSystem::ReadClientUserCmds( int clientNum, const idBitMsg& msg ) {
-}
-
-bool idNetworkSystem::IsDedicated( void ) {
-#ifdef ID_DEDICATED
-	return true;
-#else
-	return false;
-#endif
-}
-
-bool idNetworkSystem::IsLANServer( void ) {
-}
-
-bool idNetworkSystem::IsActive( void ) {
-	return idNetworkSystem::server.IsActive() || idNetworkSystem::client.IsActive();
-}
-
-
-netadr_t idNetworkSystem::ClientGetServerAddress( void ) const {
-}
-
-void idNetworkSystem::idNetworkSystem::EnableVoip( voiceMode_t mode ) {
-}
-
-void idNetworkSystem::idNetworkSystem::DisableVoip( void ) {
-}
-
-
-int idNetworkSystem::GetLastVoiceSentTime( void ) {
-}
-
-int idNetworkSystem::GetLastVoiceReceivedTime( int clientIndex ) {
-}
-
-
-int idNetworkSystem::ClientGetFrameTime( void ) {
-}
-
-
-
-int idNetworkSystem::GetDemoState( int& time, int& position, int& length, int& startPosition, int& endPosition, int &cutStartMarker, int &cutEndMarker ) {
-	enum { // in demos/DemoManager.h
-		DS_NONE = -1,
-		DS_RECORDING = 0,
-		DS_PLAYING = 1,
-		DS_PAUSED = 2
-	};
-	return DS_NONE;
-}
-
-const char* idNetworkSystem::GetDemoName( void ) {
-	return "";
-}
-
-
-bool idNetworkSystem::idNetworkSystem::CanPlayDemo( const char* fileName ) {
-	return false;
-}
-
-
-const idDict& idNetworkSystem::GetUserInfo( int clientNum ) {
-}
-
-
-bool idNetworkSystem::idNetworkSystem::IsRankedServer( void ) {
-	return false;
-}
-
-
-void idNetworkSystem::idNetworkSystem::StartSoundTest( int duration ) {
-}
-
-bool idNetworkSystem::idNetworkSystem::IsSoundTestActive( void ) {
-	return false;
-}
-
-bool idNetworkSystem::idNetworkSystem::IsSoundTestPlaybackActive( void ) {
-	return false;
-}
-
-float idNetworkSystem::idNetworkSystem::GetSoundTestProgress( void ) {
-	return 1.0f;
-}
-
-
-voiceMode_t idNetworkSystem::GetVoiceMode( void ) {
-}
-
-
-void idNetworkSystem::idNetworkSystem::RegisterServerInterest( const netadr_t& address ) {
-}
-
-#if !defined( SD_PUBLIC_TOOLS )
-bool idNetworkSystem::idNetworkSystem::HTTPEnable( bool enable ) {
-
-}
-#endif // !SD_PUBLIC_TOOLS
-
 #endif
 

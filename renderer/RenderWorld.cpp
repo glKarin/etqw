@@ -3540,6 +3540,101 @@ bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
 
 #endif
 
+#ifdef _SPLASHDAMAGE
+void idRenderWorldLocal::RestartEffectDef( qhandle_t effectHandle ) {
+}
+
+void idRenderWorldLocal::FreeStoppedEffectDefs( void ) {
+}
+
+qhandle_t idRenderWorldLocal::AddOcclusionTestDef( const occlusionTest_t *occtest ) {
+	return -1;
+}
+
+void idRenderWorldLocal::UpdateOcclusionTestDef( qhandle_t occtestHandle, const occlusionTest_t *occtest ) {
+}
+
+bool idRenderWorldLocal::IsVisibleOcclusionTestDef( qhandle_t occtestHandle ) {
+	return false;
+}
+
+void idRenderWorldLocal::FreeOcclusionTestDef( qhandle_t occtestHandle ) {
+}
+
+int idRenderWorldLocal::CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) {
+	return -1;
+}
+
+idRenderModel* idRenderWorldLocal::CreateDecalModel() {
+	return NULL;
+}
+
+void idRenderWorldLocal::AddToProjectedDecal( const idFixedWinding& winding, const idVec3 &projectionOrigin, const bool parallel, const idVec4& color, idRenderModel* model, int entityNum, const idMaterial** onlyMaterials, const int numOnlyMaterials ) {
+}
+
+void idRenderWorldLocal::ResetDecalModel( idRenderModel* model ) {
+}
+
+void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime, const int currentTime ) {
+	ProjectDecalOntoWorld(winding, projectionOrigin, parallel, fadeDepth, material, startTime);
+}
+
+void idRenderWorldLocal::AddCheapDecal( qhandle_t entityHandle, const cheapDecalParameters_t &params, float time ) {
+}
+
+void idRenderWorldLocal::ClearDecals( void ) {
+}
+
+void idRenderWorldLocal::AddEnvBounds( idVec3 const &origin, idVec3 const &scale, const char *cubemap ) {
+}
+
+void idRenderWorldLocal::UpdatePortalOccTestView( int viewID ) {
+}
+
+bool idRenderWorldLocal::AreasAreConnected( int areaNum1, int areaNum2, portalFlags_t flag ) {
+	return AreasAreConnected(areaNum1, areaNum2, PS_BLOCK_LOCATION);
+}
+
+bool idRenderWorldLocal::AreasAreConnected( int areaNum1, int areaNum2 ) {
+	return AreasAreConnected(areaNum1, areaNum2, PS_BLOCK_LOCATION);
+}
+
+int idRenderWorldLocal::GetAreaPortalFlags( int areaNum ) const {
+}
+
+void idRenderWorldLocal::SetAreaAmbientCubeMap( int areaNum, const sdDeclAmbientCubeMap *cubeMapDecl ) {
+}
+
+void idRenderWorldLocal::SetCubemapSunProperties( const sdDeclAmbientCubeMap *cubeMapDecl, const idVec3 &sunDir, const idVec3 &sunColor ) {
+}
+
+bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius, int surfCollision ) const {
+	return ModelTrace(trace, entityHandle, start, end, radius);
+}
+
+void idRenderWorldLocal::DebugArrow( const idVec4 &color, const idVec3 &start, const idVec3 &end, int size, const int lifetime, bool depthTest ) {
+	DebugArrow(color, start, end, size, lifetime);
+}
+
+void idRenderWorldLocal::DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org, const idMat3& axes, const int lifetime ) {
+}
+
+void idRenderWorldLocal::SetAtmosphere( const sdDeclAtmosphere* atmosphere ) {
+}
+
+const sdDeclAtmosphere* idRenderWorldLocal::GetAtmosphere() const {
+	return NULL;
+}
+
+void idRenderWorldLocal::SetupMatrices( const renderView_t* renderView, float* projectionMatrix, float* modelViewMatrix, const bool allowJitter ) {
+}
+
+struct atmosLightProjection_t * idRenderWorldLocal::FindAtmosLightProjection( int lightID ) {
+	return NULL;
+}
+
+#endif
+
 #ifdef _D3BFG_CULLING
 #ifdef _RAVEN
 int R_CullFrustumCornersToPlane( const frustumCorners_t& corners, const idPlane& plane );

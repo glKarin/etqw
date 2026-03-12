@@ -138,9 +138,8 @@ class idParser
 		// skip tokens until the given token string is read
 #ifdef _SPLASHDAMAGE
     	int				SkipUntilString( const char *string, idToken *token );
-#else
-		int				SkipUntilString(const char *string);
 #endif
+		int				SkipUntilString(const char *string);
 		// skip the rest of the current line
 		int				SkipRestOfLine(void);
 		// skip the braced section
