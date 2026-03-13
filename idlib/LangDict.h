@@ -62,17 +62,17 @@ class idLangDict
     	const wchar_t*			GetString( const char *str ) const;
 
     	const idLangKeyValue*	FindKeyValue( const char* str ) const;
+		const char 				*GetStringMb(const char *str) const;
 #else
-		const char 			*AddString(const char *str);
 		const char 			*GetString(const char *str) const;
 #endif
+		const char 			*AddString(const char *str);
 
 		// adds the value and key as passed (doesn't generate a "#str_xxxxx" key or ensure the key/value pair is unique)
 #ifdef _SPLASHDAMAGE
     	void					AddKeyVal( const char* key, const wchar_t* val );
-#else
-		void					AddKeyVal(const char *key, const char *val);
 #endif
+		void					AddKeyVal(const char *key, const char *val);
 
 		int						GetNumKeyVals(void) const;
 		const idLangKeyValue 	*GetKeyVal(int i) const;

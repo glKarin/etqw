@@ -448,7 +448,11 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 // broadcast scan this many ports after PORT_SERVER so a single machine can run multiple servers
+#if 1 //karin: build without static
+#define NUM_SERVER_PORTS				  4
+#else
 const int NUM_SERVER_PORTS				= 4;
+#endif
 
 // see ASYNC_PROTOCOL_VERSION
 // use a different major for each game
@@ -513,6 +517,23 @@ const int NUM_SERVER_PORTS				= 4;
 #endif
 
 #define CONFIG_SPEC						"etqwconfig.spec"
+
+//karin: compat for DOOM3
+// default idnet host address
+#ifndef IDNET_HOST
+#define IDNET_HOST					"127.0.0.1"
+#endif
+
+// default idnet master port
+#ifndef IDNET_MASTER_PORT
+#define IDNET_MASTER_PORT			"27733" // PORT_SERVER
+#endif
+
+// editor info
+#define EDITOR_DEFAULT_PROJECT			"etqw.qe4"
+#define EDITOR_REGISTRY_KEY				"ETQWRadiant"
+#define EDITOR_WINDOWTEXT				"ETQWEdit"
+
 #else // else is DOOM3
 
 #define GAME_NAME						"DOOM 3"		// appears on window titles and errors

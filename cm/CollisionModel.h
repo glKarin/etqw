@@ -120,9 +120,9 @@ public:
 	virtual						~idCollisionModel() { }
 								// Returns the name of the model.
 	virtual const char *		GetName( void ) const = 0;
-								// Gets the bounds of the model.
-    virtual const idBounds&		GetBounds( void ) const = 0;
 #ifdef _SPLASHDAMAGE
+	// Gets the bounds of the model.
+	virtual const idBounds&		GetBounds( void ) const = 0;
     // Gets the bounds of the model, excluding/including surfaces of the appropriate surface type
     virtual void				GetBounds( idBounds& bounds, int surfaceMask, bool inclusive ) const = 0;
     // Gets all contents flags of brushes and polygons of the model ored together.
@@ -141,6 +141,8 @@ public:
     virtual bool				IsWorld( void ) const = 0;
     virtual void				SetWorld( bool tf ) = 0;
 #else
+	// Gets the bounds of the model.
+	virtual const idBounds&		GetBounds( void ) const = 0;
 								// Gets all contents flags of brushes and polygons of the model ored together.
 	virtual bool				GetContents( int &contents ) const = 0;
 								// Gets a vertex of the model.

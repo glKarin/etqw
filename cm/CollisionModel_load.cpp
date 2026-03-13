@@ -639,16 +639,12 @@ void idCollisionModelManagerLocal::FreeTree_r(cm_model_t *model, cm_node_t *head
 idCollisionModelManagerLocal::FreeModel
 ================
 */
-#ifdef _RAVEN
-void idCollisionModelManagerLocal::FreeModel_memory(cm_model_t *model)
-#else
 void idCollisionModelManagerLocal::FreeModel(cm_model_t *model)
-#endif
 {
 	cm_polygonRefBlock_t *polygonRefBlock, *nextPolygonRefBlock;
 	cm_brushRefBlock_t *brushRefBlock, *nextBrushRefBlock;
 	cm_nodeBlock_t *nodeBlock, *nextNodeBlock;
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 // jmarshall - quake 4 crash fix - trm models are shared.
 	if (model->isTrmModel) {
 		return;
@@ -724,11 +720,7 @@ void idCollisionModelManagerLocal::FreeMap(void)
 			continue;
 		}
 
-#ifdef _RAVEN
-		FreeModel_memory(models[i]);
-#else
 		FreeModel(models[i]);
-#endif
 	}
 
 	FreeTrmModelStructure();
@@ -763,11 +755,7 @@ void idCollisionModelManagerLocal::FreeTrmModelStructure(void)
 
 	models[MAX_SUBMODELS]->node->polygons = NULL;
 	models[MAX_SUBMODELS]->node->brushes = NULL;
-#ifdef _RAVEN
-	FreeModel_memory(models[MAX_SUBMODELS]);
-#else
 	FreeModel(models[MAX_SUBMODELS]);
-#endif
 }
 
 
@@ -887,7 +875,7 @@ cm_model_t *idCollisionModelManagerLocal::AllocModel(void)
 	                                                                             model->numSharpEdges = model->numRemovedPolys =
 	                                                                                             model->numMergedPolys = model->usedMemory = 0;
 
-#ifdef _RAVEN // quake4 trm
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 trm
 	model->isTrmModel = false;
 	model->markRemove = false;
 	model->isTraceModel = false;
@@ -1135,7 +1123,7 @@ void idCollisionModelManagerLocal::SetupTrmModelStructure(void)
 	trmBrushes[0]->b->checkcount = 0;
 	trmBrushes[0]->b->contents = -1;		// all contents
 	trmBrushes[0]->b->numPlanes = 0;
-#ifdef _RAVEN // quake4 trm
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 trm
 // jmarshall
 	model->isTrmModel = true;
 // jmarshall end
@@ -1176,7 +1164,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 
 	// if not a valid trace model
 	if (trm.type == TRM_INVALID || !trm.numPolys) {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		return models[TRACE_MODEL_HANDLE];
 #else
 		return TRACE_MODEL_HANDLE;
@@ -1247,7 +1235,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 	// convex
 	model->isConvex = trm.isConvex;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	return models[TRACE_MODEL_HANDLE];
 #else
 	return TRACE_MODEL_HANDLE;
@@ -3670,7 +3658,12 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel(const char *fileName)
 	for (i = 0; i < renderModel->NumSurfaces(); i++) {
 		surf = renderModel->Surface(i);
 
-		if (surf->shader->GetSurfaceFlags() & SURF_COLLISION) {
+#ifdef _SPLASHDAMAGE
+		if (surf->material->GetSurfaceFlags() & SURF_COLLISION)
+#else
+		if (surf->shader->GetSurfaceFlags() & SURF_COLLISION)
+#endif
+		{
 			collisionSurface = true;
 		}
 	}
@@ -3679,12 +3672,22 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel(const char *fileName)
 		surf = renderModel->Surface(i);
 
 		// if this surface has no contents
-		if (!(surf->shader->GetContentFlags() & CONTENTS_REMOVE_UTIL)) {
+#ifdef _SPLASHDAMAGE
+		if (!(surf->material->GetContentFlags() & CONTENTS_REMOVE_UTIL))
+#else
+		if (!(surf->shader->GetContentFlags() & CONTENTS_REMOVE_UTIL))
+#endif
+		{
 			continue;
 		}
 
 		// if the model has a collision surface and this surface is not a collision surface
-		if (collisionSurface && !(surf->shader->GetSurfaceFlags() & SURF_COLLISION)) {
+#ifdef _SPLASHDAMAGE
+		if (collisionSurface && !(surf->material->GetSurfaceFlags() & SURF_COLLISION))
+#else
+		if (collisionSurface && !(surf->shader->GetSurfaceFlags() & SURF_COLLISION))
+#endif
+		{
 			continue;
 		}
 
@@ -3708,12 +3711,22 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel(const char *fileName)
 		surf = renderModel->Surface(i);
 
 		// if this surface has no contents
-		if (!(surf->shader->GetContentFlags() & CONTENTS_REMOVE_UTIL)) {
+#ifdef _SPLASHDAMAGE
+		if (!(surf->material->GetContentFlags() & CONTENTS_REMOVE_UTIL))
+#else
+		if (!(surf->shader->GetContentFlags() & CONTENTS_REMOVE_UTIL))
+#endif
+		{
 			continue;
 		}
 
 		// if the model has a collision surface and this surface is not a collision surface
-		if (collisionSurface && !(surf->shader->GetSurfaceFlags() & SURF_COLLISION)) {
+#ifdef _SPLASHDAMAGE
+		if (collisionSurface && !(surf->material->GetSurfaceFlags() & SURF_COLLISION))
+#else
+		if (collisionSurface && !(surf->shader->GetSurfaceFlags() & SURF_COLLISION))
+#endif
+		{
 			continue;
 		}
 
@@ -3724,7 +3737,11 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel(const char *fileName)
 			w += surf->geometry->verts[ surf->geometry->indexes[ j + 0 ] ].xyz;
 			w.GetPlane(plane);
 			plane = -plane;
+#ifdef _SPLASHDAMAGE
+			PolygonFromWinding(model, &w, plane, surf->material, 1);
+#else
 			PolygonFromWinding(model, &w, plane, surf->shader, 1);
+#endif
 		}
 	}
 
@@ -3856,7 +3873,7 @@ cmHandle_t idCollisionModelManagerLocal::FindModel(const char *name)
 
 	// check if this model is already loaded
 	for (i = 0; i < numModels; i++) {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		if (!static_cast<cm_model_t *>(models[i])->name.Icmp(name))
 #else
 		if (!models[i]->name.Icmp(name))
@@ -3868,14 +3885,14 @@ cmHandle_t idCollisionModelManagerLocal::FindModel(const char *name)
 
 	// if the model is already loaded
 	if (i < numModels) {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		return models[i];
 #else
 		return i;
 #endif
 	}
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	return NULL;
 #else
 	return -1;
@@ -3912,7 +3929,7 @@ void idCollisionModelManagerLocal::AccumulateModelInfo(cm_model_t *model)
 {
 	int i;
 
-#if !defined(_RAVEN)
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
 	memset(model, 0, sizeof(*model));
 #endif
 
@@ -3940,7 +3957,7 @@ void idCollisionModelManagerLocal::AccumulateModelInfo(cm_model_t *model)
 idCollisionModelManagerLocal::ModelInfo
 ================
 */
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 void idCollisionModelManagerLocal::ModelInfo(int model)
 #else
 void idCollisionModelManagerLocal::ModelInfo(cmHandle_t model)
@@ -4187,7 +4204,7 @@ idCollisionModelManagerLocal::GetModelName
 */
 const char *idCollisionModelManagerLocal::GetModelName(cmHandle_t model) const
 {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	return model ? static_cast<cm_model_t *>(model)->GetName() : "";
 #else
 	if (model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model]) {
@@ -4209,6 +4226,13 @@ bool idCollisionModelManagerLocal::GetModelBounds(cmHandle_t model, idBounds &bo
 
 #ifdef _RAVEN
 	return model ? static_cast<cm_model_t *>(model)->GetBounds(bounds) : false;
+#elif defined(_SPLASHDAMAGE)
+	if (model) {
+		bounds = model->GetBounds();
+		return true;
+	}
+	else
+		return false;
 #else
 	if (model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model]) {
 		common->Printf("idCollisionModelManagerLocal::GetModelBounds: invalid model handle\n");
@@ -4229,6 +4253,13 @@ bool idCollisionModelManagerLocal::GetModelContents(cmHandle_t model, int &conte
 {
 #ifdef _RAVEN
 	return model ? static_cast<cm_model_t *>(model)->GetContents(contents) : false;
+#elif defined(_SPLASHDAMAGE)
+	if (model) {
+		contents = model->GetContents();
+		return true;
+	}
+	else
+		return false;
 #else
 	if (model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model]) {
 		common->Printf("idCollisionModelManagerLocal::GetModelContents: invalid model handle\n");
@@ -4250,6 +4281,13 @@ bool idCollisionModelManagerLocal::GetModelVertex(cmHandle_t model, int vertexNu
 {
 #ifdef _RAVEN
 	return model ? static_cast<cm_model_t *>(model)->GetVertex(vertexNum, vertex) : false;
+#elif defined(_SPLASHDAMAGE)
+	if (model) {
+		vertex = model->GetVertex(vertexNum);
+		return true;
+	}
+	else
+		return false;
 #else
 	if (model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model]) {
 		common->Printf("idCollisionModelManagerLocal::GetModelVertex: invalid model handle\n");
@@ -4276,6 +4314,13 @@ bool idCollisionModelManagerLocal::GetModelEdge(cmHandle_t model, int edgeNum, i
 {
 #ifdef _RAVEN
 	return model ? static_cast<cm_model_t *>(model)->GetEdge(edgeNum, start, end) : false;
+#elif defined(_SPLASHDAMAGE)
+	if (model) {
+		static_cast<cm_model_t *>(model)->GetEdge(edgeNum, start, end);
+		return true;
+	}
+	else
+		return false;
 #else
 	if (model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model]) {
 		common->Printf("idCollisionModelManagerLocal::GetModelEdge: invalid model handle\n");
@@ -4305,6 +4350,13 @@ bool idCollisionModelManagerLocal::GetModelPolygon(cmHandle_t model, int polygon
 {
 #ifdef _RAVEN
 	return model ? static_cast<cm_model_t *>(model)->GetPolygon(polygonNum, winding) : false;
+#elif defined(_SPLASHDAMAGE)
+	if (model) {
+		static_cast<cm_model_t *>(model)->GetPolygon(polygonNum, winding);
+		return true;
+	}
+	else
+		return false;
 #else
     int i, edgeNum;
 	cm_polygon_t *poly;
@@ -4333,7 +4385,7 @@ idCollisionModelManagerLocal::LoadModel
 */
 cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const bool precache)
 {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	cmHandle_t handle;
 #else
 	int handle;
@@ -4341,7 +4393,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 
 	handle = FindModel(modelName);
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	if (handle)
 #else
 	if (handle >= 0)
@@ -4352,7 +4404,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 
 	if (numModels >= MAX_SUBMODELS) {
 		common->Error("idCollisionModelManagerLocal::LoadModel: no free slots\n");
-#ifdef _RAVEN //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
 //#if _RETURN_WORLDMAP_MODEL_IF_FINDMODEL_IS_NULL
 //        return models[0]; //karin: 2025-12-12: return index 0 model(worldMap)
 //#else
@@ -4367,7 +4419,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 	if (LoadCollisionModelFile(modelName, 0)) {
 		handle = FindModel(modelName);
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		if (handle)
 #else
 		if (handle >= 0)
@@ -4381,7 +4433,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 
 	// if only precaching .cm files do not waste memory converting render models
 	if (precache) {
-#ifdef _RAVEN //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
 #if _RETURN_WORLDMAP_MODEL_IF_FINDMODEL_IS_NULL
         if(!idStr::Icmp(modelName, WORLD_MODEL_NAME)) {
             common->Printf("idCollisionModelManagerLocal::LoadModel(precache): Load '" WORLD_MODEL_NAME "' collision model not found, using index 0(%s) collision model as world model.\n", models[0] ? models[0]->GetName() : "NULL");
@@ -4400,14 +4452,14 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 
 	if (models[numModels] != NULL) {
 		numModels++;
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		return models[numModels - 1];
 #else
 		return (numModels - 1);
 #endif
 	}
 
-#ifdef _RAVEN //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
 #if _RETURN_WORLDMAP_MODEL_IF_FINDMODEL_IS_NULL
     if(!idStr::Icmp(modelName, WORLD_MODEL_NAME)) {
         common->Printf("idCollisionModelManagerLocal::LoadModel: Load '" WORLD_MODEL_NAME "' collision model not found, using index 0(%s) collision model as world model.\n", models[0] ? models[0]->GetName() : "NULL");
@@ -4590,7 +4642,7 @@ bool idCollisionModelManagerLocal::TrmFromModel(const char *modelName, idTraceMo
 		return false;
 	}
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	return TrmFromModel(static_cast<cm_model_t *>(handle), trm);
 #else
 	return TrmFromModel(models[ handle ], trm);
@@ -5030,43 +5082,6 @@ void idCollisionModelManagerLocal::ClearModel(cm_model_t *model)
 #endif
 
 #ifdef _RAVEN
-cm_model_t::cm_model_t(void)
-{
-	bounds.Zero();
-	contents = 0;
-	isConvex = false;
-	maxVertices = 0;
-	numVertices = 0;
-	vertices = NULL;
-	maxEdges = 0;
-	numEdges = 0;
-	edges= NULL;
-	node = NULL;
-	nodeBlocks = NULL;
-	polygonRefBlocks = NULL;
-	brushRefBlocks = NULL;
-	polygonBlock = NULL;
-	brushBlock = NULL;
-	numPolygons = polygonMemory =
-		numBrushes = brushMemory =
-		numNodes = numBrushRefs =
-		numPolygonRefs = numInternalEdges =
-		numSharpEdges = numRemovedPolys =
-		numMergedPolys = usedMemory = 0;
-
-	isTrmModel = false;
-	markRemove = false;
-	isTraceModel = false;
-	memset(_trmPolygons, 0, sizeof(cm_polygonRef_t *) * MAX_TRACEMODEL_POLYS);
-	_trmBrushes[0] = 0;
-	refCount = 0;
-}
-
-const char * cm_model_t::GetName( void ) const
-{
-	return name.c_str();
-}
-
 bool cm_model_t::GetBounds( idBounds &bounds ) const
 {
 	bounds = this->bounds;
@@ -5122,6 +5137,48 @@ bool cm_model_t::GetPolygon( int polygonNum, idFixedWinding &winding ) const
 }
 #endif
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+cm_model_t::cm_model_t(void)
+{
+	bounds.Zero();
+	contents = 0;
+	isConvex = false;
+	maxVertices = 0;
+	numVertices = 0;
+	vertices = NULL;
+	maxEdges = 0;
+	numEdges = 0;
+	edges= NULL;
+	node = NULL;
+	nodeBlocks = NULL;
+	polygonRefBlocks = NULL;
+	brushRefBlocks = NULL;
+	polygonBlock = NULL;
+	brushBlock = NULL;
+	numPolygons = polygonMemory =
+		numBrushes = brushMemory =
+		numNodes = numBrushRefs =
+		numPolygonRefs = numInternalEdges =
+		numSharpEdges = numRemovedPolys =
+		numMergedPolys = usedMemory = 0;
+
+	isTrmModel = false;
+	markRemove = false;
+	isTraceModel = false;
+	memset(_trmPolygons, 0, sizeof(cm_polygonRef_t *) * MAX_TRACEMODEL_POLYS);
+	_trmBrushes[0] = 0;
+	refCount = 0;
+#ifdef _SPLASHDAMAGE
+	isWorld = false;
+#endif
+}
+
+const char * cm_model_t::GetName( void ) const
+{
+	return name.c_str();
+}
+#endif
+
 #ifdef _HUMANHEAD
 // HUMANHEAD pdm: Support for level appending
 #if DEATHWALK_AUTOLOAD
@@ -5147,4 +5204,97 @@ int idCollisionModelManagerLocal::GetNumInlinedProcClipModels(void) {
 }
 #endif
 //HUMANHEAD END
+#endif
+
+#ifdef _SPLASHDAMAGE
+const idBounds& cm_model_t::GetBounds( void ) const {
+	return bounds;
+}
+
+void cm_model_t::GetBounds( idBounds& bounds, int surfaceMask, bool inclusive ) const {
+	bounds = this->bounds;
+}
+
+int cm_model_t::GetContents( void ) const {
+	return contents;
+}
+
+const idVec3& cm_model_t::GetVertex( int vertexNum ) const {
+	if (vertexNum < 0 || vertexNum >= numVertices) {
+		common->Printf("idCollisionModelManagerLocal::GetModelVertex: invalid vertex number\n");
+		return vec3_origin;
+	}
+
+	return vertices[vertexNum].p;
+}
+
+void cm_model_t::GetEdge( int edgeNum, idVec3& start, idVec3& end ) const {
+	edgeNum = abs(edgeNum);
+
+	if (edgeNum >= numEdges) {
+		common->Printf("idCollisionModelManagerLocal::GetModelEdge: invalid edge number\n");
+		start = vec3_origin;
+		start = vec3_origin;
+	}
+
+	start = vertices[edges[edgeNum].vertexNum[0]].p;
+	end = vertices[edges[edgeNum].vertexNum[1]].p;
+}
+
+void cm_model_t::GetPolygon( int polygonNum, idFixedWinding &winding ) const {
+	int i, edgeNum;
+	cm_polygon_t *poly;
+
+	poly = *reinterpret_cast<cm_polygon_t **>(&polygonNum);
+	winding.Clear();
+
+	for (i = 0; i < poly->numEdges; i++) {
+		edgeNum = poly->edges[i];
+		winding += vertices[ edges[abs(edgeNum)].vertexNum[INTSIGNBITSET(edgeNum)] ].p;
+	}
+}
+
+int cm_model_t::GetNumBrushPlanes( void ) const {
+	return numBrushes;
+}
+
+const idPlane& cm_model_t::GetBrushPlane( int planeNum ) const {
+	if (planeNum < 0 || planeNum >= numBrushes) {
+		common->Printf("idCollisionModelManagerLocal::GetBrushPlane: invalid plane number\n");
+		return plane_origin;
+	}
+
+	return plane_origin;
+}
+
+const idMaterial* cm_model_t::GetPolygonMaterial( int polygonNum ) const {
+	if (polygonNum < 0 || polygonNum >= numPolygons) {
+		common->Printf("idCollisionModelManagerLocal::GetPolygonPlane: invalid polygon number\n");
+		return NULL;
+	}
+
+	return NULL;
+}
+
+const idPlane& cm_model_t::GetPolygonPlane( int polygonNum ) const {
+	if (polygonNum < 0 || polygonNum >= numPolygons) {
+		common->Printf("idCollisionModelManagerLocal::GetPolygonPlane: invalid polygon number\n");
+		return plane_origin;
+	}
+
+	return plane_origin;
+}
+
+int cm_model_t::GetNumPolygons( void ) const {
+	return numPolygons;
+}
+
+bool cm_model_t::IsWorld( void ) const {
+	return isWorld;
+}
+
+void cm_model_t::SetWorld( bool tf ) {
+	isWorld = tf;
+}
+
 #endif

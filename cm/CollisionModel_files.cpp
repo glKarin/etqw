@@ -358,11 +358,7 @@ bool idCollisionModelManagerLocal::WriteCollisionModelForMapEntity(const idMapEn
 
 	if (!fp) {
 		common->Printf("idCollisionModelManagerLocal::WriteCollisionModelForMapEntity: Error opening file %s\n", name.c_str());
-#ifdef _RAVEN
-		FreeModel_memory(model);
-#else
 		FreeModel(model);
-#endif
 		return false;
 	}
 
@@ -384,11 +380,7 @@ bool idCollisionModelManagerLocal::WriteCollisionModelForMapEntity(const idMapEn
 		TrmFromModel(model, trm);
 	}
 
-#ifdef _RAVEN
-	FreeModel_memory(model);
-#else
 	FreeModel(model);
-#endif
 
 	return true;
 }

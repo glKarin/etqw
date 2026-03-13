@@ -565,6 +565,11 @@ template<class T> ID_INLINE T	Min(T x, T y)
 #include "Color.h"
 #include "Properties.h"
 #include "TextUtilities.h"
+
+idStr WStrToStr( const wchar_t *wstr );
+idWStr StrToWStr( const char *str );
+idStr WStrToStr( const idWStr &wstr );
+idWStr StrToWStr( const idStr &str );
 #endif
 
 #endif	/* !__LIB_H__ */

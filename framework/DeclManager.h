@@ -79,15 +79,37 @@ typedef enum {
 	DECL_SKIN,
 	DECL_SOUND,
 	DECL_ENTITYDEF,
+#ifdef _SPLASHDAMAGE //karin: sync with declIdentifierType_t
+	DECL_EFFECT,
+	DECL_AF,
+	DECL_ATMOSPHERE,
+	DECL_AMBIENTCUBEMAP,
+	DECL_STUFFTYPE,
+	DECL_SURFACETYPE,
+	DECL_SURFACETYPEMAP,
+	DECL_RENDERPROGRAM,
+	DECL_RENDERBINDING,
+	DECL_TEMPLATE,
+	DECL_IMPOSTER,
+	DECL_IMPOSTERGENERATOR,
+	DECL_LOCSTR,
+	DECL_DECAL,
+	DECL_FONT,
+	DECL_MODELEXPORT,
+#endif
 	DECL_MODELDEF,
 	DECL_FX,
 	DECL_PARTICLE,
+#if !defined(_SPLASHDAMAGE) //karin: sync with declIdentifierType_t
 	DECL_AF,
+#endif
 	DECL_PDA,
 	DECL_VIDEO,
 	DECL_AUDIO,
 	DECL_EMAIL,
+#if !defined(_SPLASHDAMAGE) //karin: sync with declIdentifierType_t
 	DECL_MODELEXPORT,
+#endif
 	DECL_MAPDEF,
 
 	// new decl types can be added here
@@ -95,12 +117,12 @@ typedef enum {
 #ifdef _RAVEN // quake4 new decl
 	// RAVEN BEGIN
 // jscott: added new decls
-        DECL_MATERIALTYPE,
-        DECL_LIPSYNC,
-        DECL_PLAYBACK,
-        DECL_EFFECT,
+    DECL_MATERIALTYPE,
+    DECL_LIPSYNC,
+    DECL_PLAYBACK,
+    DECL_EFFECT,
 // rjohnson: camera is now contained in a def for frame commands
-        DECL_CAMERADEF,
+    DECL_CAMERADEF,
 // jscott: don't use these
 //      DECL_FX,
 //      DECL_PARTICLE,
@@ -496,7 +518,14 @@ public:
     virtual void				PostParse( idDecl* decl ) const = 0;
 
     virtual void				RegisterPostParse( pfnOnPostParse postParse ) const = 0;
-    virtual void				UnregisterPostParse( pfnOnPostParse postParse ) const = 0;
+	virtual void				UnregisterPostParse( pfnOnPostParse postParse ) const = 0;
+
+#ifdef _SPLASHDAMAGE
+	public:
+		idStr					typeName;
+		declType_t				type;
+		idDecl *(*allocator)(void);
+#endif
 };
 
 
@@ -522,6 +551,26 @@ public:
     virtual const idDecl*		Find( const char* name, bool makeDefault = true ) const;
     virtual int					Num( void ) const;
 
+#ifdef _SPLASHDAMAGE //karin: for compat
+	virtual bool				SkipChecksum( void ) const;
+	virtual bool				AllowTemplateEvaluation( void ) const;
+	virtual bool				SkipParsing( void ) const;
+	virtual bool				NotPrecached( void ) const;
+	virtual bool				AlwaysGenerateBinary( void ) const;
+	virtual bool				UsePrivateTokens( void ) const;
+	virtual bool				WriteBinary( void ) const;
+	virtual bool				NeverStoreBinary( void ) const;
+
+	virtual idDecl*				Alloc( void );
+	virtual void				OnReload( idDecl* decl ) const;
+	virtual const char*			GetName( void ) const;
+	virtual void				CacheFromDict( const idDict& dict ) const;
+	virtual bool				CanCacheFromDict() const;
+	virtual void				PostParse( idDecl* decl ) const;
+
+	virtual void				RegisterPostParse( pfnOnPostParse postParse ) const;
+	virtual void				UnregisterPostParse( pfnOnPostParse postParse ) const;
+#endif
 private:
     qhandle_t					declTypeHandle;
 };

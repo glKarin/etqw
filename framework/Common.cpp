@@ -392,6 +392,7 @@ class idCommonLocal : public idCommon
 
 		virtual idSoundWorld*		GetGameSoundWorld( void );
 		virtual idSoundWorld*		GetMenuSoundWorld( void );
+		virtual void				PrintLoadingMessage( const wchar_t *msg );
 #endif
 };
 
@@ -1996,7 +1997,11 @@ void idCommonLocal::LocalizeSpecificMapData(const char *fileName, idLangDict &la
 					const char *temp = ent->epairs.GetString(kv->key);
 
 					if (temp && *temp) {
+#ifdef _SPLASHDAMAGE
+						idStr val = WStrToStr(kv->value);
+#else
 						idStr val = kv->value;
+#endif
 
 						if (val == temp) {
 							ent->epairs.Set(kv->key, langDict.AddString(temp));
@@ -2689,7 +2694,11 @@ Com_FinishBuild_f
 void Com_FinishBuild_f(const idCmdArgs &args)
 {
 	if (game) {
+#ifdef _SPLASHDAMAGE
+		game->CacheDictionaryMedia(idDict());
+#else
 		game->CacheDictionaryMedia(NULL);
+#endif
 	}
 
 	globalImages->FinishBuild((args.Argc() > 1));
@@ -3858,6 +3867,11 @@ idSoundWorld* idCommonLocal::GetGameSoundWorld( void ) {
 
 idSoundWorld* idCommonLocal::GetMenuSoundWorld( void ) {
 	return session->menuSoundWorld;
+}
+
+void idCommonLocal::PrintLoadingMessage( const wchar_t *msg ) {
+	idStr str = WStrToStr(msg);
+	PrintLoadingMessage(str);
 }
 #endif
 

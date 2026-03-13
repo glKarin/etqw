@@ -163,7 +163,7 @@ typedef struct cm_nodeBlock_s {
 	struct cm_nodeBlock_s *next;				// next block with nodes
 } cm_nodeBlock_t;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 struct cm_model_t : public idCollisionModel
 #else
 typedef struct cm_model_s 
@@ -201,25 +201,49 @@ typedef struct cm_model_s
 	int						numMergedPolys;
 	int						usedMemory;
 
-#ifdef _RAVEN // quake4 trm
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 trm
 	bool					isTrmModel;
 	bool                    markRemove; //k: if ture, marked can replace
 	bool                    isTraceModel; //k: if true, returned by ModelFromTrm
 	cm_polygonRef_t         *_trmPolygons[MAX_TRACEMODEL_POLYS];
 	cm_brushRef_t           *_trmBrushes[1];
 	int                     refCount;
+#ifdef _SPLASHDAMAGE
+	bool					isWorld;
+#endif
 
 	cm_model_t(void);
+#endif
 
-	virtual const char *	GetName( void ) const;
+#ifdef _RAVEN // quake4 trm
 	virtual bool			GetBounds( idBounds &bounds ) const;
 	virtual bool			GetContents( int &contents ) const;
 	virtual bool			GetVertex( int vertexNum, idVec3 &vertex ) const;
 	virtual bool			GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const;
 	virtual bool			GetPolygon( int polygonNum, idFixedWinding &winding ) const;
 #endif
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+	virtual const char *	GetName( void ) const;
+#endif
+
+#ifdef _SPLASHDAMAGE
+	virtual const idBounds&		GetBounds( void ) const;
+	virtual void				GetBounds( idBounds& bounds, int surfaceMask, bool inclusive ) const;
+	virtual int					GetContents( void ) const;
+	virtual const idVec3&		GetVertex( int vertexNum ) const;
+	virtual void				GetEdge( int edgeNum, idVec3& start, idVec3& end ) const;
+	virtual void				GetPolygon( int polygonNum, idFixedWinding &winding ) const;
+	virtual int					GetNumBrushPlanes( void ) const;
+	virtual const idPlane&		GetBrushPlane( int planeNum ) const;
+	virtual const idMaterial*	GetPolygonMaterial( int polygonNum ) const;
+	virtual const idPlane&		GetPolygonPlane( int polygonNum ) const;
+	virtual int					GetNumPolygons( void ) const;
+	virtual bool				IsWorld( void ) const;
+	virtual void				SetWorld( bool tf );
+#endif
 }
-#if !defined(_RAVEN)
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
  cm_model_t
 #endif
  ;
@@ -343,9 +367,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		// Loads collision models from a map file.
 		void			LoadMap( const idMapFile *mapFile, bool forceCreateMap );
 
-		// create trace model from a collision model, returns true if succesfull
-		bool			TrmFromModel(const char* mapName, const char *modelName, idTraceModel &trm ) { (void)mapName; return TrmFromModel(modelName, trm); }; //k DIFF_IMPL
-
 		// sets up a trace model for collision with other trace models
 		cmHandle_t      ModelFromTrm(const char* mapName, const char* modelName, const idTraceModel &trm, const idMaterial *material );
 
@@ -409,7 +430,9 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		void			DrawModel(cmHandle_t model, const idVec3 &origin, const idMat3 &axis,
 		                                  const idVec3 &viewOrigin, const float radius);
 		// print model information, use -1 handle for accumulated model info
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+		// create trace model from a collision model, returns true if succesfull
+		bool			TrmFromModel(const char* mapName, const char *modelName, idTraceModel &trm ) { (void)mapName; return TrmFromModel(modelName, trm); }; //k DIFF_IMPL
 		void			ModelInfo(int num);
 #else
 		void			ModelInfo(cmHandle_t model);
@@ -424,6 +447,29 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 	    int				GetNumInlinedProcClipModels(void);
 #endif
 	    //HUMANHEAD END
+#endif
+#ifdef _SPLASHDAMAGE
+		virtual void				AllocThread( void );
+		virtual void				FreeThread( void );
+		virtual int					GetThreadId( void );
+		virtual int					GetThreadCount( void );
+		virtual void				LoadMap( const char* fileName, bool forceReload );
+		virtual void				FreeModel( idCollisionModel *model );
+		virtual void				PurgeModels( void );
+
+		virtual idCollisionModel *	ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes );
+
+		virtual int				Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec3 *dir, const float depth,
+										  const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
+										  idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis );
+
+		virtual void				DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis,
+											   const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime );
+		virtual void				DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis );
+
+		virtual void				GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const;
+
+		virtual void				DumpCollisionModelStats( void );
 #endif
 
 	private:			// CollisionMap_translate.cpp
@@ -495,10 +541,8 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 #ifdef _RAVEN
 		cm_model_t 	    *AllocModel(cm_model_t * &model);
 		void            ClearModel(cm_model_t *model);
-		void			FreeModel_memory(cm_model_t *model);
-#else
-		void			FreeModel(cm_model_t *model);
 #endif
+		void			FreeModel(cm_model_t *model);
 		// merging polygons
 		void			ReplacePolygons(cm_model_t *model, cm_node_t *node, cm_polygon_t *p1, cm_polygon_t *p2, cm_polygon_t *newp);
 		cm_polygon_t 	*TryMergePolygons(cm_model_t *model, cm_polygon_t *p1, cm_polygon_t *p2);

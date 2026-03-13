@@ -893,7 +893,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 
 	memset(results, 0, sizeof(*results));
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	if (!model) {
 		common->Printf("idCollisionModelManagerLocal::Translation: invalid model\n");
 		return;
@@ -959,7 +959,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 	tw.contacts = idCollisionModelManagerLocal::contacts;
 	tw.maxContacts = idCollisionModelManagerLocal::maxContacts;
 	tw.numContacts = 0;
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	tw.model = static_cast<cm_model_t *>(model);
 #else
 	tw.model = idCollisionModelManagerLocal::models[model];

@@ -157,6 +157,29 @@ void idSysLocal::DLL_GetFileName(const char *baseName, char *dllName, int maxLen
 #endif
 }
 
+#ifdef _SPLASHDAMAGE
+const sdSysEvent* idSysLocal::GenerateMouseButtonEvent(int button, bool down)
+{
+	static sysEvent_t ev;
+	ev.evType = SE_KEY;
+	ev.evValue = K_MOUSE1 + button - 1;
+	ev.evValue2 = down;
+	ev.evPtrLength = 0;
+	ev.evPtr = NULL;
+	return &ev;
+}
+
+const sdSysEvent* idSysLocal::GenerateMouseMoveEvent(int deltax, int deltay)
+{
+	static sysEvent_t ev;
+	ev.evType = SE_MOUSE;
+	ev.evValue = deltax;
+	ev.evValue2 = deltay;
+	ev.evPtrLength = 0;
+	ev.evPtr = NULL;
+	return &ev;
+}
+#else
 sysEvent_t idSysLocal::GenerateMouseButtonEvent(int button, bool down)
 {
 	sysEvent_t ev;
@@ -178,6 +201,7 @@ sysEvent_t idSysLocal::GenerateMouseMoveEvent(int deltax, int deltay)
 	ev.evPtr = NULL;
 	return ev;
 }
+#endif
 
 void idSysLocal::FPU_EnableExceptions(int exceptions)
 {
@@ -244,7 +268,7 @@ const char *Sys_TimeStampToStr(ID_TIME_T timeStamp)
 
 #ifdef _SPLASHDAMAGE
 void sdSysEvent::Save( idFile* file ) {
-	file->WriteInt( type );
+	file->WriteInt( evType );
 	file->WriteInt( evValue );
 	file->WriteInt( evValue2 );
 	file->WriteInt( evPtrLength );
@@ -255,7 +279,7 @@ void sdSysEvent::Save( idFile* file ) {
 }
 
 void sdSysEvent::Restore( idFile* file ) {
-	file->ReadInt( (int&)type );
+	file->ReadInt( (int&)evType );
 	file->ReadInt( evValue );
 	file->ReadInt( evValue2 );
 	file->ReadInt( evPtrLength );
@@ -268,7 +292,7 @@ void sdSysEvent::Restore( idFile* file ) {
 }
 
 sdSysEvent& sdSysEvent::operator=( const sdSysEvent& rhs ) {
-	type = rhs.type;
+	evType = rhs.evType;
 	evValue = rhs.evValue;
 	evValue2 = rhs.evValue2;
 	evPtrLength = rhs.evPtrLength;
@@ -281,4 +305,99 @@ sdSysEvent& sdSysEvent::operator=( const sdSysEvent& rhs ) {
 
 	return *this;
 }
+#endif
+
+#ifdef _SPLASHDAMAGE
+#include "sys/sys_keyboard.h"
+#include "sys/sys_ime.h"
+
+void idSysLocal::GetCPUInfo( cpuInfo_t& info ) {
+}
+
+int idSysLocal::Milliseconds() {
+	return Sys_Milliseconds();
+}
+
+time_t idSysLocal::RealTime( sysTime_t* sysTime ) {
+	return 0;
+}
+
+const char* idSysLocal::TimeToSystemStr( const sysTime_t& sysTime ) {
+	return "";
+}
+
+const char* idSysLocal::TimeAndDateToSystemStr( const sysTime_t& sysTime ) {
+	return "";
+}
+
+time_t idSysLocal::TimeDiff( const sysTime_t& from, const sysTime_t& to ) {
+	return 0;
+}
+
+void idSysLocal::SecondsToTime( const time_t t, sysTime_t& out, bool localTime ) {
+}
+
+const char * idSysLocal::GetCurCallStackStr( int depth ) {
+	return "";
+}
+
+void * idSysLocal::DLL_Load( const char *dllName, bool checkFullPathMatch ) {
+	return (void *)DLL_Load(dllName);
+}
+
+void * idSysLocal::DLL_GetProcAddress( void* dllHandle, const char *procName ) {
+	return (void *)DLL_GetProcAddress((uintptr_t)dllHandle, procName);
+}
+
+void idSysLocal::DLL_Unload( void* dllHandle ) {
+	DLL_Unload((uintptr_t)dllHandle);
+}
+
+void idSysLocal::ProcessOSEvents() {
+}
+
+const sdSysEvent* idSysLocal::GenerateGuiEvent( int value ) {
+	return NULL;
+}
+
+void idSysLocal::FreeEvent( const sdSysEvent* event ) {
+}
+
+idWStr idSysLocal::GetClipboardData( void ) {
+	return StrToWStr(Sys_GetClipboardData());
+}
+
+void idSysLocal::SetClipboardData( const wchar_t *string ) {
+	idStr text = WStrToStr(string);
+	Sys_SetClipboardData(text);
+}
+
+void idSysLocal::SetServerInfo( const char* key, const char* value ) {
+}
+
+void idSysLocal::FlushServerInfo( void ) {
+}
+
+idKeyboard& idSysLocal::Keyboard() {
+	return *globalKeyboard;
+}
+
+sdIME& idSysLocal::IME() {
+	return *globalIME;
+}
+
+void idSysLocal::SetSystemLocale() {
+}
+
+void idSysLocal::SetDefaultLocale() {
+}
+
+const char * idSysLocal::NetAdrToString( const netadr_t& a ) const {
+	return "";
+}
+
+bool idSysLocal::StringToNetAdr( const char *s, netadr_t *a, bool doDNSResolve ) const {
+	return true;
+}
+
 #endif

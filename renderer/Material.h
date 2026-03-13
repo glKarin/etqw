@@ -554,6 +554,7 @@ typedef enum {
     CONTENTS_AREAPORTAL			= BIT(28),	// portal separating renderer areas
     CONTENTS_NOCSG				= BIT(29),	// don't cut this brush with CSG operations in the editor
     CONTENTS_OCCLUDER			= BIT(30),	// occluder brushes for outdoor occlusion
+#define CONTENTS_MONSTERCLIP CONTENTS_MONSTER
 #endif
 	CONTENTS_REMOVE_UTIL		= ~(CONTENTS_AREAPORTAL|CONTENTS_NOCSG)
 } contentsFlags_t;

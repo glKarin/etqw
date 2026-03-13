@@ -53,9 +53,10 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
-#ifdef _SPLASHDAMAGE
 // travel flags
 #define TFL_INVALID							BIT(0)		// invalid
+
+#ifdef _SPLASHDAMAGE
 #define TFL_INVALID_GDF						BIT(1)		// not valid for GDF
 #define TFL_INVALID_STROGG					BIT(2)		// not valid for STROGG
 #define TFL_AIR								BIT(3)		// travel through air
@@ -70,6 +71,11 @@ If you have questions concerning this license or the applicable additional terms
 #define TFL_WATERJUMP						BIT(12)		// jump out of the water
 #define TFL_TELEPORT						BIT(13)		// teleportation
 #define TFL_ELEVATOR						BIT(14)		// travel by elevator
+
+//karin: compat for DOOM3
+#define TFL_CROUCH							BIT(15)		// crouching
+#define TFL_FLY								BIT(16)		// fly
+#define TFL_SPECIAL							BIT(17)		// special
 
 #define TFL_VALID_GDF						( ~( TFL_INVALID | TFL_INVALID_GDF ) )
 #define TFL_VALID_STROGG					( ~( TFL_INVALID | TFL_INVALID_STROGG ) )
@@ -103,6 +109,22 @@ If you have questions concerning this license or the applicable additional terms
 #define AAS_AREA_CONTENTS_TELEPORTER		BIT(12)		// area contains (part of) a teleporter trigger
 #define AAS_AREA_FLOOD_VISITED				BIT(15)		// area visited during a flood routine.  this is a temporary flag that should be removed before the routine exits
 
+//karin: compat for DOOM3
+#define AREA_LEDGE							AAS_AREA_LEDGE
+#define AREA_REACHABLE_WALK					AAS_AREA_REACHABLE_WALK
+#define AREA_FLOOR							BIT(5)		// AI can stand on the floor in this area
+#define AREA_GAP							BIT(6)		// area has a gap
+#define AREA_LADDER							BIT(7)		// area contains one or more ladder faces
+#define AREA_LIQUID							BIT(13)		// area contains a liquid
+#define AREA_CROUCH							BIT(14)		// AI cannot walk but can only crouch in this area
+#define AREA_REACHABLE_FLY					BIT(16)		// area is reachable by flying
+
+#define AREACONTENTS_SOLID					AAS_AREA_CONTENTS_SOLID
+#define AREACONTENTS_WATER					AAS_AREA_CONTENTS_WATER
+#define AREACONTENTS_CLUSTERPORTAL			AAS_AREA_CONTENTS_CLUSTERPORTAL
+#define AREACONTENTS_OBSTACLE 				AAS_AREA_CONTENTS_OBSTACLE
+#define AREACONTENTS_TELEPORTER 			AAS_AREA_CONTENTS_TELEPORTER
+
 // node flags
 #define AAS_NODE_FLAG_NONE					0
 #define AAS_NODE_FLAG_FLOOR_PLANE			BIT(0)		// this node stores a floor plane
@@ -129,7 +151,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #else
 // travel flags
-#define TFL_INVALID					BIT(0)		// not valid
 #define TFL_WALK					BIT(1)		// walking
 #define TFL_CROUCH					BIT(2)		// crouching
 #define TFL_WALKOFFLEDGE			BIT(3)		// walking of a ledge

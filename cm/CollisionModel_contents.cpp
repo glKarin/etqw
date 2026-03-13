@@ -484,7 +484,7 @@ int idCollisionModelManagerLocal::PointContents(const idVec3 p, cmHandle_t model
 	cm_brush_t *b;
 	idPlane *plane;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	node = idCollisionModelManagerLocal::PointNode(p, static_cast<cm_model_t *>(model));
 #else
 	node = idCollisionModelManagerLocal::PointNode(p, idCollisionModelManagerLocal::models[model]);
@@ -587,7 +587,7 @@ int idCollisionModelManagerLocal::ContentsTrm(trace_t *results, const idVec3 &st
 	tw.pointTrace = false;
 	tw.quickExit = false;
 	tw.numContacts = 0;
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	tw.model = static_cast<cm_model_t *>(model);
 #else
 	tw.model = idCollisionModelManagerLocal::models[model];
@@ -719,7 +719,7 @@ int idCollisionModelManagerLocal::Contents(const idVec3 &start,
 {
 	trace_t results;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	if(!model) {
 		common->Printf("idCollisionModelManagerLocal::Contents: invalid model\n");
 		return 0;

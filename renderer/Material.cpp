@@ -278,15 +278,27 @@ static infoParm_t	infoParms[] = {
 	// game relevant attributes
 	{"solid",		0,	0,	CONTENTS_SOLID },		// may need to override a clearSolid
 	{"water",		1,	0,	CONTENTS_WATER },		// used for water
-	{"playerclip",	0,	0,	CONTENTS_PLAYERCLIP },	// solid to players
+{"playerclip",	0,	0,	CONTENTS_PLAYERCLIP },	// solid to players
+#ifdef _SPLASHDAMAGE
+	{"walkerclip",	0,	0,	CONTENTS_WALKERCLIP },
+#else
 	{"monsterclip",	0,	0,	CONTENTS_MONSTERCLIP },	// solid to monsters
+#endif
 	{"moveableclip",0,	0,	CONTENTS_MOVEABLECLIP },// solid to moveable entities
-	{"ikclip",		0,	0,	CONTENTS_IKCLIP },		// solid to IK
+{"ikclip",		0,	0,	CONTENTS_IKCLIP },		// solid to IK
+#ifdef _SPLASHDAMAGE
+	{"slidemover",		0,	0,	CONTENTS_SLIDEMOVER },
+#else
 	{"blood",		0,	0,	CONTENTS_BLOOD },		// used to detect blood decals
-	{"trigger",		0,	0,	CONTENTS_TRIGGER },		// used for triggers
+#endif
+{"trigger",		0,	0,	CONTENTS_TRIGGER },		// used for triggers
+#if !defined(_SPLASHDAMAGE)
 	{"aassolid",	0,	0,	CONTENTS_AAS_SOLID },	// solid for AAS
+#endif
 	{"aasobstacle",	0,	0,	CONTENTS_AAS_OBSTACLE },// used to compile an obstacle into AAS that can be enabled/disabled
+#if !defined(_SPLASHDAMAGE)
 	{"flashlight_trigger",	0,	0,	CONTENTS_FLASHLIGHT_TRIGGER }, // used for triggers that are activated by the flashlight
+#endif
 	{"nonsolid",	1,	0,	0 },					// clears the solid flag
 	{"nullNormal",	0,	SURF_NULLNORMAL,0 },		// renderbump will draw as 0x80 0x80 0x80
 
@@ -348,6 +360,20 @@ static infoParm_t	infoParms[] = {
 	{"notacticalfeatures",	0,	0,	CONTENTS_NOTACTICALFEATURES },
 	{"bounce",	0,	SURF_BOUNCE,	0 },
 	{"sightClip",	0,	0,	CONTENTS_SIGHTCLIP },
+#endif
+
+#ifdef _SPLASHDAMAGE //k: quake 4 material flags
+	{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
+	{"explosionsolid",	0,	0,	CONTENTS_EXPLOSIONSOLID },
+	{"monster",	0,	0,	CONTENTS_MONSTER },
+	{"forcefield",	0,	0,	CONTENTS_FORCEFIELD },
+	{"shadowcollision",	0,	0,	CONTENTS_SHADOWCOLLISION },
+	{"crosshairsolid",	0,	0,	CONTENTS_CROSSHAIRSOLID },
+	{"flyerhiveclip",	0,	0,	CONTENTS_FLYERHIVECLIP },
+	{"aassolidplayer",	0,	0,	CONTENTS_AAS_SOLID_PLAYER },
+	{"aassolidvehicle",	0,	0,	CONTENTS_AAS_SOLID_VEHICLE },
+	{"aasclusterportal",	0,	0,	CONTENTS_AAS_CLUSTER_PORTAL },
+	{"occluder",	0,	0,	CONTENTS_OCCLUDER },
 #endif
 };
 

@@ -319,15 +319,15 @@ void idNetworkSystem::ServerKickClient( int clientNum, const char* reason, bool 
 }
 
 int idNetworkSystem::AllocateClientSlotForBot( int maxPlayersOnServer ) {
-
+	return 0;
 }
 
 int idNetworkSystem::ServerSetBotUserCommand( int clientNum, int frameNum, const usercmd_t& cmd ) {
-
+	return 0;
 }
 
 int idNetworkSystem::ServerSetBotUserName( int clientNum, const char* playerName ) {
-
+	return 0;
 }
 
 void idNetworkSystem::WriteClientUserCmds( int clientNum, idBitMsg& msg ) {
@@ -345,14 +345,16 @@ bool idNetworkSystem::IsDedicated( void ) {
 }
 
 bool idNetworkSystem::IsLANServer( void ) {
+	return true;
 }
 
 bool idNetworkSystem::IsActive( void ) {
-	return idNetworkSystem::server.IsActive() || idNetworkSystem::client.IsActive();
+	return idAsyncNetwork::server.IsActive() || idAsyncNetwork::client.IsActive();
 }
 
 
 netadr_t idNetworkSystem::ClientGetServerAddress( void ) const {
+	return netadr_t();
 }
 
 void idNetworkSystem::idNetworkSystem::EnableVoip( voiceMode_t mode ) {
@@ -361,18 +363,17 @@ void idNetworkSystem::idNetworkSystem::EnableVoip( voiceMode_t mode ) {
 void idNetworkSystem::idNetworkSystem::DisableVoip( void ) {
 }
 
-
 int idNetworkSystem::GetLastVoiceSentTime( void ) {
+	return 0;
 }
 
 int idNetworkSystem::GetLastVoiceReceivedTime( int clientIndex ) {
+	return 0;
 }
-
 
 int idNetworkSystem::ClientGetFrameTime( void ) {
+	return 0;
 }
-
-
 
 int idNetworkSystem::GetDemoState( int& time, int& position, int& length, int& startPosition, int& endPosition, int &cutStartMarker, int &cutEndMarker ) {
 	enum { // in demos/DemoManager.h
@@ -388,20 +389,18 @@ const char* idNetworkSystem::GetDemoName( void ) {
 	return "";
 }
 
-
 bool idNetworkSystem::idNetworkSystem::CanPlayDemo( const char* fileName ) {
 	return false;
 }
 
-
 const idDict& idNetworkSystem::GetUserInfo( int clientNum ) {
+	static idDict dict;
+	return dict;
 }
-
 
 bool idNetworkSystem::idNetworkSystem::IsRankedServer( void ) {
 	return false;
 }
-
 
 void idNetworkSystem::idNetworkSystem::StartSoundTest( int duration ) {
 }
@@ -418,17 +417,16 @@ float idNetworkSystem::idNetworkSystem::GetSoundTestProgress( void ) {
 	return 1.0f;
 }
 
-
 voiceMode_t idNetworkSystem::GetVoiceMode( void ) {
+	return VO_GLOBAL;
 }
-
 
 void idNetworkSystem::idNetworkSystem::RegisterServerInterest( const netadr_t& address ) {
 }
 
 #if !defined( SD_PUBLIC_TOOLS )
 bool idNetworkSystem::idNetworkSystem::HTTPEnable( bool enable ) {
-
+	return false;
 }
 #endif // !SD_PUBLIC_TOOLS
 

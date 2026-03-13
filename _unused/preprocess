@@ -14,6 +14,9 @@
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #endif
 
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
+#endif
+
 #ifdef _ETQW
 #endif
 

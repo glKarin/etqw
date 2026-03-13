@@ -419,7 +419,7 @@ void idCollisionModelManagerLocal::DrawModel(cmHandle_t handle, const idVec3 &mo
 	cm_model_t *model;
 	idVec3 viewPos;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	if(!handle)
 #else
 	if (handle < 0 && handle >= numModels)
@@ -433,7 +433,7 @@ void idCollisionModelManagerLocal::DrawModel(cmHandle_t handle, const idVec3 &mo
 		cm_drawColor.ClearModified();
 	}
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	model = static_cast<cm_model_t *>(handle);
 #else
 	model = models[ handle ];
@@ -542,7 +542,7 @@ void idCollisionModelManagerLocal::DebugOutput(const idVec3 &origin)
 	timer.Start();
 
 	for (i = 0; i < cm_testTimes.GetInteger(); i++) {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		int index = cm_testModel.GetInteger();
 		if (index >= 0 && index <= MAX_SUBMODELS && index <= maxModels && models[index])
 		Translation(&trace, start, testend[i], &itm, boxAxis, CONTENTS_SOLID|CONTENTS_PLAYERCLIP, models[index], vec3_origin, modelAxis);
@@ -598,7 +598,7 @@ void idCollisionModelManagerLocal::DebugOutput(const idVec3 &origin)
 
 		for (i = 0; i < cm_testTimes.GetInteger(); i++) {
 			rotation.SetOrigin(testend[i]);
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 			int index = cm_testModel.GetInteger();
 			if (index >= 0 && index <= MAX_SUBMODELS && index <= maxModels && models[index])
 				Rotation(&trace, start, rotation, &itm, boxAxis, CONTENTS_SOLID|CONTENTS_PLAYERCLIP, models[index], vec3_origin, modelAxis);

@@ -322,13 +322,18 @@ const wchar_t* idLangDict::GetString( const char *str ) const
     idLib::common->Warning( "Unknown String ID '%s'", str );
     return va( L"###Bad String %hs###", str );
 }
-#else
+#endif
+
 /*
 ============
 idLangDict::GetString
 ============
 */
+#ifdef _SPLASHDAMAGE
+const char *idLangDict::GetStringMb(const char *str) const
+#else
 const char *idLangDict::GetString(const char *str) const
+#endif
 {
 
 	if (str == NULL || str[0] == '\0') {
@@ -379,7 +384,11 @@ const char *idLangDict::GetString(const char *str) const
 
 	for (int i = hash.First(hashKey); i != -1; i = hash.Next(i)) {
 		if (args[i].key.Cmp(str) == 0) {
+#ifdef _SPLASHDAMAGE
+			return (const char *)args[i].value.c_str();
+#else
 			return args[i].value;
+#endif
 		}
 	}
 
@@ -403,7 +412,13 @@ const char *idLangDict::AddString(const char *str)
 	int c = args.Num();
 
 	for (int j = 0; j < c; j++) {
-		if (idStr::Cmp(args[j].value, str) == 0) {
+#ifdef _SPLASHDAMAGE
+		idStr tmp = WStrToStr(args[j].value);
+		if (idStr::Cmp(tmp, str) == 0)
+#else
+		if (idStr::Cmp(args[j].value, str) == 0)
+#endif
+		{
 			return args[j].key;
 		}
 	}
@@ -418,18 +433,21 @@ const char *idLangDict::AddString(const char *str)
 	kv.key = va("#str_%08i", id);
 	// kv.key = va( "#str_%05i", id );
 #endif
+#ifdef _SPLASHDAMAGE
+	kv.value = StrToWStr(str);
+#else
 	kv.value = str;
 #ifdef _WCHAR_LANG
     bool isUtf8 = idStr::IsValidUTF8(str, (int)strlen(str));
     if(isUtf8)
         kv.value.ConvertToUTF8();
 #endif
+#endif
 	c = args.Append(kv);
 	assert(kv.key.Cmpn(STRTABLE_ID, STRTABLE_ID_LENGTH) == 0);
 	hash.Add(GetHashKey(kv.key), c);
 	return args[c].key;
 }
-#endif
 
 /*
 ============
@@ -456,25 +474,32 @@ const idLangKeyValue *idLangDict::GetKeyVal(int i) const
 idLangDict::AddKeyVal
 ============
 */
-#ifdef _SPLASHDAMAGE
-void idLangDict::AddKeyVal( const char *key, const wchar_t *val )
-#else
-void idLangDict::AddKeyVal(const char *key, const char *val)
-#endif
-{
+void idLangDict::AddKeyVal(const char *key, const char *val) {
 	idLangKeyValue kv;
 	kv.key = key;
+#ifdef _SPLASHDAMAGE
+	kv.value = StrToWStr(val);
+#else
 	kv.value = val;
-#if !defined(_SPLASHDAMAGE)
 #ifdef _WCHAR_LANG
-    bool isUtf8 = idStr::IsValidUTF8(val, (int)strlen(val));
-    if(isUtf8)
-        kv.value.ConvertToUTF8();
+	bool isUtf8 = idStr::IsValidUTF8(val, (int)strlen(val));
+	if(isUtf8)
+		kv.value.ConvertToUTF8();
 #endif
 #endif
 	assert(kv.key.Cmpn(STRTABLE_ID, STRTABLE_ID_LENGTH) == 0);
 	hash.Add(GetHashKey(kv.key), args.Append(kv));
 }
+
+#ifdef _SPLASHDAMAGE
+void idLangDict::AddKeyVal( const char *key, const wchar_t *val ) {
+	idLangKeyValue kv;
+	kv.key = key;
+	kv.value = val;
+	assert(kv.key.Cmpn(STRTABLE_ID, STRTABLE_ID_LENGTH) == 0);
+	hash.Add(GetHashKey(kv.key), args.Append(kv));
+}
+#endif
 
 /*
 ============

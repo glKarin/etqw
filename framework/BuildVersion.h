@@ -34,6 +34,7 @@ const int BUILD_NUMBER = 116;
 #elif defined(_SPLASHDAMAGE)
 extern int ENGINE_SRC_REVISION;
 extern int ENGINE_MEDIA_REVISION;
+#define BUILD_NUMBER ENGINE_SRC_REVISION
 #else
 const int BUILD_NUMBER = 1304;
 #endif

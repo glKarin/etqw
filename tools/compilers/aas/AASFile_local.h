@@ -66,7 +66,11 @@ class idAASFileLocal : public idAASFile
 		bool						Load(const idStr &fileName, unsigned int mapFileCRC);
 		bool						Write(const idStr &fileName, unsigned int mapFileCRC);
 
+#ifdef _SPLASHDAMAGE
+		size_t						MemorySize(void) const;
+#else
 		int							MemorySize(void) const;
+#endif
 		void						ReportRoutingEfficiency(void) const;
 		void						Optimize(void);
 		void						LinkReversedReachability(void);
@@ -88,19 +92,25 @@ class idAASFileLocal : public idAASFile
 		bool						ParsePortals(idLexer &src);
 		bool						ParseClusters(idLexer &src);
 #ifdef _RAVEN
-	virtual void					ClearTactical(void) { }
+		virtual void					ClearTactical(void) { }
 
-	virtual	int						GetNumFeatureIndexes(void) const { return featureIndexes.Num(); }
-	virtual	aasIndex_t& GetFeatureIndex(int index) { return featureIndexes[index]; }
-	virtual int						AppendFeatureIndex(aasIndex_t& featureIdx) { return featureIndexes.Append(featureIdx); }
+		virtual	int						GetNumFeatureIndexes(void) const { return featureIndexes.Num(); }
+		virtual	aasIndex_t& GetFeatureIndex(int index) { return featureIndexes[index]; }
+		virtual int						AppendFeatureIndex(aasIndex_t& featureIdx) { return featureIndexes.Append(featureIdx); }
 
-	virtual	int						GetNumFeatures(void) const { return features.Num(); }
-	virtual	aasFeature_t& GetFeature(int index) { return features[index]; }
-	virtual int						AppendFeature(aasFeature_t& cluster) { return features.Append(cluster); }
-	virtual bool					IsDummyFile( unsigned int mapFileCRC ) { (void)mapFileCRC; return false; }
-	virtual size_t					GetMemorySize( void ) {
-		return MemorySize();
-	}
+		virtual	int						GetNumFeatures(void) const { return features.Num(); }
+		virtual	aasFeature_t& GetFeature(int index) { return features[index]; }
+		virtual int						AppendFeature(aasFeature_t& cluster) { return features.Append(cluster); }
+		virtual bool					IsDummyFile( unsigned int mapFileCRC ) { (void)mapFileCRC; return false; }
+		virtual size_t					GetMemorySize( void ) {
+			return MemorySize();
+		}
+#endif
+#ifdef _SPLASHDAMAGE
+		virtual int					FindReachabilityByName( const char *name ) const;
+		virtual bool				PushPointIntoArea( int areaNum, idVec3 &point ) const;
+		virtual bool				TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const;
+		virtual bool				TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const;
 #endif
 
 	private:

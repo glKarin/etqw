@@ -315,6 +315,9 @@ class idCommon
 
 		virtual idSoundWorld*		GetGameSoundWorld( void ) = 0;
 		virtual idSoundWorld*		GetMenuSoundWorld( void ) = 0;
+
+		//karin: compat for DOOM3
+		virtual void				PrintLoadingMessage( const wchar_t *msg ) = 0;
 #endif
 };
 

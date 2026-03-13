@@ -780,3 +780,61 @@ void AssertFailed(const char *file, int line, const char *expression)
 	abort();
 #endif
 }
+
+#ifdef _SPLASHDAMAGE
+idStr WStrToStr( const wchar_t *wstr ) {
+	if (!wstr || !wstr[0]) {
+		return idStr();
+	}
+
+#ifdef _WIN32
+	int len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
+	char* mbuf = (char*)malloc(len);
+	memset(mbuf, 0, len);
+	WideCharToMultiByte(CP_UTF8, 0, wstr, -1, mbuf, len, NULL, NULL);
+	idStr ret = mbuf;
+	free(mbuf);
+	return ret;
+#else
+	size_t len = wcstombs(NULL, wstr, 0);
+	char *mbuf = malloc(len + 1);
+	memset(mbuf, 0, len + 1);
+	wcstombs(mb_buf, wc_str, len + 1);
+	idStr ret = mbuf;
+	free(mbuf);
+	return ret;
+#endif
+}
+
+idWStr StrToWStr( const char *mstr ) {
+	if (!mstr || !mstr[0]) {
+		return idWStr();
+	}
+
+#ifdef _WIN32
+	int len = MultiByteToWideChar(CP_UTF8, 0, mstr, -1, NULL, 0);
+	wchar_t* wbuf = (wchar_t*)malloc(len * sizeof(wchar_t));
+	memset(wbuf, 0, len * sizeof(wchar_t));
+	MultiByteToWideChar(CP_UTF8, 0, mstr, -1, wbuf, len);
+	idWStr ret = wbuf;
+	free(wbuf);
+	return ret;
+#else
+	size_t len = mbstowcs(NULL, mstr, 0);  // 先算长度
+	wchar_t *wbuf = malloc((len + 1) * sizeof(wchar_t));
+	memset(wbuf, 0, (len + 1) * sizeof(wchar_t));
+	mbstowcs(wbuf, mstr, len + 1);
+	idWStr ret = wbuf;
+	free(wbuf);
+	return ret;
+#endif
+}
+
+idStr WStrToStr( const idWStr &wstr ) {
+	return WStrToStr(wstr.c_str());
+}
+
+idWStr StrToWStr( const idStr &str ) {
+	return StrToWStr(str.c_str());
+}
+#endif

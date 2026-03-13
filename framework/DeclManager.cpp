@@ -29,13 +29,15 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#ifdef _RAVEN // quake4 guide
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 guide
 #ifdef _RAVEN_BSE
 #include "../raven/bse/BSE.h"
 #else
 #include "../raven/fx/BSE.h"
 #endif
+#endif
 
+#ifdef _RAVEN
 // jmarshall: Quake 4 Guide(template) support
 struct rvGuideTemplate
 {
@@ -82,6 +84,7 @@ missing reload over a previously explicit definition
 #define USE_COMPRESSED_DECLS
 //#define GET_HUFFMAN_FREQUENCIES
 
+#if !defined(_SPLASHDAMAGE)
 class idDeclType
 {
 	public:
@@ -89,6 +92,7 @@ class idDeclType
 		declType_t					type;
 		idDecl *(*allocator)(void);
 };
+#endif
 
 class idDeclFolder
 {
@@ -127,6 +131,13 @@ class idDeclLocal : public idDeclBase
 		virtual bool				SourceFileChanged(void) const;
 		virtual void				MakeDefault(void);
 		virtual bool				EverReferenced(void) const;
+#ifdef _SPLASHDAMAGE
+		virtual void			SetBinarySource( const byte* source, int length );
+		virtual void			GetBinarySource( byte*& source, int& length ) const;
+		virtual void			FreeSourceBuffer( byte* buffer ) const;
+		virtual bool			HasBinaryBuffer() const;
+    	virtual const idStrList*	GetFileLevelIncludeDependencies() const;
+#endif
 
 	protected:
 		virtual bool				SetDefaultText(void);
@@ -310,6 +321,37 @@ class idDeclManagerLocal : public idDeclManager
             return inLevelLoad;
         }
 #endif
+#ifdef _SPLASHDAMAGE
+		// Returns the system token cache
+		virtual idTokenCache&	GetGlobalTokenCache();
+
+		// Registers a new decl type.
+		virtual void			RegisterDeclType( idDeclTypeInterface* type );
+		virtual void			UnregisterDeclType( idDeclTypeInterface* type );
+
+		// Registers a new folder with decl files.
+		virtual void			RegisterDeclFolder( const char *folder, const char *extension );
+
+		//Unregister a previously-registered folder
+		virtual void			UnregisterDeclFolder( const char *folder, const char *extension );
+
+		// Called when finished registering decl folders
+		// attempts to find binary decls without a source text file and load them properly
+		virtual void			FinishedRegistering();
+		virtual void			ListType( const idCmdArgs &args, const char* typeName );
+		virtual void			PrintType( const idCmdArgs &args, const char* typeName );
+		virtual int						GetNumMaterials( void );
+		virtual void					CacheFromDict( const idDict& dict );
+		virtual	const rvDeclEffect *	FindEffect( const char *name, bool makeDefault = true );
+		virtual idDeclTypeInterface*	GetDeclType( const char* typeName ) const;
+		virtual idDeclTypeInterface*	GetDeclType( qhandle_t typeHandle ) const;
+		virtual qhandle_t				GetDeclTypeHandle( const char* typeName ) const;
+		virtual const char*				GetDeclTypeName( qhandle_t typeHandle ) const;
+
+		virtual void					AddDependency( const idDecl* decl, const idDecl* dependency );
+		virtual void					AddDependency( const idDecl* decl, const char* fileName );
+		virtual void					AddDependencies( const idDecl* decl, const idParser& parser );
+#endif
 
 		virtual const idMaterial 		*MaterialByIndex(int index, bool forceParse = true);
 		virtual const idDeclSkin 		*SkinByIndex(int index, bool forceParse = true);
@@ -322,9 +364,11 @@ public:
 		static void					MakeNameCanonical(const char *name, char *result, int maxLength);
 		idDeclLocal 				*FindTypeWithoutParsing(declType_t type, const char *name, bool makeDefault = true);
 
+#if !defined(_SPLASHDAMAGE)
 		idDeclType 				*GetDeclType(int type) const {
 			return declTypes[type];
 		}
+#endif
 		const idDeclFile 			*GetImplicitDeclFile(void) const {
 			return &implicitDecls;
 		}
@@ -838,7 +882,11 @@ int idDeclFile::LoadAndParse()
 		numTypes = declManagerLocal.GetNumDeclTypes();
 
 		for (i = 0; i < numTypes; i++) {
+#ifdef _SPLASHDAMAGE
+			idDeclTypeInterface *typeInfo = declManagerLocal.GetDeclType(i);
+#else
 			idDeclType *typeInfo = declManagerLocal.GetDeclType(i);
+#endif
 
 			if (typeInfo && typeInfo->typeName.Icmp(token) == 0) {
 				identifiedType = (declType_t) typeInfo->type;
@@ -2606,8 +2654,12 @@ const idDecl * idDeclManagerLocal::AddDeclDef(const char *defname, declType_t ty
     const idDeclType *typeInfoFound = NULL;
 
     int numTypes = declManagerLocal.GetNumDeclTypes();
-    for (int i = 0; i < numTypes; i++) {
+	for (int i = 0; i < numTypes; i++) {
+#ifdef _SPLASHDAMAGE
+        idDeclType *typeInfo = static_cast<idDeclType *>(declManagerLocal.GetDeclType(i));
+#else
         idDeclType *typeInfo = declManagerLocal.GetDeclType(i);
+#endif
 
         if (typeInfo && typeInfo->type == type) {
             typeInfoFound = typeInfo;
@@ -3133,4 +3185,184 @@ const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse 
 {
 	return static_cast<const hhDeclBeam*>(DeclByIndex(DECL_BEAM, index, forceParse));
 }
+#endif
+
+#ifdef _SPLASHDAMAGE
+void idDeclLocal::SetBinarySource( const byte* source, int length ) {
+
+}
+
+void idDeclLocal::GetBinarySource( byte*& source, int& length ) const {
+
+}
+
+void idDeclLocal::FreeSourceBuffer( byte* buffer ) const {
+
+}
+
+bool idDeclLocal::HasBinaryBuffer() const {
+	return false;
+}
+
+const idStrList* idDeclLocal::GetFileLevelIncludeDependencies() const {
+	return NULL;
+}
+#endif
+
+#ifdef _SPLASHDAMAGE
+idDeclType::idDeclType( void )
+	: declTypeHandle(-1)
+{
+	allocator = NULL;
+}
+
+void idDeclType::OnRegister( qhandle_t handle ) {
+}
+
+idDecl* idDeclType::Create( const char *name, const char *fileName ) const {
+	return NULL;
+}
+
+const idDecl* idDeclType::FindByIndex( int index, bool forceParse ) const {
+	return NULL;
+}
+
+const idDecl* idDeclType::Find( const char* name, bool makeDefault ) const {
+	return NULL;
+}
+
+int idDeclType::Num( void ) const {
+	return 0;
+}
+
+bool idDeclType::SkipChecksum( void ) const {
+	return true;
+}
+
+bool idDeclType::AllowTemplateEvaluation( void ) const {
+	return false;
+}
+
+bool idDeclType::SkipParsing( void ) const {
+	return false;
+}
+
+bool idDeclType::NotPrecached( void ) const {
+	return false;
+}
+
+bool idDeclType::AlwaysGenerateBinary( void ) const {
+	return false;
+}
+
+bool idDeclType::UsePrivateTokens( void ) const {
+	return false;
+}
+
+bool idDeclType::WriteBinary( void ) const {
+	return false;
+}
+
+bool idDeclType::NeverStoreBinary( void ) const {
+	return true;
+}
+
+idDecl* idDeclType::Alloc( void ) {
+	return NULL;
+}
+
+void idDeclType::OnReload( idDecl* decl ) const {
+}
+
+const char* idDeclType::GetName( void ) const {
+	return typeName;
+}
+
+void idDeclType::CacheFromDict( const idDict& dict ) const {
+}
+
+bool idDeclType::CanCacheFromDict() const {
+	return false;
+}
+
+void idDeclType::PostParse( idDecl* decl ) const {
+}
+
+void idDeclType::RegisterPostParse( pfnOnPostParse postParse ) const {
+}
+
+void idDeclType::UnregisterPostParse( pfnOnPostParse postParse ) const {
+}
+
+#endif
+
+#ifdef _SPLASHDAMAGE
+// Returns the system token cache
+idTokenCache& idDeclManagerLocal::GetGlobalTokenCache() {
+	static idTokenCache cache;
+	return cache;
+}
+
+void idDeclManagerLocal::RegisterDeclType( idDeclTypeInterface* type ) {
+}
+
+void idDeclManagerLocal::UnregisterDeclType( idDeclTypeInterface* type ) {
+}
+
+void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *extension ) {
+}
+
+void idDeclManagerLocal::UnregisterDeclFolder( const char *folder, const char *extension ) {
+}
+
+void idDeclManagerLocal::FinishedRegistering() {
+}
+
+void idDeclManagerLocal::ListType( const idCmdArgs &args, const char* typeName ) {
+}
+
+void idDeclManagerLocal::PrintType( const idCmdArgs &args, const char* typeName ) {
+}
+
+int idDeclManagerLocal::GetNumMaterials( void ) {
+	return 0;
+}
+
+void idDeclManagerLocal::CacheFromDict( const idDict& dict ) {
+}
+
+const rvDeclEffect * idDeclManagerLocal::FindEffect( const char *name, bool makeDefault ) {
+	return static_cast<const rvDeclEffect*>(FindType(DECLTYPE_EFFECT, name, makeDefault));
+}
+
+idDeclTypeInterface* idDeclManagerLocal::GetDeclType( const char* typeName ) const {
+	for (int i = 0; i < declTypes.Num(); ++i) {
+		idDeclTypeInterface *declType = declTypes[i];
+		if (!idStr::Cmp(declType->GetName(), typeName))
+			return declType;
+	}
+	return NULL;
+}
+
+idDeclTypeInterface* idDeclManagerLocal::GetDeclType( qhandle_t typeHandle ) const {
+	return declTypes[typeHandle];
+}
+
+qhandle_t idDeclManagerLocal::GetDeclTypeHandle( const char* typeName ) const {
+	return -1;
+}
+
+const char* idDeclManagerLocal::GetDeclTypeName( qhandle_t typeHandle ) const {
+	return "";
+}
+
+void idDeclManagerLocal::AddDependency( const idDecl* decl, const idDecl* dependency ) {
+}
+
+void idDeclManagerLocal::AddDependency( const idDecl* decl, const char* fileName ) {
+}
+
+void idDeclManagerLocal::AddDependencies( const idDecl* decl, const idParser& parser ) {
+}
+
 #endif

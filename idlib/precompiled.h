@@ -253,14 +253,6 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #ifdef _RAVEN // raven_engine.h
 #include "../raven/idlib/TextCompiler.h"
 #include "../raven/idlib/math/Radians.h"
-// RAVEN BEGIN
-// jscott: Effects system interface
-#ifdef _RAVEN_BSE
-#include "../raven/bse/BSEInterface.h"
-#else
-#include "../raven/fx/BSEInterface.h"
-#endif
-// RAVEN END
 
 #include "../raven/framework/DeclPlayerModel.h"
 // RAVEN BEGIN
@@ -272,6 +264,17 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 // Sanity check for any axis in bounds
 const float MAX_BOUND_SIZE = 65536.0f;
+#endif
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+// RAVEN BEGIN
+// jscott: Effects system interface
+#ifdef _RAVEN_BSE
+#include "../raven/bse/BSEInterface.h"
+#else
+#include "../raven/fx/BSEInterface.h"
+#endif
+// RAVEN END
 #endif
 
 // game

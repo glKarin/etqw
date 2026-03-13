@@ -1518,9 +1518,17 @@ bool idAASFileLocal::Load(const idStr &fileName, unsigned int mapFileCRC)
 idAASFileLocal::MemorySize
 ================
 */
+#ifdef _SPLASHDAMAGE
+size_t idAASFileLocal::MemorySize(void) const
+#else
 int idAASFileLocal::MemorySize(void) const
+#endif
 {
+#ifdef _SPLASHDAMAGE
+	size_t size;
+#else
 	int size;
+#endif
 
 	size = planeList.Size();
 	size += vertices.Size();
@@ -1644,3 +1652,22 @@ void idAASFileLocal::DeleteClusters(void)
 	memset(&cluster, 0, sizeof(cluster));
 	clusters.Append(cluster);
 }
+
+#ifdef _SPLASHDAMAGE
+int idAASFileLocal::FindReachabilityByName( const char *name ) const {
+	return -1;
+}
+
+bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
+	return false;
+}
+
+bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const {
+	return false;
+}
+
+bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const {
+	return false;
+}
+
+#endif
