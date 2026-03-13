@@ -124,7 +124,11 @@ class idToken : public idStr
     	unsigned short	GetBinaryIndex( void ) const;			// token index in a binary stream
 	    void			SetIntValue( unsigned /* 64long */int intvalue );
 	    void			SetFloatValue( double floatvalue );
+
+		//karin: compat for DOOM3
+		void			operator=(const wchar_t *text);
 #endif
+
 	private:
 		unsigned/* 64long */ int	intvalue;							// integer value
 		double			floatvalue;							// floating point value
@@ -249,6 +253,10 @@ ID_INLINE void idToken::SetFloatValue( double floatvalue )
 ID_INLINE unsigned short idToken::GetBinaryIndex( void ) const
 {
     return binaryIndex;
+}
+
+ID_INLINE void idToken::operator=(const wchar_t *text) {
+	*static_cast<idStr *>(this) = text;
 }
 #endif
 

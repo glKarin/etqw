@@ -3293,11 +3293,13 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.renderSystem				= ::renderSystem;
 	gameImport.soundSystem				= ::soundSystem;
 	gameImport.renderModelManager		= ::renderModelManager;
+#if !defined(_SPLASHDAMAGE)
 	gameImport.uiManager				= ::uiManager;
+#endif
 	gameImport.declManager				= ::declManager;
 	gameImport.AASFileManager			= ::AASFileManager;
 	gameImport.collisionModelManager	= ::collisionModelManager;
-#ifdef _RAVEN // bse
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // bse
 	gameImport.bse						= ::bse;
 #endif
 

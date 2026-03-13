@@ -153,6 +153,10 @@ class idUserInterface
         virtual void				CallStartup() = 0;
         // HUMANHEAD END
 #endif
+
+#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+		virtual void				SetStateString(const char *varName, const wchar_t *value) = 0;
+#endif
 };
 
 

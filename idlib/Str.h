@@ -496,6 +496,13 @@ class idStr
         static int          	JointUnique(idStr &ret, const idList<idStr> &list, const char *ch = ",");
 		static void 			StripWhitespace(idStr &str);
 
+#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+		void				operator=(const wchar_t *text);
+
+		static void			Append( char *dest, int size, const wchar_t *src );
+		static void			Copynz( char *dest, const wchar_t *src, int destsize );
+#endif
+
 	protected:
 		int					len;
 		char 				*data;
@@ -1553,6 +1560,20 @@ ID_INLINE idStr &idStr::RemoveEscapes ( int escapes ) {
 	return *this;
 }
 // RAVEN END
+#endif
+
+#ifdef _SPLASHDAMAGE
+ID_INLINE void idStr::Append( char *dest, int size, const wchar_t *src ) {
+	idStr tmp;
+	tmp = src;
+	Append(dest, size, tmp.c_str());
+}
+
+ID_INLINE void idStr::Copynz( char *dest, const wchar_t *src, int destsize ) {
+	idStr tmp;
+	tmp = src;
+	Copynz(dest, tmp.c_str(), destsize);
+}
 #endif
 
 #endif /* !__STR_H__ */

@@ -313,10 +313,13 @@ void idAsyncServer::ExecuteMapChange(void)
 	GetBestGameType(cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"), bestGameType);
 #elif defined(_HUMANHEAD)
 	game->GetBestGameType(cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"));
+#elif defined(_SPLASHDAMAGE)
 #else
 	game->GetBestGameType(cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"), bestGameType);
 #endif
+#if !defined(_SPLASHDAMAGE)
 	cvarSystem->SetCVarString("si_gametype", bestGameType);
+#endif
 
 	// initialize map settings
 	cmdSystem->BufferCommandText(CMD_EXEC_NOW, "rescanSI");

@@ -351,7 +351,11 @@ static void Session_PromptKey_f(const idCmdArgs &args)
 		}
 
 		// the auth server may have replied and set an error message, otherwise use a default
+#ifdef _SPLASHDAMAGE
+		idStr prompt_msg = sessLocal.GetAuthMsg();
+#else
 		const char *prompt_msg = sessLocal.GetAuthMsg();
+#endif
 
 		if (prompt_msg[ 0 ] == '\0') {
 			prompt_msg = common->GetLanguageDict()->GetString("#str_04308");
@@ -1453,8 +1457,15 @@ void idSessionLocal::StartNewGame(const char *mapName, bool devmap)
 idSessionLocal::GetAutoSaveName
 ===============
 */
+#ifdef _SPLASHDAMAGE
+idStr idSessionLocal::GetAutoSaveName(const char *_mapName) const
+#else
 idStr idSessionLocal::GetAutoSaveName(const char *mapName) const
+#endif
 {
+#ifdef _SPLASHDAMAGE
+	idStr mapName = _mapName;
+#endif
 #ifdef _RAVEN //k: quake4 map entity filter
 	const char *entityFilter = cvarSystem->GetCVarString("si_entityFilter");
 	idStr showMapName(mapName);
@@ -1478,7 +1489,11 @@ idStr idSessionLocal::GetAutoSaveName(const char *mapName) const
 	}
 
 	// Fixme: Localization
+#ifdef _SPLASHDAMAGE
+	return va("^3AutoSave:^0 %s", mapName.c_str());
+#else
 	return va("^3AutoSave:^0 %s", mapName);
+#endif
 }
 
 /*
@@ -1747,7 +1762,7 @@ void idSessionLocal::LoadLoadingGui(const char *mapName)
 	char guiMap[ MAX_STRING_CHARS ];
     idStr::Copynz(guiMap, va("guis/map/%s.gui", stripped.c_str()), MAX_STRING_CHARS);
 	// give the gamecode a chance to override
-#if !defined(_RAVEN) && !defined(_HUMANHEAD) // k: quake4 and prey loading gui is generic
+#if !defined(_RAVEN) && !defined(_HUMANHEAD) && !defined(_SPLASHDAMAGE) // k: quake4 and prey loading gui is generic
 	game->GetMapLoadingGUI(guiMap);
 #endif
 
@@ -2039,18 +2054,22 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 
 	// set the user info
 	for (i = 0; i < numClients; i++) {
+#if !defined(_SPLASHDAMAGE)
 #ifdef _RAVEN
 		game->SetUserInfo( i, mapSpawnData.userInfo[i], false );
 #else
 		game->SetUserInfo(i, mapSpawnData.userInfo[i], idAsyncNetwork::client.IsActive(), false);
 #endif
 		game->SetPersistentPlayerInfo(i, mapSpawnData.persistentPlayerInfo[i]);
+#endif
 	}
 
 	// load and spawn all other entities ( from a savegame possibly )
 	if (loadingSaveGame && savegameFile) {
 #ifdef _RAVEN
 		if (game->InitFromSaveGame(fullMapName + ".map", rw, savegameFile) == false)
+#elif defined(_SPLASHDAMAGE)
+		if (true)
 #else
 		if (game->InitFromSaveGame(fullMapName + ".map", rw, sw, savegameFile) == false)
 #endif
@@ -2063,6 +2082,8 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 			game->SetServerInfo(mapSpawnData.serverInfo);
 #ifdef _RAVEN
 			game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
+#elif defined(_SPLASHDAMAGE)
+			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), Sys_Milliseconds(), false);
 #else
 			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
@@ -2071,6 +2092,8 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->SetServerInfo(mapSpawnData.serverInfo);
 #ifdef _RAVEN
 		game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
+#elif defined(_SPLASHDAMAGE)
+		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), Sys_Milliseconds(), false);
 #else
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
@@ -2079,7 +2102,11 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
 		// spawn players
 		for (i = 0; i < numClients; i++) {
+#ifdef _SPLASHDAMAGE
+			game->SpawnPlayer(i, false);
+#else
 			game->SpawnPlayer(i);
+#endif
 		}
 	}
 
@@ -2098,6 +2125,8 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		for (i = 0; i < 10; i++) {
 #ifdef _RAVEN
 			game->RunFrame(mapSpawnData.mapSpawnUsercmd, 0, false, 1); // serverGameFrame isn't used
+#elif defined(_SPLASHDAMAGE)
+			game->RunFrame(mapSpawnData.mapSpawnUsercmd, 0);
 #else
 			game->RunFrame(mapSpawnData.mapSpawnUsercmd);
 #endif
@@ -2187,7 +2216,11 @@ void LoadGame_f(const idCmdArgs &args)
 	console->Close();
 
 	if (args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick") == 0) {
+#ifdef _SPLASHDAMAGE
+		idStr saveName = WStrToStr(common->GetLanguageDict()->GetString("#str_07178"));
+#else
 		idStr saveName = common->GetLanguageDict()->GetString("#str_07178");
+#endif
 		sessLocal.LoadGame(saveName);
 	} else {
 		sessLocal.LoadGame(args.Argv(1));
@@ -2202,7 +2235,12 @@ SaveGame_f
 void SaveGame_f(const idCmdArgs &args)
 {
 	if (args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick") == 0) {
+#ifdef _SPLASHDAMAGE
+		idStr saveName;
+		saveName = common->GetLanguageDict()->GetString("#str_07178");
+#else
 		idStr saveName = common->GetLanguageDict()->GetString("#str_07178");
+#endif
 
 		if (sessLocal.SaveGame(saveName)) {
 			common->Printf("%s\n", saveName.c_str());
@@ -2409,11 +2447,13 @@ bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 		return false;
 	}
 
+#if !defined(_SPLASHDAMAGE)
 	if (game->GetPersistentPlayerInfo(0).GetInt("health") <= 0) {
 		MessageBox(MSG_OK, common->GetLanguageDict()->GetString("#str_04311"), common->GetLanguageDict()->GetString("#str_04312"), true);
 		common->Printf("You must be alive to save the game\n");
 		return false;
 	}
+#endif
 
 	if (Sys_GetDriveFreeSpace(cvarSystem->GetCVarString("fs_savepath")) < 25) {
 		MessageBox(MSG_OK, common->GetLanguageDict()->GetString("#str_04313"), common->GetLanguageDict()->GetString("#str_04314"), true);
@@ -2479,12 +2519,16 @@ bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 
 	// persistent player info
 	for (i = 0; i < MAX_ASYNC_CLIENTS; i++) {
+#if !defined(_SPLASHDAMAGE)
 		mapSpawnData.persistentPlayerInfo[i] = game->GetPersistentPlayerInfo(i);
+#endif
 		mapSpawnData.persistentPlayerInfo[i].WriteToFileHandle(fileOut);
 	}
 
+#if !defined(_SPLASHDAMAGE)
 	// let the game save its state
 	game->SaveGame(fileOut);
+#endif
 
 	// close the sava game file
 	fileSystem->CloseFile(fileOut);
@@ -2492,7 +2536,11 @@ bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 	// Write screenshot
 	if (!autosave) {
 		renderSystem->CropRenderSize(320, 240, false);
+#ifdef _SPLASHDAMAGE
+		game->Draw();
+#else
 		game->Draw(0);
+#endif
 		renderSystem->CaptureRenderToFile(previewFile, true);
 		renderSystem->UnCrop();
 	}
@@ -2714,6 +2762,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	if (!guiActive && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) {
 		console->Close();
 
+#if !defined(_SPLASHDAMAGE)
 		if (game) {
 			idUserInterface	*gui = NULL;
 			escReply_t		op;
@@ -2726,6 +2775,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 				return true;
 			}
 		}
+#endif
 
 		StartMenu();
 		return true;
@@ -2982,7 +3032,11 @@ void idSessionLocal::Draw()
 
 		// draw the menus full screen
 		if (guiActive == guiTakeNotes && !com_skipGameDraw.GetBool()) {
+#ifdef _SPLASHDAMAGE
+			game->Draw();
+#else
 			game->Draw(GetLocalClientNum());
+#endif
 #ifdef _HUMANHEAD
 			if(guiSubtitles)
 				guiSubtitles->Redraw(com_frameTime);
@@ -3000,7 +3054,11 @@ void idSessionLocal::Draw()
 		if (!com_skipGameDraw.GetBool() && GetLocalClientNum() >= 0) {
 			// draw the game view
 			int	start = Sys_Milliseconds();
+#ifdef _SPLASHDAMAGE
+			gameDraw = game->Draw();
+#else
 			gameDraw = game->Draw(GetLocalClientNum());
+#endif
 #ifdef _HUMANHEAD
 			if(guiSubtitles)
 				guiSubtitles->Redraw(com_frameTime);
@@ -3298,6 +3356,7 @@ void idSessionLocal::Frame()
 		mapSpawnData.userInfo[0] = *cvarSystem->MoveCVarsToDict(CVAR_USERINFO);
 #ifdef _RAVEN
 		game->SetUserInfo(0, mapSpawnData.userInfo[0], false);
+#elif defined(_SPLASHDAMAGE)
 #else
 		game->SetUserInfo(0, mapSpawnData.userInfo[0], false, false);
 #endif
@@ -3427,6 +3486,8 @@ void idSessionLocal::RunGameTic()
 #ifdef _RAVEN
 	// rw->DebugClear(0); // clear debug draw(version 1)
 	gameReturn_t	ret = game->RunFrame(&cmd, 0, true, 0); // jmarshall: serverGameFrame isn't used
+#elif defined(_SPLASHDAMAGE)
+	game->RunFrame(&cmd, 0);
 #else
 	gameReturn_t	ret = game->RunFrame(&cmd);
 #endif
@@ -3434,6 +3495,7 @@ void idSessionLocal::RunGameTic()
 	int end = Sys_Milliseconds();
 	time_gameFrame += end - start;	// note time used for com_speeds
 
+#if !defined(_SPLASHDAMAGE)
 	// check for constency failure from a recorded command
 	if (cmdDemoFile) {
 		if (ret.consistencyHash != logCmd.consistencyHash) {
@@ -3470,7 +3532,9 @@ void idSessionLocal::RunGameTic()
 		if (!idStr::Icmp(args.Argv(0), "map")) {
 			// get current player states
 			for (int i = 0 ; i < numClients ; i++) {
+#if !defined(_SPLASHDAMAGE)
 				mapSpawnData.persistentPlayerInfo[i] = game->GetPersistentPlayerInfo(i);
+#endif
 			}
 
 			// clear the devmap key on serverinfo, so player spawns
@@ -3537,6 +3601,7 @@ void idSessionLocal::RunGameTic()
 		}
 #endif
 	}
+#endif
 }
 
 /*

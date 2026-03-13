@@ -3203,3 +3203,10 @@ void idStr::StripWhitespace(idStr &str)
 	str.StripTrailingWhitespace();
 	str.StripLeading(' ');
 }
+
+#ifdef _SPLASHDAMAGE
+void idStr::operator=(const wchar_t *text) {
+	idStr tmp = WStrToStr(text);
+	operator=(tmp.c_str());
+}
+#endif

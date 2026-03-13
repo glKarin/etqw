@@ -182,6 +182,7 @@ keyname_t keynames[] = {
 
 static const int	MAX_KEYS = 256;
 
+#if !defined(_SPLASHDAMAGE)
 class idKey
 {
 	public:
@@ -195,6 +196,7 @@ class idKey
 		idStr			binding;
 		int				usercmdAction;	// for testing by the asyncronous usercmd generation
 };
+#endif
 
 bool		key_overstrikeMode = false;
 idKey 		*keys = NULL;

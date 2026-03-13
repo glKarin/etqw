@@ -93,13 +93,19 @@ const char *cm_contentsNameByIndex[] = {
 	"monsterclip",					// 5
 	"moveableclip",					// 6
 	"ikclip",						// 7
+#if !defined(_SPLASHDAMAGE)
 	"blood",						// 8
+#endif
 	"body",							// 9
 	"corpse",						// 10
 	"trigger",						// 11
+#if !defined(_SPLASHDAMAGE)
 	"aas_solid",					// 12
+#endif
 	"aas_obstacle",					// 13
+#if !defined(_SPLASHDAMAGE)
 	"flashlight_trigger",			// 14
+#endif
 #endif
 	NULL
 };
@@ -148,13 +154,19 @@ int cm_contentsFlagByIndex[] = {
 	CONTENTS_MONSTERCLIP,			// 5
 	CONTENTS_MOVEABLECLIP,			// 6
 	CONTENTS_IKCLIP,				// 7
+#if !defined(_SPLASHDAMAGE)
 	CONTENTS_BLOOD,					// 8
+#endif
 	CONTENTS_BODY,					// 9
 	CONTENTS_CORPSE,				// 10
 	CONTENTS_TRIGGER,				// 11
+#if !defined(_SPLASHDAMAGE)
 	CONTENTS_AAS_SOLID,				// 12
+#endif
 	CONTENTS_AAS_OBSTACLE,			// 13
+#if !defined(_SPLASHDAMAGE)
 	CONTENTS_FLASHLIGHT_TRIGGER,	// 14
+#endif
 #endif
 	0
 };

@@ -44,6 +44,34 @@ void usercmd_t::ByteSwap(void)
 	sequence = LittleLong(sequence);
 }
 
+#ifdef _SPLASHDAMAGE
+bool operator==(const userButtons_t &a, const userButtons_t &b) {
+	return a.activate == b.activate
+	&& a.altAttack == b.altAttack
+	&& a.attack == b.attack
+	&& a.run == b.run
+	&& a.modeSwitch == b.modeSwitch
+	&& a.mLookOff == b.mLookOff
+	&& a.sprint == b.sprint
+	&& a.leanLeft == b.leanLeft
+	&& a.leanRight == b.leanRight
+	&& a.tophat && b.tophat
+	;
+};
+
+bool operator==(const userButtonsUnion_t &a, const userButtonsUnion_t &b) {
+	return a.btnValue == b.btnValue || a.btn == b.btn;
+}
+
+int operator&(const userButtonsUnion_t &a, int b) {
+	return a.btnValue & b;
+}
+
+int operator|=(userButtonsUnion_t &a, int b) {
+	a.btnValue |= b;
+	return a.btnValue;
+}
+#endif
 /*
 ================
 usercmd_t::operator==
@@ -67,6 +95,7 @@ bool usercmd_t::operator==(const usercmd_t &rhs) const
 
 const int KEY_MOVESPEED	= 127;
 
+#if !defined(_SPLASHDAMAGE)
 typedef enum {
 	UB_NONE,
 
@@ -168,6 +197,7 @@ typedef enum {
 
 	UB_MAX_BUTTONS
 } usercmdButton_t;
+#endif
 
 typedef struct {
 	const char *string;

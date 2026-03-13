@@ -269,8 +269,13 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 
 	if (key != K_MOUSE1) {
 		// Send a fake mouse click event so onAction gets run in our parents
+#ifdef _SPLASHDAMAGE
+		const sysEvent_t *ev = sys->GenerateMouseButtonEvent(1, true);
+		idWindow::HandleEvent(ev, updateVisuals);
+#else
 		const sysEvent_t ev = sys->GenerateMouseButtonEvent(1, true);
 		idWindow::HandleEvent(&ev, updateVisuals);
+#endif
 	}
 
 	if (currentSel.Num() > 0) {

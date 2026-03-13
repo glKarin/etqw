@@ -186,6 +186,11 @@ class idSession
 #ifdef _MULTITHREAD
 		virtual void UpdateScreen(byte *data, bool outOfSequence) = 0;
 #endif
+#ifdef _SPLASHDAMAGE
+	//karin: compat for DOOM3
+	virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
+	virtual const char *MessageBox(msgBoxType_t type, const char *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
+#endif
 };
 
 extern	idSession 	*session;

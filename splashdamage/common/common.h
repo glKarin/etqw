@@ -258,4 +258,8 @@ template< typename T > ID_INLINE void Swap( T& l, T& r ) {
 
 #include "../renderer/qgl.h"
 
+#ifndef PATHSEPERATOR_CHAR
+#define PATHSEPERATOR_CHAR PATHSEPARATOR_CHAR
+#endif
+
 #endif // _COMMON_COMMON_H_

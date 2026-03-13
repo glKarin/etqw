@@ -534,6 +534,13 @@ const int NUM_SERVER_PORTS				= 4;
 #define EDITOR_REGISTRY_KEY				"ETQWRadiant"
 #define EDITOR_WINDOWTEXT				"ETQWEdit"
 
+#define CDKEY_FILE						"etqwkey"
+#define XPKEY_FILE						"xpkey"
+#define CDKEY_TEXT						"\n// Do not give this file to ANYONE.\n" \
+"// Splash Damage will NEVER ask you to send this file to them.\n"
+
+#define SAVEGAME_VERSION				16
+
 #else // else is DOOM3
 
 #define GAME_NAME						"DOOM 3"		// appears on window titles and errors

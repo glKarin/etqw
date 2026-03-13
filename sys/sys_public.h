@@ -75,7 +75,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
 
-bool Sys_IsMainThread();
 #endif
 
 // Mac OSX
@@ -980,6 +979,10 @@ bool Sys_ThreadIsRunning(const xthreadInfo *thread);
 #else
 #define THREAD_CANCELED(x) false
 #endif
+#endif
+
+#if defined(WIN32) || defined(_WIN32)
+bool Sys_IsMainThread();
 #endif
 
 void			Sys_Trap(void);

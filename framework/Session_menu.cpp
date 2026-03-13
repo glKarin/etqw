@@ -654,7 +654,7 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 
 		// always let the game know the command is being run
 		if (game) {
-#if !defined(_HUMANHEAD)
+#if !defined(_HUMANHEAD) && !defined(_SPLASHDAMAGE)
 			game->HandleMainMenuCommands(cmd, guiActive);
 #endif
 		}
@@ -791,7 +791,11 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 				dict = fileSystem->GetMapDecl(i);
 
 				if (dict && dict->GetBool(gametype)) {
+#ifdef _SPLASHDAMAGE
+					idStr mapName = dict->GetString("name");
+#else
 					const char *mapName = dict->GetString("name");
+#endif
 
 					if (mapName[ 0 ] == '\0') {
 						mapName = dict->GetString("path");
@@ -1403,6 +1407,7 @@ void idSessionLocal::DispatchCommand(idUserInterface *gui, const char *menuComma
 		HandleLoadingCommands(menuCommand);
 #endif
 	} else if (game && guiActive && guiActive->State().GetBool("gameDraw")) {
+#if !defined(_SPLASHDAMAGE)
 		const char *cmd = game->HandleGuiCommands(menuCommand);
 
 		if (!cmd) {
@@ -1419,6 +1424,7 @@ void idSessionLocal::DispatchCommand(idUserInterface *gui, const char *menuComma
 			// pipe the GUI sound commands not handled by the game to the main menu code
 			HandleMainMenuCommands(cmd);
 		}
+#endif
 	} else if (guiHandle) {
 		if ((*guiHandle)(menuCommand)) {
 			return;
@@ -2098,4 +2104,19 @@ void idSessionLocal::HandleLoadingCommands(const char *menuCommand)
 	}
 }
 
+#endif
+
+#ifdef _SPLASHDAMAGE
+const char * idSessionLocal::MessageBox(msgBoxType_t type, const wchar_t *message, const wchar_t *title, bool wait, const char *fire_yes, const char *fire_no, bool network)
+{
+	idStr msg = WStrToStr(message);
+	idStr t = WStrToStr(title);
+	return MessageBox(type, msg, t, wait, fire_yes, fire_no, network);
+}
+
+const char * idSessionLocal::MessageBox(msgBoxType_t type, const char *message, const wchar_t *title, bool wait, const char *fire_yes, const char *fire_no, bool network)
+{
+	idStr t = WStrToStr(title);
+	return MessageBox(type, message, t, wait, fire_yes, fire_no, network);
+}
 #endif

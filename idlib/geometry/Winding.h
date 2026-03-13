@@ -47,9 +47,8 @@ class idWinding
 #ifdef _SPLASHDAMAGE
 	    explicit idWinding( const idVec3 &normal, const float dist, const float radius );	// base winding for plane
 	    explicit idWinding( const idPlane &plane, const float radius );						// base winding for plane
-#else
-		explicit idWinding(const idVec3 &normal, const float dist);	// base winding for plane
 #endif
+		explicit idWinding(const idVec3 &normal, const float dist);	// base winding for plane
 		explicit idWinding(const idPlane &plane);						// base winding for plane
 		explicit idWinding(const idWinding &winding);
 		virtual			~idWinding(void);
@@ -210,32 +209,26 @@ ID_INLINE idWinding::idWinding(const idVec3 *verts, const int n)
 }
 
 #ifdef _SPLASHDAMAGE
-ID_INLINE idWinding::idWinding( const idVec3 &normal, const float dist, const float radius )
-#else
-ID_INLINE idWinding::idWinding(const idVec3 &normal, const float dist)
-#endif
-{
+ID_INLINE idWinding::idWinding( const idVec3 &normal, const float dist, const float radius ) {
 	numPoints = allocedSize = 0;
 	p = NULL;
-#ifdef _SPLASHDAMAGE
     BaseForPlane( normal, dist, radius );
-#else
-	BaseForPlane(normal, dist);
-#endif
 }
 
-#ifdef _SPLASHDAMAGE
 ID_INLINE idWinding::idWinding( const idPlane &plane, const float radius )
 {
 	numPoints = allocedSize = 0;
 	p = NULL;
-#ifdef _SPLASHDAMAGE
 	BaseForPlane( plane, radius );
-#else
-	BaseForPlane(plane);
-#endif
 }
 #endif
+
+ID_INLINE idWinding::idWinding(const idVec3 &normal, const float dist) {
+	numPoints = allocedSize = 0;
+	p = NULL;
+	BaseForPlane(normal, dist);
+}
+
 ID_INLINE idWinding::idWinding(const idPlane &plane)
 {
 	numPoints = allocedSize = 0;

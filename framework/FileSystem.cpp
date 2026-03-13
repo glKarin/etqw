@@ -5170,7 +5170,7 @@ bool idFileSystemLocal::IsAddonPackReferenced( const char* pak ) {
 void idFileSystemLocal::ReferenceAddonPack( const char* pak ) {
 }
 
-void idFileSystemLocal::ReadTGA( const char *name, byte **pic, int *width, int *height, unsigned *timestamp = 0, bool markPaksReferenced = true ) {
+void idFileSystemLocal::ReadTGA( const char *name, byte **pic, int *width, int *height, unsigned *timestamp, bool markPaksReferenced ) {
 }
 
 void idFileSystemLocal::WriteTGA( const char* name, const byte* pic, int width, int height ) {
