@@ -182,6 +182,7 @@ class idSessionLocal : public idSession
 #ifdef _SPLASHDAMAGE
 		virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false);
 		virtual const char *MessageBox(msgBoxType_t type, const char *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false);
+		virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false);
 #endif
 
 		//=====================================

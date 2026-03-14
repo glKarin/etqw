@@ -316,7 +316,11 @@ bool idSessionLocal::MaybeWaitOnCDKey(void)
 {
 	if (authEmitTimeout > 0) {
 		authWaitBox = true;
+#ifdef _SPLASHDAMAGE
+		sessLocal.MessageBox(MSG_WAIT, common->GetLanguageDict()->GetString("#str_07191"), L"", true, NULL, NULL, true);
+#else
 		sessLocal.MessageBox(MSG_WAIT, common->GetLanguageDict()->GetString("#str_07191"), NULL, true, NULL, NULL, true);
+#endif
 		return true;
 	}
 

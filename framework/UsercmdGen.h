@@ -351,8 +351,18 @@ union userButtonsUnion_t {
     userButtons_t		btn;
 
 	//karin: compat for DOOM3
-	userButtonsUnion_t& operator=(int btn) {
-		btnValue = btn;
+	userButtonsUnion_t& operator=(int b) {
+		btnValue = b;
+		return *this;
+	}
+
+	userButtonsUnion_t& operator&=(int b) {
+		btnValue &= b;
+		return *this;
+	}
+
+	operator byte() const {
+		return btnValue;
 	}
 };
 

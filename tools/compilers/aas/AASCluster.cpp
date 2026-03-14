@@ -124,8 +124,17 @@ bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 
 	if (!noFaceFlood) {
 		// use area faces to flood into adjacent areas
-		for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+		for (i = 0; i < area->numEdges; i++)
+#else
+		for (i = 0; i < area->numFaces; i++)
+#endif
+		{
+#ifdef _SPLASHDAMAGE
+			faceNum = abs(file->faceIndex[area->firstEdge + i]);
+#else
 			faceNum = abs(file->faceIndex[area->firstFace + i]);
+#endif
 			face = &file->faces[faceNum];
 
 			if (face->areas[0] == areaNum) {
@@ -442,8 +451,17 @@ void idAASCluster::RemoveInvalidPortals(void)
 
 		numOpenAreas = 0;
 
-		for (j = 0; j < file->areas[i].numFaces; j++) {
+#ifdef _SPLASHDAMAGE
+		for (j = 0; j < file->areas[i].numEdges; j++)
+#else
+		for (j = 0; j < file->areas[i].numFaces; j++)
+#endif
+		{
+#ifdef _SPLASHDAMAGE
+			face1Num = file->faceIndex[ file->areas[i].firstEdge + j ];
+#else
 			face1Num = file->faceIndex[ file->areas[i].firstFace + j ];
+#endif
 			face1 = &file->faces[ abs(face1Num)];
 			otherAreaNum = face1->areas[ face1Num < 0 ];
 
@@ -452,7 +470,11 @@ void idAASCluster::RemoveInvalidPortals(void)
 			}
 
 			for (k = 0; k < j; k++) {
+#ifdef _SPLASHDAMAGE
+				face2Num = file->faceIndex[ file->areas[i].firstEdge + k ];
+#else
 				face2Num = file->faceIndex[ file->areas[i].firstFace + k ];
+#endif
 				face2 = &file->faces[ abs(face2Num)];
 
 				if (otherAreaNum == face2->areas[ face2Num < 0 ]) {

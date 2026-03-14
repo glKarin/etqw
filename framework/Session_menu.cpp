@@ -2119,4 +2119,10 @@ const char * idSessionLocal::MessageBox(msgBoxType_t type, const char *message, 
 	idStr t = WStrToStr(title);
 	return MessageBox(type, message, t, wait, fire_yes, fire_no, network);
 }
+
+const char * idSessionLocal::MessageBox(msgBoxType_t type, const wchar_t *message, const char *title, bool wait, const char *fire_yes, const char *fire_no, bool network)
+{
+	idStr msg = WStrToStr(message);
+	return MessageBox(type, msg, title, wait, fire_yes, fire_no, network);
+}
 #endif

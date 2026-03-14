@@ -121,8 +121,17 @@ void idAASReach::Reachability_Fly(int areaNum)
 
 	area = &file->areas[areaNum];
 
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = file->faceIndex[area->firstEdge + i];
+#else
 		faceNum = file->faceIndex[area->firstFace + i];
+#endif
 		face = &file->faces[abs(faceNum)];
 
 		otherAreaNum = face->areas[INTSIGNBITNOTSET(faceNum)];
@@ -142,12 +151,33 @@ void idAASReach::Reachability_Fly(int areaNum)
 		reach->fromAreaNum = areaNum;
 		reach->edgeNum = 0;
 		reach->travelTime = 1;
+#ifdef _SPLASHDAMAGE
+		idVec3 _start = file->FaceCenter(abs(faceNum));
+		reach->start[0] = _start[0];
+		reach->start[1] = _start[1];
+		reach->start[2] = _start[2];
+#else
 		reach->start = file->FaceCenter(abs(faceNum));
+#endif
 
 		if (faceNum < 0) {
+#ifdef _SPLASHDAMAGE
+			idVec3 _end = _start + file->planeList[face->planeNum].Normal() * INSIDEUNITS_FLYEND;
+			reach->end[0] = _end[0];
+			reach->end[1] = _end[1];
+			reach->end[2] = _end[2];
+#else
 			reach->end = reach->start + file->planeList[face->planeNum].Normal() * INSIDEUNITS_FLYEND;
+#endif
 		} else {
+#ifdef _SPLASHDAMAGE
+			idVec3 _end = _start - file->planeList[face->planeNum].Normal() * INSIDEUNITS_FLYEND;
+			reach->end[0] = _end[0];
+			reach->end[1] = _end[1];
+			reach->end[2] = _end[2];
+#else
 			reach->end = reach->start - file->planeList[face->planeNum].Normal() * INSIDEUNITS_FLYEND;
+#endif
 		}
 
 		AddReachabilityToArea(reach, areaNum);
@@ -172,8 +202,17 @@ void idAASReach::Reachability_Swim(int areaNum)
 
 	area = &file->areas[areaNum];
 
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = file->faceIndex[area->firstEdge + i];
+#else
 		faceNum = file->faceIndex[area->firstFace + i];
+#endif
 		face = &file->faces[abs(faceNum)];
 
 		otherAreaNum = face->areas[INTSIGNBITNOTSET(faceNum)];
@@ -197,12 +236,33 @@ void idAASReach::Reachability_Swim(int areaNum)
 		reach->fromAreaNum = areaNum;
 		reach->edgeNum = 0;
 		reach->travelTime = 1;
+#ifdef _SPLASHDAMAGE
+		idVec3 _start = file->FaceCenter(abs(faceNum));
+		reach->start[0] = _start[0];
+		reach->start[1] = _start[1];
+		reach->start[2] = _start[2];
+#else
 		reach->start = file->FaceCenter(abs(faceNum));
+#endif
 
 		if (faceNum < 0) {
+#ifdef _SPLASHDAMAGE
+			idVec3 _end = _start + file->planeList[face->planeNum].Normal() * INSIDEUNITS_SWIMEND;
+			reach->end[0] = _end[0];
+			reach->end[1] = _end[1];
+			reach->end[2] = _end[2];
+#else
 			reach->end = reach->start + file->planeList[face->planeNum].Normal() * INSIDEUNITS_SWIMEND;
+#endif
 		} else {
+#ifdef _SPLASHDAMAGE
+			idVec3 _end = _start - file->planeList[face->planeNum].Normal() * INSIDEUNITS_SWIMEND;
+			reach->end[0] = _end[0];
+			reach->end[1] = _end[1];
+			reach->end[2] = _end[2];
+#else
 			reach->end = reach->start - file->planeList[face->planeNum].Normal() * INSIDEUNITS_SWIMEND;
+#endif
 		}
 
 		AddReachabilityToArea(reach, areaNum);
@@ -227,8 +287,17 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 
 	area = &file->areas[areaNum];
 
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = file->faceIndex[area->firstEdge + i];
+#else
 		faceNum = file->faceIndex[area->firstFace + i];
+#endif
 		face = &file->faces[abs(faceNum)];
 
 		otherAreaNum = face->areas[INTSIGNBITNOTSET(faceNum)];
@@ -239,16 +308,34 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 
 		otherArea = &file->areas[otherAreaNum];
 
-		for (k = 0; k < area->numFaces; k++) {
+#ifdef _SPLASHDAMAGE
+		for (k = 0; k < area->numEdges; k++)
+#else
+		for (k = 0; k < area->numFaces; k++)
+#endif
+		{
+#ifdef _SPLASHDAMAGE
+			face1Num = file->faceIndex[area->firstEdge + k];
+#else
 			face1Num = file->faceIndex[area->firstFace + k];
+#endif
 			face1 = &file->faces[abs(face1Num)];
 
 			if (!(face1->flags & FACE_FLOOR)) {
 				continue;
 			}
 
-			for (l = 0; l < otherArea->numFaces; l++) {
+#ifdef _SPLASHDAMAGE
+			for (l = 0; l < otherArea->numEdges; l++)
+#else
+			for (l = 0; l < otherArea->numFaces; l++)
+#endif
+			{
+#ifdef _SPLASHDAMAGE
+				face2Num = file->faceIndex[otherArea->firstEdge + l];
+#else
 				face2Num = file->faceIndex[otherArea->firstFace + l];
+#endif
 				face2 = &file->faces[abs(face2Num)];
 
 				if (!(face2->flags & FACE_FLOOR)) {
@@ -276,12 +363,22 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 				}
 			}
 
-			if (l < otherArea->numFaces) {
+#ifdef _SPLASHDAMAGE
+			if (l < otherArea->numEdges)
+#else
+			if (l < otherArea->numFaces)
+#endif
+			{
 				break;
 			}
 		}
 
-		if (k < area->numFaces) {
+#ifdef _SPLASHDAMAGE
+		if (k < area->numEdges)
+#else
+		if (k < area->numFaces)
+#endif
+		{
 			// create reachability
 			reach = new idReachability_Walk();
 			reach->travelType = TFL_WALK;
@@ -289,12 +386,33 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 			reach->fromAreaNum = areaNum;
 			reach->edgeNum = abs(edge1Num);
 			reach->travelTime = 1;
+#ifdef _SPLASHDAMAGE
+			idVec3 _start = file->EdgeCenter(edge1Num);
+			reach->start[0] = _start[0];
+			reach->start[1] = _start[1];
+			reach->start[2] = _start[2];
+#else
 			reach->start = file->EdgeCenter(edge1Num);
+#endif
 
 			if (faceNum < 0) {
+#ifdef _SPLASHDAMAGE
+				idVec3 _end = _start + file->planeList[face->planeNum].Normal() * INSIDEUNITS_WALKEND;
+				reach->end[0] = _end[0];
+				reach->end[1] = _end[1];
+				reach->end[2] = _end[2];
+#else
 				reach->end = reach->start + file->planeList[face->planeNum].Normal() * INSIDEUNITS_WALKEND;
+#endif
 			} else {
+#ifdef _SPLASHDAMAGE
+				idVec3 _end = _start - file->planeList[face->planeNum].Normal() * INSIDEUNITS_WALKEND;
+				reach->end[0] = _end[0];
+				reach->end[1] = _end[1];
+				reach->end[2] = _end[2];
+#else
 				reach->end = reach->start - file->planeList[face->planeNum].Normal() * INSIDEUNITS_WALKEND;
+#endif
 			}
 
 			AddReachabilityToArea(reach, areaNum);
@@ -373,8 +491,17 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 	water_bestLength = 0;
 	water_bestArea2FloorEdgeNum = 0;
 
-	for (i = 0; i < area1->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area1->numEdges; i++)
+#else
+	for (i = 0; i < area1->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		floorFace1Num = file->faceIndex[area1->firstEdge + i];
+#else
 		floorFace1Num = file->faceIndex[area1->firstFace + i];
+#endif
 		faceSide1 = floorFace1Num < 0;
 		floorFace1 = &file->faces[abs(floorFace1Num)];
 
@@ -419,8 +546,17 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 			dist = normal * v1;
 
 			// check the faces from the second area
-			for (j = 0; j < area2->numFaces; j++) {
+#ifdef _SPLASHDAMAGE
+			for (j = 0; j < area2->numEdges; j++)
+#else
+			for (j = 0; j < area2->numFaces; j++)
+#endif
+			{
+#ifdef _SPLASHDAMAGE
+				floorFace2 = &file->faces[abs(file->faceIndex[area2->firstEdge + j])];
+#else
 				floorFace2 = &file->faces[abs(file->faceIndex[area2->firstFace + j])];
+#endif
 
 				// must be a ground face
 				if (!(floorFace2->flags & FACE_FLOOR)) {
@@ -627,8 +763,19 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 			walkReach->travelType = TFL_WALK;
 			walkReach->toAreaNum = area2num;
 			walkReach->fromAreaNum = area1num;
+#ifdef _SPLASHDAMAGE
+			idVec3 _start = floor_bestStart + INSIDEUNITS_WALKSTART * floor_bestNormal;
+			idVec3 _end = floor_bestEnd + INSIDEUNITS_WALKEND * floor_bestNormal;
+			walkReach->start[0] = _start[0];
+			walkReach->start[1] = _start[1];
+			walkReach->start[2] = _start[2];
+			walkReach->end[0] = _end[0];
+			walkReach->end[1] = _end[1];
+			walkReach->end[2] = _end[2];
+#else
 			walkReach->start = floor_bestStart + INSIDEUNITS_WALKSTART * floor_bestNormal;
 			walkReach->end = floor_bestEnd + INSIDEUNITS_WALKEND * floor_bestNormal;
+#endif
 			walkReach->edgeNum = abs(floor_bestArea1FloorEdgeNum);
 			walkReach->travelTime = 0;
 
@@ -677,8 +824,18 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 					waterJumpReach->travelType = TFL_WATERJUMP;
 					waterJumpReach->toAreaNum = area2num;
 					waterJumpReach->fromAreaNum = area1num;
+#ifdef _SPLASHDAMAGE
+					idVec3 _end = water_bestEnd + INSIDEUNITS_WATERJUMP * water_bestNormal;
+					walkReach->start[0] = water_bestStart[0];
+					walkReach->start[1] = water_bestStart[1];
+					walkReach->start[2] = water_bestStart[2];
+					walkReach->end[0] = _end[0];
+					walkReach->end[1] = _end[1];
+					walkReach->end[2] = _end[2];
+#else
 					waterJumpReach->start = water_bestStart;
 					waterJumpReach->end = water_bestEnd + INSIDEUNITS_WATERJUMP * water_bestNormal;
+#endif
 					waterJumpReach->edgeNum = abs(floor_bestArea1FloorEdgeNum);
 					waterJumpReach->travelTime = file->settings.tt_waterJump;
 					AddReachabilityToArea(waterJumpReach, area1num);
@@ -718,8 +875,19 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 					barrierJumpReach->travelType = TFL_BARRIERJUMP;
 					barrierJumpReach->toAreaNum = area2num;
 					barrierJumpReach->fromAreaNum = area1num;
+#ifdef _SPLASHDAMAGE
+					idVec3 _start = floor_bestStart + INSIDEUNITS_WALKSTART * floor_bestNormal;
+					idVec3 _end = floor_bestEnd + INSIDEUNITS_WALKEND * floor_bestNormal;
+					barrierJumpReach->start[0] = _start[0];
+					barrierJumpReach->start[1] = _start[1];
+					barrierJumpReach->start[2] = _start[2];
+					barrierJumpReach->end[0] = _end[0];
+					barrierJumpReach->end[1] = _end[1];
+					barrierJumpReach->end[2] = _end[2];
+#else
 					barrierJumpReach->start = floor_bestStart + INSIDEUNITS_WALKSTART * floor_bestNormal;
 					barrierJumpReach->end = floor_bestEnd + INSIDEUNITS_WALKEND * floor_bestNormal;
+#endif
 					barrierJumpReach->edgeNum = abs(floor_bestArea1FloorEdgeNum);
 					barrierJumpReach->travelTime = file->settings.tt_barrierJump;
 					AddReachabilityToArea(barrierJumpReach, area1num);
@@ -759,8 +927,19 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 				walkReach->travelType = TFL_WALK;
 				walkReach->toAreaNum = area2num;
 				walkReach->fromAreaNum = area1num;
+#ifdef _SPLASHDAMAGE
+				idVec3 _start = floor_bestStart + INSIDEUNITS_WALKSTART * floor_bestNormal;
+				idVec3 _end = floor_bestEnd + INSIDEUNITS_WALKEND * floor_bestNormal;
+				walkReach->start[0] = _start[0];
+				walkReach->start[1] = _start[1];
+				walkReach->start[2] = _start[2];
+				walkReach->end[0] = _end[0];
+				walkReach->end[1] = _end[1];
+				walkReach->end[2] = _end[2];
+#else
 				walkReach->start = floor_bestStart + INSIDEUNITS_WALKSTART * floor_bestNormal;
 				walkReach->end = floor_bestEnd + INSIDEUNITS_WALKEND * floor_bestNormal;
+#endif
 				walkReach->edgeNum = abs(floor_bestArea1FloorEdgeNum);
 				walkReach->travelTime = 1;
 				AddReachabilityToArea(walkReach, area1num);
@@ -796,8 +975,17 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 							walkOffLedgeReach->travelType = TFL_WALKOFFLEDGE;
 							walkOffLedgeReach->toAreaNum = area2num;
 							walkOffLedgeReach->fromAreaNum = area1num;
+#ifdef _SPLASHDAMAGE
+							walkOffLedgeReach->start[0] = floor_bestStart[0];
+							walkOffLedgeReach->start[1] = floor_bestStart[1];
+							walkOffLedgeReach->start[2] = floor_bestStart[2];
+							walkOffLedgeReach->end[0] = floor_bestEnd[0];
+							walkOffLedgeReach->end[1] = floor_bestEnd[1];
+							walkOffLedgeReach->end[2] = floor_bestEnd[2];
+#else
 							walkOffLedgeReach->start = floor_bestStart;
 							walkOffLedgeReach->end = floor_bestEnd;
+#endif
 							walkOffLedgeReach->edgeNum = abs(floor_bestArea1FloorEdgeNum);
 							walkOffLedgeReach->travelTime = file->settings.tt_startWalkOffLedge + idMath::Fabs(floor_bestDist) * 50 / file->settings.gravityValue;
 							AddReachabilityToArea(walkOffLedgeReach, area1num);
@@ -834,8 +1022,17 @@ void idAASReach::Reachability_WalkOffLedge(int areaNum)
 
 	area = &file->areas[areaNum];
 
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = file->faceIndex[area->firstEdge + i];
+#else
 		faceNum = file->faceIndex[area->firstFace + i];
+#endif
 		face = &file->faces[abs(faceNum)];
 
 		// face must be a floor face
@@ -903,8 +1100,17 @@ void idAASReach::Reachability_WalkOffLedge(int areaNum)
 			reach->travelType = TFL_WALKOFFLEDGE;
 			reach->toAreaNum = reachAreaNum;
 			reach->fromAreaNum = areaNum;
+#ifdef _SPLASHDAMAGE
+			reach->start[0] = mid[0];
+			reach->start[1] = mid[1];
+			reach->start[2] = mid[2];
+			reach->end[0] = trace.endpos[0];
+			reach->end[1] = trace.endpos[1];
+			reach->end[2] = trace.endpos[2];
+#else
 			reach->start = mid;
 			reach->end = trace.endpos;
+#endif
 			reach->edgeNum = abs(edgeNum);
 			reach->travelTime = file->settings.tt_startWalkOffLedge + idMath::Fabs(mid[2] - trace.endpos[2]) * 50 / file->settings.gravityValue;
 			AddReachabilityToArea(reach, areaNum);

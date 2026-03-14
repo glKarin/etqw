@@ -53,9 +53,15 @@ Reachability_Write
 */
 bool Reachability_Write(idFile *fp, idReachability *reach)
 {
+#ifdef _SPLASHDAMAGE
+	fp->WriteFloatString("\t\t%d %d (%d %d %d) (%d %d %d) %d %d",
+						 (int) reach->travelType, (int) reach->toAreaNum, reach->start[0], reach->start[1], reach->start[2],
+						 reach->end[0], reach->end[1], reach->end[2], reach->edgeNum, (int) reach->travelTime);
+#else
 	fp->WriteFloatString("\t\t%d %d (%f %f %f) (%f %f %f) %d %d",
 	                     (int) reach->travelType, (int) reach->toAreaNum, reach->start.x, reach->start.y, reach->start.z,
 	                     reach->end.x, reach->end.y, reach->end.z, reach->edgeNum, (int) reach->travelTime);
+#endif
 	return true;
 }
 
@@ -68,8 +74,17 @@ bool Reachability_Read(idLexer &src, idReachability *reach)
 {
 	reach->travelType = src.ParseInt();
 	reach->toAreaNum = src.ParseInt();
+#ifdef _SPLASHDAMAGE
+	reach->start[0] = src.ParseInt();
+	reach->start[1] = src.ParseInt();
+	reach->start[2] = src.ParseInt();
+	reach->end[0] = src.ParseInt();
+	reach->end[1] = src.ParseInt();
+	reach->end[2] = src.ParseInt();
+#else
 	src.Parse1DMatrix(3, reach->start.ToFloatPtr());
 	src.Parse1DMatrix(3, reach->end.ToFloatPtr());
+#endif
 	reach->edgeNum = src.ParseInt();
 	reach->travelTime = src.ParseInt();
 	return true;
@@ -84,8 +99,17 @@ void idReachability::CopyBase(idReachability &reach)
 {
 	travelType = reach.travelType;
 	toAreaNum = reach.toAreaNum;
+#ifdef _SPLASHDAMAGE
+	start[0] = reach.start[0];
+	start[1] = reach.start[1];
+	start[2] = reach.start[2];
+	end[0] = reach.end[0];
+	end[1] = reach.end[1];
+	end[2] = reach.end[2];
+#else
 	start = reach.start;
 	end = reach.end;
+#endif
 	edgeNum = reach.edgeNum;
 	travelTime = reach.travelTime;
 }
@@ -815,6 +839,9 @@ bool idAASFileLocal::Write(const idStr &fileName, unsigned int mapFileCRC)
 		aasFile->WriteFloatString( "\t%d ( %d %d %d %d %d %d %d %d ) %d {\n", i, areas[i].flags, areas[i].contents,
 						areas[i].firstFace, areas[i].numFaces, areas[i].cluster, areas[i].clusterAreaNum, /*areas[i].numFeatures*/ 0, /*areas[i].firstFeature*/ 0, num );
 // jmarshall end
+#elif defined(_SPLASHDAMAGE)
+		aasFile->WriteFloatString("\t%d ( %d %d %d %d %d %d ) %d {\n", i, areas[i].flags, areas[i].contents,
+								  areas[i].firstEdge, areas[i].numEdges, areas[i].cluster, areas[i].clusterAreaNum, num);
 #else
 		aasFile->WriteFloatString("\t%d ( %d %d %d %d %d %d ) %d {\n", i, areas[i].flags, areas[i].contents,
 		                          areas[i].firstFace, areas[i].numFaces, areas[i].cluster, areas[i].clusterAreaNum, num);
@@ -1191,8 +1218,13 @@ bool idAASFileLocal::ParseAreas(idLexer &src)
 		src.ExpectTokenString("(");
 		area.flags = src.ParseInt();
 		area.contents = src.ParseInt();
+#ifdef _SPLASHDAMAGE
+		area.firstEdge = src.ParseInt();
+		area.numEdges = src.ParseInt();
+#else
 		area.firstFace = src.ParseInt();
 		area.numFaces = src.ParseInt();
+#endif
 		area.cluster = src.ParseInt();
 		area.clusterAreaNum = src.ParseInt();
         area.reach = NULL;

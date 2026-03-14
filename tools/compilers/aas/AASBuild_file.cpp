@@ -316,8 +316,13 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 	area.flags = node->GetFlags();
 	area.cluster = area.clusterAreaNum = 0;
 	area.contents = node->GetContents();
+#ifdef _SPLASHDAMAGE
+	area.firstEdge = file->faceIndex.Num();
+	area.numEdges = 0;
+#else
 	area.firstFace = file->faceIndex.Num();
 	area.numFaces = 0;
+#endif
 	area.reach = NULL;
 	area.rev_reach = NULL;
     area.bounds.Zero();
@@ -332,7 +337,11 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 		}
 
 		file->faceIndex.Append(faceNum);
+#ifdef _SPLASHDAMAGE
+		area.numEdges++;
+#else
 		area.numFaces++;
+#endif
 
 		if (faceNum > 0) {
 			file->faces[abs(faceNum)].areas[0] = file->areas.Num();
@@ -341,7 +350,12 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 		}
 	}
 
-	if (!area.numFaces) {
+#ifdef _SPLASHDAMAGE
+	if (!area.numEdges)
+#else
+	if (!area.numFaces)
+#endif
+	{
 		*areaNum = 0;
 		return false;
 	}

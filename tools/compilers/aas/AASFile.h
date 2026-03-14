@@ -119,6 +119,12 @@ If you have questions concerning this license or the applicable additional terms
 #define AREA_CROUCH							BIT(14)		// AI cannot walk but can only crouch in this area
 #define AREA_REACHABLE_FLY					BIT(16)		// area is reachable by flying
 
+#define FACE_SOLID					AAS_EDGE_WALL		// solid at the other side
+#define FACE_LADDER					AAS_EDGE_LADDER		// ladder surface
+#define FACE_FLOOR					AAS_EDGE_STEP_BOTTOM		// standing on floor when on this face
+#define FACE_LIQUID					AAS_EDGE_WATER		// face seperating two areas with liquid
+#define FACE_LIQUIDSURFACE			AAS_EDGE_WATER		// face seperating liquid and air
+
 #define AREACONTENTS_SOLID					AAS_AREA_CONTENTS_SOLID
 #define AREACONTENTS_WATER					AAS_AREA_CONTENTS_WATER
 #define AREACONTENTS_CLUSTERPORTAL			AAS_AREA_CONTENTS_CLUSTERPORTAL

@@ -77,8 +77,17 @@ void idAASFileLocal::Optimize(void)
 
 		areaFirstFace = newFaceIndex.Num();
 
-		for (j = 0; j < area->numFaces; j++) {
+#ifdef _SPLASHDAMAGE
+		for (j = 0; j < area->numEdges; j++)
+#else
+		for (j = 0; j < area->numFaces; j++)
+#endif
+		{
+#ifdef _SPLASHDAMAGE
+			faceNum = faceIndex[area->firstEdge + j];
+#else
 			faceNum = faceIndex[area->firstFace + j];
+#endif
 			face = &faces[ abs(faceNum)];
 
 			// store face
@@ -139,8 +148,13 @@ void idAASFileLocal::Optimize(void)
 			}
 		}
 
+#ifdef _SPLASHDAMAGE
+		area->firstEdge = areaFirstFace;
+		area->numEdges = newFaceIndex.Num() - areaFirstFace;
+#else
 		area->firstFace = areaFirstFace;
 		area->numFaces = newFaceIndex.Num() - areaFirstFace;
+#endif
 
 		// remap the reachability edges
 		for (reach = area->reach; reach; reach = reach->next) {

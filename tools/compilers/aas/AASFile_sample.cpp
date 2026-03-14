@@ -95,6 +95,16 @@ idVec3 idAASFileLocal::AreaCenter(int areaNum) const
 
 	area = &areas[areaNum];
 
+#ifdef _SPLASHDAMAGE
+	if (area->numEdges > 0) {
+		for (i = 0; i < area->numEdges; i++) {
+			faceNum = faceIndex[area->firstEdge + i];
+			center += FaceCenter(abs(faceNum));
+		}
+
+		center /= area->numEdges;
+	}
+#else
 	if (area->numFaces > 0) {
 		for (i = 0; i < area->numFaces; i++) {
 			faceNum = faceIndex[area->firstFace + i];
@@ -103,6 +113,7 @@ idVec3 idAASFileLocal::AreaCenter(int areaNum) const
 
 		center /= area->numFaces;
 	}
+#endif
 
 	return center;
 }
@@ -130,8 +141,17 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 
 	numFaces = 0;
 
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = faceIndex[area->firstEdge + i];
+#else
 		faceNum = faceIndex[area->firstFace + i];
+#endif
 
 		if (!(faces[abs(faceNum)].flags & FACE_FLOOR)) {
 			continue;
@@ -207,8 +227,17 @@ idBounds idAASFileLocal::AreaBounds(int areaNum) const
 	area = &areas[areaNum];
 	bounds.Clear();
 
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = faceIndex[area->firstEdge + i];
+#else
 		faceNum = faceIndex[area->firstFace + i];
+#endif
 		bounds += FaceBounds(abs(faceNum));
 	}
 
@@ -379,8 +408,17 @@ void idAASFileLocal::PushPointIntoAreaNum(int areaNum, idVec3 &point) const
 	area = &areas[areaNum];
 
 	// push the point to the right side of all area face planes
-	for (i = 0; i < area->numFaces; i++) {
+#ifdef _SPLASHDAMAGE
+	for (i = 0; i < area->numEdges; i++)
+#else
+	for (i = 0; i < area->numFaces; i++)
+#endif
+	{
+#ifdef _SPLASHDAMAGE
+		faceNum = faceIndex[area->firstEdge + i];
+#else
 		faceNum = faceIndex[area->firstFace + i];
+#endif
 		face = &faces[abs(faceNum)];
 
 		const idPlane &plane = planeList[face->planeNum ^ INTSIGNBITSET(faceNum)];

@@ -341,6 +341,10 @@ public:
 								sysEvent_s() :
 									evPtrLength( 0 ),
 									evPtr( NULL ) {
+#if 1 //karin: compat for DOOM3
+									evType = SE_NONE;
+									evValue = evValue2 = 0;
+#endif
 								}
 								~sysEvent_s( void );
 

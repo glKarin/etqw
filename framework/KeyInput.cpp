@@ -398,7 +398,11 @@ const char *idKeyInput::KeyNumToString(int keynum, bool localized)
 				}
 
 #else
+#ifdef _SPLASHDAMAGE
+				return (const char *)common->GetLanguageDict()->GetString(kn->strId);
+#else
 				return common->GetLanguageDict()->GetString(kn->strId);
+#endif
 #endif
 			}
 		}

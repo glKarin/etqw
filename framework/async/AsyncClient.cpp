@@ -850,7 +850,11 @@ void idAsyncClient::ProcessUnreliableServerMessage(const idBitMsg &msg)
 			aheadOfServer = msg.ReadShort();
 
 			// read the game snapshot
+#ifdef _SPLASHDAMAGE
+			game->ClientReadSnapshot(snapshotSequence, snapshotGameFrame, snapshotGameTime, numDuplicatedUsercmds, aheadOfServer, msg, msg);
+#else
 			game->ClientReadSnapshot(clientNum, snapshotSequence, snapshotGameFrame, snapshotGameTime, numDuplicatedUsercmds, aheadOfServer, msg);
+#endif
 
 			// read user commands of other clients from the snapshot
 			for (last = NULL, i = msg.ReadByte(); i < MAX_ASYNC_CLIENTS; i = msg.ReadByte()) {
@@ -1041,6 +1045,7 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 
 #ifdef _RAVEN
 				game->SetUserInfo(clientNum, info, true);
+#elif defined(_SPLASHDAMAGE)
 #else
 				game->SetUserInfo(clientNum, info, true, false);
 #endif
@@ -1085,7 +1090,12 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 				int sequence;
 				sequence = msg.ReadLong();
 
-				if (!game->ClientApplySnapshot(clientNum, sequence)) {
+#ifdef _SPLASHDAMAGE
+				if (!game->ClientApplySnapshot(sequence))
+#else
+				if (!game->ClientApplySnapshot(clientNum, sequence))
+#endif
+				{
 					session->Stop();
 					common->Error("couldn't apply snapshot %d", sequence);
 				}
@@ -1109,6 +1119,7 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 				SendUserInfoToServer();
 #ifdef _RAVEN
 				game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true);
+#elif defined(_SPLASHDAMAGE)
 #else
 				game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false);
 #endif
@@ -1117,7 +1128,11 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 			}
 			default: {
 				// pass reliable message on to game code
+#ifdef _SPLASHDAMAGE
+				game->ClientProcessReliableMessage(msg);
+#else
 				game->ClientProcessReliableMessage(clientNum, msg);
+#endif
 				break;
 			}
 		}
@@ -1240,7 +1255,11 @@ void idAsyncClient::ProcessDisconnectMessage(const netadr_t from, const idBitMsg
 	}
 
 	session->Stop();
+#ifdef _SPLASHDAMAGE
+	session->MessageBox(MSG_OK, common->GetLanguageDict()->GetString("#str_04320"), L"", true);
+#else
 	session->MessageBox(MSG_OK, common->GetLanguageDict()->GetString("#str_04320"), NULL, true);
+#endif
 	session->StartMenu();
 }
 
@@ -1540,7 +1559,12 @@ bool idAsyncClient::ValidatePureServerChecksums(const netadr_t from, const idBit
 
 			if (idAsyncNetwork::clientDownload.GetInteger() == 0) {
 				// never any downloads
+#ifdef _SPLASHDAMAGE
+				idStr message;
+				message = va(common->GetLanguageDict()->GetString("#str_07210"), Sys_NetAdrToString(from));
+#else
 				idStr message = va(common->GetLanguageDict()->GetString("#str_07210"), Sys_NetAdrToString(from));
+#endif
 
 				if (numMissingChecksums > 0) {
 					message += va(common->GetLanguageDict()->GetString("#str_06751"), numMissingChecksums, checksums.c_str());
@@ -1594,7 +1618,16 @@ bool idAsyncClient::ValidatePureServerChecksums(const netadr_t from, const idBit
 			return false;
 		}
 		case PURE_NODLL:
+#ifdef _SPLASHDAMAGE
+		{
+			wchar_t tmp[1024] = {0};
+			idWStr::snPrintf(tmp, 1024, common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
+			idStr tmp2 = WStrToStr(tmp);
+			common->Printf("%s", tmp2.c_str());
+		}
+#else
 			common->Printf(common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
+#endif
 			cmdSystem->BufferCommandText(CMD_EXEC_NOW, "disconnect");
 			return false;
 		default:
@@ -1984,10 +2017,13 @@ void idAsyncClient::RunFrame(void)
 
 	// check for user info changes
 	if (cvarSystem->GetModifiedFlags() & CVAR_USERINFO) {
+#if !defined(_SPLASHDAMAGE)
 		game->ThrottleUserInfo();
+#endif
 		SendUserInfoToServer();
 #ifdef _RAVEN
 		game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true);
+#elif defined(_SPLASHDAMAGE)
 #else
 		game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false);
 #endif
@@ -2023,11 +2059,15 @@ void idAsyncClient::RunFrame(void)
 			// run client prediction
 #ifdef _HUMANHEAD
 			gameReturn_t ret = game->ClientPrediction(clientNum, userCmds[ snapshotGameFrame & (MAX_USERCMD_BACKUP - 1)]);
+#elif defined(_SPLASHDAMAGE)
+			game->ClientPrediction(userCmds[ snapshotGameFrame & (MAX_USERCMD_BACKUP - 1)], NULL);
 #else
 			gameReturn_t ret = game->ClientPrediction(clientNum, userCmds[ snapshotGameFrame & (MAX_USERCMD_BACKUP - 1)], lastPredictFrame);
 #endif
 
+#if !defined(_SPLASHDAMAGE)
 			idAsyncNetwork::ExecuteSessionCommand(ret.sessionCommand);
+#endif
 
 			snapshotGameFrame++;
 			snapshotGameTime += USERCMD_MSEC;
@@ -2222,7 +2262,13 @@ void idAsyncClient::HandleDownloads(void)
 				fileSystem->BackgroundDownload(&backgroundDownload);
 				idStr dltitle;
 				// "Downloading %s"
+#ifdef _SPLASHDAMAGE
+				wchar_t tmp[1024] = {0};
+				idWStr::snPrintf(tmp, 1024, common->GetLanguageDict()->GetString("#str_07213"), dlList[ 0 ].filename.c_str());
+				dltitle = WStrToStr(tmp);
+#else
 				sprintf(dltitle, common->GetLanguageDict()->GetString("#str_07213"), dlList[ 0 ].filename.c_str());
+#endif
 
 				if (numPaks > 1) {
 					dltitle += va(" (%d/%d)", pakCount, numPaks);

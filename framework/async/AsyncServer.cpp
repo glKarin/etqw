@@ -32,6 +32,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "AsyncNetwork.h"
 
 #include "../Session_local.h"
+#ifdef _SPLASHDAMAGE
+#include "sdnet/SDNet.h"
+#endif
 
 const int MIN_RECONNECT_TIME			= 2000;
 const int EMPTY_RESEND_TIME				= 500;
@@ -421,7 +424,9 @@ void idAsyncServer::ExecuteMapChange(void)
 	if (localClientNum >= 0) {
 		BeginLocalClient();
 	} else {
+#if !defined(_SPLASHDAMAGE)
 		game->SetLocalClient(-1);
+#endif
 	}
 
 	if (sessLocal.mapSpawnData.serverInfo.GetInt("si_pure")) {
@@ -791,7 +796,7 @@ void idAsyncServer::InitClient(int clientNum, int clientId, int clientRate)
 	}
 
 	// let the game know a player connected
-#ifdef _HUMANHEAD
+#if defined(_HUMANHEAD) || defined(_SPLASHDAMAGE)
 	game->ServerClientConnect(clientNum);
 #else
 	game->ServerClientConnect(clientNum, client.guid);
@@ -823,13 +828,20 @@ idAsyncServer::BeginLocalClient
 */
 void idAsyncServer::BeginLocalClient(void)
 {
+#if !defined(_SPLASHDAMAGE)
 	game->SetLocalClient(localClientNum);
+#endif
 #ifdef _RAVEN
 	game->SetUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum], false);
+#elif defined(_SPLASHDAMAGE)
 #else
 	game->SetUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum], false, false);
 #endif
+#ifdef _SPLASHDAMAGE
+	game->ServerClientBegin(localClientNum, false);
+#else
 	game->ServerClientBegin(localClientNum);
+#endif
 }
 
 /*
@@ -890,7 +902,11 @@ void idAsyncServer::DropClient(int clientNum, const char *reason)
 		}
 	}
 
+#ifdef _SPLASHDAMAGE
+	reason = (const char *)common->GetLanguageDict()->GetString(reason);
+#else
 	reason = common->GetLanguageDict()->GetString(reason);
+#endif
 	common->Printf("client %d %s\n", clientNum, reason);
 	cmdSystem->BufferCommandText(CMD_EXEC_NOW, va("addChatLine \"%s^0 %s\"", sessLocal.mapSpawnData.userInfo[ clientNum ].GetString("ui_name"), reason));
 
@@ -1013,6 +1029,7 @@ void idAsyncServer::SendUserInfoBroadcast(int userInfoNum, const idDict &info, b
 
 #ifdef _RAVEN
 	gameInfo = game->SetUserInfo(userInfoNum, info, false);
+#elif defined(_SPLASHDAMAGE)
 #else
 	gameInfo = game->SetUserInfo(userInfoNum, info, false, true);
 #endif
@@ -1071,6 +1088,7 @@ we then need to get the info from the game, and broadcast to clients
 */
 void idAsyncServer::UpdateUI(int clientNum)
 {
+#if !defined(_SPLASHDAMAGE)
 	const idDict	*info = game->GetUserInfo(clientNum);
 
 	if (!info) {
@@ -1079,6 +1097,7 @@ void idAsyncServer::UpdateUI(int clientNum)
 	}
 
 	SendUserInfoBroadcast(clientNum, *info, true);
+#endif
 }
 
 /*
@@ -1316,6 +1335,8 @@ bool idAsyncServer::SendSnapshotToClient(int clientNum)
 	// write the game snapshot
 #ifdef _RAVEN
 	game->ServerWriteSnapshot(clientNum, client.snapshotSequence, msg, clientInPVS, MAX_ASYNC_CLIENTS, 0);
+#elif defined(_SPLASHDAMAGE)
+	game->ServerWriteSnapshot(clientNum, client.snapshotSequence, msg, msg);
 #else
 	game->ServerWriteSnapshot(clientNum, client.snapshotSequence, msg, clientInPVS, MAX_ASYNC_CLIENTS);
 #endif
@@ -1429,7 +1450,11 @@ void idAsyncServer::ProcessUnreliableClientMessage(int clientNum, const idBitMsg
 		SendEnterGameToClient(clientNum);
 
 		// get the client running in the game
+#ifdef _SPLASHDAMAGE
+		game->ServerClientBegin(clientNum, false);
+#else
 		game->ServerClientBegin(clientNum);
+#endif
 
 		// write any reliable messages to initialize the client game state
 		game->ServerWriteInitialReliableMessages(clientNum);
@@ -1635,7 +1660,12 @@ void idAsyncServer::ProcessAuthMessage(const idBitMsg &msg)
 		}
 
 		// maybe localize it
+#ifdef _SPLASHDAMAGE
+		idStr tmp = WStrToStr(common->GetLanguageDict()->GetString(msg));
+		const char *l_msg = tmp.c_str();
+#else
 		const char *l_msg = common->GetLanguageDict()->GetString(msg);
+#endif
 		common->DPrintf("auth: client %s %s - %s %s\n", Sys_NetAdrToString(client_from), client_guid, authReplyStr[ reply ], l_msg);
 		challenges[ i ].authReply = reply;
 		challenges[ i ].authReplyMsg = replyMsg;
@@ -1916,9 +1946,18 @@ void idAsyncServer::ProcessConnectMessage(const netadr_t from, const idBitMsg &m
 				msg = challenges[ ichallenge ].authReplyPrint.c_str();
 			}
 
+#ifdef _SPLASHDAMAGE
+		{
+			idStr tmp = WStrToStr(common->GetLanguageDict()->GetString(msg));
+			l_msg = tmp.c_str();
+
+			common->DPrintf("%s: %s\n", Sys_NetAdrToString(from), l_msg);
+		}
+#else
 			l_msg = common->GetLanguageDict()->GetString(msg);
 
 			common->DPrintf("%s: %s\n", Sys_NetAdrToString(from), l_msg);
+#endif
 
 			if (challenges[ ichallenge ].authReplyMsg == AUTH_REPLY_UNKNOWN || challenges[ ichallenge ].authReplyMsg == AUTH_REPLY_WAITING) {
 				// the client may be trying to connect to us in LAN mode, and the server disagrees
@@ -1973,6 +2012,11 @@ void idAsyncServer::ProcessConnectMessage(const netadr_t from, const idBitMsg &m
 	char reason[MAX_STRING_CHARS];
 #ifdef _RAVEN
 	allowReply_t reply = game->ServerAllowClient(clientId, numClients, Sys_NetAdrToString(from), guid, password, password, reason);
+#elif defined(_SPLASHDAMAGE)
+	clientNetworkAddress_t address;
+	sdNetClientId netClientId;
+	allowFailureReason_t reasonValue;
+	allowReply_t reply = game->ServerAllowClient(numClients, 0, address, netClientId, guid, password, reasonValue);
 #else
 	allowReply_t reply = game->ServerAllowClient(numClients, Sys_NetAdrToString(from), guid, password, reason);
 #endif
@@ -2684,7 +2728,9 @@ void idAsyncServer::RunFrame(void)
 	if (cvarSystem->GetModifiedFlags() & CVAR_USERINFO) {
 		if (localClientNum >= 0) {
 			idDict newInfo;
+#if !defined(_SPLASHDAMAGE)
 			game->ThrottleUserInfo();
+#endif
 			newInfo = *cvarSystem->MoveCVarsToDict(CVAR_USERINFO);
 			SendUserInfoBroadcast(localClientNum, newInfo);
 		}
@@ -2705,11 +2751,15 @@ void idAsyncServer::RunFrame(void)
 #ifdef _RAVEN
 		// session->rw->DebugClear(0); // clear debug draw(version 1)
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], 0, true, gameFrame);
+#elif defined(_SPLASHDAMAGE)
+		game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], 0);
 #else
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)]);
 #endif
 
+#if !defined(_SPLASHDAMAGE)
 		idAsyncNetwork::ExecuteSessionCommand(ret.sessionCommand);
+#endif
 
 		// update time
 		gameFrame++;
