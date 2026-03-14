@@ -267,6 +267,18 @@ const char *Sys_TimeStampToStr(ID_TIME_T timeStamp)
 }
 
 #ifdef _SPLASHDAMAGE
+sysEvent_s::~sysEvent_s( void ) {
+	Mem_Free( evPtr );
+}
+
+void sysEvent_s::FreeData( void ) {
+	if (evPtr) {
+		Mem_Free( evPtr );
+		evPtr = NULL;
+	}
+	evPtrLength = 0;
+}
+
 void sdSysEvent::Save( idFile* file ) {
 	file->WriteInt( evType );
 	file->WriteInt( evValue );

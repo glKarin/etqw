@@ -5,7 +5,7 @@
 
 #include "idlib/precompiled.h"
 
-sdIMEGeneric()
+sdIMEGeneric::sdIMEGeneric()
     : enable(false)
 {
     

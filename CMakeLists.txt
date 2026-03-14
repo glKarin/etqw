@@ -3165,6 +3165,12 @@ if(SPLASHDAMAGE)
 			splashdamage/sdnet/SDNetTeamManager.cpp
 			splashdamage/sdnet/SDNet.cpp
 	)
+	set(splashdamage_engine_src
+			splashdamage/decllib/DeclType.cpp
+			splashdamage/framework/BuildVersion.cpp
+			splashdamage/sys/sys_ime.cpp
+			splashdamage/sys/sys_keyboard.cpp
+	)
 	set(src_core_splashdamage
 			${src_renderer}
 			${src_framework}
@@ -3177,6 +3183,7 @@ if(SPLASHDAMAGE)
 			${src_tools}
 			${src_renderbump}
 			${src_dmap}
+			${splashdamage_engine_src}
 	)
 
 	set(splashdamage_bse_src

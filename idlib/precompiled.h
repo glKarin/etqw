@@ -147,6 +147,7 @@ public:
 #include <math.h>
 #ifdef _SPLASHDAMAGE
 #include <wchar.h>	// wmemset
+#include "idlib/LibOS.h"
 #endif
 
 #include <inttypes.h>

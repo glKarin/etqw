@@ -1511,3 +1511,57 @@ int idFile::WriteVec5(const idVec5& vec) {
 	return Write(&v, sizeof(v));
 }
 #endif
+
+#ifdef _SPLASHDAMAGE
+int idFile::ReadCQuat( idCQuat& quat ) {
+	int result = Read(&quat, sizeof(quat));
+	LittleRevBytes(&quat, sizeof(float), sizeof(quat)/sizeof(float));
+	return result;
+}
+
+int idFile::ReadAngles( idAngles& angles ) {
+	int result = Read(&angles, sizeof(angles));
+	LittleRevBytes(&angles, sizeof(float), sizeof(angles)/sizeof(float));
+	return result;
+}
+
+int idFile::Read1DFloatArray( float* dst ) {
+	return 0;
+}
+
+int idFile::ReadFloatArray( float* src, const int num ) {
+	int result = Read(&src, num * sizeof(float));
+	LittleRevBytes(src, sizeof(float), num);
+	return result;
+}
+
+int idFile::WriteDouble( const double value ) {
+	double v = LittleDouble(value);
+	return Write(&v, sizeof(v));
+}
+
+int idFile::WriteCQuat( const idCQuat& quat ) {
+	idCQuat v = quat;
+	LittleRevBytes(&v, sizeof(float), sizeof(v)/sizeof(float));
+	return Write(&v, sizeof(v));
+}
+
+int idFile::WriteAngles( const idAngles& angles ) {
+	idAngles v = angles;
+	LittleRevBytes(&v, sizeof(float), sizeof(v)/sizeof(float));
+	return Write(&v, sizeof(v));
+}
+
+int idFile::Write1DFloatArray( const int num, const float* src ) {
+	return 0;
+}
+
+int idFile::WriteFloatArray( const float* src, const int num ) {
+	int ret = 0;
+	for (int i = 0; i < num; i++) {
+		ret += WriteFloat(src[i]);
+	}
+	return ret;
+}
+
+#endif

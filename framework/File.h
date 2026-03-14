@@ -136,8 +136,8 @@ class idFile
         // jmarshall end
 #endif
 #ifdef _SPLASHDAMAGE
-    virtual int				Write1DFloatArray( const int num, const float* src );
-    virtual int				WriteFloatArray( const float* src, const int num );
+	    virtual int				Write1DFloatArray( const int num, const float* src );
+	    virtual int				WriteFloatArray( const float* src, const int num );
 #endif
 };
 
