@@ -362,7 +362,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		// frees all the collision models
 		void			FreeMap(void);
 #ifdef _RAVEN
-		virtual void	FreeModel(cmHandle_t model);
 		void			FreeMap(const char* mapName) { FreeMap(); };
 		// Loads collision models from a map file.
 		void			LoadMap( const idMapFile *mapFile, bool forceCreateMap );
@@ -381,10 +380,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 			return LoadModel(modelName, true);
 		}
 
-        virtual void	DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis ) {
-            (void)viewAxis;
-            DebugOutput(viewOrigin);
-        }
 		virtual  void	DrawModel(cmHandle_t handle, const idVec3& modelOrigin, const idMat3& modelAxis, const idVec3& viewOrigin, const idMat3& viewAxis, const float radius) { (void)handle; (void)modelOrigin; (void)modelAxis; (void)viewOrigin; (void)viewAxis; (void)radius; }
 #endif
 
@@ -431,6 +426,13 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		                                  const idVec3 &viewOrigin, const float radius);
 		// print model information, use -1 handle for accumulated model info
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+		virtual void	FreeModel( idCollisionModel *model );
+
+		virtual void	DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis ) {
+			(void)viewAxis;
+			DebugOutput(viewOrigin);
+		}
+
 		// create trace model from a collision model, returns true if succesfull
 		bool			TrmFromModel(const char* mapName, const char *modelName, idTraceModel &trm ) { (void)mapName; return TrmFromModel(modelName, trm); }; //k DIFF_IMPL
 		void			ModelInfo(int num);
@@ -454,7 +456,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		virtual int					GetThreadId( void );
 		virtual int					GetThreadCount( void );
 		virtual void				LoadMap( const char* fileName, bool forceReload );
-		virtual void				FreeModel( idCollisionModel *model );
 		virtual void				PurgeModels( void );
 
 		virtual idCollisionModel *	ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes );
@@ -465,7 +466,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 
 		virtual void				DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis,
 											   const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime );
-		virtual void				DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis );
 
 		virtual void				GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const;
 
@@ -542,7 +542,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		cm_model_t 	    *AllocModel(cm_model_t * &model);
 		void            ClearModel(cm_model_t *model);
 #endif
-		void			FreeModel(cm_model_t *model);
 		// merging polygons
 		void			ReplacePolygons(cm_model_t *model, cm_node_t *node, cm_polygon_t *p1, cm_polygon_t *p2, cm_polygon_t *newp);
 		cm_polygon_t 	*TryMergePolygons(cm_model_t *model, cm_polygon_t *p1, cm_polygon_t *p2);

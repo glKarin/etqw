@@ -1733,7 +1733,7 @@ void R_RemoveUnecessaryViewLights(void)
 #include "tr/tr_lightmatrix.cpp"
 #endif
 
-#ifdef _RAVEN // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
 #ifdef _RAVEN_BSE
 idRenderModel * R_EffectDefDynamicModel(rvRenderEffectLocal *def)
 {

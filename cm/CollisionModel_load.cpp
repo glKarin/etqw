@@ -639,8 +639,13 @@ void idCollisionModelManagerLocal::FreeTree_r(cm_model_t *model, cm_node_t *head
 idCollisionModelManagerLocal::FreeModel
 ================
 */
-void idCollisionModelManagerLocal::FreeModel(cm_model_t *model)
+void idCollisionModelManagerLocal::FreeModel(idCollisionModel *_model)
 {
+	if (!_model)
+		return;
+
+	cm_model_t *model = static_cast<cm_model_t *>(_model);
+
 	cm_polygonRefBlock_t *polygonRefBlock, *nextPolygonRefBlock;
 	cm_brushRefBlock_t *brushRefBlock, *nextBrushRefBlock;
 	cm_nodeBlock_t *nodeBlock, *nextNodeBlock;
@@ -5295,6 +5300,97 @@ bool cm_model_t::IsWorld( void ) const {
 
 void cm_model_t::SetWorld( bool tf ) {
 	isWorld = tf;
+}
+
+#endif
+
+#ifdef _SPLASHDAMAGE
+void idCollisionModelManagerLocal::AllocThread( void ) {
+}
+
+void idCollisionModelManagerLocal::FreeThread( void ) {
+}
+
+int idCollisionModelManagerLocal::GetThreadId( void ) {
+	return -1;
+}
+
+int idCollisionModelManagerLocal::GetThreadCount( void ) {
+	return 0;
+}
+
+void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceReload ) {
+#if 0
+	if (mapFile == NULL) {
+		common->Error("idCollisionModelManagerLocal::LoadMap: NULL mapFile");
+	}
+
+	// check whether we can keep the current collision map based on the mapName and mapFileTime
+	if (loaded) {
+		if (mapName.Icmp(mapFile->GetName()) == 0) {
+			if (mapFile->GetFileTime() == mapFileTime) {
+				common->DPrintf("Using loaded version\n");
+				return;
+			}
+
+			common->DPrintf("Reloading modified map\n");
+		}
+
+		FreeMap(mapFile->GetName());
+	}
+
+	// clear the collision map
+	Clear();
+
+	// models
+	maxModels = MAX_SUBMODELS;
+	numModels = 0;
+	models = (cm_model_t **) Mem_ClearedAlloc((maxModels+1) * sizeof(cm_model_t *));
+
+	// setup hash to speed up finding shared vertices and edges
+	SetupHash();
+
+	// setup trace model structure
+	SetupTrmModelStructure();
+
+	// build collision models
+	BuildModels(mapFile, forceCreateMap);
+
+	// save name and time stamp
+	mapName = mapFile->GetName();
+	mapFileTime = mapFile->GetFileTime();
+	loaded = true;
+
+	// shutdown the hash
+	ShutdownHash();
+#endif
+}
+
+void idCollisionModelManagerLocal::PurgeModels( void ) {
+}
+
+idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes ) {
+	return NULL;
+}
+
+int idCollisionModelManagerLocal::Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec3 *dir, const float depth,
+								  const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
+								  idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) {
+	return 0;
+}
+
+
+void idCollisionModelManagerLocal::DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis,
+									   const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) {
+}
+
+void idCollisionModelManagerLocal::GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const {
+	out.Append(mapName);
+	out.Append("/");
+	out.Append(modelName);
+}
+
+void idCollisionModelManagerLocal::DumpCollisionModelStats( void ) {
 }
 
 #endif

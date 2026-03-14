@@ -1216,7 +1216,7 @@ void R_DeriveEntityData(idRenderEntityLocal* entity)
 }
 #endif
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
 void R_FreeEffectDefDerivedData(rvRenderEffectLocal *def)
 {

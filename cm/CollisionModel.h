@@ -185,10 +185,7 @@ class idCollisionModelManager
         // Loads collision models from a map file.
         virtual void			LoadMap( const idMapFile *mapFile, bool forceCreateMap ) = 0;
         // Frees all the collision models.
-        virtual void			FreeMap(const char* mapName) = 0;
-
-        // Frees a collision model.
-        virtual void	        FreeModel(cmHandle_t model) = 0;
+        virtual void			FreeMap(const char* mapName) = 0
 
         // sets up a trace model for collision with other trace models
         virtual cmHandle_t      ModelFromTrm(const char* mapName, const char* modelName, const idTraceModel &trm, const idMaterial *material ) = 0;
@@ -198,8 +195,6 @@ class idCollisionModelManager
         // Gets the clip handle for a model.
         virtual cmHandle_t      LoadModel(const char* mapName, const char *modelName, const bool precache = false ) = 0;
         virtual cmHandle_t      PreCacheModel(const char* mapName, const char *modelName ) = 0;
-
-        virtual void			DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis ) = 0;
 #endif
 #ifdef _HUMANHEAD
         // HUMANHEAD pdm: Support for level appending
@@ -224,8 +219,6 @@ class idCollisionModelManager
     	virtual int					GetThreadCount( void ) = 0;
 	    // Loads collision models from a map file.
 	    virtual void				LoadMap( const char* fileName, bool forceReload ) = 0;
-	    // Free the given model.
-	    virtual void				FreeModel( idCollisionModel *model ) = 0;
 	    // Purge all unused models.
 	    virtual void				PurgeModels( void ) = 0;
 	    
@@ -282,6 +275,10 @@ class idCollisionModelManager
 		                const idVec3 &viewOrigin, const float radius) = 0;
 		// Prints model information, use -1 handle for accumulated model info.
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+		// Free the given model.
+		virtual void			FreeModel( idCollisionModel *model ) = 0;
+        virtual void			DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis ) = 0;
+
         // Creates a trace model from a collision model, returns true if succesfull.
         virtual bool			TrmFromModel(const char* mapName, const char *modelName, idTraceModel &trm ) = 0;
         
@@ -297,8 +294,6 @@ class idCollisionModelManager
 	    // Draws a model.
 	    virtual void				DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis,
 	                                           const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) = 0;
-	    // Tests collision detection.
-	    virtual void				DebugOutput( const idVec3 &viewOrigin, const idMat3 &viewAxis ) = 0;
 
     	virtual void				GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const = 0;
     	

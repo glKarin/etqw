@@ -530,7 +530,7 @@ class idRenderModelSprite : public idRenderModelStatic
 		virtual	idBounds		Bounds(const struct renderEntity_s *ent) const;
 };
 
-#ifdef _RAVEN // bse model
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // bse model
 #ifdef _RAVEN_BSE
 #include "../raven/renderer/Model_bse.h"
 #else

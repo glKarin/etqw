@@ -71,7 +71,7 @@ typedef struct portalArea_s {
 	portal_t 		*portals;		// never changes after load
 	areaReference_t	entityRefs;		// head/tail of doubly linked list, may change
 	areaReference_t	lightRefs;		// head/tail of doubly linked list, may change
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
     areaReference_t	effectRefs;		// head/tail of doubly linked list, may change
 #endif
@@ -191,7 +191,7 @@ class idRenderWorldLocal : public idRenderWorld
 // jscott: handling of effects
         virtual bool			EffectDefHasSound(const renderEffect_s* reffect);
 
-#ifdef _RAVEN_BSE
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
         void                    MarkEffectDef(int effectHandle);
         void                    PushEffectDef(int effectHandle);
         void                    AddAreaEffectRefs(int areaNum, const struct portalStack_s *ps);
@@ -202,6 +202,8 @@ class idRenderWorldLocal : public idRenderWorld
 #endif
 
 	    idList<rvRenderEffectLocal*>	effectDefs;
+#endif
+#ifdef _RAVEN
         int                             procVersion; //karin: for compat doom3 proc
 #endif
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)

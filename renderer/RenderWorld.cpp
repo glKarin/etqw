@@ -2463,7 +2463,7 @@ const idMaterial *R_RemapShaderBySkin(const idMaterial *shader, const idDeclSkin
 	return skin->RemapShaderBySkin(shader);
 }
 
-#ifdef _RAVEN // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
 
 #ifdef _RAVEN_FX
 #define ASSERT_EFFECT_HANDLE(effectHandle) \
@@ -2509,7 +2509,7 @@ rvRenderEffectLocal::~rvRenderEffectLocal()
         delete dynamicModel;
 }
 
-#ifdef _RAVEN_BSE
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 
 #define ASSERT_EFFECT_HANDLE(effectHandle) \
 	if (effectHandle < 0 || effectHandle > LUDICROUS_INDEX) { \
@@ -3548,7 +3548,9 @@ const class rvRenderEffectLocal* idRenderWorldLocal::GetEffectDef(qhandle_t effe
 	return NULL;
 #endif
 }
+#endif
 
+#ifdef _RAVEN
 bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
 #ifdef _RAVEN_FX
     return bse->CheckDefForSound(reffect);
@@ -3558,7 +3560,6 @@ bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
     return false;
 #endif
 }
-
 #endif
 
 #ifdef _SPLASHDAMAGE

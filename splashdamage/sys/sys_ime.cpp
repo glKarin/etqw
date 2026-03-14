@@ -1,9 +1,9 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
-#include "sys_ime.h"
-
 #include "idlib/precompiled.h"
+
+#include "sys_ime.h"
 
 sdIMEGeneric::sdIMEGeneric()
     : enable(false)

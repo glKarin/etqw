@@ -1083,7 +1083,7 @@ void idRenderWorldLocal::AddAreaRefs(int areaNum, const portalStack_t *ps)
 	// add the models and lights, using more precise culling to the planes
 	AddAreaEntityRefs(areaNum, ps);
 	AddAreaLightRefs(areaNum, ps);
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
     AddAreaEffectRefs(areaNum, ps);
 #endif
@@ -1166,7 +1166,7 @@ void idRenderWorldLocal::FindViewLightsAndEntities(void)
 	// clear the visible lightDef and entityDef lists
 	tr.viewDef->viewLights = NULL;
 	tr.viewDef->viewEntitys = NULL;
-#ifdef _RAVEN // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
 #ifdef _RAVEN_BSE
     tr.viewDef->viewEffects = NULL;
 #endif

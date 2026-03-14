@@ -1293,7 +1293,7 @@ void R_RenderView(viewDef_t *parms)
 	// lists
 	R_AddModelSurfaces();
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
     R_AddEffectSurfaces();
 #endif

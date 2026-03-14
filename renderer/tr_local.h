@@ -247,7 +247,7 @@ typedef struct areaReference_s {
 	idRenderEntityLocal 	*entity;					// only one of entity / light will be non-NULL
 	idRenderLightLocal 	*light;					// only one of entity / light will be non-NULL
 	struct portalArea_s		*area;					// so owners can find all the areas they are in
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
     rvRenderEffectLocal	*effect;		// head/tail of doubly linked list, may change
 #endif
@@ -1508,7 +1508,7 @@ void R_ModulateLights_f(const idCmdArgs &args);
 void R_SetLightProject(idPlane lightProject[4], const idVec3 origin, const idVec3 targetPoint,
                        const idVec3 rightVector, const idVec3 upVector, const idVec3 start, const idVec3 stop);
 
-#ifdef _RAVEN // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
 #ifdef _RAVEN_BSE
 void R_AddEffectSurfaces(void);
 viewEffect_s * R_SetEffectDefViewEntity(rvRenderEffectLocal *def);
@@ -2333,7 +2333,9 @@ idScreenRect R_CalcIntersectionScissor(const idRenderLightLocal *lightDef,
 #define SUPPRESS_SURFACE_MASK(x) (1 << (x))
 #define SUPPRESS_SURFACE_MASK_CHECK(t, x) ((t) & SUPPRESS_SURFACE_MASK(x))
 #include "../raven/renderer/NewShaderStage.h"
+#endif
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 typedef struct viewEffect_s/* : viewEntity_s*/ // 164 bytes in 32bits
 {
     struct viewEffect_s *next;

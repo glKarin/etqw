@@ -3170,6 +3170,8 @@ if(SPLASHDAMAGE)
 			splashdamage/framework/BuildVersion.cpp
 			splashdamage/sys/sys_ime.cpp
 			splashdamage/sys/sys_keyboard.cpp
+			splashdamage/framework/AdManager.cpp
+			splashdamage/framework/NotificationSystem.cpp
 	)
 	set(src_core_splashdamage
 			${src_renderer}

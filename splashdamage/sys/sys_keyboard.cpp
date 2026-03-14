@@ -1,9 +1,9 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
-#include "sys_keyboard.h"
-
 #include "idlib/precompiled.h"
+
+#include "sys_keyboard.h"
 
 #include "framework/KeyInput.h"
 
