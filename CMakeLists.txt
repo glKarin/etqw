@@ -3150,29 +3150,40 @@ endif()
 if(SPLASHDAMAGE)
 	# splashdamage engine source
 	set(splashdamage_sdnet_src
+			splashdamage/sdnet/SDNet.cpp
 			splashdamage/sdnet/SDNetAccount.cpp
 			splashdamage/sdnet/SDNetFriend.cpp
+			splashdamage/sdnet/SDNetFriendsManager.cpp
 			splashdamage/sdnet/SDNetMessage.cpp
 			splashdamage/sdnet/SDNetMessageHistory.cpp
 			splashdamage/sdnet/SDNetProfile.cpp
+			splashdamage/sdnet/SDNetSession.cpp
+			splashdamage/sdnet/SDNetSessionManager.cpp
+			splashdamage/sdnet/SDNetStatsManager.cpp
 			splashdamage/sdnet/SDNetTask.cpp
+			splashdamage/sdnet/SDNetTeamManager.cpp
 			splashdamage/sdnet/SDNetTeamMember.cpp
 			splashdamage/sdnet/SDNetUser.cpp
-			splashdamage/sdnet/SDNetFriendsManager.cpp
-			splashdamage/sdnet/SDNetSession.cpp
-			splashdamage/sdnet/SDNetStatsManager.cpp
-			splashdamage/sdnet/SDNetSessionManager.cpp
-			splashdamage/sdnet/SDNetTeamManager.cpp
-			splashdamage/sdnet/SDNet.cpp
 	)
 	set(splashdamage_engine_src
-			splashdamage/decllib/DeclType.cpp
+			splashdamage/framework/AdManager.cpp
 			splashdamage/framework/BuildVersion.cpp
+			splashdamage/framework/GraphManager.cpp
+			splashdamage/framework/NotificationSystem.cpp
+			splashdamage/renderer/DeviceContext.cpp
 			splashdamage/sys/sys_ime.cpp
 			splashdamage/sys/sys_keyboard.cpp
-			splashdamage/framework/AdManager.cpp
-			splashdamage/framework/NotificationSystem.cpp
-			splashdamage/framework/GraphManager.cpp
+	)
+	set(splashdamage_decl_src
+			splashdamage/decllib/declAmbientCubeMap.cpp
+			splashdamage/decllib/declAtmosphere.cpp
+			splashdamage/decllib/declDecal.cpp
+			splashdamage/decllib/declImposter.cpp
+			splashdamage/decllib/declLocStr.cpp
+			splashdamage/decllib/declRenderBinding.cpp
+			splashdamage/decllib/declStuffType.cpp
+			splashdamage/decllib/DeclSurfaceType.cpp
+			splashdamage/decllib/DeclType.cpp
 	)
 	set(splashdamage_bse_src
 			raven/bse/BSE_Effect.cpp
@@ -3205,6 +3216,7 @@ if(SPLASHDAMAGE)
 			${src_dmap}
 			${splashdamage_engine_src}
 			${splashdamage_bse_src}
+			${splashdamage_decl_src}
 	)
 
 	if(ANDROID)

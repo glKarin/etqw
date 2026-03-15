@@ -1887,3 +1887,9 @@ idDeclAF::~idDeclAF(void)
 	bodies.DeleteContents(true);
 	constraints.DeleteContents(true);
 }
+
+#ifdef _SPLASHDAMAGE
+void idDeclAF::CacheFromDict( const idDict& dict ) {
+
+}
+#endif

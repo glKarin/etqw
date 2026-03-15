@@ -1,6 +1,9 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclAF.h"
+#else
 #ifndef __DECLAF_H__
 #define __DECLAF_H__
 
@@ -192,3 +195,4 @@ private:
 };
 
 #endif /* !__DECLAF_H__ */
+#endif

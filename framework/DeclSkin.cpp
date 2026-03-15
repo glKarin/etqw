@@ -197,3 +197,9 @@ const idMaterial *idDeclSkin::RemapShaderBySkin(const idMaterial *shader) const
 	// didn't find a match or wildcard, so stay the same
 	return shader;
 }
+
+#ifdef _SPLASHDAMAGE
+void idDeclSkin::CacheFromDict( const idDict& dict ) {
+
+}
+#endif

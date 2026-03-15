@@ -168,3 +168,9 @@ void idDeclEntityDef::Print(void) const
 {
 	dict.Print();
 }
+
+#ifdef _SPLASHDAMAGE
+void idDeclEntityDef::CacheFromDict( const idDict& dict ) {
+
+}
+#endif

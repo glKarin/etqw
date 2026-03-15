@@ -1,6 +1,9 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclTable.h"
+#else
 #ifndef __DECLTABLE_H__
 #define __DECLTABLE_H__
 
@@ -48,3 +51,4 @@ private:
 };
 
 #endif /* !__DECLTABLE_H__ */
+#endif

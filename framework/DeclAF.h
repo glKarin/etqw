@@ -179,6 +179,10 @@ class idDeclAF : public idDecl
 		static declAFJointMod_t	JointModFromString(const char *str);
 		static const char 		*JointModToString(declAFJointMod_t jointMod);
 
+#ifdef _SPLASHDAMAGE
+    	static void				CacheFromDict( const idDict& dict );
+#endif
+
 	public:
 		bool					modified;
 		idStr					model;
@@ -203,7 +207,7 @@ class idDeclAF : public idDecl
 #ifdef _RAVEN
 // RAVEN BEGIN
 // rjohnson: fast AF eval to skip some things that are not needed for specific circumstances
-	bool					fastEval;
+		bool					fastEval;
 // RAVEN END
 #endif
 

@@ -1,6 +1,9 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclSkin.h"
+#else
 #ifndef __DECLSKIN_H__
 #define __DECLSKIN_H__
 
@@ -37,3 +40,4 @@ private:
 };
 
 #endif /* !__DECLSKIN_H__ */
+#endif

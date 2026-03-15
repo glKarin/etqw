@@ -1,6 +1,9 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclEntityDef.h"
+#else
 #ifndef __DECLENTITYDEF_H__
 #define __DECLENTITYDEF_H__
 
@@ -29,3 +32,4 @@ public:
 };
 
 #endif /* !__DECLENTITYDEF_H__ */
+#endif

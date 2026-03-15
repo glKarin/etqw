@@ -51,6 +51,8 @@ class idDeclTable : public idDecl
 		virtual void			FreeData(void);
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+// RAVEN BEGIN
+// jscott: for BSE
         float			GetMaxValue( void ) const { return( maxValue ); }
         float			GetMinValue( void ) const { return( minValue ); }
         // bdube: made virtual so it can be accessed in game
@@ -60,6 +62,15 @@ class idDeclTable : public idDecl
 		virtual	//HUMANHEAD pdm: made virtual so it can be called from game code
 #endif
 		float					TableLookup(float index) const;
+		
+#ifdef _SPLASHDAMAGE
+	    int						NumValues( void ) const {
+	        return values.Num();
+	    }
+	    float					GetValue( int index ) const {
+	        return values[ index ];
+	    }
+#endif
 
 	private:
 		bool					clamp;
@@ -72,6 +83,10 @@ class idDeclTable : public idDecl
 		float					minValue;
 		float					maxValue;
 // RAVEN END
+#endif
+#ifdef _SPLASHDAMAGE
+	    bool					discontinuous;
+	    bool					isLinear;
 #endif
 };
 

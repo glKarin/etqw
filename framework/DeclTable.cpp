@@ -132,6 +132,10 @@ bool idDeclTable::Parse(const char *text, const int textLength)
 	minValue = idMath::INFINITY;
 	maxValue = -idMath::INFINITY;
 #endif
+#ifdef _SPLASHDAMAGE
+	discontinuous = false;
+	isLinear = true;
+#endif
 
 	snap = false;
 	clamp = false;
