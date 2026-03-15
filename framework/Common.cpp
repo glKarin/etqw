@@ -57,8 +57,8 @@ extern bool smooth_joystick;
 #endif
 
 #ifdef _SPLASHDAMAGE
-static idStrPool globalKeyPool;
-static idStrPool globalValuePool;
+static idStrPool *globalKeyPool;
+static idStrPool *globalValuePool;
 
 static stringDataAllocator_t globalStringDataAllocator;
 static wideStringDataAllocator_t globalWideStringDataAllocator;
@@ -3334,11 +3334,14 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.bse						= ::bse;
 #endif
 #ifdef _SPLASHDAMAGE
+	idStrPool *keypool = NULL;
+	idStrPool *valuepool = NULL;
+	idDict::GetGlobalPools(globalKeyPool, globalValuePool);
 	gameImport.adManager				= ::adManager;
 	gameImport.keyInputManager			= ::keyInputManager;
 	gameImport.notificationSystem		= ::notificationSystem;
-	gameImport.globalKeys				= &::globalKeyPool;
-	gameImport.globalValues				= &::globalValuePool;
+	gameImport.globalKeys				= keypool;
+	gameImport.globalValues				= valuepool;
 	gameImport.stringAllocator			= &::globalStringDataAllocator;
 	gameImport.wideStringAllocator		= &::globalWideStringDataAllocator;
 	gameImport.graphManager				= ::graphManager;
@@ -3464,7 +3467,10 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 
 		// initialize idLib
 #ifdef _SPLASHDAMAGE //karin: must call before idLib::Init
-		idDict::SetGlobalPools(&globalKeyPool, &globalValuePool);
+		//karin: must in heap
+		globalKeyPool = new idStrPool;
+		globalValuePool = new idStrPool;
+		idDict::SetGlobalPools(globalKeyPool, globalValuePool);
 		idStr::SetStringAllocator(&globalStringDataAllocator);
 		idWStr::SetStringAllocator(&globalWideStringDataAllocator);
 #endif

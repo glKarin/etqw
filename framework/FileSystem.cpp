@@ -3349,9 +3349,15 @@ void idFileSystemLocal::Init(void)
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
 	// Dedicated servers can run with no outside files at all
+#ifdef _SPLASHDAMAGE
+	if (ReadFile("public.cfg", NULL, NULL) <= 0) {
+		common->FatalError("Couldn't load default.cfg");
+	}
+#else
 	if (ReadFile("default.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
 	}
+#endif
 }
 
 /*
@@ -3372,9 +3378,15 @@ void idFileSystemLocal::Restart(void)
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
+#ifdef _SPLASHDAMAGE
+	if (ReadFile("public.cfg", NULL, NULL) <= 0) {
+		common->FatalError("Couldn't load default.cfg");
+	}
+#else
 	if (ReadFile("default.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
 	}
+#endif
 }
 
 /*

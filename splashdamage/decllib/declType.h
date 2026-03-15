@@ -151,4 +151,68 @@ ID_INLINE const idDecl* sdDeclWrapper::CreateNewDecl( const char* name, const ch
 	return declManager->CreateNewDecl( declTypeHandle, name, file );
 }
 
+
+
+#ifdef _SPLASHDAMAGE
+ID_INLINE bool idDeclType::SkipChecksum( void ) const {
+	return true;
+}
+
+ID_INLINE bool idDeclType::AllowTemplateEvaluation( void ) const {
+	return false;
+}
+
+ID_INLINE bool idDeclType::SkipParsing( void ) const {
+	return false;
+}
+
+ID_INLINE bool idDeclType::NotPrecached( void ) const {
+	return false;
+}
+
+ID_INLINE bool idDeclType::AlwaysGenerateBinary( void ) const {
+	return false;
+}
+
+ID_INLINE bool idDeclType::UsePrivateTokens( void ) const {
+	return false;
+}
+
+ID_INLINE bool idDeclType::WriteBinary( void ) const {
+	return false;
+}
+
+ID_INLINE bool idDeclType::NeverStoreBinary( void ) const {
+	return false;
+}
+
+ID_INLINE idDecl* idDeclType::Alloc( void ) {
+	return NULL;
+}
+
+ID_INLINE void idDeclType::OnReload( idDecl* decl ) const {
+}
+
+ID_INLINE const char* idDeclType::GetName( void ) const {
+	return declManager->GetDeclTypeName( declTypeHandle );
+}
+
+ID_INLINE void idDeclType::CacheFromDict( const idDict& dict ) const {
+}
+
+ID_INLINE bool idDeclType::CanCacheFromDict() const {
+	return false;
+}
+
+ID_INLINE void idDeclType::PostParse( idDecl* decl ) const {
+}
+
+ID_INLINE void idDeclType::RegisterPostParse( pfnOnPostParse postParse ) const {
+}
+
+ID_INLINE void idDeclType::UnregisterPostParse( pfnOnPostParse postParse ) const {
+}
+
+#endif
+
 #endif // __DECLLIB_DECLTYPE_H__
