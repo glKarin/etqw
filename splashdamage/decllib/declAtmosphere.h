@@ -4,7 +4,7 @@
 #ifndef __DECLATMOSPHERE_H__
 #define __DECLATMOSPHERE_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 #include "declAmbientCubeMap.h"
 
 class idRenderModel;

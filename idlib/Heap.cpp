@@ -1311,7 +1311,7 @@ void *Mem_Alloc(const int size)
         common->Printf( "\nTotal Physical Memory: %I64d bytes\nAvailable Physical Memory: %I64d bytes\nMemory Utilization: %i %%\n\n",
                         statex.ullTotalPhys, statex.ullAvailPhys, (int)statex.dwMemoryLoad );
 #endif
-        common->FatalError( "Mem_Alloc request for %li bytes failed", size );
+        common->FatalError( "Mem_Alloc request for %i bytes failed", size );
     }
 #endif
 	return mem;

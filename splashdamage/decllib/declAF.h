@@ -4,7 +4,7 @@
 #ifndef __DECLAF_H__
 #define __DECLAF_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 /*
 ===============================================================================

@@ -200,7 +200,7 @@ sdThread::ThreadProc
 void* sdThread::ThreadProc( void* p ) {
 	sdThreadParms *parms = static_cast< sdThreadParms* >( p );
 	unsigned int retVal = parms->process->Run( parms->parm );
-	return sdSysThread::Exit( retVal );
+	return (void *)(uintptr_t)sdSysThread::Exit( retVal );
 }
 
 #endif

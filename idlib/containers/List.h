@@ -71,6 +71,7 @@ ID_INLINE type *idListNewElement(void)
 	return new type;
 }
 
+#if 0 //karin: move to Sort.h for Sort function
 /*
 ================
 idSwap<type>
@@ -83,6 +84,7 @@ ID_INLINE void idSwap(type &a, type &b)
 	a = b;
 	b = c;
 }
+#endif
 
 template< class type >
 class idList
@@ -111,6 +113,7 @@ class idList
 	        Clear();
 	        CopyFromRange( begin, end );
 	    }
+		static const int		DEFAULT_GRANULARITY = 16;
 #endif
 
 		idList(int newgranularity = 16);

@@ -990,7 +990,11 @@ void idAsyncClient::ReadLocalizedServerString(const idBitMsg &msg, char *out, in
 {
 	msg.ReadString(out, maxLen);
 	// look up localized string. if the message is not an #str_ format, we'll just get it back unchanged
+#ifdef _SPLASHDAMAGE
+	idStr::snPrintf(out, maxLen - 1, "%ls", common->GetLanguageDict()->GetString(out));
+#else
 	idStr::snPrintf(out, maxLen - 1, "%s", common->GetLanguageDict()->GetString(out));
+#endif
 }
 
 /*

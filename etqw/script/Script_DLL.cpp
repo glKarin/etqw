@@ -52,7 +52,7 @@ char*							sdDLLThread::s_errorThrown = NULL;
 		popa		\
 	}
 
-#elif defined( __linux__ ) || defined( MACOS_X )
+#elif (defined( __linux__ ) || defined( MACOS_X )) && defined(__i386__) //karin: only on x86
 
 // this one is not actually used, the stack is restored at the same address so we never have to modify esp
 //#define STACK_SET( value ) __asm__ __volatile__ ( "movl %0, %%esp; sub $0x1c, %%esp;" : : "m" ( value ) : )

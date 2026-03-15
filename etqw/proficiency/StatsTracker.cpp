@@ -281,7 +281,7 @@ bool sdStatsCommand_Get::Run( sdStatsTracker& tracker, const idCmdArgs& args ) {
 		return false;
 	}
 
-	gameLocal.Printf( "Found Stat Handle %i\n", handle );
+	gameLocal.Printf( "Found Stat Handle %i\n", (int)handle );
 
 	return true;
 }

@@ -4,7 +4,7 @@
 #ifndef __DECLDECAL_H__
 #define __DECLDECAL_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 class sdDeclDecal : public idDecl {
 public:

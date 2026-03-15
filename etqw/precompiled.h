@@ -24,7 +24,11 @@
 #include "../idlib/Lib.h"
 #include "../idlib/LibImpl.h"
 
+#ifdef _ETQW
+#include "../framework/DeclManager.h"
+#else
 #include "../framework/declManager.h"
+#endif
 #include "../framework/CVarSystem.h"
 #include "../framework/CmdSystemDeclCompletion.h"
 #include "../framework/UsercmdGen.h"

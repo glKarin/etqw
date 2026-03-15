@@ -4,7 +4,7 @@
 #ifndef __DECLTABLE_H__
 #define __DECLTABLE_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 /*
 ===============================================================================

@@ -34,6 +34,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "../renderer/imgui/r_imgui.h"
 #endif
 
+#ifdef _SPLASHDAMAGE
+#include "framework/AdManager.h"
+#include "framework/NotificationSystem.h"
+#endif
+
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
 
@@ -134,7 +139,7 @@ idGame 		*game = NULL;
 idGameEdit 	*gameEdit = NULL;
 #endif
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 bool com_debugHudActive = false;
 #endif
 
@@ -3087,6 +3092,8 @@ void idCommonLocal::Async(void)
 #define _HARM_BASE_GAME_DLL "q4game"
 #elif defined(_HUMANHEAD) // prey game dll
 #define _HARM_BASE_GAME_DLL "preygame"
+#elif defined(_SPLASHDAMAGE) // ETQW game dll
+#define _HARM_BASE_GAME_DLL "qtewgame"
 #else
 #define _HARM_BASE_GAME_DLL "game"
 #endif
@@ -3199,6 +3206,19 @@ void idCommonLocal::LoadGameDLL(void)
 				gameDLL = sys->DLL_Load(dllFile);
 				common->Printf("Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
 			}
+#elif defined(_SPLASHDAMAGE) // ETQW base game dll
+			if(!fsgame.Icmp("etqwbase") 
+#if !defined(__ANDROID__)
+					|| !fsgame.Icmp("base")
+#endif
+					|| fsgame.IsEmpty()) // load ETQW game so.
+			{
+				common->Printf("Load ETQW game......\n");
+				idStr dllFile(dir);
+				dllFile.AppendPath(DLL_NAME("etqwgame"));
+				gameDLL = sys->DLL_Load(dllFile);
+				common->Printf("Load dynamic library `%s` %s!\n", dllFile.c_str(), LOAD_RESULT(gameDLL));
+			}
 #else // doom3 base game dll
 			if(!fsgame.Icmp("base") || fsgame.IsEmpty()) // doom3 base game dll
 			{
@@ -3293,7 +3313,7 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.renderSystem				= ::renderSystem;
 	gameImport.soundSystem				= ::soundSystem;
 	gameImport.renderModelManager		= ::renderModelManager;
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: sdUserInterfaceManager on ETQW game
 	gameImport.uiManager				= ::uiManager;
 #endif
 	gameImport.declManager				= ::declManager;
@@ -3301,6 +3321,16 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.collisionModelManager	= ::collisionModelManager;
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE) // bse
 	gameImport.bse						= ::bse;
+#endif
+#ifdef _SPLASHDAMAGE
+	gameImport.adManager			= ::adManager;
+	//gameImport.keyInputManager			= ::AASFileManager;
+	gameImport.notificationSystem			= ::notificationSystem;
+	//gameImport.globalKeys			= ::AASFileManager;
+	//gameImport.globalValues			= ::AASFileManager;
+	//gameImport.stringAllocator			= ::AASFileManager;
+	//gameImport.wideStringAllocator			= ::AASFileManager;
+	//gameImport.graphManager			= ::AASFileManager;
 #endif
 
 	gameExport							= *GetGameAPI(&gameImport);

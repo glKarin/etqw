@@ -100,7 +100,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPERATOR_STR				"/"
 #define PATHSEPERATOR_CHAR				'/'
@@ -588,7 +588,11 @@ const char 	*Sys_EXEPath(void);
 
 // use fs_debug to verbose Sys_ListFiles
 // returns -1 if directory was not found (the list is cleared)
+#ifdef _SPLASHDAMAGE
+int				Sys_ListFiles(const char *directory, const char *extension, class idStrList &list);
+#else
 int				Sys_ListFiles(const char *directory, const char *extension, idList<class idStr> &list);
+#endif
 
 // know early if we are performing a fatal error shutdown so the error message doesn't get lost
 void			Sys_SetFatalError(const char *error);

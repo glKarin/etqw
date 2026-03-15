@@ -159,6 +159,9 @@ class idProgram;
 
 // RAVEN BEGIN
 // bdube: added timing dict
+#endif
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 extern bool                        com_debugHudActive;                // The debug hud is active in the game
 // RAVEN END
 #endif

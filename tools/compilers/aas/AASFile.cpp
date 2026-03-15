@@ -1589,7 +1589,11 @@ idAASFileLocal::PrintInfo
 */
 void idAASFileLocal::PrintInfo(void) const
 {
+#ifdef _SPLASHDAMAGE
+	common->Printf("%6zd KB file size\n", MemorySize() >> 10);
+#else
 	common->Printf("%6d KB file size\n", MemorySize() >> 10);
+#endif
 	common->Printf("%6d areas\n", areas.Num());
 	common->Printf("%6d max tree depth\n", MaxTreeDepth());
 	ReportRoutingEfficiency();

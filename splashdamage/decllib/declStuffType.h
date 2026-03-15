@@ -4,7 +4,7 @@
 #ifndef __DECLSTUFFTYPE_H__
 #define __DECLSTUFFTYPE_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 class sdDeclStuffType : public idDecl {
 public:

@@ -437,6 +437,9 @@ class idVec3
 
 		idVec3(void);
 		explicit idVec3(const float x, const float y, const float z);
+#ifdef _SPLASHDAMAGE
+		idVec3(const float v);
+#endif
 
 		void 			Set(const float x, const float y, const float z);
 		void			Zero(void);
@@ -715,6 +718,9 @@ class idVec3
 
 extern idVec3 vec3_origin;
 #define vec3_zero vec3_origin
+#ifdef _SPLASHDAMAGE
+extern idVec3 vec3_one;
+#endif
 
 ID_INLINE idVec3::idVec3(void)
 {
@@ -726,6 +732,13 @@ ID_INLINE idVec3::idVec3(const float x, const float y, const float z)
 	this->y = y;
 	this->z = z;
 }
+
+#ifdef _SPLASHDAMAGE
+ID_INLINE idVec3::idVec3(const float v)
+{
+	this->x = this->y = this->z = v;
+}
+#endif
 
 ID_INLINE float idVec3::operator[](const int index) const
 {

@@ -242,7 +242,9 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 // user interfaces
 #include "../ui/ListGUI.h"
+#if !defined(_ETQW) //karin: sdUserInterface* on ETQW
 #include "../ui/UserInterface.h"
+#endif
 
 // collision detection system
 #include "../cm/CollisionModel.h"

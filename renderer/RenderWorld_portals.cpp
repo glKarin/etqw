@@ -1637,7 +1637,9 @@ void idRenderWorldLocal::FindVisibleAreas_r(const idVec3 &origin, int areaNum, c
 	}
 }
 #endif
+#endif
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
 void idRenderWorldLocal::AddAreaEffectRefs(int areaNum, const portalStack_s *ps) {
     areaReference_s *p_effectRefs; // ebp

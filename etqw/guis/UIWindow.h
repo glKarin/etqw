@@ -207,7 +207,13 @@ public:
 protected:
 	unsigned int							GetDrawTextFlags() const;
 	virtual void							DrawText( const wchar_t* text, const idVec4& color );
+#ifdef _SPLASHDAMAGE
+public:
+#endif
 	static void								DrawText( const wchar_t* text, const idVec4& color, const int pointSize, const sdBounds2D& rect, qhandle_t font, const unsigned int flags );
+#ifdef _SPLASHDAMAGE
+protected:
+#endif
 	void									DrawText();
 	void									DrawBackground( const idVec4& rect );
 	void									DrawFrame( const idVec4& rect, uiMaterialCache_t::Iterator& cacheEntry, const idVec4& color );

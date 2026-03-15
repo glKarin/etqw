@@ -467,9 +467,13 @@ float rvParticleTemplate::GetFurthestDistance() const {
     mSpawnFriction.GetMinsMaxs(minFric, maxFric);
 
     // 2) Choose appropriate gravity
+#ifdef _SPLASHDAMAGE
+    float grav = cvarSystem->GetCVarFloat("g_gravity");
+#else
     float grav = game->IsMultiplayer()
         ? cvarSystem->GetCVarFloat("g_mp_gravity")
         : cvarSystem->GetCVarFloat("g_gravity");
+#endif
 
     // 3) Build gravity offset vector and scale by template gravity.x
     idVec3 gravVec(0.0f, 0.0f, -grav);
@@ -1253,7 +1257,11 @@ void rvParticleTemplate::Finish(void)
             const srfTriangles_t* tri = s->geometry;
             mVertexCount = tri ? tri->numVerts : 0; //k??? TODO Q4BSE duplicate: s->geometry->numVerts == tri->numVerts;
             mIndexCount = tri ? tri->numIndexes : 0; //k??? TODO Q4BSE duplicate: s->geometry->numIndexes == tri->numIndexes;
+#ifdef _SPLASHDAMAGE
+            mMaterial = s->material;
+#else
             mMaterial = s->shader;
+#endif
             mMaterialName = mMaterial->GetName();
         }
 
@@ -1417,7 +1425,11 @@ bool rvParticleTemplate::Parse(rvDeclEffect* effect, idLexer* src)
                 if(d)
                 {
                     const idDeclEntityDef *def = static_cast<const idDeclEntityDef *>(d);
+#ifdef _SPLASHDAMAGE
+                    game->CacheDictionaryMedia(def->dict);
+#else
                     game->CacheDictionaryMedia(&def->dict);
+#endif
                 }
             }
         }

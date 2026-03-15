@@ -111,7 +111,7 @@ bool idTokenCache::Read( idFile* f ) {
 		f->ReadChar( whiteSpace );
 
 		token.whiteSpaceStart_p = NULL;
-		token.whiteSpaceEnd_p = ( const char* )whiteSpace;
+		token.whiteSpaceEnd_p = ( const char* )(uintptr_t)whiteSpace;
 	}
 
 	assert( newCache.uniqueTokens.Num() == numTokens );

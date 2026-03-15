@@ -4,7 +4,7 @@
 #ifndef __DECLSKIN_H__
 #define __DECLSKIN_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 /*
 ===============================================================================

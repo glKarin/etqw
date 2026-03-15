@@ -10,7 +10,7 @@
 //
 //===============================================================
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 class sdDeclTypeHolder {
 public:

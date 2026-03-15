@@ -128,7 +128,7 @@ public:
 #endif
 
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)_alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 
 #define PATHSEPARATOR_STR				"/"
 #define PATHSEPARATOR_CHAR				'/'
@@ -222,7 +222,7 @@ public:
 
 #include <alloca.h>
 #define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)_alloca( (x)+15 )) + 15) & ~15))
+#define _alloca16( x )					((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 
 #define ALIGN16( x )					x __attribute__ ((aligned (16)))
 #define PACKED							__attribute__((packed))

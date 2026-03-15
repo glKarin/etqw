@@ -5,7 +5,11 @@
 #ifndef __DECLSURFACETYPE_H__
 #define __DECLSURFACETYPE_H__
 
+#ifdef _ETQW
+#include "../framework/DeclManager.h"
+#else
 #include "../framework/declManager.h"
+#endif
 
 /*
 ===============================================================================

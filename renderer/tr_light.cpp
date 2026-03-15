@@ -1884,8 +1884,12 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEffect_s *space, const r
 	espace->entityDef->parms.allowSurfaceInViewID = space->effectDef->parms.allowSurfaceInViewID;
     espace->entityDef->parms.origin = space->effectDef->parms.origin;
     espace->entityDef->parms.axis = space->effectDef->parms.axis;
+#ifdef _SPLASHDAMAGE
+    espace->entityDef->parms.referenceSound = space->effectDef->parms.referenceSound;
+#else
     espace->entityDef->parms.referenceSoundHandle = space->effectDef->parms.referenceSoundHandle;
     espace->entityDef->parms.weaponDepthHackInViewID = space->effectDef->parms.weaponDepthHackInViewID;
+#endif
     espace->entityDef->parms.modelDepthHack = space->effectDef->parms.modelDepthHack;
     espace->entityDef->parms.weaponDepthHack = space->effectDef->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
     memcpy(espace->entityDef->parms.shaderParms, space->effectDef->parms.shaderParms, sizeof(espace->entityDef->parms.shaderParms));
@@ -1972,7 +1976,11 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEffect_s *space, const r
         }
 #endif
 
+#ifdef _SPLASHDAMAGE
+        shader->EvaluateRegisters(regs, shaderParms, tr.viewDef, renderEntity->referenceSound);
+#else
         shader->EvaluateRegisters(regs, shaderParms, tr.viewDef, renderEntity->referenceSoundHandle);
+#endif
 
 #if 0
         if (space->entityDef && space->entityDef->parms.timeGroup) {
@@ -2065,7 +2073,11 @@ void R_AddAmbientEffectDrawsurfs(viewEffect_s *vEffect) {
         v4 = v2->geometry;
         if (v4) {
             if (v4->numIndexes) {
+#ifdef _SPLASHDAMAGE
+                v5 = v2->material;
+#else
                 v5 = v2->shader;
+#endif
                 if (v5) {
                     if (/*((int) v5[66] > 0 || v5[19] || v5[20])
                         && //k??? TODO some idMaterial property as condition, need get property name by memory offset in 32bits */ !R_CullLocalBox(v4->bounds, vEffect->modelMatrix, 5, tr.viewDef->frustum)) {

@@ -20,6 +20,6 @@
 #include "../sys/sys_public.h"
 #include "../idlib/Lib.h"
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 #endif // __DECLLIB_PRECOMPILED_H__

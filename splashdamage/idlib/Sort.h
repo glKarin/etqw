@@ -7,6 +7,21 @@
 
 // a version from Microsoft's CRT that supports a functor
 
+#if 1 //karin: move from List.h for Sort function
+/*
+================
+idSwap<type>
+================
+*/
+template< class type >
+ID_INLINE void idSwap(type &a, type &b)
+{
+	type c = a;
+	a = b;
+	b = c;
+}
+#endif
+
 template< class T >
 class sdSortLess {
 public:	

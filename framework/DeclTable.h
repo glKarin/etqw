@@ -50,7 +50,7 @@ class idDeclTable : public idDecl
 #endif
 		virtual void			FreeData(void);
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
         float			GetMaxValue( void ) const { return( maxValue ); }
         float			GetMinValue( void ) const { return( minValue ); }
         // bdube: made virtual so it can be accessed in game
@@ -66,11 +66,11 @@ class idDeclTable : public idDecl
 		bool					snap;
 		idList<float>			values;
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 // RAVEN BEGIN
 // jscott: for BSE
-	float					minValue;
-	float					maxValue;
+		float					minValue;
+		float					maxValue;
 // RAVEN END
 #endif
 };

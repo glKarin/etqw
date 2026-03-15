@@ -797,9 +797,9 @@ idStr WStrToStr( const wchar_t *wstr ) {
 	return ret;
 #else
 	size_t len = wcstombs(NULL, wstr, 0);
-	char *mbuf = malloc(len + 1);
+	char *mbuf = (char *)malloc(len + 1);
 	memset(mbuf, 0, len + 1);
-	wcstombs(mb_buf, wc_str, len + 1);
+	wcstombs(mbuf, wstr, len + 1);
 	idStr ret = mbuf;
 	free(mbuf);
 	return ret;
@@ -821,7 +821,7 @@ idWStr StrToWStr( const char *mstr ) {
 	return ret;
 #else
 	size_t len = mbstowcs(NULL, mstr, 0);  // 先算长度
-	wchar_t *wbuf = malloc((len + 1) * sizeof(wchar_t));
+	wchar_t *wbuf = (wchar_t *)malloc((len + 1) * sizeof(wchar_t));
 	memset(wbuf, 0, (len + 1) * sizeof(wchar_t));
 	mbstowcs(wbuf, mstr, len + 1);
 	idWStr ret = wbuf;

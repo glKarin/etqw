@@ -90,8 +90,12 @@ bool rvLightParticle::InitLight(rvBSE* effect,
     mLight.pointLight = true;
     mLight.noShadows = (st->mFlags & PTFLAG_SHADOWS) == 0;
     mLight.noSpecular = (st->mFlags & PTFLAG_SPECULAR) == 0;
+#ifdef _SPLASHDAMAGE
+    mLight.material = st->mParticleTemplate.mMaterial; //k??? TODO set particle material for light // assumption jmarshall - fix me
+#else
     mLight.detailLevel = 10.f;
     mLight.shader = st->mParticleTemplate.mMaterial; //k??? TODO set particle material for light // assumption jmarshall - fix me
+#endif
 
     mLightDefHandle = session->rw->AddLightDef(&mLight);
     return true;

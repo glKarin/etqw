@@ -3,7 +3,7 @@
 #ifndef __SCRIPT_DLL_H__
 #define __SCRIPT_DLL_H__
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(ANDROID) //karin: not support on Android
 #define USE_UCONTEXT
 #endif
 

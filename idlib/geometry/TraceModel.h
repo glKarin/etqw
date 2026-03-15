@@ -180,13 +180,13 @@ class idTraceModel
 	    void				Read( idFile* fp, trmMaterialForName_t lookup );
 #endif
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	public:
 #else
 	private:
 #endif
 		void				InitBox(void);
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	private:
 #endif
 		void				InitOctahedron(void);

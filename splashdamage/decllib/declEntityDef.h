@@ -4,7 +4,7 @@
 #ifndef __DECLENTITYDEF_H__
 #define __DECLENTITYDEF_H__
 
-#include "../framework/declManager.h"
+#include "../framework/DeclManager.h"
 
 /*
 ===============================================================================

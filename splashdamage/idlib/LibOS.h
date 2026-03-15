@@ -97,7 +97,9 @@
 	#undef _XENON
 	#undef _CONSOLE
 	#define _OPENGL
+#if !defined(_LITTLE_ENDIAN)
 	#define _LITTLE_ENDIAN
+#endif
 	#define _CASE_SENSITIVE_FILESYSTEM
 
 	#define NEWLINE				"\n"

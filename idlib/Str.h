@@ -347,6 +347,7 @@ class idStr
 		// file name methods
 		int					FileNameHash(void) const;						// hash key for the filename (skips extension)
 #ifdef _SPLASHDAMAGE
+		int					FileNameHash( const int hashSize ) const;						// hash key for the filename (skips extension)
     	idStr &				CollapsePath( void );							// where possible removes /../ and /./ from path
     	idStr &				SlashesToBackSlashes( void );					// convert slashes
 #endif
@@ -433,6 +434,7 @@ class idStr
     	static const char*	StrForColorIndex( int i );
     	static int			HexForChar( int c );
     	void				SetStaticBuffer( char *buffer, int l );
+		static int			FileNameHash( const char *string, const int hashSize );	// hash key for the filename (skips extension)
 #endif
 
 		friend int			sprintf(idStr &dest, const char *fmt, ...);
@@ -1573,6 +1575,10 @@ ID_INLINE void idStr::Copynz( char *dest, const wchar_t *src, int destsize ) {
 	idStr tmp;
 	tmp = src;
 	Copynz(dest, tmp.c_str(), destsize);
+}
+
+ID_INLINE int idStr::FileNameHash( const int hashSize ) const {
+	return FileNameHash( data, hashSize );
 }
 #endif
 

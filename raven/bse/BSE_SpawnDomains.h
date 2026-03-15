@@ -94,7 +94,7 @@ enum
 class idVec3;
 class idMat3;
 
-void R_DeriveFacePlanes(struct srfTriangles_s* tris);
+void R_DeriveFacePlanes(srfTriangles_t* tris);
 
 //───────────────────────────────────────────────────────────────────────────────
 //  Free helper functions – declared here, defined in the .cpp

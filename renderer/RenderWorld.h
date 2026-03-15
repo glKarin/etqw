@@ -570,9 +570,11 @@ typedef struct renderEffect_s {
 #ifdef _SPLASHDAMAGE
     float					distanceOffset;
     float					maxVisDist;
-#endif
 
+	idSoundEmitter 		    *referenceSound;		// for shader sound tables, allowing effects to vary with sounds
+#else
 	int						referenceSoundHandle;		// for shader sound tables, allowing effects to vary with sounds
+#endif
 
 	float					shaderParms[ MAX_ENTITY_SHADER_PARMS ];	// can be used in any way by shader or model generation
 } renderEffect_t;

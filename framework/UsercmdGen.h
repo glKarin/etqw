@@ -214,7 +214,6 @@ enum usercmdbuttonType_t {
 };
 
 enum usercmdButton_t {
-#ifdef _SPLASHDAMAGE
 	UB_NONE,
 
 	UB_UP,
@@ -240,9 +239,25 @@ enum usercmdButton_t {
 
 	UB_ATTACK,
 	UB_SPEED,
+#ifdef _SPLASHDAMAGE
+    UB_MODESWITCH,
+    UB_SPRINT,
+    UB_ACTIVATE,
+    UB_SHOWSCORES,
+    UB_VOICE,
+    UB_TEAMVOICE,
+    UB_FIRETEAMVOICE,
+    UB_MLOOK,
+    UB_ALTATTACK,
+    UB_TOPHAT,
+    UB_LEANLEFT,
+    UB_LEANRIGHT,
+#endif
 	UB_ZOOM,
+#if !defined(_SPLASHDAMAGE)
 	UB_SHOWSCORES,
 	UB_MLOOK,
+#endif
 
 	UB_IMPULSE0,
 	UB_IMPULSE1,
@@ -308,34 +323,6 @@ enum usercmdButton_t {
 	UB_IMPULSE61,
 	UB_IMPULSE62,
 	UB_IMPULSE63,
-#else
-    UB_UP,
-    UB_DOWN,
-    UB_LEFT,
-    UB_RIGHT,
-    UB_FORWARD,
-    UB_BACK,
-    UB_LOOKUP,
-    UB_LOOKDOWN,
-    UB_STRAFE,
-    UB_MOVELEFT,
-    UB_MOVERIGHT,
-
-    UB_ATTACK,
-    UB_SPEED,
-    UB_MODESWITCH,
-    UB_SPRINT,
-    UB_ACTIVATE,
-    UB_SHOWSCORES,
-    UB_VOICE,
-    UB_TEAMVOICE,
-    UB_FIRETEAMVOICE,
-    UB_MLOOK,
-    UB_ALTATTACK,
-    UB_TOPHAT,
-    UB_LEANLEFT,
-    UB_LEANRIGHT,
-#endif
 
     UB_MAX_BUTTONS
 };

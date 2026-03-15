@@ -569,7 +569,7 @@ typedef struct viewDef_s {
 	// crossing a closed door.  This is used to avoid drawing interactions
 	// when the light is behind a closed door.
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
     struct viewEffect_s	*viewEffects;			// chain of all viewEffects effecting view
 #endif
 

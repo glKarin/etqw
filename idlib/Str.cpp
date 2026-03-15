@@ -3099,6 +3099,34 @@ idStr& idStr::CollapseColors( void )
 	}
 	return *this;
 }
+
+/*
+============
+idStr::FileNameHash
+============
+*/
+int idStr::FileNameHash( const char *string, const int hashSize ) {
+	int		i;
+	/* 64long */int	hash;
+	char	letter;
+
+	hash = 0;
+	i = 0;
+	while( string[i] != '\0' ) {
+		letter = idStr::ToLower( string[i] );
+		if ( letter == '.' ) {
+			break;				// don't include extension
+		}
+		if ( letter =='\\' ) {
+			letter = '/';
+		}
+		hash += (/* 64long */int)letter * ( i + 119 );
+		i++;
+	}
+	hash &= ( hashSize - 1 );
+	return hash;
+}
+
 #endif
 
 int idStr::SplitUnique(idList<idStr> &ret, const char *macros, char ch)

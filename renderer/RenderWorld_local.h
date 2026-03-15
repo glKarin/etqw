@@ -190,6 +190,7 @@ class idRenderWorldLocal : public idRenderWorld
 
 // jscott: handling of effects
         virtual bool			EffectDefHasSound(const renderEffect_s* reffect);
+#endif
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
         void                    MarkEffectDef(int effectHandle);
@@ -199,7 +200,6 @@ class idRenderWorldLocal : public idRenderWorld
         void					PushPolytopeIntoTree_r(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints, int nodeNum);
 
         void					PushPolytopeIntoTree(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints);
-#endif
 
 	    idList<rvRenderEffectLocal*>	effectDefs;
 #endif

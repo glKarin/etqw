@@ -16,7 +16,11 @@
 #include "../../sys/sys_public.h"
 #include "../../idlib/Lib.h"
 
+#ifdef _ETQW
+#include "../../framework/DeclManager.h"
+#else
 #include "../../framework/declManager.h"
+#endif
 #include "../../framework/CVarSystem.h"
 #include "../../framework/UsercmdGen.h"
 #include "../../framework/FileSystem.h"

@@ -500,7 +500,9 @@ sdVehicleSoundControl_Wheeled::sdVehicleSoundControl_Wheeled( void ) {
 	soundFlags.inWater					= false;
 	soundFlags.playingDriveSound		= false;
 
+#if !defined(_ETQW)
 	groundSurfaceType					= NULL;
+#endif
 }
 
 /*
