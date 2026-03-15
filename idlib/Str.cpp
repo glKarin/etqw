@@ -40,8 +40,10 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
+#if !defined(_SPLASHDAMAGE)
 #ifdef USE_STRING_DATA_ALLOCATOR
 static idDynamicBlockAlloc<char, 1<<18, 128>	stringDataAllocator;
+#endif
 #endif
 
 #ifdef _SPLASHDAMAGE
@@ -60,9 +62,7 @@ struct strColor_t {
 #pragma GCC visibility push(hidden)
 #endif
 
-#ifdef _SPLASHDAMAGE
 idStr::hmsFormat_t	idStr::defaultHMSFormat;
-#endif
 strColor_t g_color_table[COLOR_BITS+1] = {
     {	idVec4( 0.0f,  0.0f,  0.0f,  1.0f ), "^0" },			// 0 - S_COLOR_DEFAULT			0
     {	idVec4( 1.0f,  0.0f,  0.0f,  1.0f ), "^1" }, 			// 1 - S_COLOR_RED				1
@@ -2355,8 +2355,16 @@ idStr::InitMemory
 */
 void idStr::InitMemory(void)
 {
+#ifdef _SPLASHDAMAGE
+	if( !stringDataAllocator ) {
+		stringDataAllocator = new stringDataAllocator_t;
+		stringDataAllocator->Init();
+		stringAllocatorIsShared = false;
+	}
+#else
 #ifdef USE_STRING_DATA_ALLOCATOR
 	stringDataAllocator.Init();
+#endif
 #endif
 }
 

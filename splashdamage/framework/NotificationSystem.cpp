@@ -22,7 +22,7 @@ const notification_t* sdNotificationSystemLocal::GetNotification( const int inde
 	return NULL;
 }
 
-static sdNotificationSystemLocal globalNotificationSystem;
+static sdNotificationSystemLocal sdNotificationSystemLocal;
 
-sdNotificationSystem *notificationSystem = &globalNotificationSystem;
+sdNotificationSystem *notificationSystem = &sdNotificationSystemLocal;
 

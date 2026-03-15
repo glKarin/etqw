@@ -865,3 +865,98 @@ const char * IN_FirstKeyFromBinding(const char *binding, int *keycode = NULL)
 	return NULL;
 }
 #endif
+
+#ifdef _SPLASHDAMAGE
+class sdKeyInputManagerLocal : public sdKeyInputManager
+{
+public:
+	sdKeyInputManagerLocal();
+	virtual ~sdKeyInputManagerLocal();
+
+	virtual void			SetBinding( sdBindContext* context, idKey& key, const char* binding, idKey* modifierKey );
+	virtual const char*		GetBinding( sdBindContext* context, idKey& key, idKey* modifierKey );
+
+	virtual void			UnbindBinding( sdBindContext* context, const char *bind );
+	virtual void			KeysFromBinding( sdBindContext* context, const char* binding, bool useBindStrWhenEmpty, idWStr& keyName );
+
+	// pass NULL for keys to find the number of keys to allocate
+	virtual void			KeysFromBinding( sdBindContext* context, const char* binding, int& numKeys, idKey** keys );
+
+	virtual bool			IsDown( const idKey& key );
+	virtual bool			IsDown( keyNum_e key );
+	virtual idKey*			GetKey( const char* name );
+	virtual idKey*			GetKeyForEvent( const sdSysEvent& evt, bool& down );
+
+	virtual void			ProcessUserCmdEvent( const sdSysEvent& event );
+
+	virtual sdKeyCommand*	GetCommand( sdBindContext* context, const idKey& key );
+
+	virtual sdBindContext*	AllocBindContext( const char* context );
+
+	virtual void			UnbindKey(  sdBindContext* context, idKey& key, idKey* modifier = NULL );
+
+	virtual bool			AnyKeysDown( void );
+};
+
+sdKeyInputManagerLocal::sdKeyInputManagerLocal() {
+}
+
+sdKeyInputManagerLocal::~sdKeyInputManagerLocal() {
+}
+
+void sdKeyInputManagerLocal::SetBinding( sdBindContext* context, idKey& key, const char* binding, idKey* modifierKey ) {
+}
+
+const char* sdKeyInputManagerLocal::GetBinding( sdBindContext* context, idKey& key, idKey* modifierKey ) {
+	return "";
+}
+
+void sdKeyInputManagerLocal::UnbindBinding( sdBindContext* context, const char *bind ) {
+}
+
+void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char* binding, bool useBindStrWhenEmpty, idWStr& keyName ) {
+}
+
+// pass NULL for keys to find the number of keys to allocate
+void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char* binding, int& numKeys, idKey** keys ) {
+}
+
+bool sdKeyInputManagerLocal::IsDown( const idKey& key ) {
+	return false;
+}
+
+bool sdKeyInputManagerLocal::IsDown( keyNum_e key ) {
+	return false;
+}
+
+idKey* sdKeyInputManagerLocal::GetKey( const char* name ) {
+	return NULL;
+}
+
+idKey* sdKeyInputManagerLocal::GetKeyForEvent( const sdSysEvent& evt, bool& down ) {
+	return NULL;
+}
+
+void sdKeyInputManagerLocal::ProcessUserCmdEvent( const sdSysEvent& event ) {
+}
+
+sdKeyCommand* sdKeyInputManagerLocal::GetCommand( sdBindContext* context, const idKey& key ) {
+	return NULL;
+}
+
+sdBindContext* sdKeyInputManagerLocal::AllocBindContext( const char* context ) {
+	return NULL;
+}
+
+void sdKeyInputManagerLocal::UnbindKey(  sdBindContext* context, idKey& key, idKey* modifier ) {
+}
+
+bool sdKeyInputManagerLocal::AnyKeysDown( void ) {
+	return false;
+}
+
+static sdKeyInputManagerLocal inputManagerLocal;
+
+sdKeyInputManager* keyInputManager = &inputManagerLocal;
+
+#endif

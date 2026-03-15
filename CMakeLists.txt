@@ -3172,6 +3172,7 @@ if(SPLASHDAMAGE)
 			splashdamage/sys/sys_keyboard.cpp
 			splashdamage/framework/AdManager.cpp
 			splashdamage/framework/NotificationSystem.cpp
+			splashdamage/framework/GraphManager.cpp
 	)
 	set(splashdamage_bse_src
 			raven/bse/BSE_Effect.cpp

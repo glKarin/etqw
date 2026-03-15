@@ -70,6 +70,9 @@ void idLib::Init(void)
 
 	// init string memory allocator
 	idStr::InitMemory();
+#ifdef _SPLASHDAMAGE
+	idWStr::InitMemory();
+#endif
 
 	// initialize generic SIMD implementation
 	idSIMD::Init();
@@ -100,6 +103,9 @@ void idLib::ShutDown(void)
 
 	// shut down the string memory allocator
 	idStr::ShutdownMemory();
+#ifdef _SPLASHDAMAGE
+	idWStr::ShutdownMemory();
+#endif
 
 	// shut down the SIMD engine
 	idSIMD::Shutdown();

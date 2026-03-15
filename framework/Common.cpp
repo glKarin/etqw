@@ -30,6 +30,8 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../renderer/Image.h"
+#include "_unused/formatted/idlib/Dict.h"
+#include "_unused/raw/idlib/Dict.h"
 #ifdef _IMGUI
 #include "../renderer/imgui/r_imgui.h"
 #endif
@@ -37,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE
 #include "framework/AdManager.h"
 #include "framework/NotificationSystem.h"
+#include "framework/GraphManager.h"
 #endif
 
 #define	MAX_PRINT_MSG_SIZE	4096
@@ -51,6 +54,14 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef __ANDROID__
 idCVar harm_g_normalizeMovementDirection("harm_g_normalizeMovementDirection", "0", CVAR_GAME | CVAR_BOOL, "Re-normalize player/walker movement direction");
 extern bool smooth_joystick;
+#endif
+
+#ifdef _SPLASHDAMAGE
+static idStrPool globalKeyPool;
+static idStrPool globalValuePool;
+
+static stringDataAllocator_t globalStringDataAllocator;
+static wideStringDataAllocator_t globalWideStringDataAllocator;
 #endif
 
 extern void GLimp_Startup(void);
@@ -3323,14 +3334,14 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.bse						= ::bse;
 #endif
 #ifdef _SPLASHDAMAGE
-	gameImport.adManager			= ::adManager;
-	//gameImport.keyInputManager			= ::AASFileManager;
-	gameImport.notificationSystem			= ::notificationSystem;
-	//gameImport.globalKeys			= ::AASFileManager;
-	//gameImport.globalValues			= ::AASFileManager;
-	//gameImport.stringAllocator			= ::AASFileManager;
-	//gameImport.wideStringAllocator			= ::AASFileManager;
-	//gameImport.graphManager			= ::AASFileManager;
+	gameImport.adManager				= ::adManager;
+	gameImport.keyInputManager			= ::keyInputManager;
+	gameImport.notificationSystem		= ::notificationSystem;
+	gameImport.globalKeys				= &::globalKeyPool;
+	gameImport.globalValues				= &::globalValuePool;
+	gameImport.stringAllocator			= &::globalStringDataAllocator;
+	gameImport.wideStringAllocator		= &::globalWideStringDataAllocator;
+	gameImport.graphManager				= ::graphManager;
 #endif
 
 	gameExport							= *GetGameAPI(&gameImport);
@@ -3452,6 +3463,11 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 		idLib::fileSystem	= fileSystem;
 
 		// initialize idLib
+#ifdef _SPLASHDAMAGE //karin: must call before idLib::Init
+		idDict::SetGlobalPools(&globalKeyPool, &globalValuePool);
+		idStr::SetStringAllocator(&globalStringDataAllocator);
+		idWStr::SetStringAllocator(&globalWideStringDataAllocator);
+#endif
 		idLib::Init();
 
 		// clear warning buffer
