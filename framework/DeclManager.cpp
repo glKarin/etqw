@@ -48,7 +48,17 @@ If you have questions concerning this license or the applicable additional terms
 #include "decllib/DeclSurfaceType.h"
 #include "decllib/declRenderProgram.h"
 
+#define GENERATED_PREFIX "generated"
+#define GENERATED_DECLB "declb"
+
+#define CACHEB_MAGIC 1212367428
+#define CACHEB_MAGIC_CHARS "DBCH"
+#define CACHEB_VERSION 2
+
+#define GLOBALTOKENS_CACHEB "globaltokens.cacheb"
+
 #define DECL_CUSTOMER_TYPE(x) (DECL_MAPDEF + 1 + (x))
+
 extern const char* declIdentifierList[];
 #endif
 
@@ -367,6 +377,9 @@ class idDeclManagerLocal : public idDeclManager
 		virtual void					AddDependency( const idDecl* decl, const idDecl* dependency );
 		virtual void					AddDependency( const idDecl* decl, const char* fileName );
 		virtual void					AddDependencies( const idDecl* decl, const idParser& parser );
+
+		int								DecompressTokenCache(void);
+		void							MakeBinaryFilename(idStr &filename, const char *type, const char *name);
 #endif
 
 		virtual const idMaterial 		*MaterialByIndex(int index, bool forceParse = true);
@@ -409,7 +422,7 @@ public:
         bool						inLevelLoad;
 #endif
 #ifdef _SPLASHDAMAGE
-		 idTokenCache				globalTokencache;
+		idTokenCache				globalTokencache;
 		mutable idStrList			declTypeTables;
 
 		static sdDeclInfo declTableInfo;
@@ -1177,6 +1190,8 @@ void idDeclManagerLocal::Init(void)
 #endif
 
 #ifdef _SPLASHDAMAGE //karin: init decl type name table
+	DecompressTokenCache();
+
 	declTypeTables.Clear();
 	declTypeTables.SetNum(DECL_CUSTOMER_TYPE(0));
 	for(int i = 0; i <= DECL_MODELEXPORT; i++)
@@ -3395,9 +3410,9 @@ bool idDeclLocal::HasBinaryBuffer() const {
 const idStrList* idDeclLocal::GetFileLevelIncludeDependencies() const {
 	return NULL;
 }
-#endif
 
-#ifdef _SPLASHDAMAGE
+
+
 // Returns the system token cache
 idTokenCache& idDeclManagerLocal::GetGlobalTokenCache() {
 	return globalTokencache;
@@ -3510,7 +3525,6 @@ qhandle_t idDeclManagerLocal::GetDeclTypeHandle( const char* typeName ) const {
 }
 
 const char* idDeclManagerLocal::GetDeclTypeName( qhandle_t typeHandle ) const {
-	Sys_Printf("LL %d %d \n", typeHandle, declTypeTables.Num());
 	return declTypeTables[typeHandle].c_str();
 }
 
@@ -3522,5 +3536,122 @@ void idDeclManagerLocal::AddDependency( const idDecl* decl, const char* fileName
 
 void idDeclManagerLocal::AddDependencies( const idDecl* decl, const idParser& parser ) {
 }
+
+void idDeclManagerLocal::MakeBinaryFilename(idStr &filename, const char *type, const char *name) {
+	filename = GENERATED_PREFIX "/" GENERATED_DECLB;
+	if (type && type[0]) {
+		filename.AppendPath(type);
+		filename.Append("b");
+	}
+	filename.AppendPath(name);
+}
+
+int idDeclManagerLocal::DecompressTokenCache(void)
+{
+	int magic;
+	int version;
+	unsigned int compressedLength, decompressedLength;
+	idFile *file;
+	idCompressor *compressor;
+	int num;
+	idStr path;
+	MakeBinaryFilename(path, NULL, GLOBALTOKENS_CACHEB);
+
+	common->Printf("Decompressing the global token cache...\n");
+	globalTokencache.Clear();
+
+	file = fileSystem->OpenFileRead(path);
+
+	if(!file)
+	{
+		common->Warning("Token cache file not exists: %s", path.c_str());
+		return -1;
+	}
+
+#if 0
+	int length = file->Length();
+	common->Printf("length=%d\n", length);
+#endif
+
+#if 1
+	file->ReadInt(magic);
+	if(magic != CACHEB_MAGIC)
+	{
+		common->Warning("decl token cache : encountered unknown fileid");
+		fileSystem->CloseFile(file);
+		return -1;
+	}
+#else
+	char headers[5] = {0};
+	file->Read(headers, 4);
+	common->Printf("%s\n", headers);
+#endif
+
+	file->ReadInt(version); // version == 2
+	if(version != CACHEB_VERSION)
+	{
+		common->Warning("decl token cache : wrong version (%i should be %i)", version, CACHEB_VERSION);
+		fileSystem->CloseFile(file);
+		return -1;
+	}
+
+	file->ReadUnsignedInt(decompressedLength);
+	file->ReadUnsignedInt(compressedLength);
+
+	idList<byte> compressedData;
+	compressedData.SetNum(compressedLength);
+	file->Read(&compressedData[0], compressedLength);
+	//assert(file->Tell() == file->Length());
+	fileSystem->CloseFile(file);
+
+	// huffman compression
+	compressor = idCompressor::AllocHuffman();
+	idFile_Memory f("globaltokens.cacheb", (const char *)&compressedData[0], compressedLength); // FS_READ mode
+	compressor->Init(&f, false, 8);
+	idList<byte> out;
+	out.SetNum(decompressedLength * 2); // +2
+	decompressedLength = compressor->Read(&out[0], out.Num());
+
+#if 0
+	fileSystem->WriteFile("globaltokens.cacheb.bin", &out[0], decompressedLength);
+
+	file = fileSystem->OpenFileRead("globaltokens.cacheb.bin");
+	file->ReadInt(num);
+	common->Printf("tokens: %d\n", num);
+
+	idFile *os = fileSystem->OpenFileWrite("globaltokens.cacheb.txt");
+	idToken token;
+	for(int i = 0; i < num; i++)
+	{
+		file->ReadString(token);
+		char c;
+		file->ReadChar( c );
+		token.type = c;
+		file->ReadInt( token.subtype );
+
+		int linesCrossed, flags;
+		file->ReadInt( linesCrossed );
+
+		file->ReadInt( flags );
+
+		char whiteSpace;
+		file->ReadChar( whiteSpace );
+
+		os->Printf("%5d: |%s|%d,%d: %d 0x%X %d\n", i, token.c_str(), token.type, token.subtype, linesCrossed, flags, whiteSpace);
+		common->Printf("%5d: |%s|%d,%d: %d 0x%X %d\n", i, token.c_str(), token.type, token.subtype, linesCrossed, flags, whiteSpace);
+	}
+
+	fileSystem->CloseFile(os);
+	fileSystem->CloseFile(file);
+#endif
+
+	globalTokencache.ReadBuffer(&out[0], decompressedLength);
+
+	common->Printf("%ziKb\n", globalTokencache.Allocated());
+
+	delete compressor;
+	return num;
+}
+
 
 #endif

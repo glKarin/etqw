@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "../renderer/Image.h"
 #include "_unused/formatted/idlib/Dict.h"
+#include "_unused/raw/decllib/declLocStr.h"
 #include "_unused/raw/idlib/Dict.h"
 #ifdef _IMGUI
 #include "../renderer/imgui/r_imgui.h"
@@ -3904,11 +3905,19 @@ void idCommonLocal::PacifierUpdate( void ) {
 
 // arguments is a list of strings that will be formatted into the result
 idWStr idCommonLocal::LocalizeText( const char* declName, const idWStrList& arguments ) {
-	return idWStr(L"idWStr idCommonLocal::LocalizeText( const char* declName, const idWStrList& arguments )");
+	const idDecl *decl = declManager->FindType(DECL_LOCSTR, declName, false);
+	if (!decl)
+		return L"";
+	return LocalizeText((const sdDeclLocStr *)decl, arguments);
 }
 
 idWStr idCommonLocal::LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments ) {
-	return idWStr(L"idWStr idCommonLocal::LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments )");
+	idWStr ret = loc->GetText();
+	for (idWStrList::ConstIterator itor = arguments.Begin(); itor != arguments.End(); ++itor) {
+		ret.Append(L", ");
+		ret.Append(*itor);
+	}
+	return ret;
 }
 
 extern vidmode_t r_vidModes[];

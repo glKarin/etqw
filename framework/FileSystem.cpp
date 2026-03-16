@@ -5180,27 +5180,39 @@ sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataT
 void idFileSystemLocal::FreeAddonMetaDataList( sdAddonMetaDataList* list ) {
 }
 
+extern bool Sys_GetPath(sysPath_t type, idStr &path);
 const char * idFileSystemLocal::GetBasePath() const {
-	return "base";
+	static idStr basePath;
+	if (basePath.IsEmpty())
+		Sys_GetPath(PATH_BASE, basePath);
+	return basePath;
 }
 
 const char * idFileSystemLocal::GetUserPath() const {
-	return "base";
+	static idStr basePath;
+	if (basePath.IsEmpty())
+		Sys_GetPath(PATH_CONFIG, basePath);
+	return basePath;
 }
 
 const char * idFileSystemLocal::GetGamePath() const {
-	return "base";
+	static idStr basePath;
+	if (basePath.IsEmpty())
+		Sys_GetPath(PATH_EXE, basePath);
+	return basePath;
 }
 
 void idFileSystemLocal::FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck ) {
 }
 
-class idFile_Memory* idFileSystemLocal::OpenMemoryFile( const char* name ) {
-	return NULL;
+idFile_Memory* idFileSystemLocal::OpenMemoryFile( const char* name ) {
+	idFile_Memory *f = new idFile_Memory(name);
+	return f;
 }
 
-class idFile_Buffered* idFileSystemLocal::OpenBufferedFile( idFile* file ) {
-	return NULL;
+idFile_Buffered* idFileSystemLocal::OpenBufferedFile( idFile* file ) {
+	idFile_Buffered *f = new idFile_Buffered(file);
+	return f;
 }
 
 bool idFileSystemLocal::IsAddonPackReferenced( const char* pak ) {
@@ -5210,13 +5222,18 @@ bool idFileSystemLocal::IsAddonPackReferenced( const char* pak ) {
 void idFileSystemLocal::ReferenceAddonPack( const char* pak ) {
 }
 
+#include "../renderer/tr_local.h"
+extern void R_LoadTGA(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
 void idFileSystemLocal::ReadTGA( const char *name, byte **pic, int *width, int *height, unsigned *timestamp, bool markPaksReferenced ) {
+	R_LoadTGA(name, pic, width, height, (ID_TIME_T *)timestamp);
 }
 
 void idFileSystemLocal::WriteTGA( const char* name, const byte* pic, int width, int height ) {
+	R_WriteTGA(name, pic, width, height, false);
 }
 
 void idFileSystemLocal::FreeTGA( byte* pic ) {
+	Mem_Free(pic);
 }
 
 #endif

@@ -1195,6 +1195,13 @@ int idLexer::ReadToken(idToken *token)
 	}
 #endif
 
+#ifdef _SPLASHDAMAGE
+	// read from binary file if loaded
+	if ( binary.IsLoaded() ) {
+		return binary.ReadToken( token );
+	}
+#endif
+
 	// save script pointer
 	lastScript_p = script_p;
 	// save line counter

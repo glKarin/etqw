@@ -1564,4 +1564,68 @@ int idFile::WriteFloatArray( const float* src, const int num ) {
 	return ret;
 }
 
+
+
+#ifdef _SPLASHDAMAGE
+// Fake implement, NON-buffered
+idFile_Buffered::idFile_Buffered( const int granularity )
+: source(NULL),
+	granularity(granularity),
+	available(-1),
+	sourceOffset(0),
+	filePtr(NULL),
+	curPtr(NULL)
+{
+
+}
+
+idFile_Buffered::idFile_Buffered( idFile* source, const int granularity )
+: source(source),
+	granularity(granularity),
+	available(-1),
+	sourceOffset(0),
+	filePtr(NULL),
+	curPtr(NULL)
+{
+}
+
+idFile_Buffered::~idFile_Buffered( void ) {
+	if (source)
+		fileSystem->CloseFile(source);
+}
+
+int idFile_Buffered::Read( void *buffer, int len ) {
+	assert(source);
+	return source->Read(buffer, len);
+}
+
+int idFile_Buffered::Tell( void ) {
+	assert(source);
+	return source->Tell();
+}
+
+int idFile_Buffered::Seek( long offset, fsOrigin_t origin ) {
+	assert(source);
+	return source->Seek(offset, origin);
+}
+
+void idFile_Buffered::SetSource( idFile* source ) {
+	this->source = source;
+}
+
+void idFile_Buffered::ReleaseSource() {
+	source = NULL;
+}
+
+int idFile_Buffered::ReadInternal( void* buffer, int len ) {
+	assert(0);
+	return -1;
+}
+
+void idFile_Buffered::SeekInternal( long offset ) {
+	assert(0);
+}
+
+#endif
+
 #endif

@@ -6,6 +6,12 @@
 
 #include <wctype.h>
 
+#if 0
+#if !defined( ID_REDIRECT_NEWDELETE )
+#define USE_STRING_DATA_ALLOCATOR
+#endif
+#endif
+
 #if defined( MACOS_X )
 #pragma GCC visibility push(hidden)
 #endif
@@ -99,7 +105,11 @@ void idWStr::ReAllocate( int amount, bool keepold ) {
 	}
 	alloced = newsize;
 
+#ifdef USE_STRING_DATA_ALLOCATOR
 	newbuffer = stringDataAllocator->Alloc( alloced );
+#else
+	newbuffer = new wchar_t[ alloced ];
+#endif
 
 	if ( keepold && data ) {
 		if ( len ) {
@@ -111,7 +121,11 @@ void idWStr::ReAllocate( int amount, bool keepold ) {
 	}
 
 	if ( data && data != baseBuffer ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 		stringDataAllocator->Free( data );
+#else
+		delete [] data;
+#endif
 	}
 
 	data = newbuffer;
@@ -124,7 +138,11 @@ idWStr::FreeData
 */
 void idWStr::FreeData( void ) {
 	if ( data && data != baseBuffer ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 		stringDataAllocator->Free( data );
+#else
+		delete[] data;
+#endif
 		data = baseBuffer;
 	}
 }
@@ -877,7 +895,9 @@ idWStr::PurgeMemory
 ================
 */
 void idWStr::PurgeMemory( void ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 	stringDataAllocator->FreeEmptyBaseBlocks();
+#endif
 }
 
 /*
@@ -886,9 +906,11 @@ idWStr::ShowMemoryUsage_f
 ================
 */
 void idWStr::ShowMemoryUsage_f( const idCmdArgs &args ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 	idLib::common->Printf( "%6d KB wide string memory (%d KB free in %d blocks, %d empty base blocks)\n",
 		stringDataAllocator->GetBaseBlockMemory() >> 10, stringDataAllocator->GetFreeBlockMemory() >> 10,
 		stringDataAllocator->GetNumFreeBlocks(), stringDataAllocator->GetNumEmptyBaseBlocks() );
+#endif
 }
 
 
