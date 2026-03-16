@@ -26,6 +26,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __IMAGE_H__
+#define __IMAGE_H__
+
 /*
 ====================================================================
 
@@ -614,3 +617,4 @@ IMAGEPROGRAM
 void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL);
 const char *R_ParsePastImageProgram(idLexer &src);
 
+#endif

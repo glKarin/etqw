@@ -37,6 +37,21 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
+#ifdef _SPLASHDAMAGE
+#include "decllib/declAmbientCubeMap.h"
+#include "decllib/declAtmosphere.h"
+#include "decllib/declDecal.h"
+#include "decllib/declImposter.h"
+#include "decllib/declLocStr.h"
+#include "decllib/declRenderBinding.h"
+#include "decllib/declStuffType.h"
+#include "decllib/DeclSurfaceType.h"
+#include "decllib/declRenderProgram.h"
+
+#define DECL_CUSTOMER_TYPE(x) (DECL_MAPDEF + 1 + (x))
+extern const char* declIdentifierList[];
+#endif
+
 #ifdef _RAVEN
 // jmarshall: Quake 4 Guide(template) support
 struct rvGuideTemplate
@@ -254,6 +269,12 @@ class idDeclManagerLocal : public idDeclManager
 		virtual const idMaterial 		*FindMaterial(const char *name, bool makeDefault = true);
 		virtual const idDeclSkin 		*FindSkin(const char *name, bool makeDefault = true);
 		virtual const idSoundShader 	*FindSound(const char *name, bool makeDefault = true);
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+// jmarshall
+	    void						RegisterDeclSubFolder(const char* folder, const char* extension, idList<idStr>& fileList, bool norecurse = false);
+		virtual void			RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique = false, bool norecurse = false );
+// jmarshall end
+#endif
 #ifdef _RAVEN
 		virtual const idDeclTable *		FindTable( const char *name, bool makeDefault = true );
 		// RAVEN BEGIN
@@ -283,10 +304,6 @@ class idDeclManagerLocal : public idDeclManager
     }
 // RAVEN END
 
-// jmarshall
-    void						RegisterDeclSubFolder(const char* folder, const char* extension, idList<idStr>& fileList, bool norecurse = false);
-// jmarshall end
-
 	virtual bool					GetPlaybackData( const rvDeclPlayback *playback, int control, int now, int last, class rvDeclPlaybackData *pbd ) { (void)playback; (void)control; (void)now; (void)last; (void) pbd; return false; }
 	virtual bool					SetPlaybackData(rvDeclPlayback* playback, int now, int control, class rvDeclPlaybackData* pbd) { (void)playback; (void)control; (void)now; (void) pbd; return false; }
 	virtual void					StartPlaybackRecord(rvDeclPlayback* playback) { (void)playback; }
@@ -301,7 +318,6 @@ class idDeclManagerLocal : public idDeclManager
 	virtual idDeclEntityDef * FindMapDef(const char *mapName, const char *entityFilter = 0) {
 		return const_cast<idDeclEntityDef *>(GetMapDef(mapName, entityFilter));
 	}
-	virtual void			RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique = false, bool norecurse = false );
 
 	private:
 	const idDeclEntityDef * GetMapDef(const char *mapName, const char *entityFilter) const;
@@ -391,6 +407,58 @@ public:
 
 #ifdef _HUMANHEAD
         bool						inLevelLoad;
+#endif
+#ifdef _SPLASHDAMAGE
+		 idTokenCache				globalTokencache;
+		mutable idStrList			declTypeTables;
+
+		static sdDeclInfo declTableInfo;
+		static sdDeclInfo declMaterialInfo;
+		static sdDeclInfo declSkinInfo;
+		static sdDeclInfo declSoundInfo;
+		static sdDeclInfo declEntityDefInfo;
+		static sdDeclInfo declMapDefInfo;
+		static sdDeclInfo declFxInfo;
+		static sdDeclInfo declParticleInfo;
+		static sdDeclInfo declAFInfo;
+		static sdDeclInfo declPDAInfo;
+		static sdDeclInfo declEmailInfo;
+		static sdDeclInfo declVideoInfo;
+		static sdDeclInfo declAudioInfo;
+		static sdDeclInfo declEffectInfo;
+		static sdDeclInfo declAtmosphereInfo;
+		static sdDeclInfo declDecalInfo;
+		static sdDeclInfo declSurfaceTypeInfo;
+		static sdDeclInfo declImposterInfo;
+		static sdDeclInfo declImposterGeneratorInfo;
+		static sdDeclInfo declStuffTypeInfo;
+		static sdDeclInfo declRenderBindingInfo;
+		static sdDeclInfo declRenderProgramInfo;
+		static sdDeclInfo declLocStrInfo;
+
+		static idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
+		static idDeclTypeTemplate< idMaterial, &declMaterialInfo > declMaterialType;
+		static idDeclTypeTemplate< idDeclSkin, &declSkinInfo > declSkinType;
+		static idDeclTypeTemplate< idSoundShader, &declSoundInfo > declSoundType;
+		static idDeclTypeTemplate< idDeclEntityDef, &declEntityDefInfo > declEntityDefType;
+		static idDeclTypeTemplate< idDeclEntityDef, &declMapDefInfo > declMapDefType;
+		static idDeclTypeTemplate< idDeclFX, &declFxInfo > declFxType;
+		static idDeclTypeTemplate< idDeclParticle, &declParticleInfo > declParticleType;
+		static idDeclTypeTemplate< idDeclAF, &declAFInfo > declAFType;
+		static idDeclTypeTemplate< idDeclPDA, &declPDAInfo > declPDAType;
+		static idDeclTypeTemplate< idDeclEmail, &declEmailInfo > declEmailType;
+		static idDeclTypeTemplate< idDeclVideo, &declVideoInfo > declVideoType;
+		static idDeclTypeTemplate< idDeclAudio, &declAudioInfo > declAudioType;
+		static idDeclTypeTemplate< rvDeclEffect, &declEffectInfo > declEffectType;
+		static idDeclTypeTemplate< sdDeclAtmosphere, &declAtmosphereInfo > declAtmosphereType;
+		static idDeclTypeTemplate< sdDeclDecal, &declDecalInfo > declDecalType;
+		static idDeclTypeTemplate< sdDeclSurfaceType, &declSurfaceTypeInfo > declSurfaceTypeType;
+		static idDeclTypeTemplate< sdDeclImposter, &declImposterInfo > declImposterType;
+		static idDeclTypeTemplate< sdDeclImposterGenerator, &declImposterGeneratorInfo > declImposterGeneratorType;
+		static idDeclTypeTemplate< sdDeclStuffType, &declStuffTypeInfo > declStuffTypeType;
+		static idDeclTypeTemplate< sdDeclRenderBinding, &declRenderBindingInfo > declRenderBindingType;
+		static idDeclTypeTemplate< sdDeclRenderProgram, &declRenderProgramInfo > declRenderProgramType;
+		static idDeclTypeTemplate< sdDeclLocStr, &declLocStrInfo > declLocStrType;
 #endif
 
 	private:
@@ -1027,6 +1095,57 @@ int idDeclFile::LoadAndParse()
 
 const char *listDeclStrings[] = { "current", "all", "ever", NULL };
 
+#ifdef _SPLASHDAMAGE
+sdDeclInfo idDeclManagerLocal::declTableInfo("table");
+sdDeclInfo idDeclManagerLocal::declMaterialInfo("material");
+sdDeclInfo idDeclManagerLocal::declSkinInfo("skin");
+sdDeclInfo idDeclManagerLocal::declSoundInfo("sound");
+sdDeclInfo idDeclManagerLocal::declEntityDefInfo("entityDef");
+sdDeclInfo idDeclManagerLocal::declMapDefInfo("mapDef");
+sdDeclInfo idDeclManagerLocal::declFxInfo("fx");
+sdDeclInfo idDeclManagerLocal::declParticleInfo("particle");
+sdDeclInfo idDeclManagerLocal::declAFInfo("articulatedFigure");
+sdDeclInfo idDeclManagerLocal::declPDAInfo("pda");
+sdDeclInfo idDeclManagerLocal::declEmailInfo("email");
+sdDeclInfo idDeclManagerLocal::declVideoInfo("video");
+sdDeclInfo idDeclManagerLocal::declAudioInfo("audio");
+
+sdDeclInfo idDeclManagerLocal::declEffectInfo("effect");
+sdDeclInfo idDeclManagerLocal::declAtmosphereInfo("atmosphere");
+sdDeclInfo idDeclManagerLocal::declDecalInfo("decal");
+sdDeclInfo idDeclManagerLocal::declSurfaceTypeInfo("surfaceType");
+sdDeclInfo idDeclManagerLocal::declImposterInfo("imposter");
+sdDeclInfo idDeclManagerLocal::declImposterGeneratorInfo("imposterGenerator");
+sdDeclInfo idDeclManagerLocal::declStuffTypeInfo("stuffType");
+sdDeclInfo idDeclManagerLocal::declRenderBindingInfo("renderBinding");
+sdDeclInfo idDeclManagerLocal::declRenderProgramInfo("renderProgram");
+sdDeclInfo idDeclManagerLocal::declLocStrInfo("locString");
+
+
+idDeclTypeTemplate< idDeclTable, &idDeclManagerLocal::declTableInfo > idDeclManagerLocal::declTableType;
+idDeclTypeTemplate< idMaterial, &idDeclManagerLocal::declMaterialInfo > idDeclManagerLocal::declMaterialType;
+idDeclTypeTemplate< idDeclSkin, &idDeclManagerLocal::declSkinInfo > idDeclManagerLocal::declSkinType;
+idDeclTypeTemplate< idSoundShader, &idDeclManagerLocal::declSoundInfo > idDeclManagerLocal::declSoundType;
+idDeclTypeTemplate< idDeclEntityDef, &idDeclManagerLocal::declEntityDefInfo > idDeclManagerLocal::declEntityDefType;
+idDeclTypeTemplate< idDeclEntityDef, &idDeclManagerLocal::declMapDefInfo > idDeclManagerLocal::declMapDefType;
+idDeclTypeTemplate< idDeclFX, &idDeclManagerLocal::declFxInfo > idDeclManagerLocal::declFxType;
+idDeclTypeTemplate< idDeclParticle, &idDeclManagerLocal::declParticleInfo > idDeclManagerLocal::declParticleType;
+idDeclTypeTemplate< idDeclAF, &idDeclManagerLocal::declAFInfo > idDeclManagerLocal::declAFType;
+idDeclTypeTemplate< idDeclPDA, &idDeclManagerLocal::declPDAInfo > idDeclManagerLocal::declPDAType;
+idDeclTypeTemplate< idDeclEmail, &idDeclManagerLocal::declEmailInfo > idDeclManagerLocal::declEmailType;
+idDeclTypeTemplate< idDeclVideo, &idDeclManagerLocal::declVideoInfo > idDeclManagerLocal::declVideoType;
+idDeclTypeTemplate< idDeclAudio, &idDeclManagerLocal::declAudioInfo > idDeclManagerLocal::declAudioType;
+idDeclTypeTemplate< rvDeclEffect, &idDeclManagerLocal::declEffectInfo > idDeclManagerLocal::declEffectType;
+idDeclTypeTemplate< sdDeclAtmosphere, &idDeclManagerLocal::declAtmosphereInfo > idDeclManagerLocal::declAtmosphereType;
+idDeclTypeTemplate< sdDeclDecal, &idDeclManagerLocal::declDecalInfo > idDeclManagerLocal::declDecalType;
+idDeclTypeTemplate< sdDeclSurfaceType, &idDeclManagerLocal::declSurfaceTypeInfo > idDeclManagerLocal::declSurfaceTypeType;
+idDeclTypeTemplate< sdDeclImposter, &idDeclManagerLocal::declImposterInfo > idDeclManagerLocal::declImposterType;
+idDeclTypeTemplate< sdDeclImposterGenerator, &idDeclManagerLocal::declImposterGeneratorInfo > idDeclManagerLocal::declImposterGeneratorType;
+idDeclTypeTemplate< sdDeclStuffType, &idDeclManagerLocal::declStuffTypeInfo > idDeclManagerLocal::declStuffTypeType;
+idDeclTypeTemplate< sdDeclRenderBinding, &idDeclManagerLocal::declRenderBindingInfo > idDeclManagerLocal::declRenderBindingType;
+idDeclTypeTemplate< sdDeclRenderProgram, &idDeclManagerLocal::declRenderProgramInfo > idDeclManagerLocal::declRenderProgramType;
+idDeclTypeTemplate< sdDeclLocStr, &idDeclManagerLocal::declLocStrInfo > idDeclManagerLocal::declLocStrType;
+#endif
 /*
 ===================
 idDeclManagerLocal::Init
@@ -1057,6 +1176,32 @@ void idDeclManagerLocal::Init(void)
 // jmarshall end
 #endif
 
+#ifdef _SPLASHDAMAGE //karin: init decl type name table
+	declTypeTables.Clear();
+	declTypeTables.SetNum(DECL_CUSTOMER_TYPE(0));
+	for(int i = 0; i <= DECL_MODELEXPORT; i++)
+	{
+		declTypeTables[i] = declIdentifierList[i];
+	}
+#endif
+
+#ifdef _SPLASHDAMAGE
+	// decls used throughout the engine
+	RegisterDeclType(&declTableType);
+	RegisterDeclType(&declMaterialType);
+	RegisterDeclType(&declSkinType);
+	RegisterDeclType(&declSoundType);
+
+	RegisterDeclType(&declEntityDefType);
+	RegisterDeclType(&declMapDefType);
+	RegisterDeclType(&declFxType);
+	RegisterDeclType(&declParticleType);
+	RegisterDeclType(&declAFType);
+	RegisterDeclType(&declPDAType);
+	RegisterDeclType(&declEmailType);
+	RegisterDeclType(&declVideoType);
+	RegisterDeclType(&declAudioType);
+#else
 	// decls used throughout the engine
 	RegisterDeclType("table",				DECL_TABLE,			idDeclAllocator<idDeclTable>);
 	RegisterDeclType("material",			DECL_MATERIAL,		idDeclAllocator<idMaterial>);
@@ -1072,6 +1217,7 @@ void idDeclManagerLocal::Init(void)
 	RegisterDeclType("email",				DECL_EMAIL,			idDeclAllocator<idDeclEmail>);
 	RegisterDeclType("video",				DECL_VIDEO,			idDeclAllocator<idDeclVideo>);
 	RegisterDeclType("audio",				DECL_AUDIO,			idDeclAllocator<idDeclAudio>);
+#endif
 
 #ifdef _RAVEN // quake4 new decl
 // jmarshall: Raven Decl Support
@@ -1085,6 +1231,20 @@ void idDeclManagerLocal::Init(void)
 
 #ifdef _HUMANHEAD
     RegisterDeclType(	"beam",			DECL_BEAM,		idDeclAllocator<hhDeclBeam>);
+#endif
+
+#ifdef _SPLASHDAMAGE
+	RegisterDeclType(&declEffectType);
+	RegisterDeclType(&declAtmosphereType);
+	RegisterDeclType(&declDecalType);
+	//RegisterDeclType("effect",				DECL_AMBIENTCUBEMAP,			idDeclAllocator<sdDeclAmbientCubeMap>);
+	RegisterDeclType(&declSurfaceTypeType);
+	RegisterDeclType(&declImposterType);
+	RegisterDeclType(&declImposterGeneratorType);
+	RegisterDeclType(&declStuffTypeType);
+	RegisterDeclType(&declRenderBindingType);
+	RegisterDeclType(&declRenderProgramType);
+	RegisterDeclType(&declLocStrType);
 #endif
 
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
@@ -1102,6 +1262,19 @@ void idDeclManagerLocal::Init(void)
 
 #ifdef _HUMANHEAD
     RegisterDeclFolder("beams",			".beam",				DECL_BEAM);
+#endif
+
+#ifdef _SPLASHDAMAGE
+    RegisterDeclFolder("effects",			".effect",				DECL_EFFECT);
+    RegisterDeclFolder("atmosphere",			".atm",				DECL_ATMOSPHERE);
+    RegisterDeclFolder("decals",			".decal",				DECL_DECAL);
+    RegisterDeclFolder("surfacetypes",			".stp",				DECL_SURFACETYPE);
+    RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTER);
+    RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTERGENERATOR);
+    RegisterDeclFolder("stuff",			".stuff",				DECL_STUFFTYPE);
+    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERBINDING);
+    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERPROGRAM);
+    RegisterDeclFolder("localization",			".lostr",				DECL_LOCSTR);
 #endif
 
 	// add console commands
@@ -1249,7 +1422,7 @@ void idDeclManagerLocal::RegisterDeclType(const char *typeName, declType_t type,
 	idDeclType *declType;
 
 	if (type < declTypes.Num() && declTypes[(int)type]) {
-		common->Warning("idDeclManager::RegisterDeclType: type '%s' already exists", typeName);
+		common->Warning("idDeclManager::RegisterDeclType: type '%s' already exists %s", typeName, declTypes[type]->typeName.c_str());
 		return;
 	}
 
@@ -1257,6 +1430,9 @@ void idDeclManagerLocal::RegisterDeclType(const char *typeName, declType_t type,
 	declType->typeName = typeName;
 	declType->type = type;
 	declType->allocator = allocator;
+#ifdef _SPLASHDAMAGE
+	declType->OnRegister(type);
+#endif
 
 	if ((int)type + 1 > declTypes.Num()) {
 		declTypes.AssureSize((int)type + 1, NULL);
@@ -1272,7 +1448,7 @@ idDeclManagerLocal::RegisterDeclFolder
 */
 void idDeclManagerLocal::RegisterDeclFolder(const char *folder, const char *extension, declType_t defaultType)
 {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	RegisterDeclFolderWrapper(folder, extension, defaultType, false, false);
 #else
 	int i, j;
@@ -2062,6 +2238,7 @@ idDeclLocal *idDeclManagerLocal::FindTypeWithoutParsing(declType_t type, const c
 	int typeIndex = (int)type;
 	int i, hash;
 
+	//Sys_Printf("kkk %s %s %d\n", name, declTypeTables[type].c_str(), makeDefault);
 	if (typeIndex < 0 || typeIndex >= declTypes.Num() || declTypes[typeIndex] == NULL) {
 		common->FatalError("idDeclManager::FindTypeWithoutParsing: bad type: %i", typeIndex);
 	}
@@ -2557,7 +2734,15 @@ idDeclLocal::AllocateSelf
 void idDeclLocal::AllocateSelf(void)
 {
 	if (self == NULL) {
+#ifdef _SPLASHDAMAGE
+		const idDeclTypeInterface *dt = declManagerLocal.GetDeclType((int)type);
+		if(dt->allocator)
+			self = dt->allocator();
+		else
+			self = const_cast<idDeclTypeInterface *>(dt)->Alloc();
+#else
 		self = declManagerLocal.GetDeclType((int)type)->allocator();
+#endif
 		self->base = this;
 	}
 }
@@ -2984,40 +3169,6 @@ const idDeclTable* idDeclManagerLocal::FindTable(const char* name, bool makeDefa
 	return static_cast<const idDeclTable*>(FindType(DECL_TABLE, name, makeDefault));
 }
 
-/*
-===================
-RegisterDeclSubFolder
-===================
-*/
-// jmarshall
-void idDeclManagerLocal::RegisterDeclSubFolder(const char* folder, const char* extension, idList<idStr>& fileList, bool norecurse)
-{
-    // Find all
-    {
-        idFileList* list = fileSystem->ListFiles(folder, extension, true);
-
-        for (int d = 0; d < list->GetNumFiles(); d++)
-        {
-            fileList.Append(va("%s/%s", folder, list->GetFile(d)));
-        }
-
-        fileSystem->FreeFileList(list);
-    }
-
-	if(!norecurse)
-	{
-		idFileList* dirList = fileSystem->ListFiles(folder, "/", true);
-		for (int i = 0; i < dirList->GetNumFiles(); i++)
-		{
-			idStr dir = va("%s/%s", folder, dirList->GetFile(i));
-			RegisterDeclSubFolder(dir, extension, fileList);
-		}
-
-		fileSystem->FreeFileList(dirList);
-	}
-}
-// jmarshall end
-
 // jmarshall: Quake 4 Guide Support
 /*
 =========================
@@ -3118,6 +3269,42 @@ const idDeclEntityDef * idDeclManagerLocal::GetMapDef(const char *mapName, const
 	return mapDef;
 }
 
+#endif
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+/*
+===================
+RegisterDeclSubFolder
+===================
+*/
+// jmarshall
+void idDeclManagerLocal::RegisterDeclSubFolder(const char* folder, const char* extension, idList<idStr>& fileList, bool norecurse)
+{
+    // Find all
+    {
+        idFileList* list = fileSystem->ListFiles(folder, extension, true);
+
+        for (int d = 0; d < list->GetNumFiles(); d++)
+        {
+            fileList.Append(va("%s/%s", folder, list->GetFile(d)));
+        }
+
+        fileSystem->FreeFileList(list);
+    }
+
+	if(!norecurse)
+	{
+		idFileList* dirList = fileSystem->ListFiles(folder, "/", true);
+		for (int i = 0; i < dirList->GetNumFiles(); i++)
+		{
+			idStr dir = va("%s/%s", folder, dirList->GetFile(i));
+			RegisterDeclSubFolder(dir, extension, fileList);
+		}
+
+		fileSystem->FreeFileList(dirList);
+	}
+}
+
 void idDeclManagerLocal::RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique, bool norecurse )
 {
 	(void)unique;
@@ -3173,6 +3360,7 @@ void idDeclManagerLocal::RegisterDeclFolderWrapper( const char *folder, const ch
 	}
 }
 
+// jmarshall end
 #endif
 
 #ifdef _HUMANHEAD
@@ -3210,106 +3398,57 @@ const idStrList* idDeclLocal::GetFileLevelIncludeDependencies() const {
 #endif
 
 #ifdef _SPLASHDAMAGE
-idDeclType::idDeclType( void )
-	: declTypeHandle(-1)
-{
-	allocator = NULL;
-}
-
-void idDeclType::OnRegister( qhandle_t handle ) {
-}
-
-idDecl* idDeclType::Create( const char *name, const char *fileName ) const {
-	return NULL;
-}
-
-const idDecl* idDeclType::FindByIndex( int index, bool forceParse ) const {
-	return NULL;
-}
-
-const idDecl* idDeclType::Find( const char* name, bool makeDefault ) const {
-	return NULL;
-}
-
-int idDeclType::Num( void ) const {
-	return 0;
-}
-
-bool idDeclType::SkipChecksum( void ) const {
-	return true;
-}
-
-bool idDeclType::AllowTemplateEvaluation( void ) const {
-	return false;
-}
-
-bool idDeclType::SkipParsing( void ) const {
-	return false;
-}
-
-bool idDeclType::NotPrecached( void ) const {
-	return false;
-}
-
-bool idDeclType::AlwaysGenerateBinary( void ) const {
-	return false;
-}
-
-bool idDeclType::UsePrivateTokens( void ) const {
-	return false;
-}
-
-bool idDeclType::WriteBinary( void ) const {
-	return false;
-}
-
-bool idDeclType::NeverStoreBinary( void ) const {
-	return true;
-}
-
-idDecl* idDeclType::Alloc( void ) {
-	return NULL;
-}
-
-void idDeclType::OnReload( idDecl* decl ) const {
-}
-
-const char* idDeclType::GetName( void ) const {
-	return typeName;
-}
-
-void idDeclType::CacheFromDict( const idDict& dict ) const {
-}
-
-bool idDeclType::CanCacheFromDict() const {
-	return false;
-}
-
-void idDeclType::PostParse( idDecl* decl ) const {
-}
-
-void idDeclType::RegisterPostParse( pfnOnPostParse postParse ) const {
-}
-
-void idDeclType::UnregisterPostParse( pfnOnPostParse postParse ) const {
-}
-
-#endif
-
-#ifdef _SPLASHDAMAGE
 // Returns the system token cache
 idTokenCache& idDeclManagerLocal::GetGlobalTokenCache() {
-	static idTokenCache cache;
-	return cache;
+	return globalTokencache;
 }
 
 void idDeclManagerLocal::RegisterDeclType( idDeclTypeInterface* type ) {
+	qhandle_t h = GetDeclTypeHandle(type->GetName());
+	Sys_Printf("RegisterDeclType(%s, %d, %d)\n", type->GetName(), type->GetHandle(), h);
+	type->type = h;
+	type->ref = type;
+	type->OnRegister(h);
+	RegisterDeclType(type->GetName(), h, NULL);
+
+	idDeclTypeInterface *declType = GetDeclType(h);
+	declType->ref = type;
+	//FinishedRegistering();
 }
 
 void idDeclManagerLocal::UnregisterDeclType( idDeclTypeInterface* type ) {
 }
 
 void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *extension ) {
+	// in game/decls/GameDeclIdentifiers.*
+	declType_t defaultType;
+	if (!idStr::Icmp(extension, ".def"))
+		defaultType = DECL_ENTITYDEF;
+	else if (!idStr::Icmp(extension, ".af"))
+		defaultType = DECL_AF;
+	else if (!idStr::Icmp(extension, ".effect"))
+		defaultType = DECL_EFFECT;
+	else if (!idStr::Icmp(extension, ".decal"))
+		defaultType = DECL_DECAL;
+	else if (!idStr::Icmp(extension, ".vscript"))
+		defaultType = GetDeclTypeFromName("vehicleDef");
+	else if (!idStr::Icmp(extension, ".qc"))
+		defaultType = GetDeclTypeFromName("quickChatDef");
+	else if (!idStr::Icmp(extension, ".txt"))
+		defaultType = GetDeclTypeFromName("mapInfoDef");
+	else if (!idStr::Icmp(extension, ".md"))
+		defaultType = GetDeclTypeFromName("mapInfoDef");
+	else if (!idStr::Icmp(extension, ".gui"))
+		defaultType = GetDeclTypeFromName("gui");
+	else if (!idStr::Icmp(extension, ".guitheme"))
+		defaultType = GetDeclTypeFromName("guiTheme");
+	else if (!idStr::Icmp(extension, ".binding"))
+		defaultType = GetDeclTypeFromName("keyBindings");
+	else if (!idStr::Icmp(extension, ".radialmenu"))
+		defaultType = GetDeclTypeFromName("radialMenuDef ");
+	else
+		defaultType = DECL_ENTITYDEF;
+	declManagerLocal.RegisterDeclFolder(folder, extension, defaultType);
 }
 
 void idDeclManagerLocal::UnregisterDeclFolder( const char *folder, const char *extension ) {
@@ -3325,7 +3464,7 @@ void idDeclManagerLocal::PrintType( const idCmdArgs &args, const char* typeName 
 }
 
 int idDeclManagerLocal::GetNumMaterials( void ) {
-	return 0;
+	return declManagerLocal.GetNumDecls(DECL_MATERIAL);
 }
 
 void idDeclManagerLocal::CacheFromDict( const idDict& dict ) {
@@ -3338,6 +3477,8 @@ const rvDeclEffect * idDeclManagerLocal::FindEffect( const char *name, bool make
 idDeclTypeInterface* idDeclManagerLocal::GetDeclType( const char* typeName ) const {
 	for (int i = 0; i < declTypes.Num(); ++i) {
 		idDeclTypeInterface *declType = declTypes[i];
+		if(!declType)
+			continue;
 		if (!idStr::Cmp(declType->GetName(), typeName))
 			return declType;
 	}
@@ -3349,11 +3490,28 @@ idDeclTypeInterface* idDeclManagerLocal::GetDeclType( qhandle_t typeHandle ) con
 }
 
 qhandle_t idDeclManagerLocal::GetDeclTypeHandle( const char* typeName ) const {
-	return -1;
+	// 1. Find if exists
+	for(int i = 0; i < declTypeTables.Num(); i++)
+	{
+		if(!idStr::Icmp(declTypeTables[i], typeName))
+			return i;
+	}
+	// 2. Find empty slot for inserting
+	for(int i = DECL_CUSTOMER_TYPE(0); i < declTypeTables.Num(); i++)
+	{
+		if(declTypeTables[i].IsEmpty())
+		{
+			declTypeTables[i] = typeName;
+			return i;
+		}
+	}
+	// 3. Append last
+	return declTypeTables.Append(typeName);
 }
 
 const char* idDeclManagerLocal::GetDeclTypeName( qhandle_t typeHandle ) const {
-	return "";
+	Sys_Printf("LL %d %d \n", typeHandle, declTypeTables.Num());
+	return declTypeTables[typeHandle].c_str();
 }
 
 void idDeclManagerLocal::AddDependency( const idDecl* decl, const idDecl* dependency ) {

@@ -177,5 +177,6 @@ Sys_SetFatalError
 */
 void Sys_SetFatalError(const char *error)
 {
+	printf("[FatalError]: %s\n", error);
 	strncpy(fatalError, error, sizeof(fatalError));
 }

@@ -3181,6 +3181,7 @@ if(SPLASHDAMAGE)
 			splashdamage/decllib/declImposter.cpp
 			splashdamage/decllib/declLocStr.cpp
 			splashdamage/decllib/declRenderBinding.cpp
+			splashdamage/decllib/declRenderProgram.cpp
 			splashdamage/decllib/declStuffType.cpp
 			splashdamage/decllib/DeclSurfaceType.cpp
 			splashdamage/decllib/DeclType.cpp

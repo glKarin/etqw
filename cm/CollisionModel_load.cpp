@@ -5312,7 +5312,7 @@ void idCollisionModelManagerLocal::FreeThread( void ) {
 }
 
 int idCollisionModelManagerLocal::GetThreadId( void ) {
-	return -1;
+	return MAIN_THREAD_ID;
 }
 
 int idCollisionModelManagerLocal::GetThreadCount( void ) {

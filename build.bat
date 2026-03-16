@@ -29,7 +29,8 @@ if %BUILD_ARCH% == x86 (
 )
 
 echo Build %BUILD_TYPE% ......
-cmake --build ..\neo_win_%BUILD_ARCH% --config "%BUILD_TYPE%" -- "/m:1" "/nologo" "/p:CL_MPCount=1"
+cmake --build ..\neo_win_%BUILD_ARCH% --config "%BUILD_TYPE%"
+rem -- "/m:1" "/nologo" "/p:CL_MPCount=1"
 
 rem clean: cmake --build --config "%BUILD_TYPE%" --target clean
 

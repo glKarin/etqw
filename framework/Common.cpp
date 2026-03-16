@@ -40,6 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "framework/AdManager.h"
 #include "framework/NotificationSystem.h"
 #include "framework/GraphManager.h"
+#include "renderer/DeviceContext.h"
+#include "sdnet/SDNet.h"
 #endif
 
 #define	MAX_PRINT_MSG_SIZE	4096
@@ -3104,7 +3106,7 @@ void idCommonLocal::Async(void)
 #elif defined(_HUMANHEAD) // prey game dll
 #define _HARM_BASE_GAME_DLL "preygame"
 #elif defined(_SPLASHDAMAGE) // ETQW game dll
-#define _HARM_BASE_GAME_DLL "qtewgame"
+#define _HARM_BASE_GAME_DLL "etqwgame"
 #else
 #define _HARM_BASE_GAME_DLL "game"
 #endif
@@ -3334,6 +3336,10 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.bse						= ::bse;
 #endif
 #ifdef _SPLASHDAMAGE
+	gameImport.deviceContext			= ::deviceContext;
+#ifndef _XENON
+	gameImport.networkService			= ::networkService;
+#endif
 	idStrPool *keypool = NULL;
 	idStrPool *valuepool = NULL;
 	idDict::GetGlobalPools(globalKeyPool, globalValuePool);

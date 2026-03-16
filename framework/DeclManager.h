@@ -94,8 +94,8 @@ typedef enum {
 	DECL_IMPOSTERGENERATOR,
 	DECL_LOCSTR,
 	DECL_DECAL,
-	DECL_FONT,
 	DECL_MODELEXPORT,
+	DECL_FONT,
 #endif
 	DECL_MODELDEF,
 	DECL_FX,
@@ -135,7 +135,11 @@ typedef enum {
 #ifdef _HUMANHEAD
     DECL_BEAM, // HUMANHEAD CJR
 #endif
+#ifdef _SPLASHDAMAGE
+	DECL_MAX_TYPES			= 96
+#else
 	DECL_MAX_TYPES			= 32
+#endif
 }
 #ifdef _SPLASHDAMAGE
 ;
@@ -186,8 +190,8 @@ typedef enum declIdentifierType_e {
     DECLTYPE_IMPOSTERGENERATOR,
     DECLTYPE_LOCSTR,
     DECLTYPE_DECAL,
-    DECLTYPE_FONT,
     DECLTYPE_MODELEXPORT,
+    DECLTYPE_FONT,
 } declIdentifierType_t;
 
 extern const char* declIdentifierList[];
@@ -199,12 +203,24 @@ typedef enum {
 	DS_PARSED
 } declState_t;
 
+#ifdef _SPLASHDAMAGE
+const int DECL_LEXER_FLAGS	=	LEXFL_NOSTRINGCONCAT				// multiple strings seperated by whitespaces are not concatenated
+								| LEXFL_NOSTRINGESCAPECHARS			// no escape characters inside strings
+//								| LEXFL_NODOLLARPRECOMPILE			// don't use the $ sign for precompilation
+								| LEXFL_ALLOWPATHNAMES				// allow path seperators in names
+								| LEXFL_ALLOWMULTICHARLITERALS		// allow multi character literals
+								| LEXFL_ALLOWBACKSLASHSTRINGCONCAT	// allow multiple strings seperated by '\' to be concatenated
+//								| LEXFL_NOFATALERRORS				// just set a flag instead of fatal erroring
+								| LEXFL_ALLOWRAWSTRINGBLOCKS		// allow raw text blocks embraced with <% %>
+								;
+#else
 const int DECL_LEXER_FLAGS	=	LEXFL_NOSTRINGCONCAT |				// multiple strings seperated by whitespaces are not concatenated
                                         LEXFL_NOSTRINGESCAPECHARS |			// no escape characters inside strings
                                         LEXFL_ALLOWPATHNAMES |				// allow path seperators in names
                                         LEXFL_ALLOWMULTICHARLITERALS |		// allow multi character literals
                                         LEXFL_ALLOWBACKSLASHSTRINGCONCAT |	// allow multiple strings seperated by '\' to be concatenated
                                         LEXFL_NOFATALERRORS;				// just set a flag instead of fatal erroring
+#endif
 
 
 class idDeclBase
@@ -525,6 +541,7 @@ public:
 		idStr					typeName;
 		declType_t				type;
 		idDecl *(*allocator)(void);
+		idDeclTypeInterface *ref; // from game
 #endif
 };
 
@@ -1040,5 +1057,10 @@ ID_INLINE void idPrintDecls_f(const idCmdArgs &args)
 {
 	declManager->PrintType(args, type);
 }
+
+
+#ifdef _SPLASHDAMAGE
+#include "decllib/declType.h"
+#endif
 
 #endif /* !__DECLMANAGER_H__ */

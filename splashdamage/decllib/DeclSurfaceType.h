@@ -5,7 +5,7 @@
 #ifndef __DECLSURFACETYPE_H__
 #define __DECLSURFACETYPE_H__
 
-#ifdef _ETQW
+#ifdef _SPLASHDAMAGE
 #include "../framework/DeclManager.h"
 #else
 #include "../framework/declManager.h"

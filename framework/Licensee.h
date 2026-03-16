@@ -399,7 +399,11 @@ If you have questions concerning this license or the applicable additional terms
 
 // paths
 #define	CD_BASEDIR						"etqw"
+#ifdef __ANDROID__ //karin: using `preybase` On Android, because DOOM3 also use `base`
+#define	BASE_GAMEDIR					"etqwbase" // base
+#else
 #define	BASE_GAMEDIR					"base"
+#endif
 
 #define PREGENERATED_BASEDIR			"generated"
 

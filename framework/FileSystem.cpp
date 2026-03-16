@@ -989,11 +989,10 @@ const char *idFileSystemLocal::OSPathToRelativePath(const char *OSPath)
 	}
 
 #else
-#ifdef __ANDROID__ //karin: use preybase on Android
+#ifdef __ANDROID__ //karin: use <game>base on Android
 #ifdef _HUMANHEAD //k: for windows game data path, e.g. C:\PREY\base/type/file.ext
 				  // first search standard prey path, and then search diii4a prey path
-#define RAW_BASE_GAMEDIR "base"
-	base = (char *)strstr(OSPath, RAW_BASE_GAMEDIR);
+	base = (char *)strstr(OSPath, "base");
 
 	while (base) {
 		char c1 = '\0', c2;
@@ -1002,13 +1001,35 @@ const char *idFileSystemLocal::OSPathToRelativePath(const char *OSPath)
 			c1 = *(base - 1);
 		}
 
-		c2 = *(base + strlen(RAW_BASE_GAMEDIR));
+		c2 = *(base + strlen("base"));
 
 		if ((c1 == '/' || c1 == '\\') && (c2 == '/' || c2 == '\\')) {
 			break;
 		}
 
-		base = strstr(base + 1, RAW_BASE_GAMEDIR);
+		base = strstr(base + 1, "base");
+	}
+
+	if(!base || !base[0])
+	{
+#elif defined(_SPLASHDAMAGE) //k: for windows game data path, e.g. C:\PREY\base/type/file.ext
+				  // first search standard ETQW path, and then search diii4a prey path
+	base = (char *)strstr(OSPath, "base");
+
+	while (base) {
+		char c1 = '\0', c2;
+
+		if (base > OSPath) {
+			c1 = *(base - 1);
+		}
+
+		c2 = *(base + strlen("base"));
+
+		if ((c1 == '/' || c1 == '\\') && (c2 == '/' || c2 == '\\')) {
+			break;
+		}
+
+		base = strstr(base + 1, "base");
 	}
 
 	if(!base || !base[0])
@@ -1035,8 +1056,8 @@ const char *idFileSystemLocal::OSPathToRelativePath(const char *OSPath)
 		base = strstr(base + 1, BASE_GAMEDIR);
 	}
 
-#ifdef __ANDROID__ //karin: use preybase on Android
-#ifdef _HUMANHEAD
+#ifdef __ANDROID__ //karin: use <game>base on Android
+#if defined(_HUMANHEAD) || defined(_SPLASHDAMAGE)
 	}
 #endif
 #endif
@@ -1054,9 +1075,12 @@ const char *idFileSystemLocal::OSPathToRelativePath(const char *OSPath)
 			fsgame = fs_game_base.GetString();
 		}
 
-#ifdef __ANDROID__ //karin: use preybase on Android
+#ifdef __ANDROID__ //karin: use <game>base on Android
 #ifdef _HUMANHEAD
 		if(fsgame && !idStr::Icmp(fsgame, "preybase"))
+			fsgame = "";
+#elif defined(_SPLASHDAMAGE)
+		if(fsgame && !idStr::Icmp(fsgame, "etqwbase"))
 			fsgame = "";
 #endif
 #endif
@@ -1994,9 +2018,13 @@ idModList *idFileSystemLocal::ListMods(void)
 #elif defined(_HUMANHEAD) //karin: base game in mods list
 #ifdef __ANDROID__ //karin: use preybase on Android
         dirs.Remove("preybase");
-#else
-        dirs.Remove("base");
 #endif
+        dirs.Remove("base");
+#elif defined(_SPLASHDAMAGE) //karin: base game in mods list
+#ifdef __ANDROID__ //karin: use etqwbase on Android
+        dirs.Remove("etqwbase");
+#endif
+        dirs.Remove("base");
 #else
 		dirs.Remove("base");
 #endif

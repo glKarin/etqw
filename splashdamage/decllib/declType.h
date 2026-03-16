@@ -41,6 +41,10 @@ idDeclType::idDeclType
 */
 ID_INLINE idDeclType::idDeclType( void ) {
 	declTypeHandle = -1;
+#ifdef _SPLASHDAMAGE
+	allocator = NULL;
+	ref = NULL;
+#endif
 }
 
 /*
@@ -155,42 +159,44 @@ ID_INLINE const idDecl* sdDeclWrapper::CreateNewDecl( const char* name, const ch
 
 #ifdef _SPLASHDAMAGE
 ID_INLINE bool idDeclType::SkipChecksum( void ) const {
-	return true;
+	return ref ? ref->SkipChecksum() : true;
 }
 
 ID_INLINE bool idDeclType::AllowTemplateEvaluation( void ) const {
-	return false;
+	return ref ? ref->AllowTemplateEvaluation() : false;
 }
 
 ID_INLINE bool idDeclType::SkipParsing( void ) const {
-	return false;
+	return ref ? ref->SkipParsing() : false;
 }
 
 ID_INLINE bool idDeclType::NotPrecached( void ) const {
-	return false;
+	return ref ? ref->NotPrecached() : false;
 }
 
 ID_INLINE bool idDeclType::AlwaysGenerateBinary( void ) const {
-	return false;
+	return ref ? ref->AlwaysGenerateBinary() : false;
 }
 
 ID_INLINE bool idDeclType::UsePrivateTokens( void ) const {
-	return false;
+	return ref ? ref->UsePrivateTokens() : false;
 }
 
 ID_INLINE bool idDeclType::WriteBinary( void ) const {
-	return false;
+	return ref ? ref->WriteBinary() : false;
 }
 
 ID_INLINE bool idDeclType::NeverStoreBinary( void ) const {
-	return false;
+	return ref ? ref->NeverStoreBinary() : false;
 }
 
 ID_INLINE idDecl* idDeclType::Alloc( void ) {
-	return NULL;
+	return allocator ? allocator() : (ref ? ref->Alloc() : NULL);
 }
 
 ID_INLINE void idDeclType::OnReload( idDecl* decl ) const {
+	if (ref)
+		ref->OnReload(decl);
 }
 
 ID_INLINE const char* idDeclType::GetName( void ) const {
@@ -198,19 +204,27 @@ ID_INLINE const char* idDeclType::GetName( void ) const {
 }
 
 ID_INLINE void idDeclType::CacheFromDict( const idDict& dict ) const {
+	if (ref)
+		ref->CacheFromDict(dict);
 }
 
 ID_INLINE bool idDeclType::CanCacheFromDict() const {
-	return false;
+	return ref ? ref->CanCacheFromDict() : false;
 }
 
 ID_INLINE void idDeclType::PostParse( idDecl* decl ) const {
+	if (ref)
+		ref->PostParse(decl);
 }
 
 ID_INLINE void idDeclType::RegisterPostParse( pfnOnPostParse postParse ) const {
+	if (ref)
+		ref->RegisterPostParse(postParse);
 }
 
 ID_INLINE void idDeclType::UnregisterPostParse( pfnOnPostParse postParse ) const {
+	if (ref)
+		ref->UnregisterPostParse(postParse);
 }
 
 #endif
