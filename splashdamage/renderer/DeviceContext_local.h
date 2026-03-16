@@ -75,6 +75,22 @@ public:
 
     virtual void			OverrideAspectRationCorrection( bool setOverride );
     virtual float			GetAspectRatioCorrection() const;
+
+private:
+	bool					ClippedCoords(float *x, float *y, float *w, float *h, float *s1, float *t1, float *s2, float *t2);
+	void					DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader);
+	void					SetSize(float width, float height);
+	void 					AdjustCoords(float *x, float *y, float *w, float *h);
+	void 					DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle);
+
+private:
+	float					xScale;
+	float					yScale;
+
+	float					vidHeight;
+	float					vidWidth;
+	bool				    enableClipping;
+	idList<sdBounds2D>		clipRects;
 };
 
 #endif /* !__DEVICECONTEXT_LOCAL_H__ */

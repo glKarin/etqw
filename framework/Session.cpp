@@ -555,7 +555,7 @@ void idSessionLocal::Shutdown()
 
 	Stop();
 
-#ifdef _RAVEN //karin: shutdown BSE
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: shutdown BSE
 	bse->Shutdown();
 #endif
 
@@ -3686,7 +3686,7 @@ void idSessionLocal::Init()
 	sw = soundSystem->AllocSoundWorld(rw);
 
 	menuSoundWorld = soundSystem->AllocSoundWorld(rw);
-#ifdef _RAVEN //karin: init BSE
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: init BSE
 	bse->Init();
 #endif
 
