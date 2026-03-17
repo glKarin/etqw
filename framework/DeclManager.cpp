@@ -47,6 +47,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "decllib/declStuffType.h"
 #include "decllib/DeclSurfaceType.h"
 #include "decllib/declRenderProgram.h"
+#include "decllib/DeclTemplate.h"
 
 #define GENERATED_PREFIX "generated"
 #define GENERATED_DECLB "declb"
@@ -106,8 +107,10 @@ missing reload over a previously explicit definition
 
 */
 
+#if !defined(_SPLASHDAMAGE)
 #define USE_COMPRESSED_DECLS
 //#define GET_HUFFMAN_FREQUENCIES
+#endif
 
 #if !defined(_SPLASHDAMAGE)
 class idDeclType
@@ -378,7 +381,7 @@ class idDeclManagerLocal : public idDeclManager
 		virtual void					AddDependency( const idDecl* decl, const char* fileName );
 		virtual void					AddDependencies( const idDecl* decl, const idParser& parser );
 
-		int								DecompressTokenCache(void);
+		bool							DecompressTokenCache(void);
 		void							MakeBinaryFilename(idStr &filename, const char *type, const char *name);
 #endif
 
@@ -424,54 +427,6 @@ public:
 #ifdef _SPLASHDAMAGE
 		idTokenCache				globalTokencache;
 		mutable idStrList			declTypeTables;
-
-		static sdDeclInfo declTableInfo;
-		static sdDeclInfo declMaterialInfo;
-		static sdDeclInfo declSkinInfo;
-		static sdDeclInfo declSoundInfo;
-		static sdDeclInfo declEntityDefInfo;
-		static sdDeclInfo declMapDefInfo;
-		static sdDeclInfo declFxInfo;
-		static sdDeclInfo declParticleInfo;
-		static sdDeclInfo declAFInfo;
-		static sdDeclInfo declPDAInfo;
-		static sdDeclInfo declEmailInfo;
-		static sdDeclInfo declVideoInfo;
-		static sdDeclInfo declAudioInfo;
-		static sdDeclInfo declEffectInfo;
-		static sdDeclInfo declAtmosphereInfo;
-		static sdDeclInfo declDecalInfo;
-		static sdDeclInfo declSurfaceTypeInfo;
-		static sdDeclInfo declImposterInfo;
-		static sdDeclInfo declImposterGeneratorInfo;
-		static sdDeclInfo declStuffTypeInfo;
-		static sdDeclInfo declRenderBindingInfo;
-		static sdDeclInfo declRenderProgramInfo;
-		static sdDeclInfo declLocStrInfo;
-
-		static idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
-		static idDeclTypeTemplate< idMaterial, &declMaterialInfo > declMaterialType;
-		static idDeclTypeTemplate< idDeclSkin, &declSkinInfo > declSkinType;
-		static idDeclTypeTemplate< idSoundShader, &declSoundInfo > declSoundType;
-		static idDeclTypeTemplate< idDeclEntityDef, &declEntityDefInfo > declEntityDefType;
-		static idDeclTypeTemplate< idDeclEntityDef, &declMapDefInfo > declMapDefType;
-		static idDeclTypeTemplate< idDeclFX, &declFxInfo > declFxType;
-		static idDeclTypeTemplate< idDeclParticle, &declParticleInfo > declParticleType;
-		static idDeclTypeTemplate< idDeclAF, &declAFInfo > declAFType;
-		static idDeclTypeTemplate< idDeclPDA, &declPDAInfo > declPDAType;
-		static idDeclTypeTemplate< idDeclEmail, &declEmailInfo > declEmailType;
-		static idDeclTypeTemplate< idDeclVideo, &declVideoInfo > declVideoType;
-		static idDeclTypeTemplate< idDeclAudio, &declAudioInfo > declAudioType;
-		static idDeclTypeTemplate< rvDeclEffect, &declEffectInfo > declEffectType;
-		static idDeclTypeTemplate< sdDeclAtmosphere, &declAtmosphereInfo > declAtmosphereType;
-		static idDeclTypeTemplate< sdDeclDecal, &declDecalInfo > declDecalType;
-		static idDeclTypeTemplate< sdDeclSurfaceType, &declSurfaceTypeInfo > declSurfaceTypeType;
-		static idDeclTypeTemplate< sdDeclImposter, &declImposterInfo > declImposterType;
-		static idDeclTypeTemplate< sdDeclImposterGenerator, &declImposterGeneratorInfo > declImposterGeneratorType;
-		static idDeclTypeTemplate< sdDeclStuffType, &declStuffTypeInfo > declStuffTypeType;
-		static idDeclTypeTemplate< sdDeclRenderBinding, &declRenderBindingInfo > declRenderBindingType;
-		static idDeclTypeTemplate< sdDeclRenderProgram, &declRenderProgramInfo > declRenderProgramType;
-		static idDeclTypeTemplate< sdDeclLocStr, &declLocStrInfo > declLocStrType;
 #endif
 
 	private:
@@ -876,7 +831,11 @@ int c_savedMemory = 0;
 int idDeclFile::LoadAndParse()
 {
 	int			i, numTypes;
+#ifdef _SPLASHDAMAGE
+	idParser	src;
+#else
 	idLexer		src;
+#endif
 	idToken		token;
 	int			startMarker;
 	char 		*buffer;
@@ -1032,8 +991,14 @@ int idDeclFile::LoadAndParse()
 		src.UnreadToken(&token);
 
 		// now take everything until a matched closing brace
+#ifdef _SPLASHDAMAGE
+		idStr out;
+		src.ParseBracedSection(out, -1, true);
+		size = out.Length();
+#else
 		src.SkipBracedSection();
 		size = src.GetFileOffset() - startMarker;
+#endif
 
 		// look it up, possibly getting a newly created default decl
 		reparse = false;
@@ -1066,6 +1031,8 @@ int idDeclFile::LoadAndParse()
 
 #ifdef _RAVEN
 		newDecl->SetTextLocal(finalPreprocessedBuffer.c_str() + startMarker, size);
+#elif defined(_SPLASHDAMAGE)
+		newDecl->SetTextLocal(out.c_str(), size);
 #else
 		newDecl->SetTextLocal(buffer + startMarker, size);
 #endif
@@ -1109,55 +1076,59 @@ int idDeclFile::LoadAndParse()
 const char *listDeclStrings[] = { "current", "all", "ever", NULL };
 
 #ifdef _SPLASHDAMAGE
-sdDeclInfo idDeclManagerLocal::declTableInfo("table");
-sdDeclInfo idDeclManagerLocal::declMaterialInfo("material");
-sdDeclInfo idDeclManagerLocal::declSkinInfo("skin");
-sdDeclInfo idDeclManagerLocal::declSoundInfo("sound");
-sdDeclInfo idDeclManagerLocal::declEntityDefInfo("entityDef");
-sdDeclInfo idDeclManagerLocal::declMapDefInfo("mapDef");
-sdDeclInfo idDeclManagerLocal::declFxInfo("fx");
-sdDeclInfo idDeclManagerLocal::declParticleInfo("particle");
-sdDeclInfo idDeclManagerLocal::declAFInfo("articulatedFigure");
-sdDeclInfo idDeclManagerLocal::declPDAInfo("pda");
-sdDeclInfo idDeclManagerLocal::declEmailInfo("email");
-sdDeclInfo idDeclManagerLocal::declVideoInfo("video");
-sdDeclInfo idDeclManagerLocal::declAudioInfo("audio");
+static sdDeclInfo declTableInfo("table");
+static sdDeclInfo declMaterialInfo("material");
+static sdDeclInfo declSkinInfo("skin");
+static sdDeclInfo declSoundInfo("sound");
+static sdDeclInfo declEntityDefInfo("entityDef");
+static sdDeclInfo declMapDefInfo("mapDef");
+static sdDeclInfo declFxInfo("fx");
+static sdDeclInfo declParticleInfo("particle");
+static sdDeclInfo declAFInfo("articulatedFigure");
+static sdDeclInfo declPDAInfo("pda");
+static sdDeclInfo declEmailInfo("email");
+static sdDeclInfo declVideoInfo("video");
+static sdDeclInfo declAudioInfo("audio");
 
-sdDeclInfo idDeclManagerLocal::declEffectInfo("effect");
-sdDeclInfo idDeclManagerLocal::declAtmosphereInfo("atmosphere");
-sdDeclInfo idDeclManagerLocal::declDecalInfo("decal");
-sdDeclInfo idDeclManagerLocal::declSurfaceTypeInfo("surfaceType");
-sdDeclInfo idDeclManagerLocal::declImposterInfo("imposter");
-sdDeclInfo idDeclManagerLocal::declImposterGeneratorInfo("imposterGenerator");
-sdDeclInfo idDeclManagerLocal::declStuffTypeInfo("stuffType");
-sdDeclInfo idDeclManagerLocal::declRenderBindingInfo("renderBinding");
-sdDeclInfo idDeclManagerLocal::declRenderProgramInfo("renderProgram");
-sdDeclInfo idDeclManagerLocal::declLocStrInfo("locString");
+static sdDeclInfo declEffectInfo("effect");
+static sdDeclInfo declAtmosphereInfo("atmosphere");
+static sdDeclInfo declAmbientCubeMapInfo("ambientCubemap");
+static sdDeclInfo declDecalInfo("decal");
+static sdDeclInfo declSurfaceTypeInfo("surfaceType");
+static sdDeclInfo declImposterInfo("imposter");
+static sdDeclInfo declImposterGeneratorInfo("imposterGenerator");
+static sdDeclInfo declStuffTypeInfo("stuffType");
+static sdDeclInfo declRenderBindingInfo("renderBinding");
+static sdDeclInfo declRenderProgramInfo("renderProgram");
+static sdDeclInfo declLocStrInfo("locString");
+static sdDeclInfo declTemplateInfo("template");
 
 
-idDeclTypeTemplate< idDeclTable, &idDeclManagerLocal::declTableInfo > idDeclManagerLocal::declTableType;
-idDeclTypeTemplate< idMaterial, &idDeclManagerLocal::declMaterialInfo > idDeclManagerLocal::declMaterialType;
-idDeclTypeTemplate< idDeclSkin, &idDeclManagerLocal::declSkinInfo > idDeclManagerLocal::declSkinType;
-idDeclTypeTemplate< idSoundShader, &idDeclManagerLocal::declSoundInfo > idDeclManagerLocal::declSoundType;
-idDeclTypeTemplate< idDeclEntityDef, &idDeclManagerLocal::declEntityDefInfo > idDeclManagerLocal::declEntityDefType;
-idDeclTypeTemplate< idDeclEntityDef, &idDeclManagerLocal::declMapDefInfo > idDeclManagerLocal::declMapDefType;
-idDeclTypeTemplate< idDeclFX, &idDeclManagerLocal::declFxInfo > idDeclManagerLocal::declFxType;
-idDeclTypeTemplate< idDeclParticle, &idDeclManagerLocal::declParticleInfo > idDeclManagerLocal::declParticleType;
-idDeclTypeTemplate< idDeclAF, &idDeclManagerLocal::declAFInfo > idDeclManagerLocal::declAFType;
-idDeclTypeTemplate< idDeclPDA, &idDeclManagerLocal::declPDAInfo > idDeclManagerLocal::declPDAType;
-idDeclTypeTemplate< idDeclEmail, &idDeclManagerLocal::declEmailInfo > idDeclManagerLocal::declEmailType;
-idDeclTypeTemplate< idDeclVideo, &idDeclManagerLocal::declVideoInfo > idDeclManagerLocal::declVideoType;
-idDeclTypeTemplate< idDeclAudio, &idDeclManagerLocal::declAudioInfo > idDeclManagerLocal::declAudioType;
-idDeclTypeTemplate< rvDeclEffect, &idDeclManagerLocal::declEffectInfo > idDeclManagerLocal::declEffectType;
-idDeclTypeTemplate< sdDeclAtmosphere, &idDeclManagerLocal::declAtmosphereInfo > idDeclManagerLocal::declAtmosphereType;
-idDeclTypeTemplate< sdDeclDecal, &idDeclManagerLocal::declDecalInfo > idDeclManagerLocal::declDecalType;
-idDeclTypeTemplate< sdDeclSurfaceType, &idDeclManagerLocal::declSurfaceTypeInfo > idDeclManagerLocal::declSurfaceTypeType;
-idDeclTypeTemplate< sdDeclImposter, &idDeclManagerLocal::declImposterInfo > idDeclManagerLocal::declImposterType;
-idDeclTypeTemplate< sdDeclImposterGenerator, &idDeclManagerLocal::declImposterGeneratorInfo > idDeclManagerLocal::declImposterGeneratorType;
-idDeclTypeTemplate< sdDeclStuffType, &idDeclManagerLocal::declStuffTypeInfo > idDeclManagerLocal::declStuffTypeType;
-idDeclTypeTemplate< sdDeclRenderBinding, &idDeclManagerLocal::declRenderBindingInfo > idDeclManagerLocal::declRenderBindingType;
-idDeclTypeTemplate< sdDeclRenderProgram, &idDeclManagerLocal::declRenderProgramInfo > idDeclManagerLocal::declRenderProgramType;
-idDeclTypeTemplate< sdDeclLocStr, &idDeclManagerLocal::declLocStrInfo > idDeclManagerLocal::declLocStrType;
+static idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
+static idDeclTypeTemplate< idMaterial, &declMaterialInfo > declMaterialType;
+static idDeclTypeTemplate< idDeclSkin, &declSkinInfo > declSkinType;
+static idDeclTypeTemplate< idSoundShader, &declSoundInfo > declSoundType;
+static idDeclTypeTemplate< idDeclEntityDef, &declEntityDefInfo > declEntityDefType;
+static idDeclTypeTemplate< idDeclEntityDef, &declMapDefInfo > declMapDefType;
+static idDeclTypeTemplate< idDeclFX, &declFxInfo > declFxType;
+static idDeclTypeTemplate< idDeclParticle, &declParticleInfo > declParticleType;
+static idDeclTypeTemplate< idDeclAF, &declAFInfo > declAFType;
+static idDeclTypeTemplate< idDeclPDA, &declPDAInfo > declPDAType;
+static idDeclTypeTemplate< idDeclEmail, &declEmailInfo > declEmailType;
+static idDeclTypeTemplate< idDeclVideo, &declVideoInfo > declVideoType;
+static idDeclTypeTemplate< idDeclAudio, &declAudioInfo > declAudioType;
+static idDeclTypeTemplate< rvDeclEffect, &declEffectInfo > declEffectType;
+static idDeclTypeTemplate< sdDeclAtmosphere, &declAtmosphereInfo > declAtmosphereType;
+static idDeclTypeTemplate< sdDeclAmbientCubeMap, &declAmbientCubeMapInfo > declAmbientCubeMapType;
+static idDeclTypeTemplate< sdDeclDecal, &declDecalInfo > declDecalType;
+static idDeclTypeTemplate< sdDeclSurfaceType, &declSurfaceTypeInfo > declSurfaceTypeType;
+static idDeclTypeTemplate< sdDeclImposter, &declImposterInfo > declImposterType;
+static idDeclTypeTemplate< sdDeclImposterGenerator, &declImposterGeneratorInfo > declImposterGeneratorType;
+static idDeclTypeTemplate< sdDeclStuffType, &declStuffTypeInfo > declStuffTypeType;
+static idDeclTypeTemplate< sdDeclRenderBinding, &declRenderBindingInfo > declRenderBindingType;
+static idDeclTypeTemplate< sdDeclRenderProgram, &declRenderProgramInfo > declRenderProgramType;
+static idDeclTypeTemplate< sdDeclLocStr, &declLocStrInfo > declLocStrType;
+static idDeclTypeTemplate< sdDeclTemplate, &declTemplateInfo > declTemplateType;
 #endif
 /*
 ===================
@@ -1251,8 +1222,8 @@ void idDeclManagerLocal::Init(void)
 #ifdef _SPLASHDAMAGE
 	RegisterDeclType(&declEffectType);
 	RegisterDeclType(&declAtmosphereType);
+	RegisterDeclType(&declAmbientCubeMapType);
 	RegisterDeclType(&declDecalType);
-	//RegisterDeclType("effect",				DECL_AMBIENTCUBEMAP,			idDeclAllocator<sdDeclAmbientCubeMap>);
 	RegisterDeclType(&declSurfaceTypeType);
 	RegisterDeclType(&declImposterType);
 	RegisterDeclType(&declImposterGeneratorType);
@@ -1260,6 +1231,8 @@ void idDeclManagerLocal::Init(void)
 	RegisterDeclType(&declRenderBindingType);
 	RegisterDeclType(&declRenderProgramType);
 	RegisterDeclType(&declLocStrType);
+
+	RegisterDeclType(&declTemplateType);
 #endif
 
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
@@ -1282,6 +1255,7 @@ void idDeclManagerLocal::Init(void)
 #ifdef _SPLASHDAMAGE
     RegisterDeclFolder("effects",			".effect",				DECL_EFFECT);
     RegisterDeclFolder("atmosphere",			".atm",				DECL_ATMOSPHERE);
+    RegisterDeclFolder("ambientCubemap",			".atm",				DECL_AMBIENTCUBEMAP);
     RegisterDeclFolder("decals",			".decal",				DECL_DECAL);
     RegisterDeclFolder("surfacetypes",			".stp",				DECL_SURFACETYPE);
     RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTER);
@@ -3546,14 +3520,13 @@ void idDeclManagerLocal::MakeBinaryFilename(idStr &filename, const char *type, c
 	filename.AppendPath(name);
 }
 
-int idDeclManagerLocal::DecompressTokenCache(void)
+bool idDeclManagerLocal::DecompressTokenCache(void)
 {
 	int magic;
 	int version;
 	unsigned int compressedLength, decompressedLength;
 	idFile *file;
 	idCompressor *compressor;
-	int num;
 	idStr path;
 	MakeBinaryFilename(path, NULL, GLOBALTOKENS_CACHEB);
 
@@ -3565,7 +3538,7 @@ int idDeclManagerLocal::DecompressTokenCache(void)
 	if(!file)
 	{
 		common->Warning("Token cache file not exists: %s", path.c_str());
-		return -1;
+		return false;
 	}
 
 #if 0
@@ -3579,7 +3552,7 @@ int idDeclManagerLocal::DecompressTokenCache(void)
 	{
 		common->Warning("decl token cache : encountered unknown fileid");
 		fileSystem->CloseFile(file);
-		return -1;
+		return false;
 	}
 #else
 	char headers[5] = {0};
@@ -3592,7 +3565,7 @@ int idDeclManagerLocal::DecompressTokenCache(void)
 	{
 		common->Warning("decl token cache : wrong version (%i should be %i)", version, CACHEB_VERSION);
 		fileSystem->CloseFile(file);
-		return -1;
+		return false;
 	}
 
 	file->ReadUnsignedInt(decompressedLength);
@@ -3613,6 +3586,7 @@ int idDeclManagerLocal::DecompressTokenCache(void)
 	decompressedLength = compressor->Read(&out[0], out.Num());
 
 #if 0
+	int num;
 	fileSystem->WriteFile("globaltokens.cacheb.bin", &out[0], decompressedLength);
 
 	file = fileSystem->OpenFileRead("globaltokens.cacheb.bin");
@@ -3650,7 +3624,7 @@ int idDeclManagerLocal::DecompressTokenCache(void)
 	common->Printf("%ziKb\n", globalTokencache.Allocated());
 
 	delete compressor;
-	return num;
+	return true;
 }
 
 

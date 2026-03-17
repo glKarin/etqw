@@ -1578,7 +1578,12 @@ int idParser::Directive_define(void)
 			}
 		}
 
-		if (!idParser::ReadLine(&token)) {
+#ifdef _SPLASHDAMAGE
+		if ( !ReadLine( &token, isTemplate ) ) 
+#else
+		if (!idParser::ReadLine(&token)) 
+#endif
+		{
 			return true;
 		}
 	}
@@ -1615,7 +1620,12 @@ int idParser::Directive_define(void)
 		else define->tokens = t;
 
 		last = t;
-	} while (idParser::ReadLine(&token));
+	} 
+#ifdef _SPLASHDAMAGE
+	while( ReadLine( &token, isTemplate ) );
+#else
+	while (idParser::ReadLine(&token));
+#endif
 
 	if (last) {
 		// check for merge operators at the beginning or end

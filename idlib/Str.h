@@ -13,7 +13,7 @@ the Free Software Foundation, either version 3 of the License, or
 
 Doom 3 Source Code is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS stringDataAllocatorFOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
@@ -508,6 +508,12 @@ class idStr
 	protected:
 		int					len;
 		char 				*data;
+#ifdef _SPLASHDAMAGE
+		/*
+		 * > 0: allocate in heap
+		 * < 0: static buffer
+		 */
+#endif
 		int					alloced;
 		char				baseBuffer[ STR_ALLOC_BASE ];
 
@@ -532,7 +538,12 @@ char *					va_floatstring( const char *fmt, ... );
 
 ID_INLINE void idStr::EnsureAlloced(int amount, bool keepold)
 {
-	if (amount > alloced) {
+#ifdef _SPLASHDAMAGE
+	if ( amount > abs(alloced) )
+#else
+	if (amount > alloced)
+#endif
+	{
 		ReAllocate(amount, keepold);
 	}
 }
@@ -540,7 +551,11 @@ ID_INLINE void idStr::EnsureAlloced(int amount, bool keepold)
 ID_INLINE void idStr::Init(void)
 {
 	len = 0;
+#ifdef _SPLASHDAMAGE
+	alloced = -STR_ALLOC_BASE;
+#else
 	alloced = STR_ALLOC_BASE;
+#endif
 	data = baseBuffer;
 	data[ 0 ] = '\0';
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
@@ -978,7 +993,11 @@ ID_INLINE int idStr::Length(void) const
 ID_INLINE int idStr::Allocated(void) const
 {
 	if (data != baseBuffer) {
+#ifdef _SPLASHDAMAGE
+		return abs( alloced );
+#else
 		return alloced;
+#endif
 	} else {
 		return 0;
 	}

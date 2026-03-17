@@ -231,17 +231,18 @@ void idSurface_Traceable::GenerateIntersectionDrawVert( const idVec3& intersecti
 	}
 	dv._normal.Normalize();
 
-	for ( int i = 0; i < 4; i++ ) {
 #if 1 //karin: for compat
-		idVec4 dv_tangent = (idVec4 &)*(&dv.tangents[0]);
-		idVec4 v0_tangent = (idVec4 &)*(&v0->tangents[0]);
-		idVec4 v1_tangent = (idVec4 &)*(&v1->tangents[0]);
-		idVec4 v2_tangent = (idVec4 &)*(&v2->tangents[0]);
-		dv_tangent[ i ] = a * v0_tangent[ i ] + b * v1_tangent[ i ] + c * v2_tangent[ i ];
-#else
-		dv._tangent[ i ] = a * v0->_tangent[ i ] + b * v1->_tangent[ i ] + c * v2->_tangent[ i ];
-#endif
+	for ( int i = 0; i < 3; i++ ) {
+		dv.tangents[0][ i ] = a * v0->tangents[0][ i ] + b * v1->tangents[0][ i ] + c * v2->tangents[0][ i ];
+		//dv.tangents[1][ i ] = a * v0->tangents[1][ i ] + b * v1->tangents[1][ i ] + c * v2->tangents[1][ i ];
 	}
+	float sign = a * v0->GetBiTangentSign() + b * v1->GetBiTangentSign() + c * v2->GetBiTangentSign();
+	dv.SetBiTangent(sign);
+#else
+	for ( int i = 0; i < 4; i++ ) {
+		dv._tangent[ i ] = a * v0->_tangent[ i ] + b * v1->_tangent[ i ] + c * v2->_tangent[ i ];
+	}
+#endif
 #endif
 
 	for ( int i = 0; i < 4; i++ ) {

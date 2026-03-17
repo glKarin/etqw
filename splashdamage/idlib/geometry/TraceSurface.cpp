@@ -388,17 +388,18 @@ ID_INLINE float sdTraceSurface::TraceToMeshFace( const int faceNum, const idVec3
 	}
 	dv._normal.Normalize();
 
-	for ( i = 0; i < 4; i++ ) {
 #if 1 //karin: for compat
-		idVec4 dv_tangent = (idVec4 &)*(&dv.tangents[0]);
-		idVec4 v0_tangent = (idVec4 &)*(&v0.tangents[0]);
-		idVec4 v1_tangent = (idVec4 &)*(&v1.tangents[0]);
-		idVec4 v2_tangent = (idVec4 &)*(&v2.tangents[0]);
-		dv_tangent[i] = bary[0] * v0_tangent[i] + bary[1] * v1_tangent[i] + bary[2] * v2_tangent[i];
-#else
-		dv._tangent[i] = bary[0] * v0._tangent[i] + bary[1] * v1._tangent[i] + bary[2] * v2._tangent[i];
-#endif
+	for ( i = 0; i < 3; i++ ) {
+		dv.tangents[0][i] = bary[0] * v0.tangents[0][i] + bary[1] * v1.tangents[0][i] + bary[2] * v2.tangents[0][i];
+		//dv.tangents[1][ i ] = bary[0] * v0.tangents[1][ i ] + bary[1] * v1.tangents[1][ i ] + c * v2.tangents[1][ i ];
 	}
+	float sign = bary[0] * v0.GetBiTangentSign() + bary[1] * v1.GetBiTangentSign() + bary[2] * v2.GetBiTangentSign();
+	dv.SetBiTangent(sign);
+#else
+	for ( i = 0; i < 4; i++ ) {
+		dv._tangent[i] = bary[0] * v0._tangent[i] + bary[1] * v1._tangent[i] + bary[2] * v2._tangent[i];
+	}
+#endif
 
 #endif
 

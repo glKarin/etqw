@@ -4,6 +4,7 @@
 #include "idlib/precompiled.h"
 
 #include "declStuffType.h"
+#include "framework/DeclParseHelper.h"
 
 sdDeclStuffType::sdDeclStuffType( void )
 	: randomizeAngles(false),
@@ -17,13 +18,45 @@ const char* sdDeclStuffType::DefaultDefinition( void ) const {
 }
 
 bool sdDeclStuffType::Parse( const char *text, const int textLength ) {
-	models.Clear();
-	randomizeAngles = false;
-	lodType = NULL;
+	idParser src;
+	idToken	token;
+
+	src.SetFlags(DECL_LEXER_FLAGS);
+	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
+	sdDeclParseHelper declHelper( this, text, textLength, src );
+	src.SkipUntilString("{");
+
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclStuffType::Parse: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if( !token.Icmp( "Model" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclStuffType::Parse: failed to parse Model" );
+				break;
+			}
+			models.Append(token);
+			continue;
+		}
+
+		src.Warning( "sdDeclStuffType::Parse: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+
 	return true;
 }
 
 void sdDeclStuffType::FreeData( void ) {
+	models.Clear();
+	randomizeAngles = false;
+	lodType = NULL;
 }
 
 bool sdDeclStuffType::RebuildTextSource( void ) {

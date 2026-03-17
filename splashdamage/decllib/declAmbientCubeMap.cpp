@@ -4,6 +4,7 @@
 #include "idlib/precompiled.h"
 
 #include "declAmbientCubeMap.h"
+#include "framework/DeclParseHelper.h"
 
 //===============================================================
 //
@@ -34,6 +35,42 @@ const char* sdDeclAmbientCubeMap::DefaultDefinition( void ) const {
 }
 
 bool sdDeclAmbientCubeMap::Parse( const char* text, const int textLength ) {
+	idParser src;
+	idToken	token;
+
+	src.SetFlags(DECL_LEXER_FLAGS);
+	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
+	sdDeclParseHelper declHelper( this, text, textLength, src );
+	src.SkipUntilString("{");
+
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclAmbientCubeMap::Parse: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if( !token.Icmp( "AmbientLight" )) {
+			if(!ParseAmbientLight(&src))
+			{
+				src.SkipBracedSection(false);
+				break;
+			}
+			continue;
+		}
+
+		src.Warning( "sdDeclAmbientCubeMap::Parse: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+
+	return true;
+}
+
+void sdDeclAmbientCubeMap::FreeData() {
 	indoors = false;
 	brightness = 1.0f;
 	ambientCubeMap = NULL;
@@ -48,11 +85,6 @@ bool sdDeclAmbientCubeMap::Parse( const char* text, const int textLength ) {
 	avgAmbientColor.Set(1.0f, 1.0, 1.0f, 1.0f);
 	minSpecAmbientColor.Zero();
 	minSpecShadowColor.Zero();
-	return true;
-}
-
-void sdDeclAmbientCubeMap::FreeData() {
-
 }
 
 void sdDeclAmbientCubeMap::CacheFromDict( const idDict& dict ) {
@@ -67,6 +99,43 @@ void sdDeclAmbientCubeMap::GenerateImages() {
 }
 
 bool sdDeclAmbientCubeMap::ParseAmbientLight( idParser *src ) {
+	idToken token;
+	if( !src->ExpectTokenString( "{" )) {
+		src->Error( "sdDeclAmbientCubeMap::ParseAmbientLight: expected {." );
+		return false;
+	}
+
+	ambientLight_t item;
+	while (1) {
+		if( !src->ReadToken( &token )) {
+			src->Error( "sdDeclAmbientCubeMap::ParseAmbientLight: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if (!token.Icmp("Color")) {
+			item.color[0] = src->ParseFloat();
+			item.color[1] = src->ParseFloat();
+			item.color[2] = src->ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("Direction")) {
+			item.dir[0] = src->ParseFloat();
+			item.dir[1] = src->ParseFloat();
+			item.dir[2] = src->ParseFloat();
+			continue;
+		}
+
+		src->Warning( "sdDeclAmbientCubeMap::ParseAmbientLight: unexpected token '%s'.", token.c_str() );
+		src->SkipBracedSection(false);
+		break;
+	}
+	ambientLights.Append(item);
+
 	return true;
 }
 

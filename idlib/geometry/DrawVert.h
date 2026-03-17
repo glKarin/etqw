@@ -45,9 +45,10 @@ class idDrawVert
 	public:
 #ifdef _SPLASHDAMAGE
 
+#define TANGENT_BITANGENT 1
+
     //karin: for compat
 #define _normal normal
-#define _tangent tangents
 #define _st st
 	    /*
 	    	The sizeof idDrawVert should be at least a multiple of 16 bytes to make the VMX128 code work.
@@ -66,7 +67,11 @@ class idDrawVert
 	    byte			color[4];
 	    idVec3			normal;
 	    byte			_color2[4];
-		idVec3			tangents[2]; // idVec4			_tangent;		// [3] is texture polarity sign
+#ifdef TANGENT_BITANGENT
+		idVec3			tangents[2];
+#else
+		idVec4			_tangent;		// [3] is texture polarity sign
+#endif
 	    idVec2			st;
 #else
 		idVec3			xyz;
@@ -157,7 +162,11 @@ assert_sizeof( idDrawVert, DRAWVERT_SIZE );
 assert_sizeof( idDrawVert, (1<<DRAWVERT_SIZE_SHIFT) );
 assert_offsetof( idDrawVert, xyz, DRAWVERT_XYZ_OFFSET );
 assert_offsetof( idDrawVert, _normal, DRAWVERT_NORMAL_OFFSET );
+#ifdef TANGENT_BITANGENT
+assert_offsetof( idDrawVert, tangents, DRAWVERT_TANGENT_OFFSET );
+#else
 assert_offsetof( idDrawVert, _tangent, DRAWVERT_TANGENT_OFFSET );
+#endif
 
 #endif
 
@@ -177,10 +186,13 @@ ID_INLINE void idDrawVert::Clear(void)
 #ifdef _SPLASHDAMAGE
     xyz.Zero();
 
-    _normal.Zero();
-    //_tangent.Zero();
-    tangents[0].Zero();
-    tangents[1].Zero();
+	_normal.Zero();
+#ifdef TANGENT_BITANGENT
+	tangents[0].Zero();
+	tangents[1].Zero();
+#else
+    _tangent.Zero();
+#endif
     _st.Zero();
     //_st2.Zero();
     color[0] = color[1] = color[2] = color[3] = 0;
@@ -195,8 +207,6 @@ ID_INLINE void idDrawVert::Clear(void)
 #endif
 }
 
-#undef _tangent
-#define _tangent ((idVec4 &)*(&tangents[0]))
 
 
 ID_INLINE void idDrawVert::Lerp(const idDrawVert &a, const idDrawVert &b, const float f)
@@ -258,26 +268,45 @@ ID_INLINE void idDrawVert::SetNormal( float x, float y, float z )
 
 ID_INLINE const idVec3& idDrawVert::GetTangent( void ) const
 {
+#ifdef TANGENT_BITANGENT
+    return tangents[0];
+#else
     return _tangent.ToVec3();
+#endif
 }
 
 ID_INLINE const idVec4& idDrawVert::GetTangentVec4( void ) const
 {
+#ifdef TANGENT_BITANGENT
+	return *(idVec4 *)&tangents[0]; // TODO
+#else
     return _tangent;
+#endif
 }
 
 ID_INLINE void idDrawVert::SetTangent( float x, float y, float z )
 {
+#ifdef TANGENT_BITANGENT
+    tangents[0].Set( x, y, z );
+#else
     _tangent.ToVec3().Set( x, y, z );
+#endif
 }
 
 ID_INLINE void idDrawVert::SetTangent( const idVec3 &t )
 {
+#ifdef TANGENT_BITANGENT
+    tangents[0] = t;
+#else
     _tangent.ToVec3() = t;
+#endif
 }
 
 ID_INLINE const idVec3 idDrawVert::GetBiTangent( void ) const
 {
+#ifdef TANGENT_BITANGENT
+	return tangents[1];
+#else
     // derive from the normal, tangent, and bitangent direction flag
     idVec3 bitangent;
 
@@ -285,29 +314,51 @@ ID_INLINE const idVec3 idDrawVert::GetBiTangent( void ) const
     bitangent *= _tangent[3];
 
     return bitangent;
+#endif
 }
 
 ID_INLINE void idDrawVert::SetBiTangent( float x, float y, float z )
 {
+#ifdef TANGENT_BITANGENT
+	tangents[1].Set(x, y, z);
+#else
     idVec3 bitangent;
 
     bitangent.Cross( _normal, _tangent.ToVec3() );
     _tangent[3] = ( bitangent.x * x + bitangent.y * y + bitangent.z * z > 0.0f ) ? 1.0f : -1.0f;
+#endif
 }
 
 ID_INLINE void idDrawVert::SetBiTangent( const idVec3 &t )
 {
+#ifdef TANGENT_BITANGENT
+	tangents[1] = t;
+#else
     _tangent[3] = idVec3::BiTangentSign( _normal, _tangent.ToVec3(), t );
+#endif
 }
 
 ID_INLINE float idDrawVert::GetBiTangentSign( void ) const
 {
+#ifdef TANGENT_BITANGENT
+    return idVec3::BiTangentSign( normal, tangents[0], tangents[1] );
+#else
     return _tangent.w;
+#endif
 }
 
 ID_INLINE void idDrawVert::SetBiTangentSign( float sign )
 {
+#ifdef TANGENT_BITANGENT
+	tangents[1] = normal.Cross(tangents[0]) * sign;
+#if 0
+	tangents[0] = normalize(tangents[0] - (tangents[0] * normal) * normal);
+	tangents[1] = (tangents[1] - (tangents[1] * normal) * normal);
+	tangents[1].Normalize();
+#endif
+#else
     _tangent[3] = sign;
+#endif
 }
 
 ID_INLINE const idVec2& idDrawVert::GetST( void ) const
@@ -374,6 +425,5 @@ assert_sizeof( shadowCache_t, (1<<SHADOWVERT_SIZE_SHIFT) );
 #endif
     //karin: for compat
 // #undef _normal
-// #undef _tangent
 // #undef _st
 #endif /* !__DRAWVERT_H__ */

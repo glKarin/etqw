@@ -239,6 +239,9 @@ void idStr::ReAllocate(int amount, bool keepold)
 	char	*newbuffer;
 	int		newsize;
 	int		mod;
+#ifdef _SPLASHDAMAGE
+ 	bool	staticBuffer = alloced < 0;
+#endif
 
 	//assert( data );
 	assert(amount > 0);
@@ -264,7 +267,12 @@ void idStr::ReAllocate(int amount, bool keepold)
 		strcpy(newbuffer, data);
 	}
 
-	if (data && data != baseBuffer) {
+#ifdef _SPLASHDAMAGE
+	if ( data && !staticBuffer /*data != baseBuffer*/ )
+#else
+	if (data && data != baseBuffer)
+#endif
+	{
 #ifdef USE_STRING_DATA_ALLOCATOR
 		stringDataAllocator.Free(data);
 #else
@@ -282,13 +290,23 @@ idStr::FreeData
 */
 void idStr::FreeData(void)
 {
-	if (data && data != baseBuffer) {
+#ifdef _SPLASHDAMAGE
+	bool	staticBuffer = alloced < 0;
+	if ( data && !staticBuffer )
+#else
+	if (data && data != baseBuffer)
+#endif
+	{
 #ifdef USE_STRING_DATA_ALLOCATOR
 		stringDataAllocator.Free(data);
 #else
 		delete[] data;
 #endif
 		data = baseBuffer;
+#ifdef _SPLASHDAMAGE
+		alloced = -STR_ALLOC_BASE;
+		len = 0;
+#endif
 	}
 }
 
@@ -296,8 +314,12 @@ void idStr::FreeData(void)
 void idStr::SetStaticBuffer( char *buffer, int length )
 {
     bool	staticBuffer = alloced < 0;
-    if ( data && !staticBuffer ) {
+	if ( data && !staticBuffer ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
         stringDataAllocator->Free( data );
+#else
+		delete[] data;
+#endif
     }
     data = buffer;
     alloced = -length;
@@ -2355,6 +2377,7 @@ idStr::InitMemory
 */
 void idStr::InitMemory(void)
 {
+#ifdef USE_STRING_DATA_ALLOCATOR
 #ifdef _SPLASHDAMAGE
 	if( !stringDataAllocator ) {
 		stringDataAllocator = new stringDataAllocator_t;
@@ -2362,7 +2385,6 @@ void idStr::InitMemory(void)
 		stringAllocatorIsShared = false;
 	}
 #else
-#ifdef USE_STRING_DATA_ALLOCATOR
 	stringDataAllocator.Init();
 #endif
 #endif
@@ -2414,11 +2436,13 @@ idStr::SetStringAllocator
 */
 void idStr::SetStringAllocator( stringDataAllocator_t* allocator )
 {
+#ifdef USE_STRING_DATA_ALLOCATOR //karin: using new/delete
     if( !stringAllocatorIsShared ) {
         delete stringDataAllocator;
     }
     stringDataAllocator = allocator;
     stringAllocatorIsShared = true;
+#endif
 }
 
 /*

@@ -5180,26 +5180,51 @@ sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataT
 void idFileSystemLocal::FreeAddonMetaDataList( sdAddonMetaDataList* list ) {
 }
 
+#ifdef __ANDROID__
+extern const char *Posix_Cwd(void);
+#else
 extern bool Sys_GetPath(sysPath_t type, idStr &path);
+#endif
 const char * idFileSystemLocal::GetBasePath() const {
 	static idStr basePath;
 	if (basePath.IsEmpty())
+#ifdef __ANDROID__
+	{
+		basePath = Posix_Cwd();
+		basePath.AppendPath(BASE_GAMEDIR);
+	}
+#else
 		Sys_GetPath(PATH_BASE, basePath);
-	return basePath;
+#endif
+	return basePath.c_str();
 }
 
 const char * idFileSystemLocal::GetUserPath() const {
 	static idStr basePath;
 	if (basePath.IsEmpty())
+#ifdef __ANDROID__
+	{
+		basePath = Posix_Cwd();
+		basePath.AppendPath(BASE_GAMEDIR);
+	}
+#else
 		Sys_GetPath(PATH_CONFIG, basePath);
-	return basePath;
+#endif
+	return basePath.c_str();
 }
 
 const char * idFileSystemLocal::GetGamePath() const {
 	static idStr basePath;
 	if (basePath.IsEmpty())
+#ifdef __ANDROID__
+	{
+		basePath = Posix_Cwd();
+		basePath.AppendPath(BASE_GAMEDIR);
+	}
+#else
 		Sys_GetPath(PATH_EXE, basePath);
-	return basePath;
+#endif
+	return basePath.c_str();
 }
 
 void idFileSystemLocal::FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck ) {

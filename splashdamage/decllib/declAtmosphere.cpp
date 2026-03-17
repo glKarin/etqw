@@ -4,6 +4,8 @@
 #include "idlib/precompiled.h"
 
 #include "declAtmosphere.h"
+#include "framework/DeclParseHelper.h"
+#include "renderer/Image.h"
 
 void sdPrecipitationParameters::Default() {
 	preType = PT_NONE;
@@ -93,6 +95,238 @@ const char* sdDeclAtmosphere::DefaultDefinition( void ) const {
 }
 
 bool sdDeclAtmosphere::Parse( const char* text, const int textLength ) {
+	idParser src;
+	idToken	token;
+
+	src.SetFlags(DECL_LEXER_FLAGS);
+	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
+	sdDeclParseHelper declHelper( this, text, textLength, src );
+	src.SkipUntilString("{");
+
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclAtmosphere::Parse: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if( !token.Icmp( "sunMaterial" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse sunMaterial" );
+				break;
+			}
+			sunMaterial = declManager->FindMaterial(token);
+			continue;
+		}
+
+		if (!token.Icmp("sunDir")) {
+			if( !src.Parse1DMatrix(3, sunDir.ToFloatPtr())) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse sunDir" );
+				break;
+			}
+			continue;
+		}
+
+		if (!token.Icmp("sunColor")) {
+			if( !src.Parse1DMatrix(3, sunColor.ToFloatPtr())) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse sunColor" );
+				break;
+			}
+			continue;
+		}
+
+		if (!token.Icmp("sunHaloScale")) {
+			sunHaloScale = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("sunHaloBias")) {
+			sunHaloBias = src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "sunSpriteMaterial" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse sunSpriteMaterial" );
+				break;
+			}
+			sunSpriteMaterial = declManager->FindMaterial(token);
+			continue;
+		}
+
+		if (!token.Icmp("sunSpriteSize")) {
+			sunSpriteSize = src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "sunFlareMaterial" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse sunFlareMaterial" );
+				break;
+			}
+			sunFlareMaterial = declManager->FindMaterial(token);
+			continue;
+		}
+
+		if (!token.Icmp("sunFlareSize")) {
+			sunFlareSize = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("sunFlareTime")) {
+			sunFlareTime = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("enableSunFlareAziZen")) {
+			enableSunFlareAziZen = src.ParseBool();
+			continue;
+		}
+
+		if (!token.Icmp("sunFlareAzi")) {
+			sunFlareAzi = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("sunFlareZen")) {
+			sunFlareZen = src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "postProcessParms" )) {
+			if(!ParsePostProcessParms(src))
+			{
+				src.SkipBracedSection(false);
+				break;
+			}
+			continue;
+		}
+
+		if (!token.Icmp("fogDistHalf")) {
+			fogDistHalf = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("fogHeightHalf")) {
+			fogHeightHalf = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("fogHeightOffset")) {
+			fogHeightOffset = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("fogColor")) {
+			if( !src.Parse1DMatrix(3, fogColor.ToFloatPtr())) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse fogColor" );
+				break;
+			}
+			continue;
+		}
+
+		if (!token.Icmp("fogStart")) {
+			fogStart = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("fogEnd")) {
+			fogEnd = src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "atmosphereMaterial" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse atmosphereMaterial" );
+				break;
+			}
+			atmosphereMaterial = declManager->FindMaterial(token);
+			continue;
+		}
+
+		if( !token.Icmp( "ambientCubeMap" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse ambientCubeMap" );
+				break;
+			}
+			ambientCubeMap = static_cast<const sdDeclAmbientCubeMap *>(declManager->GetDeclType("ambientCubeMap")->Find(token));
+			continue;
+		}
+
+		if( !token.Icmp( "skyGradientImage" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::Parse: failed to parse skyGradientImage" );
+				break;
+			}
+			skyGradientImage = globalImages->GetImage(token);
+			continue;
+		}
+
+		if (!token.Icmp("farClip")) {
+			farClip = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("isNight")) {
+			isNight = src.ParseBool();
+			continue;
+		}
+
+		if (!token.Icmp("drawAtmosphereLast")) {
+			drawAtmosphereLast = src.ParseBool();
+			continue;
+		}
+
+		if (!token.Icmp("windAngle")) {
+			windAngle = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("windAngleDev")) {
+			windAngleDev = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("windStrength")) {
+			windStrength = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("windStrengthDev")) {
+			windStrengthDev = src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "cloudLayer" )) {
+			if(!ParseCloudLayer(src))
+			{
+				src.SkipBracedSection(false);
+				break;
+			}
+			continue;
+		}
+
+		if( !token.Icmp( "precipitationLayer" )) {
+			if(!ParsePrecipitationLayer(src))
+			{
+				src.SkipBracedSection(false);
+				break;
+			}
+			continue;
+		}
+
+		src.Warning( "sdDeclAtmosphere::Parse: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+
+	return true;
+}
+
+void sdDeclAtmosphere::FreeData() {
 	modified = false;
 	sunMaterial = NULL;
 	sunDir.Set(0.0f, 0.0f, 1.0f);
@@ -144,11 +378,6 @@ bool sdDeclAtmosphere::Parse( const char* text, const int textLength ) {
 	for ( int i = 0; i < NUM_PRECIP_LAYERS; i++ ) {
 		precipitation[i].Default();
 	}
-
-	return true;
-}
-
-void sdDeclAtmosphere::FreeData() {
 }
 
 void sdDeclAtmosphere::CacheFromDict( const idDict& dict ) {
@@ -166,14 +395,243 @@ bool sdDeclAtmosphere::SetSkyGradientImage( const char* imageName ) {
 }
 
 bool sdDeclAtmosphere::ParsePostProcessParms( idParser& src ) {
+	idToken token;
+	if( !src.ExpectTokenString( "{" )) {
+		src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: expected {." );
+		return false;
+	}
+
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if (!token.Icmp("tint")) {
+			if( !src.Parse1DMatrix(3, postProcessParms.tint.ToFloatPtr())) {
+				src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: failed to parse tint" );
+				break;
+			}
+			continue;
+		}
+
+		if (!token.Icmp("saturation")) {
+			postProcessParms.saturation = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("contrast")) {
+			postProcessParms.contrast = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("glareParms")) {
+			if( !src.Parse1DMatrix(4, postProcessParms.glareParms.ToFloatPtr())) {
+				src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: failed to parse glareParms" );
+				break;
+			}
+			continue;
+		}
+
+		if (!token.Icmp("glareBases")) {
+			if( !src.Parse1DMatrix(4, postProcessParms.glareBases.ToFloatPtr())) {
+				src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: failed to parse glareBases" );
+				break;
+			}
+			continue;
+		}
+
+		src.Warning( "sdDeclAmbientCubeMap::ParsePostProcessParms: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+
 	return true;
 }
 
 bool sdDeclAtmosphere::ParseCloudLayer( idParser& src ) {
+	idToken token;
+
+	if (!src.ReadToken(&token)) {
+		src.Error( "sdDeclAtmosphere::ParseCloudLayer: expected name." );
+		return false;
+	}
+
+	if( !src.ExpectTokenString( "{" )) {
+		src.Error( "sdDeclAtmosphere::ParseCloudLayer: expected {." );
+		return false;
+	}
+
+	sdCloudLayer item;
+	item.material = declManager->FindMaterial(token);
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclAtmosphere::ParseCloudLayer: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if (!token.Icmp("style")) {
+			item.style = src.ParseInt();
+			continue;
+		}
+
+		if (!token.Icmp("parms")) {
+			int num = src.ParseInt();
+			if (num > NUM_CLOUD_LAYER_PARAMETERS) {
+				src.Error( "sdDeclAtmosphere::ParseCloudLayer: cloudLayer parms %d > %d", num, NUM_CLOUD_LAYER_PARAMETERS );
+				return false;
+			}
+			if( !src.Parse1DMatrix(num, item.parms)) {
+				src.Error( "sdDeclAtmosphere::ParseCloudLayer: failed to parse parms" );
+				return false;
+			}
+			continue;
+		}
+
+		src.Warning( "sdDeclAtmosphere::ParseCloudLayer: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+	cloudLayers.Append(item);
+
 	return true;
 }
 
 bool sdDeclAtmosphere::ParsePrecipitationLayer( idParser& src ) {
+	idToken token;
+	if( !src.ExpectTokenString( "{" )) {
+		src.Error( "sdDeclAmbientCubeMap::ParsePrecipitationLayer: expected {." );
+		return false;
+	}
+
+	if (numPrecipLayers >= NUM_CLOUD_LAYER_PARAMETERS) {
+		src.Error( "sdDeclAtmosphere::ParseCloudLayer: precipitationLayer num over %d", NUM_CLOUD_LAYER_PARAMETERS );
+		return false;
+	}
+
+	sdPrecipitationParameters item;
+	item.Default();
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclAmbientCubeMap::ParsePrecipitationLayer: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if (!token.Icmp("type")) {
+			item.preType = static_cast<sdPrecipitationParameters::precipitationType_e>(src.ParseInt());
+			continue;
+		}
+
+		if (!token.Icmp("maxParticles")) {
+			item.maxParticles = src.ParseInt();
+			continue;
+		}
+
+		if (!token.Icmp("heightMin")) {
+			item.heightMin = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("heightMax")) {
+			item.heightMax = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("weightMin")) {
+			item.weightMin = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("weightMax")) {
+			item.weightMax = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("timeMin")) {
+			item.timeMin = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("timeMax")) {
+			item.timeMax = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("windScale")) {
+			item.windScale = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("gustWindScale")) {
+			item.gustWindScale = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("fallMin")) {
+			item.fallMin = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("fallMax")) {
+			item.fallMax = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("tumbleStrength")) {
+			item.tumbleStrength = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("precipitationDistance")) {
+			item.precipitationDistance = src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "material" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::ParsePrecipitationLayer: failed to parse material" );
+				break;
+			}
+			item.material = declManager->FindMaterial(token);
+			continue;
+		}
+
+		if( !token.Icmp( "model" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::ParsePrecipitationLayer: failed to parse model" );
+				break;
+			}
+			item.model = renderModelManager->FindModel(token);
+			continue;
+		}
+
+		if( !token.Icmp( "effect" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAtmosphere::ParsePrecipitationLayer: failed to parse effect" );
+				break;
+			}
+			item.effect = declManager->FindEffect(token);
+			continue;
+		}
+
+		src.Warning( "sdDeclAmbientCubeMap::ParsePrecipitationLayer: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+	precipitation[numPrecipLayers++] = item;
+
 	return true;
 }
 

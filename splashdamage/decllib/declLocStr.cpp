@@ -23,10 +23,8 @@ const char * sdDeclLocStr::DefaultDefinition() const {
 }
 
 bool sdDeclLocStr::Parse( const char *text, const int textLength ) {
-	locText.Clear();
-	numArgs = 0;
 	idParser src;
-	idToken	token, token2;
+	idToken	token;
 
 	src.SetFlags(DECL_LEXER_FLAGS);
 	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
@@ -44,7 +42,7 @@ bool sdDeclLocStr::Parse( const char *text, const int textLength ) {
 		}
 
 		if( !token.Icmp( "text" )) {
-			if( !src.ReadToken(&token2)) {
+			if( !src.ReadToken(&token)) {
 				src.Error( "sdDeclLocStr::Parse: failed to parse text" );
 				break;
 			}
@@ -57,11 +55,9 @@ bool sdDeclLocStr::Parse( const char *text, const int textLength ) {
 			continue;
 		}
 
-		if( !src.ReadToken( &token )) {
-			src.Error( "sdDeclLocStr::Parse: unexpected token '%s'.", token.c_str() );
-			src.SkipBracedSection(false);
-			break;
-		}
+		src.Warning( "sdDeclLocStr::Parse: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
 	}
 
 	return true;

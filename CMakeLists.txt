@@ -6,10 +6,14 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 1)
 
 set(IDTECH4AMM_ENGINE_PATCH 73)
 set(IDTECH4AMM_ENGINE_VERSION "1.1.0harmattan${IDTECH4AMM_ENGINE_PATCH}")
+if(FALSE)
 if(CMAKE_BUILD_TYPE STREQUAL "Release" AND FALSE)
 string(TIMESTAMP IDTECH4AMM_BUILDTIME "%Y-%m-%d %H:%M:%S")
 else()
 file(TIMESTAMP ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt IDTECH4AMM_BUILDTIME "%Y-%m-%d %H:%M:%S")
+endif()
+else()
+file(TIMESTAMP ${CMAKE_CURRENT_SOURCE_DIR}/idlib/precompiled.h IDTECH4AMM_BUILDTIME "%Y-%m-%d %H:%M:%S")
 endif()
 message(STATUS "idTech4A++")
 message(STATUS "Build version: ${IDTECH4AMM_ENGINE_VERSION}")
@@ -3185,6 +3189,7 @@ if(SPLASHDAMAGE)
 			splashdamage/decllib/declStuffType.cpp
 			splashdamage/decllib/DeclSurfaceType.cpp
 			splashdamage/decllib/DeclType.cpp
+			splashdamage/decllib/DeclTemplate.cpp
 	)
 	set(splashdamage_bse_src
 			raven/bse/BSE_Effect.cpp
@@ -3542,4 +3547,4 @@ if(ETQW)
 		)
 	endif()
 
-	endif()
+endif()

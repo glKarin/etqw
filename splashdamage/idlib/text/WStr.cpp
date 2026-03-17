@@ -869,11 +869,13 @@ idWStr::InitMemory
 ================
 */
 void idWStr::InitMemory( void ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 	if( !stringDataAllocator ) {
 		stringDataAllocator = new wideStringDataAllocator_t;
 		stringDataAllocator->Init();
 		stringAllocatorIsShared = false;
-	}	
+	}
+#endif
 }
 
 /*
@@ -882,11 +884,13 @@ idWStr::ShutdownMemory
 ================
 */
 void idWStr::ShutdownMemory( void ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 	if( stringDataAllocator && !stringAllocatorIsShared ) {
 		stringDataAllocator->Shutdown();
 		delete stringDataAllocator;
 		stringDataAllocator = NULL;
 	}
+#endif
 }
 
 /*
@@ -920,11 +924,13 @@ idWStr::SetStringAllocator
 ============
 */
 void idWStr::SetStringAllocator( wideStringDataAllocator_t* allocator ) {
+#ifdef USE_STRING_DATA_ALLOCATOR
 	if( !stringAllocatorIsShared ) {
 		delete stringDataAllocator;
 	}
 	stringDataAllocator = allocator;
 	stringAllocatorIsShared = true;
+#endif
 }
 
 /*

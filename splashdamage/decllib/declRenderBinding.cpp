@@ -20,19 +20,10 @@ const char* sdDeclRenderBinding::DefaultDefinition( void ) const {
 }
 
 bool sdDeclRenderBinding::Parse( const char* text, const int textLength ) {
+	return true;
+}
 
-	struct textureData_t {
-		idImage*		image;
-		textureDepth_t	defaultDepth;
-		cubeFiles_t		defaultCubeMap;
-	};
-
-	union bindingData_t {
-		float			vector[4];
-		textureData_t	texture;
-		int				attrib;
-	};
-
+void sdDeclRenderBinding::FreeData() {
 	type = BT_VECTOR;
 
 	defaults.vector[0] = defaults.vector[1] = defaults.vector[2] = defaults.vector[3] = 0.0f;
@@ -43,11 +34,6 @@ bool sdDeclRenderBinding::Parse( const char* text, const int textLength ) {
 	infrequent = 0;
 
 	data = defaults;
-
-	return true;
-}
-
-void sdDeclRenderBinding::FreeData() {
 }
 
 void sdDeclRenderBinding::List( void ) const {
