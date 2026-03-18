@@ -56,11 +56,43 @@ If you have questions concerning this license or the applicable additional terms
 #define CACHEB_MAGIC_CHARS "DBCH"
 #define CACHEB_VERSION 2
 
-#define GLOBALTOKENS_CACHEB "globaltokens.cacheb"
+#define DCLB_MAGIC 1112294212
+#define DCLB_MAGIC_CHARS "DCLB"
+#define DCLB_VERSION 3
+
+#define GLOBALTOKENS_CACHEB "globaltokens.cache"
 
 #define DECL_CUSTOMER_TYPE(x) (DECL_MAPDEF + 1 + (x))
 
 extern const char* declIdentifierList[];
+
+struct binaryTokenCache_t {
+	int version; // 2
+	unsigned int uncompressedLength;
+	unsigned int compressedLength;
+	idList<byte> compressedData;
+};
+
+struct binaryDeclEntry_t {
+	idStr type;
+	idStr name;
+	//byte whitespace;
+	unsigned int offset;
+
+	unsigned int uncompressedLength;
+	unsigned int compressedLength;
+	idList<byte> data;
+};
+
+struct binaryDecl_t {
+	int version; // 3
+
+	int checksum;
+	int num;
+
+	idList<binaryDeclEntry_t> entries;
+};
+
 #endif
 
 #ifdef _RAVEN
@@ -107,10 +139,10 @@ missing reload over a previously explicit definition
 
 */
 
-#if !defined(_SPLASHDAMAGE)
+//#if !defined(_SPLASHDAMAGE)
 #define USE_COMPRESSED_DECLS
 //#define GET_HUFFMAN_FREQUENCIES
-#endif
+//#endif
 
 #if !defined(_SPLASHDAMAGE)
 class idDeclType
@@ -164,7 +196,9 @@ class idDeclLocal : public idDeclBase
 		virtual void			GetBinarySource( byte*& source, int& length ) const;
 		virtual void			FreeSourceBuffer( byte* buffer ) const;
 		virtual bool			HasBinaryBuffer() const;
+		virtual const idStrList&	GetIncludeDependencies() const;
     	virtual const idStrList*	GetFileLevelIncludeDependencies() const;
+		void					AddIncludeDependency(const char *file);
 #endif
 
 	protected:
@@ -215,6 +249,9 @@ class idDeclLocal : public idDeclBase
 		bool						redefinedInReload;		// used during file reloading to make sure a decl that has
 		// its source removed will be defaulted
 		idDeclLocal 				*nextInFile;				// next decl in the decl file
+#ifdef _SPLASHDAMAGE
+		idStrList					includeDependencies;
+#endif
 };
 
 class idDeclFile
@@ -238,9 +275,9 @@ class idDeclFile
 		idDeclLocal 				*decls;
 #ifdef _RAVEN // quake4 guide
 // jmarshall: guide support
-private:
-    idStr						PreprocessGuides(const char* buffer, int length);
-    idStr						PreprocessInlineGuides(const char* buffer, int length);
+	private:
+	    idStr						PreprocessGuides(const char* buffer, int length);
+	    idStr						PreprocessInlineGuides(const char* buffer, int length);
 // jmarshall end
 #endif
 };
@@ -381,7 +418,8 @@ class idDeclManagerLocal : public idDeclManager
 		virtual void					AddDependency( const idDecl* decl, const char* fileName );
 		virtual void					AddDependencies( const idDecl* decl, const idParser& parser );
 
-		bool							DecompressTokenCache(void);
+		bool							LoadGlobalTokenCache(void);
+		bool							LoadDeclBinary(const char *filename);
 		void							MakeBinaryFilename(idStr &filename, const char *type, const char *name);
 #endif
 
@@ -906,6 +944,10 @@ int idDeclFile::LoadAndParse()
 	fileSize = length;
 
 	// scan through, identifying each individual declaration
+#ifdef _SPLASHDAMAGE
+	declManagerLocal.LoadDeclBinary(fileName);
+	src.PushDependencies();
+#endif
 	while (1) {
 
 		startMarker = src.GetFileOffset();
@@ -974,6 +1016,15 @@ int idDeclFile::LoadAndParse()
 			src.SkipBracedSection();
 			continue;
 		}
+#ifdef _SPLASHDAMAGE
+		idStrList dependencies;
+		int cd = src.GetCurrentDependency();
+		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd))
+		{
+			dependencies.AddUnique(d);
+		}
+		src.PushDependencies();
+#endif
 
 		name = token;
 
@@ -985,20 +1036,17 @@ int idDeclFile::LoadAndParse()
 
 		if (token != "{") {
 			src.Warning("Expecting '{' but found '%s'", token.c_str());
+#ifdef _SPLASHDAMAGE
+			src.PopDependencies();
+#endif
 			continue;
 		}
 
 		src.UnreadToken(&token);
 
 		// now take everything until a matched closing brace
-#ifdef _SPLASHDAMAGE
-		idStr out;
-		src.ParseBracedSection(out, -1, true);
-		size = out.Length();
-#else
 		src.SkipBracedSection();
 		size = src.GetFileOffset() - startMarker;
-#endif
 
 		// look it up, possibly getting a newly created default decl
 		reparse = false;
@@ -1031,8 +1079,6 @@ int idDeclFile::LoadAndParse()
 
 #ifdef _RAVEN
 		newDecl->SetTextLocal(finalPreprocessedBuffer.c_str() + startMarker, size);
-#elif defined(_SPLASHDAMAGE)
-		newDecl->SetTextLocal(out.c_str(), size);
 #else
 		newDecl->SetTextLocal(buffer + startMarker, size);
 #endif
@@ -1042,12 +1088,27 @@ int idDeclFile::LoadAndParse()
 		newDecl->sourceLine = sourceLine;
 		newDecl->declState = DS_UNPARSED;
 
+#ifdef _SPLASHDAMAGE
+		cd = src.GetCurrentDependency();
+		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd))
+		{
+			newDecl->AddIncludeDependency(d);
+		}
+		for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor)
+			newDecl->AddIncludeDependency(*itor);
+#endif
 		// if it is currently in use, reparse it immedaitely
 		if (reparse) {
 			newDecl->ParseLocal();
 		}
+#ifdef _SPLASHDAMAGE
+		src.PopDependencies();
+#endif
 	}
 
+#ifdef _SPLASHDAMAGE
+	src.PopDependencies();
+#endif
 	numLines = src.GetLineNum();
 
 	Mem_Free(buffer);
@@ -1060,6 +1121,13 @@ int idDeclFile::LoadAndParse()
 			decl->sourceTextLength = 0;
 			decl->sourceLine = decl->sourceFile->numLines;
 		}
+#ifdef _SPLASHDAMAGExxx
+		int cd = src.GetCurrentDependency();
+		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd))
+		{
+			dependencies.AddUnique(d);
+		}
+#endif
 	}
 
 	return checksum;
@@ -1161,7 +1229,7 @@ void idDeclManagerLocal::Init(void)
 #endif
 
 #ifdef _SPLASHDAMAGE //karin: init decl type name table
-	DecompressTokenCache();
+	LoadGlobalTokenCache();
 
 	declTypeTables.Clear();
 	declTypeTables.SetNum(DECL_CUSTOMER_TYPE(0));
@@ -1439,6 +1507,7 @@ void idDeclManagerLocal::RegisterDeclFolder(const char *folder, const char *exte
 {
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	RegisterDeclFolderWrapper(folder, extension, defaultType, false, false);
+	Sys_Printf("RegisterDeclFolder(%s, %s, %d)\n", folder, extension, defaultType);
 #else
 	int i, j;
 	idStr fileName;
@@ -3381,8 +3450,18 @@ bool idDeclLocal::HasBinaryBuffer() const {
 	return false;
 }
 
+const idStrList& idDeclLocal::GetIncludeDependencies() const
+{
+	return includeDependencies;
+}
+
 const idStrList* idDeclLocal::GetFileLevelIncludeDependencies() const {
-	return NULL;
+	return &includeDependencies;
+}
+
+void idDeclLocal::AddIncludeDependency(const char *file)
+{
+	includeDependencies.AddUnique(file);
 }
 
 
@@ -3515,22 +3594,37 @@ void idDeclManagerLocal::MakeBinaryFilename(idStr &filename, const char *type, c
 	filename = GENERATED_PREFIX "/" GENERATED_DECLB;
 	if (type && type[0]) {
 		filename.AppendPath(type);
-		filename.Append("b");
 	}
 	filename.AppendPath(name);
+	filename.Append("b");
 }
 
-bool idDeclManagerLocal::DecompressTokenCache(void)
+static int ReadTokenCacheData(binaryTokenCache_t &header, idFile *file) {
+	header.compressedData.SetNum(header.compressedLength);
+	return file->Read(header.compressedData.Ptr(), header.compressedLength);
+}
+
+// huffman compression
+static int DecompressTokenCache(binaryTokenCache_t &header, idList<byte> &out) {
+	idCompressor *compressor;
+
+	compressor = idCompressor::AllocHuffman();
+	idFile_Memory f("globaltokens.cacheb", (const char *)header.compressedData.Ptr(), header.compressedLength); // FS_READ mode
+	compressor->Init(&f, false, 8);
+	out.SetNum(header.uncompressedLength * 2); // +2
+	header.uncompressedLength = compressor->Read(out.Ptr(), out.Num());
+	delete compressor;
+	return header.uncompressedLength;
+}
+
+bool idDeclManagerLocal::LoadGlobalTokenCache(void)
 {
 	int magic;
-	int version;
-	unsigned int compressedLength, decompressedLength;
 	idFile *file;
-	idCompressor *compressor;
 	idStr path;
 	MakeBinaryFilename(path, NULL, GLOBALTOKENS_CACHEB);
 
-	common->Printf("Decompressing the global token cache...\n");
+	common->Printf("Decompressing the global token cache '%s'...\n", path.c_str());
 	globalTokencache.Clear();
 
 	file = fileSystem->OpenFileRead(path);
@@ -3541,12 +3635,6 @@ bool idDeclManagerLocal::DecompressTokenCache(void)
 		return false;
 	}
 
-#if 0
-	int length = file->Length();
-	common->Printf("length=%d\n", length);
-#endif
-
-#if 1
 	file->ReadInt(magic);
 	if(magic != CACHEB_MAGIC)
 	{
@@ -3554,40 +3642,29 @@ bool idDeclManagerLocal::DecompressTokenCache(void)
 		fileSystem->CloseFile(file);
 		return false;
 	}
-#else
-	char headers[5] = {0};
-	file->Read(headers, 4);
-	common->Printf("%s\n", headers);
-#endif
 
-	file->ReadInt(version); // version == 2
-	if(version != CACHEB_VERSION)
+	binaryTokenCache_t header;
+	file->ReadInt(header.version); // version == 2
+	if(header.version != CACHEB_VERSION)
 	{
-		common->Warning("decl token cache : wrong version (%i should be %i)", version, CACHEB_VERSION);
+		common->Warning("decl token cache : wrong version (%i should be %i)", header.version, CACHEB_VERSION);
 		fileSystem->CloseFile(file);
 		return false;
 	}
 
-	file->ReadUnsignedInt(decompressedLength);
-	file->ReadUnsignedInt(compressedLength);
-
-	idList<byte> compressedData;
-	compressedData.SetNum(compressedLength);
-	file->Read(&compressedData[0], compressedLength);
+	file->ReadUnsignedInt(header.uncompressedLength);
+	file->ReadUnsignedInt(header.compressedLength);
+	ReadTokenCacheData(header, file);
 	//assert(file->Tell() == file->Length());
 	fileSystem->CloseFile(file);
 
 	// huffman compression
-	compressor = idCompressor::AllocHuffman();
-	idFile_Memory f("globaltokens.cacheb", (const char *)&compressedData[0], compressedLength); // FS_READ mode
-	compressor->Init(&f, false, 8);
 	idList<byte> out;
-	out.SetNum(decompressedLength * 2); // +2
-	decompressedLength = compressor->Read(&out[0], out.Num());
+	unsigned int uncompressedLength = DecompressTokenCache(header, out);
 
 #if 0
 	int num;
-	fileSystem->WriteFile("globaltokens.cacheb.bin", &out[0], decompressedLength);
+	fileSystem->WriteFile("globaltokens.cacheb.bin", &out[0], uncompressedLength);
 
 	file = fileSystem->OpenFileRead("globaltokens.cacheb.bin");
 	file->ReadInt(num);
@@ -3619,11 +3696,110 @@ bool idDeclManagerLocal::DecompressTokenCache(void)
 	fileSystem->CloseFile(file);
 #endif
 
-	globalTokencache.ReadBuffer(&out[0], decompressedLength);
+	globalTokencache.ReadBuffer(&out[0], uncompressedLength);
 
 	common->Printf("%ziKb\n", globalTokencache.Allocated());
 
-	delete compressor;
+	return true;
+}
+
+static int LoadBinaryDeclHeader(binaryDecl_t &header, idFile *file) {
+	int magic;
+
+	file->ReadInt(magic);
+	if(magic != DCLB_MAGIC)
+	{
+		common->Warning("decl binary : encountered unknown fileid");
+		return -1;
+	}
+
+	file->ReadInt(header.version); // version == 3
+	if(header.version != DCLB_VERSION)
+	{
+		common->Warning("decl binary : wrong version (%i should be %i)", header.version, DCLB_VERSION);
+		return -1;
+	}
+
+	file->ReadInt(header.checksum);
+	file->ReadInt(header.num);
+
+	if (header.num > 0) {
+		header.entries.SetNum(header.num);
+		for (int i = 0; i < header.num; ++i) {
+			binaryDeclEntry_t &entry = header.entries[i];
+			file->ReadString(entry.type);
+			file->ReadString(entry.name);
+			byte whitespace;
+			file->ReadUnsignedChar(whitespace);
+			file->ReadUnsignedInt(entry.offset);
+			if(entry.offset >= file->Length())
+			{
+				common->Warning("Decl binary entry %s %s invalid offset: %d", entry.type.c_str(), entry.name.c_str(), entry.offset);
+				return false;
+			}
+		}
+	}
+
+	return header.checksum;
+}
+
+bool idDeclManagerLocal::LoadDeclBinary(const char *filename)
+{
+	idFile *file;
+	idStr path;
+	MakeBinaryFilename(path, NULL, filename);
+
+	common->Printf("Load decl binary '%s'...\n", path.c_str());
+
+	file = fileSystem->OpenFileRead(path);
+
+	if(!file)
+	{
+		common->Warning("Decl binary file not exists: %s", path.c_str());
+		return false;
+	}
+
+	binaryDecl_t header;
+	if (LoadBinaryDeclHeader(header, file) == -1) {
+		common->Warning("Decl binary read 0 entries: %s", path.c_str());
+		fileSystem->CloseFile(file);
+		return false;
+	}
+
+	for (int i = 0; i < header.num; ++i) {
+		binaryDeclEntry_t &entry = header.entries[i];
+
+		//int pos = file->Tell();
+		file->Seek(entry.offset, FS_SEEK_SET);
+		file->ReadUnsignedInt(entry.uncompressedLength);
+		file->ReadUnsignedInt(entry.compressedLength);
+		byte a;
+		//file->ReadUnsignedChar(a);
+		entry.data.SetNum(entry.compressedLength);
+		file->Read(entry.data.Ptr(), entry.compressedLength);
+		//file->Seek(pos, FS_SEEK_SET);
+
+		Sys_Printf("EEE %s|%s|%d|%d|%d\n", entry.type.c_str(), entry.name.c_str(), entry.uncompressedLength, entry.compressedLength,a);
+
+		static bool w;
+		if (!w) {
+			fileSystem->WriteFile("file", entry.data.Ptr(), entry.compressedLength);
+			w = true;
+		}
+
+
+		/*idList<byte> out;
+		idCompressor *compressor = idCompressor::AllocHuffman();
+		idFile_Memory f("globaltokens.cacheb2", (const char *)entry.data.Ptr(), entry.compressedLength); // FS_READ mode
+		compressor->Init(&f, false, 8);
+		out.SetNum(entry.uncompressedLength*2);
+		int uncompressedLength = compressor->Read(out.Ptr(), out.Num());
+		delete compressor;*/
+
+	}
+
+	fileSystem->CloseFile(file);
+
 	return true;
 }
 

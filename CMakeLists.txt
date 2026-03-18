@@ -3548,3 +3548,5 @@ if(ETQW)
 	endif()
 
 endif()
+
+add_dependencies(${ETQWBINARY} etqwgame)

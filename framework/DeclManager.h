@@ -263,6 +263,7 @@ class idDeclBase
 		virtual void			List(void) const = 0;
 		virtual void			Print(void) const = 0;
 #ifdef _SPLASHDAMAGE
+		virtual const idStrList&	GetIncludeDependencies() const = 0;
     	virtual const idStrList*	GetFileLevelIncludeDependencies() const = 0;
 #endif
 };
@@ -480,6 +481,7 @@ class idDecl
 			base->Print();
 		}
 #ifdef _SPLASHDAMAGE
+		virtual const idStrList&	GetIncludeDependencies() const { return base->GetIncludeDependencies(); }
 		virtual const idStrList*	GetFileLevelIncludeDependencies() const { return base->GetFileLevelIncludeDependencies(); }
 #endif
 
