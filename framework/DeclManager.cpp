@@ -945,7 +945,7 @@ int idDeclFile::LoadAndParse()
 
 	// scan through, identifying each individual declaration
 #ifdef _SPLASHDAMAGE
-	declManagerLocal.LoadDeclBinary(fileName);
+	//declManagerLocal.LoadDeclBinary(fileName); // test
 	src.PushDependencies();
 #endif
 	while (1) {
@@ -3456,7 +3456,7 @@ const idStrList& idDeclLocal::GetIncludeDependencies() const
 }
 
 const idStrList* idDeclLocal::GetFileLevelIncludeDependencies() const {
-	return &includeDependencies;
+	return NULL; //&includeDependencies;
 }
 
 void idDeclLocal::AddIncludeDependency(const char *file)
@@ -3779,14 +3779,21 @@ bool idDeclManagerLocal::LoadDeclBinary(const char *filename)
 		file->Read(entry.data.Ptr(), entry.compressedLength);
 		//file->Seek(pos, FS_SEEK_SET);
 
-		Sys_Printf("EEE %s|%s|%d|%d|%d\n", entry.type.c_str(), entry.name.c_str(), entry.uncompressedLength, entry.compressedLength,a);
+		// Sys_Printf("EEE %s|%s|%d|%d|%d\n", entry.type.c_str(), entry.name.c_str(), entry.uncompressedLength, entry.compressedLength,a);
 
-		static bool w;
+		/*static bool w;
 		if (!w) {
 			fileSystem->WriteFile("file", entry.data.Ptr(), entry.compressedLength);
 			w = true;
-		}
+		}*/
 
+		/*idList<char> out;
+		out.SetNum(entry.uncompressedLength*2);
+		int rrr=HuffmanDecompressText(out.Ptr(), entry.uncompressedLength, entry.data.Ptr(), entry.compressedLength);
+		for (int i = 0; i < rrr; ++i) {
+Sys_Printf("%02d ", out[i]);
+		}
+Sys_Printf("\nxxx  %d\n", rrr);*/
 
 		/*idList<byte> out;
 		idCompressor *compressor = idCompressor::AllocHuffman();

@@ -67,7 +67,11 @@ namespace sdProperties {
 		ValueType							value;
 
 	public:		
-		sdPropertyValue() {}
+		sdPropertyValue()
+#if 1 //karin: init. GCC error sdGlobalPropertiesNameSpace::Init and typeName == "handle" on PlayerProperties.cpp
+			: value(T()) 
+#endif
+		{}
 
 		sdPropertyValue( typename Traits::ConstParameter ref ) :
 			value( ref ), onChange( 1 ), onValidate( 1 ) {}

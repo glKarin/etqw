@@ -206,7 +206,7 @@ class idSessionLocal : public idSession
 		int					timeHitch;
 
 	bool				menuActive;
-#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE) //karin: move to idSession
 		idSoundWorld 		*menuSoundWorld;			// so the game soundWorld can be muted
 #endif
 

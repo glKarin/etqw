@@ -30,9 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../renderer/Image.h"
-#include "_unused/formatted/idlib/Dict.h"
-#include "_unused/raw/decllib/declLocStr.h"
-#include "_unused/raw/idlib/Dict.h"
+#include "decllib/declLocStr.h"
 #ifdef _IMGUI
 #include "../renderer/imgui/r_imgui.h"
 #endif
@@ -3942,6 +3940,22 @@ void idCommonLocal::PrintLoadingMessage( const wchar_t *msg ) {
 	idStr str = WStrToStr(msg);
 	PrintLoadingMessage(str);
 }
+
+//karin: cvar must exists on GUI event
+static idCVar net_clientPunkbusterEnabled("net_clientPunkbusterEnabled", "0", CVAR_BOOL, "");
+static idCVar in_toggleSprint("in_toggleSprint", "0", CVAR_BOOL, "");
+static idCVar s_useAdpcmCompression("s_useAdpcmCompression", "0", CVAR_BOOL | CVAR_SOUND, "");
+static idCVar s_volume_VoIPIn_dB("s_volume_VoIPIn_dB", "0", CVAR_INTEGER | CVAR_SOUND, "");
+static idCVar s_volume_VoIPOut_dB("s_volume_VoIPOut_dB", "0", CVAR_INTEGER | CVAR_SOUND, "");
+static idCVar s_volume_VoIPScale("s_volume_VoIPScale", "0", CVAR_INTEGER | CVAR_SOUND, "");
+static idCVar image_diffusePicMip("image_diffusePicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+static idCVar image_bumpPicMip("image_bumpPicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+static idCVar image_specularPicMip("image_specularPicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+static idCVar r_softParticles("r_softParticles", "0", CVAR_BOOL | CVAR_RENDERER, "");
+static idCVar r_megaDrawMethod("r_megaDrawMethod", "0", CVAR_INTEGER | CVAR_RENDERER, "");
+static idCVar com_gpuSpec("com_gpuSpec", "0", CVAR_INTEGER | CVAR_SYSTEM, "");
+static idCVar r_useAlphaToCoverage("r_useAlphaToCoverage", "0", CVAR_BOOL | CVAR_RENDERER, "");
+
 #endif
 
 #include <zlib.h>

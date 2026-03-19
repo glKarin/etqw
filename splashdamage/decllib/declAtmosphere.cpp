@@ -479,7 +479,12 @@ bool sdDeclAtmosphere::ParseCloudLayer( idParser& src ) {
 		}
 
 		if (!token.Icmp("style")) {
-			item.style = src.ParseInt();
+			if (src.ReadToken(&token)) {
+				if (token.type == TT_INTEGER)
+					item.style = token.GetIntValue();
+				else
+					item.style = 0; // old
+			}
 			continue;
 		}
 

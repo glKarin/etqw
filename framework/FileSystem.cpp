@@ -493,6 +493,9 @@ class idFileSystemLocal : public idFileSystem
 		int						dir_cache_count;
 
 		int						d3xp;	// 0: didn't check, -1: not installed, 1: installed
+#ifdef _SPLASHDAMAGE
+		idHashMap<sdAddonMetaDataList>		addonMetaDataList;
+#endif
 
 	private:
 		void					ReplaceSeparators(idStr &path, char sep = PATHSEPERATOR_CHAR);
@@ -5174,10 +5177,20 @@ idFile * idFileSystemLocal::GetNewFileMemory( void )
 
 #ifdef _SPLASHDAMAGE
 sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataTag ) {
-	return NULL;
+	sdAddonMetaDataList *value;
+	if (addonMetaDataList.Get(metaDataTag, &value))
+		return value;
+	addonMetaDataList.Set(metaDataTag, sdAddonMetaDataList());
+	addonMetaDataList.Get(metaDataTag, &value);
+	return value;
 }
 
 void idFileSystemLocal::FreeAddonMetaDataList( sdAddonMetaDataList* list ) {
+	for (int i = 0; i < addonMetaDataList.Num(); i++) {
+		if (addonMetaDataList.GetIndex(i) == list) {
+			addonMetaDataList.Remove(addonMetaDataList.GetKey(i));
+		}
+	}
 }
 
 #ifdef __ANDROID__

@@ -4807,3 +4807,52 @@ int idParser::DollarDirective_elif( void )
     return true;
 }
 #endif
+
+void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
+	idFile *f = idLib::fileSystem->OpenFileWrite(va("formatted/%s/%s", name, fileName));
+	idToken token2;
+	int intent = 0;
+	bool nl    = false;
+	while (src.ReadToken(&token2)) {
+		if (token2.type != TT_STRING) {
+			if (token2 == "}") {
+				intent--;
+			}
+		}
+		if (nl) {
+			f->Write("\n", 1);
+			for (int m = 0; m < intent; m++) {
+				f->Write("    ", 4);
+			}
+			nl = false;
+		}
+		if (token2.type == TT_STRING) {
+			f->Write("\"", 1);
+		}
+		f->Write(token2.c_str(), token2.Length());
+		if (token2.type == TT_STRING) {
+			f->Write("\"", 1);
+		}
+		if (token2.type != TT_STRING) {
+			if (token2 == "}") {
+				nl = true;
+			}
+			else if (token2 == ";") {
+				nl = true;
+			}
+			else if (token2 == "{") {
+				intent++;
+				nl = true;
+			}
+			else {
+				nl = false;
+				f->Write(" ", 1);
+			}
+		}
+		else {
+			nl = false;
+			f->Write(" ", 1);
+		}
+	}
+	idLib::fileSystem->CloseFile(f);
+}

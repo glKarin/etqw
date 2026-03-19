@@ -42,21 +42,21 @@ public:
 							// Get the full file path.
 	virtual const char *	GetFullPath( void );
 							// Read data from the file to the buffer.
-	virtual int				Read( void *buffer, int len );
+	virtual int				Read( void *buffer, int len ); //k 3=12
 							// Write data from the buffer to the file.
-	virtual int				Write( const void *buffer, int len );
+	virtual int				Write( const void *buffer, int len ); //k 4=16
 							// Returns the length of the file.
 	virtual int				Length( void ) const;
 							// Return a time value for reload operations.
 	virtual unsigned int	Timestamp( void );
 							// Returns offset in file.
-	virtual int				Tell( void );
+	virtual int				Tell( void ); //k 7=28
 							// Forces flush on files being writting to.
 	virtual void			ForceFlush( void );
 							// Causes any buffered data to be written to the file.
 	virtual void			Flush( void );
 							// Seek on a file.
-	virtual int				Seek( long offset, fsOrigin_t origin );
+	virtual int				Seek( long offset, fsOrigin_t origin ); //k 10=40
 							// Go back to the beginning of the file.
 	virtual void			Rewind( void );
 							// Like fprintf.
@@ -67,15 +67,15 @@ public:
 	virtual int				WriteFloatString( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 
 	// Endian portable alternatives to Read(...)
-	virtual int				ReadInt( int &value );
-	virtual int				ReadUnsignedInt( unsigned int &value );
+	virtual int				ReadInt( int &value ); //k 15=60
+	virtual int				ReadUnsignedInt( unsigned int &value ); //k 16 64
 	virtual int				ReadShort( short &value );
 	virtual int				ReadUnsignedShort( unsigned short &value );
 	virtual int				ReadChar( char &value );
-	virtual int				ReadUnsignedChar( unsigned char &value );
+	virtual int				ReadUnsignedChar( unsigned char &value ); //k: 20=80
 	virtual int				ReadFloat( float &value );
 	virtual int				ReadBool( bool &value );
-	virtual int				ReadString( idStr &string );
+	virtual int				ReadString( idStr &string ); //k 23=92
 	virtual int				ReadVec2( idVec2 &vec );
 	virtual int				ReadVec3( idVec3 &vec );
 	virtual int				ReadCQuat( idCQuat& quat );
@@ -87,16 +87,16 @@ public:
 	virtual int				ReadFloatArray( float* src, const int num );
 	
 	// Endian portable alternatives to Write(...)
-	virtual int				WriteInt( const int value );
-	virtual int				WriteUnsignedInt( const unsigned int value );
+	virtual int				WriteInt( const int value ); //k 132=33
+	virtual int				WriteUnsignedInt( const unsigned int value ); //k 136=34
 	virtual int				WriteShort( const short value );
 	virtual int				WriteUnsignedShort( unsigned short value );
 	virtual int				WriteChar( const char value );
-	virtual int				WriteUnsignedChar( const unsigned char value );
+	virtual int				WriteUnsignedChar( const unsigned char value ); //k 152=38
 	virtual int				WriteFloat( const float value );
 	virtual int				WriteDouble( const double value );
 	virtual int				WriteBool( const bool value );
-	virtual int				WriteString( const char *string );
+	virtual int				WriteString( const char *string ); //k 168=42
 	virtual int				WriteVec2( const idVec2 &vec );
 	virtual int				WriteVec3( const idVec3 &vec );
 	virtual int				WriteCQuat( const idCQuat& quat );
@@ -105,7 +105,7 @@ public:
 	virtual int				WriteVec6( const idVec6 &vec );
 	virtual int				WriteMat3( const idMat3 &mat );
 	virtual int				Write1DFloatArray( const int num, const float* src );
-	virtual int				WriteFloatArray( const float* src, const int num );
+	virtual int				WriteFloatArray( const float* src, const int num ); //k 204 51
 };
 
 class idFile_Memory : public idFile {
