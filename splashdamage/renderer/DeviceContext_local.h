@@ -91,6 +91,7 @@ private:
 	float					vidWidth;
 	bool				    enableClipping;
 	idList<sdBounds2D>		clipRects;
+	const idMaterial		*whiteImage;
 };
 
 #endif /* !__DEVICECONTEXT_LOCAL_H__ */

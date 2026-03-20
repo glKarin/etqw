@@ -37,6 +37,23 @@ If you have questions concerning this license or the applicable additional terms
 #define NS_DEBUG(x)
 #endif
 
+#ifdef _SPLASHDAMAGE
+extern idStrList stageParms;
+#define SETUP_STAGE_PROGRAM_PARMS() \
+	for(int _i = 0; _i < stageParms.Num(); _i++) { \
+		const idStr &p = stageParms[_i]; \
+		if(!idStr::Icmp(p, "clamp")) trp = TR_CLAMP; \
+		else if(!idStr::Icmp(p, "linear")) tf = TF_LINEAR; \
+		else if(!idStr::Icmp(p, "nearest")) tf = TF_NEAREST; \
+		else if(!idStr::Icmp(p, "highquality")) { \
+			if (!globalImages->image_ignoreHighQuality.GetInteger()) td = TD_HIGH_QUALITY; \
+		} \
+		else if(!idStr::Icmp(p, "forceHighQuality")) td = TD_HIGH_QUALITY; \
+		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO; \
+		else if(!idStr::Icmp(p, "partialLoad")); \
+	}
+#endif
+
 // jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
 //#define MATERIAL_MAP_SHORTCUT_PARSE 1 // but error if has newline
 
@@ -463,7 +480,7 @@ void idMaterial::ParseSort(idLexer &src)
 		sort = SS_POST_PROCESS;
 	} else if (!token.Icmp("portalSky")) {
 		sort = SS_PORTAL_SKY;
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	} else if (!token.Icmp("gui")) {
 		sort = SS_GUI;
 #endif
@@ -811,6 +828,21 @@ int idMaterial::ParseTerm(idLexer &src)
 	}
 #endif
 
+#ifdef _SPLASHDAMAGE //karin: cinematicY _cinematicY
+	if (!token.Icmp("_cinematicY")) {
+		return GetExpressionConstant(0.0f);
+	}
+	if (!token.Icmp("sun_r")) {
+		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("sun_g")) {
+		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("sun_b")) {
+		return GetExpressionConstant(1.0f);
+	}
+#endif
+
 	if (!token.Icmp("fragmentPrograms")) {
 #ifdef _HUMANHEAD //karin: only support some ARB shaders to GLSL shaders
 		pd->registersAreConstant = false;
@@ -1118,6 +1150,12 @@ void idMaterial::ParseBlend(idLexer &src, shaderStage_t *stage)
 		stage->lighting = SL_SPECULAR;
 		return;
 	}
+
+#ifdef _SPLASHDAMAGE //karin: blend screen
+	if (!token.Icmp("screen")) {
+		return;
+	}
+#endif
 
 	srcBlend = NameToSrcBlendMode(token);
 
@@ -1456,6 +1494,9 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("map")) {
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
+#ifdef _SPLASHDAMAGE
+			SETUP_STAGE_PROGRAM_PARMS();
+#endif
 			continue;
 		}
 
@@ -1550,6 +1591,9 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			cubeMap = CF_NATIVE;
+#ifdef _SPLASHDAMAGE
+			SETUP_STAGE_PROGRAM_PARMS();
+#endif
 			continue;
 		}
 
@@ -1557,6 +1601,9 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			cubeMap = CF_CAMERA;
+#ifdef _SPLASHDAMAGE
+			SETUP_STAGE_PROGRAM_PARMS();
+#endif
 			continue;
 		}
 
@@ -1877,9 +1924,56 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			                                 ss->color.registers[2] = ss->color.registers[3] = ParseExpression(src);
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: material stage
+		if (!token.Icmp("cinematicY")) { // cinematicY _cinematicY
+			ParseExpression(src);
+			continue;
+		}
+		if (!token.Icmp("parameters")) { // parameters 0
+			(void)src.ParseInt();
+			continue;
+		}
+		if (!token.Icmp("lightProjectionMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("depthFunc")) { // depthFunc equal
+			idToken t;
+			src.ReadToken(&t);
+			if(!idStr::Icmp(t, "equal"))
+				ss->drawStateBits |= GLS_DEPTHFUNC_EQUAL;
+			else if(!idStr::Icmp(t, "always"))
+				ss->drawStateBits |= GLS_DEPTHFUNC_ALWAYS;
+			else if(!idStr::Icmp(t, "lequal"))
+				ss->drawStateBits |= GLS_DEPTHFUNC_LESS;
+			else
+				common->Warning("unknown depth func '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
+			continue;
+		}
+		if (!token.Icmp("destinationBuffer")) { // destinationBuffer 1
+			(void)src.ParseInt();
+			continue;
+		}
+#endif
 
 		if (!token.Icmp("if")) {
+#ifdef _SPLASHDAMAGE //karin: if cvar
+			idToken t;
+			src.ReadToken(&t);
+			if(!idStr::Icmp(t, "cvar")) {
+				ss->conditionRegister = GetExpressionConstant(0.0f); //TODO: always false
+				src.SkipUntilString(")"); //skip to end
+			}
+			else
+			{
+				src.UnreadToken(&t);
+#endif
 			ss->conditionRegister = ParseExpression(src);
+#ifdef _SPLASHDAMAGE //karin: if cvar
+			}
+#endif
 			continue;
 		}
 
@@ -2870,6 +2964,10 @@ void idMaterial::ParseMaterial(idLexer &src)
 			CheckSurfaceParm(&t);
 			continue;
 #undef _SURFTYPE
+#endif
+#ifdef _SPLASHDAMAGE //karin: material parms
+		} else if (!token.Icmp("noAtmosphere")) { // noAtmosphere
+			continue;
 #endif
 #ifdef _NO_LIGHT
 		} else if (!token.Icmp("noLight")) {

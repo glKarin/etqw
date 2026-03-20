@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGExxx
 #pragma pack( push, 1 )
 #endif
 
@@ -47,7 +47,7 @@ class idDrawVert
 
 #define TANGENT_BITANGENT 1
 
-    //karin: for compat
+    //karin: using original layout: sizeof(idDrawVert) == 60, it causes OpenGL renderer error(wrong color)
 #define _normal normal
 #define _st st
 	    /*
@@ -64,15 +64,15 @@ class idDrawVert
 	    */
 
 	    idVec3			xyz;
-	    byte			color[4];
+	    idVec2			st;
 	    idVec3			normal;
-	    byte			_color2[4];
 #ifdef TANGENT_BITANGENT
 		idVec3			tangents[2];
 #else
 		idVec4			_tangent;		// [3] is texture polarity sign
 #endif
-	    idVec2			st;
+	    byte			color[4];
+	    //byte			_color2[4];
 #else
 		idVec3			xyz;
 		idVec2			st;
@@ -127,9 +127,11 @@ class idDrawVert
 #endif
 };
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGExxx
 #pragma pack( pop )
+#endif
 
+#ifdef _SPLASHDAMAGE
 #define ST_TO_FLOAT	1.0f / 4096.0f
 #define FLOAT_TO_ST	4096.0f
 #define ST_TO_FLOAT_LOWRANGE	1.0f / 32767.0f
@@ -149,13 +151,30 @@ class idDrawVert
 #else
 
 // offsets for SIMD code
+#if 1 //karin:
+#define DRAWVERT_SIZE				60 // 64			// sizeof( idDrawVert )
+#define DRAWVERT_SIZE_SHIFT			6			// log2( sizeof( idDrawVert ) )
+#define DRAWVERT_XYZ_OFFSET			(0*4)		// offsetof( idDrawVert, xyz )
+#define DRAWVERT_NORMAL_OFFSET		(5*4) // (4*4)		// offsetof( idDrawVert, normal )
+#define DRAWVERT_TANGENT_OFFSET		(8*4)		// offsetof( idDrawVert, tangent )
+
+assert_sizeof( idDrawVert, DRAWVERT_SIZE );
+//assert_sizeof( idDrawVert, (1<<DRAWVERT_SIZE_SHIFT) );
+assert_offsetof( idDrawVert, xyz, DRAWVERT_XYZ_OFFSET );
+assert_offsetof( idDrawVert, _normal, DRAWVERT_NORMAL_OFFSET );
+#ifdef TANGENT_BITANGENT
+assert_offsetof( idDrawVert, tangents, DRAWVERT_TANGENT_OFFSET );
+#else
+assert_offsetof( idDrawVert, _tangent, DRAWVERT_TANGENT_OFFSET );
+#endif
+
+#else
+
 #define DRAWVERT_SIZE				64			// sizeof( idDrawVert )
 #define DRAWVERT_SIZE_SHIFT			6			// log2( sizeof( idDrawVert ) )
 #define DRAWVERT_XYZ_OFFSET			(0*4)		// offsetof( idDrawVert, xyz )
 #define DRAWVERT_NORMAL_OFFSET		(4*4)		// offsetof( idDrawVert, normal )
 #define DRAWVERT_TANGENT_OFFSET		(8*4)		// offsetof( idDrawVert, tangent )
-
-#endif
 
 
 assert_sizeof( idDrawVert, DRAWVERT_SIZE );
@@ -166,6 +185,10 @@ assert_offsetof( idDrawVert, _normal, DRAWVERT_NORMAL_OFFSET );
 assert_offsetof( idDrawVert, tangents, DRAWVERT_TANGENT_OFFSET );
 #else
 assert_offsetof( idDrawVert, _tangent, DRAWVERT_TANGENT_OFFSET );
+#endif
+
+#endif
+
 #endif
 
 #endif
@@ -196,7 +219,7 @@ ID_INLINE void idDrawVert::Clear(void)
     _st.Zero();
     //_st2.Zero();
     color[0] = color[1] = color[2] = color[3] = 0;
-    _color2[0] = _color2[1] = _color2[2] = _color2[3] = 0;
+    //_color2[0] = _color2[1] = _color2[2] = _color2[3] = 0;
 #else
 	xyz.Zero();
 	st.Zero();

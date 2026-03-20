@@ -691,7 +691,15 @@ bool sdUserInterfaceLocal::Load( const char* name ) {
 			gameLocal.Warning( "sdUserInterfaceLocal::Load: could not find 'desktop' in '%s'", name );
 		}
 
+#ifdef _ETQW //karin: tooltip is not defined
+		sdUIObject *tpUIO = GetWindow( "toolTip" );
+		if(tpUIO)
+			toolTipWindow = tpUIO->Cast< sdUIWindow >();
+		else
+			toolTipWindow = NULL;
+#else
 		toolTipWindow = GetWindow( "toolTip" )->Cast< sdUIWindow >();
+#endif
 
 		// parent all the nested windows
 		for ( i = 0; i < guiDecl->GetNumWindows(); i++ ) {
@@ -824,6 +832,7 @@ void sdUserInterfaceLocal::UpdateToolTip() {
 
 		sdProperties::sdProperty* toolText	= toolTipSource->GetScope().GetProperty( "toolTipText", PT_WSTRING );
 
+#if !defined(_ETQW) //karin: tooltip is not defined
 		sdProperties::sdProperty* active	= toolTipWindow->GetScope().GetProperty( "active", PT_FLOAT );
 		sdProperties::sdProperty* tipText	= toolTipWindow->GetScope().GetProperty( "tipText", PT_WSTRING );
 		sdProperties::sdProperty* rect		= toolTipWindow->GetScope().GetProperty( "rect", PT_VEC4 );
@@ -847,6 +856,7 @@ void sdUserInterfaceLocal::UpdateToolTip() {
 			}
 			*rect->value.vec4Value = temp;
 		}
+#endif
 		tooltipAnchor = cursorPos;
 		nextAllowToolTipTime = 0;
 	}

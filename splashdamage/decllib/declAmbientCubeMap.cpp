@@ -62,6 +62,25 @@ bool sdDeclAmbientCubeMap::Parse( const char* text, const int textLength ) {
 			continue;
 		}
 
+		if (!token.Icmp("ambientColor")) {
+			avgAmbientColor[0] = src.ParseFloat();
+			avgAmbientColor[1] = src.ParseFloat();
+			avgAmbientColor[2] = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("highLightColor")) {
+			highLightColor[0] = src.ParseFloat();
+			highLightColor[1] = src.ParseFloat();
+			highLightColor[2] = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("brightness")) {
+			brightness = src.ParseFloat();
+			continue;
+		}
+
 		src.Warning( "sdDeclAmbientCubeMap::Parse: unexpected token '%s'.", token.c_str() );
 		src.SkipBracedSection(false);
 		break;
@@ -127,6 +146,15 @@ bool sdDeclAmbientCubeMap::ParseAmbientLight( idParser *src ) {
 			item.dir[0] = src->ParseFloat();
 			item.dir[1] = src->ParseFloat();
 			item.dir[2] = src->ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("name")) {
+			if( !src->ReadToken(&token)) {
+				src->Error( "sdDeclAmbientCubeMap::ParseAmbientLight: failed to parse name" );
+				break;
+			}
+			item.name = token.c_str();
 			continue;
 		}
 

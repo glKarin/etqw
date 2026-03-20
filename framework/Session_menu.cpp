@@ -56,7 +56,12 @@ idSessionLocal::StartMainMenu
 */
 void idSessionLocal::StartMenu(bool playIntro)
 {
-	if (guiActive == guiMainMenu) {
+#ifdef _SPLASHDAMAGE
+	if(game->IsMainMenuActive())
+#else
+	if (guiActive == guiMainMenu)
+#endif
+	{
 		return;
 	}
 
@@ -73,6 +78,9 @@ void idSessionLocal::StartMenu(bool playIntro)
 	// start playing the menu sounds
 	soundSystem->SetPlayingSoundWorld(menuSoundWorld);
 
+#ifdef _SPLASHDAMAGE
+	game->ShowMainMenu();
+#else
 	SetGUI(guiMainMenu, NULL);
 	guiMainMenu->HandleNamedEvent(playIntro ? "playIntro" : "noIntro");
 
@@ -82,6 +90,7 @@ void idSessionLocal::StartMenu(bool playIntro)
 	} else {
 		guiMainMenu->SetStateString("game_list", common->GetLanguageDict()->GetString("#str_07212"));
 	}
+#endif
 
 	console->Close();
 
@@ -1448,6 +1457,12 @@ Executes any commands returned by the gui
 */
 void idSessionLocal::MenuEvent(const sysEvent_t *event)
 {
+#ifdef _SPLASHDAMAGE //karin: send UI event to game
+	if (!game->IsMainMenuActive()) {
+		return;
+	}
+	(void)game->HandleGuiEvent(event);
+#else
 	const char	*menuCommand;
 
 	if (guiActive == NULL) {
@@ -1466,6 +1481,7 @@ void idSessionLocal::MenuEvent(const sysEvent_t *event)
 	}
 
 	DispatchCommand(guiActive, menuCommand);
+#endif
 }
 
 /*

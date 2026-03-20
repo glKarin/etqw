@@ -1937,7 +1937,11 @@ void idCommonLocal::FilterLangList(idStrList *list, idStr lang)
 
 	for (int i = 0; i < list->Num(); i++) {
 		temp = (*list)[i];
+#ifdef _SPLASHDAMAGE //karin: lang in localization/
+		temp = temp.Right(temp.Length()-strlen("localization/"));
+#else
 		temp = temp.Right(temp.Length()-strlen("strings/"));
+#endif
 		temp = temp.Left(lang.Length());
 
 		if (idStr::Icmp(temp, lang) != 0) {
@@ -1962,7 +1966,11 @@ void idCommonLocal::InitLanguageDict(void)
 	//similar to the way pak files work. So you can place english001.lang
 	//to add new strings to the english language dictionary
 	idFileList	*langFiles;
+#ifdef _SPLASHDAMAGE //karin: lang in localization/
+	langFiles =  fileSystem->ListFilesTree("localization", ".lang", true);
+#else
 	langFiles =  fileSystem->ListFilesTree("strings", ".lang", true);
+#endif
 
 	idStrList langList = langFiles->GetList();
 
@@ -3756,6 +3764,9 @@ void idCommonLocal::InitGame(void)
 
 	// initialize the user interfaces
 	uiManager->Init();
+#ifdef _SPLASHDAMAGE
+	deviceContext->Reset();
+#endif
 
 	// startup the script debugger
 	// DebuggerServerInit();

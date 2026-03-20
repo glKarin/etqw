@@ -8,15 +8,18 @@
 const int VIRTUAL_WIDTH = 640;
 const int VIRTUAL_HEIGHT = 480;
 
-sdDeviceContextLocal::sdDeviceContextLocal() {
+sdDeviceContextLocal::sdDeviceContextLocal()
+: whiteImage(NULL)
+{
 	xScale = 0.0;
 	SetSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-    Reset();
+	enableClipping = true;
+	clipRects.Clear();
 }
 
 void sdDeviceContextLocal::Reset() {
-    enableClipping = true;
-	clipRects.Clear();
+	whiteImage = declManager->FindMaterial("guis/assets/white");
+	whiteImage->SetSort(SS_GUI);
 }
 
 void sdDeviceContextLocal::BeginEmitToCurrentView( const float modelMatrix[16], const int allowInViewID, const bool weaponDepthHack ) {
@@ -61,31 +64,19 @@ void sdDeviceContextLocal::PopClipRect() {
 }
 
 void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, float angle ) {
-	(void)angle; // TODO
 
-	const float size = 2.0f;
-	const idVec4 &color = vec4_one;
+	AdjustCoords(&x, &y, &w, &h);
 
-	DrawMaterial(x, y, size, h, material, color);
-	DrawMaterial(x + w - size, y, size, h, material, color);
-	DrawMaterial(x, y, w, size, material, color);
-	DrawMaterial(x, y + h - size, w, size, material, color);
+	DrawStretchPicRotated(x, y, w, h, s1, t1, s2, t2, material, angle);
 }
 
 void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, float angle ) {
-	(void)angle; // TODO
 
-	if (ClippedCoords(&x, &y, &w, &h, NULL, NULL, NULL, NULL)) {
+	if (ClippedCoords(&x, &y, &w, &h, &s1, &t1, &s2, &t2)) {
 		return;
 	}
 
-	const float size = 2.0f;
-
-	AdjustCoords(&x, &y, &w, &h);
-	DrawStretchPic(x, y, size, h, s1, t1, s2, t2, material);
-	DrawStretchPic(x + w - size, y, size, h, s1, t1, s2, t2, material);
-	DrawStretchPic(x, y, w, size, s1, t1, s2, 0, material);
-	DrawStretchPic(x, y + h - size, w, size, s1, t1, s2, t2, material);
+	DrawRect(x, y, w, h, s1, t1, s2, t2, material, angle);
 }
 
 void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, float h, float s01, float t01, float s02, float t02, float s11, float t11, float s12, float t12, const idMaterial* material, float angle ) {
@@ -135,6 +126,10 @@ void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, con
 }
 
 void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idVec2 extents, const idMaterial* material, const idVec4& color ) {
+
+	if (color.w == 0.0f) {
+		return;
+	}
 
 	renderSystem->SetColor(color);
 
@@ -195,14 +190,33 @@ void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, const i
         return;
     }
 
-    renderSystem->SetColor(color);
+	renderSystem->SetColor(color);
 
-    if (ClippedCoords(&x, &y, &w, &h, NULL, NULL, NULL, NULL)) {
+	AdjustCoords(&x, &y, &w, &h);
+
+	DrawStretchPic(x, y, w, h, 0, 0, 0, 0, whiteImage);
+}
+
+void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, const idVec4 &color ) {
+
+    if (color.w == 0.0f) {
         return;
     }
 
-	const float size = 2.0f;
-	const idMaterial *whiteImage = declManager->FindMaterial("_white", true);
+	if (ClippedCoords(&x, &y, &w, &h, NULL, NULL, NULL, NULL)) {
+		return;
+	}
+
+	DrawRect(x, y, w, h, color);
+}
+
+void sdDeviceContextLocal::DrawBox( float x, float y, float w, float h, float size, const idVec4 &color ) {
+
+    if (color.w == 0.0f) {
+        return;
+    }
+
+    renderSystem->SetColor(color);
 
     AdjustCoords(&x, &y, &w, &h);
     DrawStretchPic(x, y, size, h, 0, 0, 0, 0, whiteImage);
@@ -211,13 +225,17 @@ void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, const i
     DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, whiteImage);
 }
 
-void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, const idVec4 &color ) {
-}
-
-void sdDeviceContextLocal::DrawBox( float x, float y, float w, float h, float size, const idVec4 &color ) {
-}
-
 void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, float size, const idVec4 &color ) {
+
+    if (color.w == 0.0f) {
+        return;
+    }
+
+    if (ClippedCoords(&x, &y, &w, &h, NULL, NULL, NULL, NULL)) {
+        return;
+    }
+
+	DrawBox(x, y, w, h, size, color);
 }
 
 void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float rotation ) {
@@ -248,7 +266,7 @@ void sdDeviceContextLocal::DrawTimer( const float x, const float y, const float 
 }
 
 qhandle_t sdDeviceContextLocal::FindFont( const char* fontName ) {
-    return -1;
+    return 0;
 }
 
 void sdDeviceContextLocal::FreeFont( const qhandle_t font ) {
@@ -279,6 +297,7 @@ float sdDeviceContextLocal::GetAspectRatioCorrection() const {
 
 bool sdDeviceContextLocal::ClippedCoords(float *x, float *y, float *w, float *h, float *s1, float *t1, float *s2, float *t2)
 {
+	return false;
 
     if (enableClipping == false || clipRects.Num() == 0) {
         return false;
@@ -438,21 +457,21 @@ void sdDeviceContextLocal::SetSize(float width, float height)
 
 void sdDeviceContextLocal::AdjustCoords(float *x, float *y, float *w, float *h)
 {
-	if (x) {
-		*x *= xScale;
-	}
-
-	if (y) {
-		*y *= yScale;
-	}
-
-	if (w) {
-		*w *= xScale;
-	}
-
-	if (h) {
-		*h *= yScale;
-	}
+	// if (x) {
+	// 	*x *= xScale;
+	// }
+	//
+	// if (y) {
+	// 	*y *= yScale;
+	// }
+	//
+	// if (w) {
+	// 	*w *= xScale;
+	// }
+	//
+	// if (h) {
+	// 	*h *= yScale;
+	// }
 }
 
 void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle)
@@ -554,6 +573,8 @@ void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, floa
 
 	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, (angle == 0.0) ? false : true);
 }
+
+
 
 static sdDeviceContextLocal deviceContextLocal;
 

@@ -219,6 +219,9 @@ public:
 
 	sdUIWindow*							GetDesktop() { return desktop; }
 	const sdUIWindow*					GetDesktop() const { return desktop; }
+#ifdef _ETQW //karin: set desktop if GetDesktop() return null
+	void								SetDesktop(sdUIWindow *d) { desktop = d; }
+#endif
 
 	virtual int							GetNumWindows() { return windows.Num(); }
 	virtual sdUIObject*					GetWindow( int index ) { return windows.FindIndex( index )->second; }

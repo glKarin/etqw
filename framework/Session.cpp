@@ -2809,7 +2809,12 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	}
 
 	// menus / etc
-	if (guiActive) {
+#ifdef _SPLASHDAMAGE //karin: send UI event to game
+	if (game->IsMainMenuActive())
+#else
+	if (guiActive)
+#endif
+	{
 		MenuEvent(event);
 		return true;
 	}
@@ -3010,6 +3015,9 @@ void idSessionLocal::Draw()
 	bool fullConsole = false;
 
 	if (insideExecuteMapChange) {
+#ifdef _SPLASHDAMAGE
+		game->DrawLoadScreen();
+#else
 		if (guiLoading) {
 			guiLoading->Redraw(com_frameTime);
 		}
@@ -3017,6 +3025,7 @@ void idSessionLocal::Draw()
 		if (guiActive == guiMsg) {
 			guiMsg->Redraw(com_frameTime);
 		}
+#endif
 	} else if (guiTest) {
 		// if testing a gui, clear the screen and draw it
 		// clear the background, in case the tested gui is transparent
@@ -3048,6 +3057,10 @@ void idSessionLocal::Draw()
 		}
 
 		guiActive->Redraw(com_frameTime);
+#ifdef _SPLASHDAMAGE
+	} else if (game->IsMainMenuActive()) {
+		game->DrawMainMenu();
+#endif
 	} else if (readDemo) {
 		rw->RenderScene(&currentDemoRenderView);
 		renderSystem->DrawDemoPics();
@@ -3777,7 +3790,12 @@ idSessionLocal::SetPlayingSoundWorld
 */
 void idSessionLocal::SetPlayingSoundWorld()
 {
-	if (guiActive && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) {
+#ifdef _SPLASHDAMAGE
+	if (game->IsMainMenuActive()) 
+#else
+	if (guiActive && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) 
+#endif
+	{
 		soundSystem->SetPlayingSoundWorld(menuSoundWorld);
 	} else {
 		soundSystem->SetPlayingSoundWorld(sw);
