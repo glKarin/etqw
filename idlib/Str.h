@@ -94,6 +94,17 @@ const int C_COLOR_MAGENTA			= '6';
 const int C_COLOR_WHITE				= '7';
 const int C_COLOR_GRAY				= '8';
 const int C_COLOR_BLACK				= '9';
+#ifdef _SPLASHDAMAGE
+const int C_COLOR_LTGREY			= ':';
+const int C_COLOR_MDGREEN			= '<';
+const int C_COLOR_MDYELLOW			= '=';
+const int C_COLOR_MDBLUE			= '>';
+const int C_COLOR_MDRED				= '?';
+const int C_COLOR_LTORANGE			= 'A';
+const int C_COLOR_MDCYAN			= 'B';
+const int C_COLOR_MDPURPLE			= 'C';
+const int C_COLOR_ORANGE			= 'D';
+#endif
 
 // color escape string
 #define S_COLOR_DEFAULT				"^0"
@@ -147,6 +158,16 @@ const int C_COLOR_CONSOLE			= ':';
 #define S_ESCAPE_COMMAND			BIT(4)
 #define	S_ESCAPE_ALL				( S_ESCAPE_COLOR | S_ESCAPE_COLORINDEX | S_ESCAPE_ICON | S_ESCAPE_COMMAND )
 // RAVEN END
+#elif defined(_SPLASHDAMAGE)
+#define S_COLOR_LTGREY				"^:"
+#define S_COLOR_MDGREEN				"^<"
+#define S_COLOR_MDYELLOW			"^="
+#define S_COLOR_MDBLUE				"^>"
+#define S_COLOR_MDRED				"^?"
+#define S_COLOR_LTORANGE			"^A"
+#define S_COLOR_MDCYAN				"^B"
+#define S_COLOR_MDPURPLE			"^C"
+#define S_COLOR_ORANGE				"^D"
 #endif
 
 // make idStr a multiple of 16 bytes long
@@ -1456,7 +1477,11 @@ ID_INLINE bool idStr::CharIsTab(char c)
 
 ID_INLINE int idStr::ColorIndex(int c)
 {
+#ifdef _SPLASHDAMAGE
+    return ( ( c - '0' ) & COLOR_BITS );
+#else
 	return (c & 15);
+#endif
 }
 
 ID_INLINE int idStr::DynamicMemoryUsed() const
