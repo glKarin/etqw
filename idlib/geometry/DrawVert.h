@@ -73,6 +73,12 @@ class idDrawVert
 #endif
 	    byte			color[4];
 	    //byte			_color2[4];
+#if 0
+		idDrawVert() {
+			Clear();
+			color[0] = color[1] = color[2] = color[3] = 255;
+		}
+#endif
 #else
 		idVec3			xyz;
 		idVec2			st;

@@ -410,6 +410,48 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 	ID_TIME_T		timestamp;
 
 	src.ReadToken(&token);
+#ifdef _SPLASHDAMAGE //karin: image program: stage parms
+	if (!token.Icmp("linear")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("clamp")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("nopicmip")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("nearest")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("highquality")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("forceHighQuality")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("zeroClamp")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("partialLoad")) {
+		stageParms.Append(token);
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+#endif
 	AppendToken(token);
 
 	if (!token.Icmp("heightmap")) {
@@ -611,48 +653,6 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 		return true;
 	}
 // jmarshall end
-#endif
-#ifdef _SPLASHDAMAGE //karin: image program: stage parms
-	if (!token.Icmp("linear")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("clamp")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("nopicmip")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("nearest")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("highquality")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("forceHighQuality")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("zeroClamp")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
-	if (!token.Icmp("partialLoad")) {
-		stageParms.Append(token);
-		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
-		return true;
-	}
 #endif
 
 	if (!token.Icmp("makeAlpha")) {

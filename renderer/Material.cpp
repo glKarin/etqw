@@ -50,6 +50,7 @@ extern idStrList stageParms;
 		} \
 		else if(!idStr::Icmp(p, "forceHighQuality")) td = TD_HIGH_QUALITY; \
 		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO; \
+		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
 		else if(!idStr::Icmp(p, "partialLoad")); \
 	}
 #endif
@@ -1930,7 +1931,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("parameters")) { // parameters 0
-			(void)src.ParseInt();
+			ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("lightProjectionMap")) {

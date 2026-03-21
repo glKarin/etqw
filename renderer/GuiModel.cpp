@@ -41,6 +41,12 @@ idGuiModel::idGuiModel()
 {
 	indexes.SetGranularity(1000);
 	verts.SetGranularity(1000);
+#ifdef _SPLASHDAMAGE
+	lastViewDef = NULL;
+	emitViewDef = NULL;
+	((idMat4 *)emitModelMatrix)->Identity();
+	emitDepthHack = false;
+#endif
 }
 
 /*
@@ -393,6 +399,18 @@ void idGuiModel::DrawStretchPic(const idDrawVert *dverts, const glIndex_t *dinde
 
 		surf->material = hShader;
 	}
+#ifdef _SPLASHDAMAGE //karin: sync vertex color when has vertexColor flag of stage in GUI
+	bool usingVertexColor = false;
+	for(int m = 0; m < surf->material->GetNumStages(); m++)
+	{
+		const shaderStage_t *stage = surf->material->GetStage(m);
+		if(stage->vertexColor == SVC_MODULATE)
+		{
+			usingVertexColor = true;
+			break;
+		}
+	}
+#endif
 
 	// add the verts and indexes to the current surface
 
@@ -450,6 +468,15 @@ void idGuiModel::DrawStretchPic(const idDrawVert *dverts, const glIndex_t *dinde
 				dv->normal.Set(0, 0, 1);
 				dv->tangents[0].Set(1, 0, 0);
 				dv->tangents[1].Set(0, 1, 0);
+#ifdef _SPLASHDAMAGE //karin: sync vertex color when has vertexColor flag of stage in GUI
+				if(usingVertexColor)
+				{
+					dv->color[0] = (byte)(surf->color[0] * 255.0f);
+					dv->color[1] = (byte)(surf->color[1] * 255.0f);
+					dv->color[2] = (byte)(surf->color[2] * 255.0f);
+					dv->color[3] = (byte)(surf->color[3] * 255.0f);
+				}
+#endif
 			}
 
 			surf->numVerts += w.GetNumPoints();
@@ -478,6 +505,19 @@ void idGuiModel::DrawStretchPic(const idDrawVert *dverts, const glIndex_t *dinde
 		}
 
 		memcpy(&verts[numVerts], dverts, vertCount * sizeof(verts[0]));
+#ifdef _SPLASHDAMAGE //karin: sync vertex color when has vertexColor flag of stage in GUI
+		if(usingVertexColor)
+		{
+			for(int m = 0; m < vertCount; m++)
+			{
+				idDrawVert *dv = &verts[numVerts + m];
+				dv->color[0] = (byte)(surf->color[0] * 255.0f);
+				dv->color[1] = (byte)(surf->color[1] * 255.0f);
+				dv->color[2] = (byte)(surf->color[2] * 255.0f);
+				dv->color[3] = (byte)(surf->color[3] * 255.0f);
+			}
+		}
+#endif
 	}
 }
 
@@ -691,3 +731,119 @@ void idGuiModel::DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVe
 	memcpy(&verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
 }
 
+#ifdef _SPLASHDAMAGE
+void idGuiModel::BeginEmitToCurrentView(const float modelMatrix[16], int allowInViewID, bool depthHack)
+{
+	if(!tr.viewDef)
+		return;
+
+	lastViewDef = NULL;
+	emitViewDef = NULL;
+	memcpy(&emitModelMatrix[0], &modelMatrix[0], sizeof(float) * 16);
+	emitDepthHack = depthHack;
+}
+
+void idGuiModel::BeginEmitFullScreen()
+{
+	viewDef_t	*viewDef;
+
+	viewDef = (viewDef_t *)R_ClearedFrameAlloc(sizeof(*viewDef));
+
+	// for gui editor
+	if (!tr.viewDef || !tr.viewDef->isEditor) {
+		viewDef->renderView.x = 0;
+		viewDef->renderView.y = 0;
+		viewDef->renderView.width = SCREEN_WIDTH;
+		viewDef->renderView.height = SCREEN_HEIGHT;
+
+		tr.RenderViewToViewport(&viewDef->renderView, &viewDef->viewport);
+
+		viewDef->scissor.x1 = 0;
+		viewDef->scissor.y1 = 0;
+		viewDef->scissor.x2 = viewDef->viewport.x2 - viewDef->viewport.x1;
+		viewDef->scissor.y2 = viewDef->viewport.y2 - viewDef->viewport.y1;
+	} else {
+		viewDef->renderView.x = tr.viewDef->renderView.x;
+		viewDef->renderView.y = tr.viewDef->renderView.y;
+		viewDef->renderView.width = tr.viewDef->renderView.width;
+		viewDef->renderView.height = tr.viewDef->renderView.height;
+
+		viewDef->viewport.x1 = tr.viewDef->renderView.x;
+		viewDef->viewport.x2 = tr.viewDef->renderView.x + tr.viewDef->renderView.width;
+		viewDef->viewport.y1 = tr.viewDef->renderView.y;
+		viewDef->viewport.y2 = tr.viewDef->renderView.y + tr.viewDef->renderView.height;
+
+		viewDef->scissor.x1 = tr.viewDef->scissor.x1;
+		viewDef->scissor.y1 = tr.viewDef->scissor.y1;
+		viewDef->scissor.x2 = tr.viewDef->scissor.x2;
+		viewDef->scissor.y2 = tr.viewDef->scissor.y2;
+	}
+
+	viewDef->floatTime = tr.frameShaderTime;
+
+	// glOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
+	viewDef->projectionMatrix[0] = 2.0f / 640.0f;
+	viewDef->projectionMatrix[5] = -2.0f / 480.0f;
+	viewDef->projectionMatrix[10] = -2.0f / 1.0f;
+	viewDef->projectionMatrix[12] = -1.0f;
+	viewDef->projectionMatrix[13] = 1.0f;
+	viewDef->projectionMatrix[14] = -1.0f;
+	viewDef->projectionMatrix[15] = 1.0f;
+
+	viewDef->worldSpace.modelViewMatrix[0] = 1.0f;
+	viewDef->worldSpace.modelViewMatrix[5] = 1.0f;
+	viewDef->worldSpace.modelViewMatrix[10] = 1.0f;
+	viewDef->worldSpace.modelViewMatrix[15] = 1.0f;
+
+	viewDef->numDrawSurfs = 0;
+
+	lastViewDef = tr.viewDef;
+	tr.viewDef = viewDef;
+
+	emitViewDef = viewDef;
+}
+
+void idGuiModel::End()
+{
+	if(!tr.viewDef)
+		return;
+
+	viewDef_t *viewDef = tr.viewDef;
+	bool usingCurrentView = NULL == emitViewDef;
+
+	viewDef->maxDrawSurfs = surfaces.Num();
+	viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc(viewDef->maxDrawSurfs * sizeof(viewDef->drawSurfs[0]));
+	viewDef->numDrawSurfs = 0;
+
+	// add the surfaces to this view
+	if(usingCurrentView)
+	{
+		float	modelViewMatrix[16];
+
+		myGlMultMatrix(emitModelMatrix, tr.viewDef->worldSpace.modelViewMatrix,
+				modelViewMatrix);
+
+		for (int i = 0 ; i < surfaces.Num() ; i++) {
+			EmitSurface(&surfaces[i], emitModelMatrix, modelViewMatrix, emitDepthHack);
+		}
+
+		((idMat4 *)emitModelMatrix)->Identity();
+		emitDepthHack = false;
+	}
+	else
+	{
+		for (int i = 0 ; i < surfaces.Num() ; i++) {
+			EmitSurface(&surfaces[i], viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false);
+		}
+
+		tr.viewDef = lastViewDef;
+		lastViewDef = NULL;
+		emitViewDef = NULL;
+	}
+
+	// add the command to draw this view
+	R_AddDrawViewCmd(viewDef);
+
+	Clear();
+}
+#endif

@@ -56,6 +56,11 @@ class idGuiModel
 		void	DrawStretchPic(float x, float y, float w, float h,
 		                       float s1, float t1, float s2, float t2, const idMaterial *hShader);
 		void	DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material);
+#ifdef _SPLASHDAMAGE
+		void	BeginEmitToCurrentView(const float modelMatrix[16], int allowInViewID, bool depthHack);
+		void	BeginEmitFullScreen();
+		void	End();
+#endif
 
 		//---------------------------
 	private:
@@ -67,5 +72,11 @@ class idGuiModel
 		idList<guiModelSurface_t>	surfaces;
 		idList<glIndex_t>		indexes;
 		idList<idDrawVert>	verts;
+#ifdef _SPLASHDAMAGE
+		viewDef_t				*lastViewDef;
+		viewDef_t				*emitViewDef;
+		float					emitModelMatrix[16];
+		bool					emitDepthHack;
+#endif
 };
 

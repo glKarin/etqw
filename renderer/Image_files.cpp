@@ -599,6 +599,10 @@ static void LoadTGA(const char *name, byte **pic, int *width, int *height, ID_TI
 	TargaHeader	targa_header;
 	byte		*targa_rgba;
 
+	{
+	void aaa(const char*,bool);
+	aaa(name,0);
+	aaa(name,1);}
 	if (!pic) {
 		fileSystem->ReadFile(name, NULL, timestamp);
 		return;	// just getting timestamp
@@ -1303,6 +1307,285 @@ bool R_LoadCubeImages(const char *imgName, cubeFiles_t extensions, byte *pics[6]
 #ifdef _SPLASHDAMAGE
 void R_LoadTGA(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp) {
 	LoadTGA(name, pic, width, height, timestamp);
+}
+
+#if 0
+void /*idImage::*/ImageProgramStringToCompressedFileName(const char *Source, char *Destination)
+{
+  int v4; // eax
+  char *v5; // edi
+  const char *v6; // esi
+  char *v7; // ebx
+  int v8; // edx
+  char *v9; // ecx
+  char v10; // al
+  char v11; // al
+  int v12; // ecx
+  char v13; // dl
+  size_t v14; // eax
+  int v15; // eax
+  char *v16; // eax
+  int v17; // [esp-4h] [ebp-14h]
+  char *Sourcea; // [esp+14h] [ebp+4h]
+
+  if ( idStr::CheckExtension(Source, "dds") )
+  {
+    idStr::Copynz(Destination, Source, 256);
+    return;
+  }
+  idStr::Copynz(Destination, "generated/dds/", 256);
+  v4 = idStr::Length(Destination);
+
+  v5 = &Destination[v4];
+  Sourcea = 0;
+  v6 = Source;
+  v7 = Source;
+  if ( *Source )
+  {
+    v8 = -1 - (_DWORD)Source;
+	bool hasBadChar = false;
+	while(*v7)
+	{
+		if(*v7 == '/' || *v7 == '\\' || *v7 == '(')
+		{
+			hasBadChar = true;
+			break;
+		}
+	}
+
+	if(hasBadChar)
+	{
+		if(v6 == Source)
+		{
+		}
+	}
+	else
+	{
+	}
+
+    while ( 1 )
+    {
+      v9 = v7 + 1;
+      if ( &v7[v8 + 1] == (char *)128 )
+        goto LABEL_27;
+      v10 = *v7;
+      if ( *v7 == 47 || v10 == 92 || v10 == 40 )
+        break;
+LABEL_26:
+      v7 = v9;
+      if ( !*v9 )
+        goto LABEL_27;
+    }
+    if ( (int)Sourcea < 4 )
+    {
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( *v6 == 32 )
+      {
+        if ( ++v6 >= v7 )
+        {
+LABEL_25:
+          *v5++ = 47;
+          ++Sourcea;
+          v6 = v9;
+          goto LABEL_26;
+        }
+      }
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( 1 )
+      {
+        if ( idStr::IsBadFilenameChar(*v6) )
+        {
+          *v5 = '_';
+        }
+        else
+        {
+          v11 = *v6;
+          if ( *v6 == 41 || v11 == 44 )
+            goto LABEL_23;
+          *v5 = v11;
+        }
+        ++v5;
+LABEL_23:
+        if ( ++v6 >= v7 )
+        {
+          v8 = -1 - (_DWORD)Source;
+          v9 = v7 + 1;
+          goto LABEL_25;
+        }
+      }
+    }
+  }
+LABEL_27:
+  *v5 = 0;
+  v12 = 0;
+  v13 = *Source;
+  if ( v13 )
+  {
+	  v12 = idStr::Length( Source );
+  }
+  v14 = 0;
+  if ( v13 )
+  {
+	  v14 = idStr::Length( Source );
+  }
+  v17 = v12;
+  v15 = MD5_BlockChecksum((unsigned __int8 *)Source, v14);
+  v16 = va("%ub%d.dds", v15, v17);
+  idStr::Append(Destination, 256, v16);
+}
+#endif
+
+void ImageProgramStringToCompressedFileName(char *Source, char *Destination,bool b)
+{
+  int v4; // eax
+  char *v5; // edi
+  const char *v6; // esi
+  char *v7; // ebx
+  uintptr_t v8; // edx
+  char *v9; // ecx
+  char v10; // al
+  char v11; // al
+  int v12; // ecx
+  char v13; // dl
+  size_t v14; // eax
+  int v15; // eax
+  char *v16; // eax
+  int v17; // [esp-4h] [ebp-14h]
+  char *Sourcea; // [esp+14h] [ebp+4h]
+
+  if ( idStr::CheckExtension(Source, "dds") )
+  {
+    idStr::Copynz(Destination, Source, 256);
+    return;
+  }
+  idStr::Copynz(Destination, "generated/dds/", 256);
+  v4 = 0;
+  if ( *Destination )
+  {
+    do
+      ++v4;
+    while ( Destination[v4] );
+  }
+  v5 = &Destination[v4];
+  Sourcea = 0;
+  v6 = Source;
+  v7 = Source;
+  if ( *Source )
+  {
+    v8 = -1 - (uintptr_t)Source;
+    while ( 1 )
+    {
+      v9 = v7 + 1;
+      if ( &v7[v8 + 1] == (char *)128 )
+        goto LABEL_27;
+      v10 = *v7;
+      if ( *v7 == 47 || v10 == 92 || v10 == 40 )
+        break;
+LABEL_26:
+      v7 = v9;
+      if ( !*v9 )
+        goto LABEL_27;
+    }
+    if ( (intptr_t)Sourcea < 4 )
+    {
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( *v6 == 32 )
+      {
+        if ( ++v6 >= v7 )
+        {
+LABEL_25:
+          *v5++ = 47;
+          ++Sourcea;
+          v6 = v9;
+          goto LABEL_26;
+        }
+      }
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( 1 )
+      {
+        if ( idStr::IsBadFilenameChar(*v6) )
+        {
+          *v5 = 95;
+        }
+        else
+        {
+          v11 = *v6;
+          if ( *v6 == 41 || v11 == 44 )
+            goto LABEL_23;
+          *v5 = v11;
+        }
+        ++v5;
+LABEL_23:
+        if ( ++v6 >= v7 )
+        {
+          v8 = -1 - (uintptr_t)Source;
+          v9 = v7 + 1;
+          goto LABEL_25;
+        }
+      }
+    }
+  }
+LABEL_27:
+  *v5 = 0;
+  v12 = 0;
+  v13 = *Source;
+  if(b) //if ( *((_DWORD *)this + 333) == 3 )
+  {
+    if ( v13 )
+    {
+      do
+        ++v12;
+      while ( Source[v12] );
+    }
+    v14 = 0;
+    if ( v13 )
+    {
+      do
+        ++v14;
+      while ( Source[v14] );
+    }
+  }
+  else
+  {
+    if ( v13 )
+    {
+      do
+        ++v12;
+      while ( Source[v12] );
+    }
+    v14 = 0;
+    if ( v13 )
+    {
+      do
+        ++v14;
+      while ( Source[v14] );
+    }
+  }
+  v17 = v12;
+  v15 = MD5_BlockChecksum((byte *)Source, v14);
+  v16 = va("%ub%d.dds", v15, v17);
+  idStr::Append(Destination, 256, v16);
+}
+
+void aaa(const char *name,bool b) {
+	char a[1024];
+	ImageProgramStringToCompressedFileName((char*)name, a,b);	
+	idFile *f=fileSystem->OpenFileRead(name);
+	common->Printf("NNN: %s|%p\n", name,f);
+	if(f)
+		fileSystem->CloseFile(f);
+	common->Printf("DDD: %s\n", a);
+	f=fileSystem->OpenFileRead(a);
+	common->Printf("EEE: %p\n", f);
+	if(f)
+	{
+	common->Printf("GGG\n");
+		fileSystem->CloseFile(f);
+	}
 }
 #endif
 

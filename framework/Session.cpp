@@ -3664,11 +3664,13 @@ void idSessionLocal::Init()
 #endif
 
 	cmdSystem->AddCommand("demoShot", Session_DemoShot_f, CMD_FL_SYSTEM, "writes a screenshot for a demo");
+#if !defined(_SPLASHDAMAGE) //karin: defined in game
 	cmdSystem->AddCommand("testGUI", Session_TestGUI_f, CMD_FL_SYSTEM, "tests a gui"
 #if defined(_RAVEN) || 1
 			, idCmdSystem::ArgCompletion_GuiName
 #endif
 			);
+#endif
 
 #ifndef	ID_DEDICATED
 	cmdSystem->AddCommand("saveGame", SaveGame_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "saves a game");
