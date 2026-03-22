@@ -289,6 +289,9 @@ class idWaveFile
 		int				OpenOGG(const char *strFileName, waveformatex_t *pwfx = NULL);
 		int				ReadOGG(byte *pBuffer, int dwSizeToRead, int *pdwSizeRead);
 		int				CloseOGG(void);
+#ifdef _SPLASHDAMAGE
+		friend class idSoundSample;
+#endif
 };
 
 
@@ -1286,4 +1289,7 @@ class idSoundCache
 		idList<idSoundSample *>	listCache;
 };
 
+#ifdef _SPLASHDAMAGE
+idStr S_SoundFileNameToOgg(const char *raw);
+#endif
 #endif /* !__SND_LOCAL_H__ */

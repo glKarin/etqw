@@ -474,6 +474,12 @@ ID_TIME_T idSoundSample::GetNewTimeStamp(void) const
 		fileSystem->ReadFile(mp3Name, NULL, &timestamp);
 	}
 #endif
+#ifdef _SPLASHDAMAGE
+	if (timestamp == FILE_NOT_FOUND_TIMESTAMP) {
+		idStr oggName = S_SoundFileNameToOgg(name);
+		int len=fileSystem->ReadFile(oggName, NULL, &timestamp);
+	}
+#endif
 
 	return timestamp;
 }
@@ -825,3 +831,13 @@ bool idSoundSample::FetchFromCache(int offset, const byte **output, int *positio
 
 	return true;
 }
+
+#ifdef _SPLASHDAMAGE
+idStr S_SoundFileNameToOgg(const char *raw)
+{
+	idStr oggName = va("generated/ogg/%s", raw);
+	oggName.SetFileExtension(".ogg");
+	//printf("ooo %s|%s\n",raw,oggName.c_str());
+	return oggName;
+}
+#endif

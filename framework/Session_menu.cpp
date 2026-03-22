@@ -35,6 +35,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../sound/snd_local.h"
 #endif
 
+#ifdef _SPLASHDAMAGE
+#include "decllib/declLocStr.h"
+#endif
+
 idCVar	idSessionLocal::gui_configServerRate("gui_configServerRate", "0", CVAR_GUI | CVAR_ARCHIVE | CVAR_ROM | CVAR_INTEGER, "");
 
 // implements the setup for, and commands from, the main menu
@@ -1533,6 +1537,10 @@ bool idSessionLocal::BoxDialogSanityCheck(void)
 		return false;
 	}
 
+#ifdef _SPLASHDAMAGE
+	if (!game)
+		return false;
+#else
 	if (!guiMsg) {
 		return false;
 	}
@@ -1541,6 +1549,7 @@ bool idSessionLocal::BoxDialogSanityCheck(void)
 		common->DPrintf("message box sanity check: recursed\n");
 		return false;
 	}
+#endif
 
 	if (cvarSystem->GetCVarInteger("net_serverDedicated")) {
 		common->DPrintf("message box sanity check: not compatible with dedicated server\n");
@@ -1564,6 +1573,11 @@ const char *idSessionLocal::MessageBox(msgBoxType_t type, const char *message, c
 		return NULL;
 	}
 
+#ifdef _SPLASHDAMAGE
+	const sdDeclLocStr *placeholder = static_cast<const sdDeclLocStr *>(declManager->FindType(DECL_LOCSTR, "_default", true));
+	idWStr wstr = StrToWStr(message);
+	game->MessageBox(type, wstr.c_str(), placeholder);
+#else
 	guiMsg->SetStateString("title", title ? title : "");
 	guiMsg->SetStateString("message", message ? message : "");
 
@@ -1705,6 +1719,7 @@ const char *idSessionLocal::MessageBox(msgBoxType_t type, const char *message, c
 			return msgFireBack[ msgRetIndex ].c_str();
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -1725,6 +1740,7 @@ void idSessionLocal::DownloadProgressBox(backgroundDownload_t *bgl, const char *
 		return;
 	}
 
+#if !defined(_SPLASHDAMAGE)
 	guiMsg->SetStateString("visible_msgbox", "1");
 	guiMsg->SetStateString("visible_waitbox", "0");
 
@@ -1799,6 +1815,7 @@ void idSessionLocal::DownloadProgressBox(backgroundDownload_t *bgl, const char *
 		guiActive = guiMsg;
 		msgRunning = true;
 	}
+#endif
 }
 
 /*
@@ -1808,9 +1825,13 @@ idSessionLocal::StopBox
 */
 void idSessionLocal::StopBox()
 {
+#ifdef _SPLASHDAMAGE
+	game->CloseMessageBox();
+#else
 	if (guiActive == guiMsg) {
 		HandleMsgCommands("stop");
 	}
+#endif
 }
 
 /*

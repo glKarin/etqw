@@ -2101,6 +2101,15 @@ idAsyncClient::SendVersionCheck
 */
 void idAsyncClient::SendVersionCheck(bool fromMenu)
 {
+#ifdef _SPLASHDAMAGE
+	common->Printf("Check updates(fake)......");
+	game->SetUpdateMessage(L"No availability update: not supported");
+	game->SetUpdateProgress(1.0f);
+	game->SetUpdateFromServer(false);
+	game->SetUpdateAvailability(UPDATE_AVAIL_NONE);
+	game->SetUpdateState(UPDATE_PROMPT_READY);
+	common->Printf("No availability update: not supported");
+#else
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
@@ -2124,6 +2133,7 @@ void idAsyncClient::SendVersionCheck(bool fromMenu)
 	updateState = UPDATE_SENT;
 	updateSentTime = clientTime;
 	showUpdateMessage = fromMenu;
+#endif
 }
 
 /*

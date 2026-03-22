@@ -1846,10 +1846,7 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 		if (pic == NULL) {
 			char filename[MAX_IMAGE_NAME];
 			ImageProgramStringToCompressedFileName(imgName, filename);
-
-			if (!generatorFunction) {
-				LoadDDS(filename, &pic, &width, &height, &timestamp);
-			}
+			LoadDDS(filename, &pic, &width, &height, &timestamp);
 		}
 #endif
 

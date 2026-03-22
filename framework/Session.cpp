@@ -3759,6 +3759,10 @@ void idSessionLocal::Init()
 
 	ReadCDKey();
 
+#ifdef _SPLASHDAMAGE
+	idAsyncNetwork::client.SendVersionCheck();
+#endif
+
 	if(harm_g_skipHitEffect.GetBool())
 		G_SkipHitEffect(true); // cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "skipHitEffect;");
 
