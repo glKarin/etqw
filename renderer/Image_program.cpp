@@ -714,6 +714,9 @@ R_LoadImageProgram
 */
 void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamps, textureDepth_t *depth)
 {
+#ifdef _SPLASHDAMAGE
+	stageParms.Clear();
+#endif
 	idLexer src;
 
 	src.LoadMemory(name, strlen(name), name);

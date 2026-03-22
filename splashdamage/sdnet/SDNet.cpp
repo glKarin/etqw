@@ -123,6 +123,7 @@ sdNetTeamManager& sdNetService_Local::GetTeamManager() {
 	// Task management
 	//
 void sdNetService_Local::FreeTask( sdNetTask* task ) {
+	delete task;
 }
 
 	//
@@ -135,6 +136,7 @@ sdNetErrorCode_e sdNetService_Local::GetLastError() const {
 
 	// Start online service and connect to auth system
 sdNetTask* sdNetService_Local::Connect() {
+	serviceState = SS_ONLINE;
 	return new sdNetTask_Local;
 }
 

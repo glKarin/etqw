@@ -60,6 +60,7 @@ class idGuiModel
 		void	BeginEmitToCurrentView(const float modelMatrix[16], int allowInViewID, bool depthHack);
 		void	BeginEmitFullScreen();
 		void	End();
+		idVec4	CurrentColor();
 #endif
 
 		//---------------------------

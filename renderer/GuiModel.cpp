@@ -846,4 +846,11 @@ void idGuiModel::End()
 
 	Clear();
 }
+
+idVec4 idGuiModel::CurrentColor()
+{
+	if(!surf)
+		return vec4_one;
+	return *((idVec4 *)&surf->color[0]);
+}
 #endif

@@ -26,6 +26,8 @@ sdDeviceContextLocal::sdDeviceContextLocal()
 	enableClipping = false;
 	overStrikeMode = true;
 	clipRects.Clear();
+	tempColor = vec4_one;
+	usingTempColor = false;
 }
 
 void sdDeviceContextLocal::Reset() {
@@ -99,6 +101,7 @@ void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, flo
 }
 
 void sdDeviceContextLocal::DrawCinematic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, idSoundEmitter* referenceSound, float angle ) {
+	printf("ccc|%s\n", material->GetName());
 }
 
 void sdDeviceContextLocal::DrawClippedWinding( const idWinding2D& winding, const idMaterial* material ) {
@@ -146,8 +149,6 @@ void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idV
 		return;
 	}
 
-	renderSystem->SetColor(color);
-
 	float	s0, s1, t0, t1;
 	float scalex = 1.0f;
 	float scaley = 1.0f;
@@ -191,9 +192,13 @@ void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idV
 		return;
 	}
 
+	SetTempColor(color);
+
 	AdjustCoords(&x, &y, &w, &h);
 
 	DrawStretchPicRotated(x, y, w, h, s0, t0, s1, t1, material, angle);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawWindingMaterial( const idWinding2D& winding, const idMaterial* material, const idVec4& color ) {
@@ -205,11 +210,13 @@ void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, const i
         return;
     }
 
-	renderSystem->SetColor(color);
+	SetTempColor(color);
 
 	AdjustCoords(&x, &y, &w, &h);
 
 	DrawStretchPic(x, y, w, h, 0, 0, 0, 0, whiteImage);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, const idVec4 &color ) {
@@ -231,13 +238,15 @@ void sdDeviceContextLocal::DrawBox( float x, float y, float w, float h, float si
         return;
     }
 
-    renderSystem->SetColor(color);
+	SetTempColor(color);
 
     AdjustCoords(&x, &y, &w, &h);
     DrawStretchPic(x, y, size, h, 0, 0, 0, 0, whiteImage);
     DrawStretchPic(x + w - size, y, size, h, 0, 0, 0, 0, whiteImage);
     DrawStretchPic(x, y, w, size, 0, 0, 0, 0, whiteImage);
     DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, whiteImage);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, float size, const idVec4 &color ) {
@@ -281,6 +290,7 @@ void sdDeviceContextLocal::DrawTimer( const float x, const float y, const float 
 }
 
 qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
+	name = "fonts";
 	int c = fonts.Num();
 
 	for (int i = 0; i < c; i++) {
@@ -356,8 +366,7 @@ qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
 		return index;
 	} else {
 		common->Printf("Could not register font %s [%s]\n", name, fileName.c_str());
-		return 0;
-		//return -1;
+		return -1;
 	}
 }
 
@@ -390,7 +399,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	DrawText(str.c_str(), 1.0f, textAlign, idVec4(1,1,1,1), rect, wrap, -1, false, NULL, 0);
+	DrawText(str.c_str(), 0.3f, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
@@ -405,11 +414,11 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	width = DrawText(str.c_str(), 1.0f, textAlign, idVec4(1,1,1,1), rect, wrap, -1, true, lineBreaks, 0);
-	height = MaxCharHeight(1.0f);
+	width = DrawText(str.c_str(), 0.3f, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0);
+	height = MaxCharHeight(0.3f);
 
 	if (scale)
-		*scale = 1.0f;
+		*scale = 0.3f;
 }
 
 void sdDeviceContextLocal::OverrideAspectRationCorrection( bool setOverride ) {
@@ -563,7 +572,6 @@ void sdDeviceContextLocal::DrawStretchPic(float x, float y, float w, float h, fl
 	verts[3].tangents[1][2] = 0;
 
 	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, false);
-
 }
 
 void sdDeviceContextLocal::SetSize(float width, float height)
@@ -693,8 +701,22 @@ void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, floa
 		verts[i].xyz += origTrans;
 	}
 
-
 	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, (angle == 0.0) ? false : true);
+
+	if(shader)
+	{
+
+	idVec4 c = tr.guiModel->CurrentColor();
+	renderSystem->SetColor(colorRed);
+	idStr str = "";
+	str.Append(shader->GetName());
+	idWStr wstr = StrToWStr(str);
+	sdBounds2D bb = sdBounds2D(x,y,w,h);
+	bb.GetRight() = 640;
+	DrawText(wstr.c_str(), bb, 0);
+
+	renderSystem->SetColor(c);
+	}
 }
 
 void sdDeviceContextLocal::SetupFonts() {
@@ -937,12 +959,14 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 	textWidth = 0;
 	newLinePtr = NULL;
 
+	SetTempColor(color);
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
 			renderSystem->SetColor(color);
 			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale);
 		}
 
+		UnsetTempColor();
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
@@ -1032,6 +1056,7 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 			}
 
 			if (!wrap) {
+				UnsetTempColor();
 				return newLine;
 			}
 
@@ -1163,6 +1188,7 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 
                 // If wrap is disabled return at this point.
                 if( !wrap ) {
+					UnsetTempColor();
                     return lastBreak;
                 }
 
@@ -1202,7 +1228,25 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
     }
 #endif
 
+	UnsetTempColor();
+
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
+}
+
+void sdDeviceContextLocal::SetTempColor(const idVec4 &c)
+{
+	tempColor = tr.guiModel->CurrentColor();
+	renderSystem->SetColor(c);
+	usingTempColor = true;
+}
+
+void sdDeviceContextLocal::UnsetTempColor()
+{
+	if(usingTempColor)
+	{
+		usingTempColor = false;
+		renderSystem->SetColor(tempColor);
+	}
 }
 
 

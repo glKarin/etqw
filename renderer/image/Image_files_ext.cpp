@@ -163,7 +163,7 @@ void LoadDDS(const char *filename, byte **pic, int *width, int *height, ID_TIME_
     Mem_Free( fbuffer );
 
     if ( decodedImageData == NULL ) {
-        common->Warning( "stb_image was unable to load PNG %s : %s\n",
+        common->Warning( "stb_image was unable to load DDS %s : %s\n",
                          filename, stbi_failure_reason());
         return;
     }

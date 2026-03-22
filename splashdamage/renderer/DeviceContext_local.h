@@ -91,6 +91,8 @@ private:
 	int						MaxCharHeight(float scale);
 	int						MaxCharWidth(float scale);
 	int						CharWidth(const char c, float scale);
+	void					SetTempColor(const idVec4 &c);
+	void					UnsetTempColor();
 
 private:
 	enum {
@@ -108,6 +110,8 @@ private:
 	bool				    enableClipping;
 	idList<sdBounds2D>		clipRects;
 	const idMaterial		*whiteImage;
+	idVec4					tempColor;
+	bool					usingTempColor;
 
 	fontInfoEx_t			*activeFont;
 	fontInfo_t				*useFont;

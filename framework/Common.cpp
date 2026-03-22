@@ -3766,6 +3766,7 @@ void idCommonLocal::InitGame(void)
 	uiManager->Init();
 #ifdef _SPLASHDAMAGE
 	deviceContext->Reset();
+	networkService->Init();
 #endif
 
 	// startup the script debugger

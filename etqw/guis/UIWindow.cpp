@@ -647,7 +647,7 @@ sdUIWindow::OnActivate
 void sdUIWindow::OnActivate( void ) {
 	if ( RunEvent( sdUIEventInfo( WE_ACTIVATE, 0 ) ) ) {
 		if( sdUserInterfaceLocal::g_debugGUIEvents.GetBool() ) {
-			gameLocal.Printf( "%s: OnActivate", name.GetValue().c_str() );
+			gameLocal.Printf( "%s: OnActivate\n", name.GetValue().c_str() );
 		}
 	}
 

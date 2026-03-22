@@ -4,7 +4,7 @@
 #include "SDNetTask_local.h"
 
 sdNetTask_Local::sdNetTask_Local()
-    : taskStatus(TS_INITIAL),
+    : taskStatus(TS_DONE),
     errorCode(SDNET_NO_ERROR)
 {
 }

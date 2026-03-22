@@ -3334,6 +3334,9 @@ void idSessionLocal::Frame()
 			SetCDKeyGuiVars();
 		}
 	}
+#ifdef _SPLASHDAMAGE
+	game->RunFrame();
+#endif
 
 	// send frame and mouse events to active guis
 	GuiFrameEvents();

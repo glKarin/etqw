@@ -944,8 +944,16 @@ void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char
 	const char	*s;
 	char	*f;
 
+#ifdef _SPLASHDAMAGE
+	strcpy(fileName, "generated/dds/");
+	idList<char> tmp;
+	tmp.SetNum(imgName.Length() + 1);
+	memcpy(tmp.Ptr(), imgName.c_str(), imgName.Length());
+	f = tmp.Ptr();
+#else
 	strcpy(fileName, "dds/");
 	f = fileName + strlen(fileName);
+#endif
 
 	int depth = 0;
 
@@ -961,7 +969,13 @@ void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char
 			}
 
 			f++;
-		} else if (*s == '<' || *s == '>' || *s == ':' || *s == '|' || *s == '"' || *s == '.') {
+		} 
+#ifdef _SPLASHDAMAGE
+		else if ( idStr::IsBadFilenameChar(*s) )
+#else
+		else if (*s == '<' || *s == '>' || *s == ':' || *s == '|' || *s == '"' || *s == '.') 
+#endif
+		{
 			*f = '_';
 			f++;
 		} else if (*s == ' ' && *(f-1) == '/') {	// ignore a space right after a slash
@@ -973,6 +987,15 @@ void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char
 	}
 
 	*f++ = 0;
+#ifdef _SPLASHDAMAGE
+	int v14 = f - tmp.Ptr() - 1;
+	int v15 = MD5_BlockChecksum((byte *)tmp.Ptr(), v14);
+	idStr str = tmp.Ptr();
+	str.StripFilename();
+	const char *v16 = va("%ub%d", v15, v14);
+	str.AppendPath(v16);
+	strcat(fileName, str.c_str());
+#endif
 	strcat(fileName, ".dds");
 }
 
@@ -1819,6 +1842,16 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 		}
 
 		R_LoadImageProgram(imgName, &pic, &width, &height, &timestamp, &depth);
+#ifdef _SPLASHDAMAGE
+		if (pic == NULL) {
+			char filename[MAX_IMAGE_NAME];
+			ImageProgramStringToCompressedFileName(imgName, filename);
+
+			if (!generatorFunction) {
+				LoadDDS(filename, &pic, &width, &height, &timestamp);
+			}
+		}
+#endif
 
 		if (pic == NULL) {
 #ifdef _MULTITHREADxxx
