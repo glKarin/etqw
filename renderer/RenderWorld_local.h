@@ -265,6 +265,12 @@ class idRenderWorldLocal : public idRenderWorld
 		virtual void			SetupMatrices( const renderView_t* renderView, float* projectionMatrix, float* modelViewMatrix, const bool allowJitter );
 
 		virtual struct atmosLightProjection_t *FindAtmosLightProjection( int lightID );
+
+		idRenderModel 			*ParseShadowModel_Binary(idFile *file);
+		void					ParseNodes_Binary(idFile *file);
+		idRenderModel 			*ParseModel_Binary(idFile *file, const idStrList &materialsTable);
+		void					ParseInterAreaPortals_Binary(idFile *file);
+		bool					Parse_Binary();
 #endif
 
 #ifdef _D3BFG_CULLING
