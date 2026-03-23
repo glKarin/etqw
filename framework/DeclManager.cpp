@@ -1305,7 +1305,11 @@ void idDeclManagerLocal::Init(void)
 
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
 	RegisterDeclFolder("skins",			".skin",			DECL_SKIN);
+#ifdef _SPLASHDAMAGE
+	RegisterDeclFolder("sounds",			".sndshd",			DECL_SOUND);
+#else
 	RegisterDeclFolder("sound",			".sndshd",			DECL_SOUND);
+#endif
 
 #ifdef _RAVEN // quake4 new decl
 // jmarshall: Raven Decl Support

@@ -939,21 +939,285 @@ void idImage::GenerateCubeImage(const byte *pic[6], int size,
 ImageProgramStringToFileCompressedFileName
 ================
 */
+#ifdef _SPLASHDAMAGE
+void iImageProgramStringToCompressedFileName(const char *imageProg, char *fileName)
+{
+  int v4; // eax
+  char *v5; // edi
+  const char *v6; // esi
+  const char *v7; // ebx
+  intptr_t v8; // edx
+  const char *v9; // ecx
+  char v10; // al
+  char v11; // al
+  int v12; // ecx
+  char v13; // dl
+  size_t v14; // eax
+  int v15; // eax
+  char *v16; // eax
+  int v17; // [esp-4h] [ebp-14h]
+  char *Sourcea; // [esp+14h] [ebp+4h]
+
+  if ( idStr::CheckExtension(imageProg, "dds") )
+  {
+    idStr::Copynz(fileName, imageProg, 256);
+    return;
+  }
+  idStr::Copynz(fileName, "generated/dds/", 256);
+  v4 = 0;
+  if ( *fileName )
+  {
+    do
+      ++v4;
+    while ( fileName[v4] );
+  }
+  v5 = &fileName[v4];
+  Sourcea = 0;
+  v6 = imageProg;
+  v7 = imageProg;
+  if ( *imageProg )
+  {
+    v8 = -1 - (intptr_t)imageProg;
+    while ( 1 )
+    {
+      v9 = v7 + 1;
+      if ( &v7[v8 + 1] == (char *)128 )
+        goto LABEL_27;
+      v10 = *v7;
+      if ( *v7 == 47 || v10 == 92 || v10 == 40 )
+        break;
+LABEL_26:
+      v7 = v9;
+      if ( !*v9 )
+        goto LABEL_27;
+    }
+    if ( (intptr_t)Sourcea < 4 )
+    {
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( *v6 == 32 )
+      {
+        if ( ++v6 >= v7 )
+        {
+LABEL_25:
+          *v5++ = 47;
+          ++Sourcea;
+          v6 = v9;
+          goto LABEL_26;
+        }
+      }
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( 1 )
+      {
+        if ( idStr::IsBadFilenameChar(*v6) )
+        {
+          *v5 = 95;
+        }
+        else
+        {
+          v11 = *v6;
+          if ( *v6 == 41 || v11 == 44 )
+            goto LABEL_23;
+          *v5 = v11;
+        }
+        ++v5;
+LABEL_23:
+        if ( ++v6 >= v7 )
+        {
+          v8 = -1 - (intptr_t)imageProg;
+          v9 = v7 + 1;
+          goto LABEL_25;
+        }
+      }
+    }
+  }
+LABEL_27:
+  *v5 = 0;
+  v12 = 0;
+  v13 = *imageProg;
+  if ( 3 == 3 )
+  {
+    if ( v13 )
+    {
+      do
+        ++v12;
+      while ( imageProg[v12] );
+    }
+    v14 = 0;
+    if ( v13 )
+    {
+      do
+        ++v14;
+      while ( imageProg[v14] );
+    }
+  }
+  else
+  {
+    if ( v13 )
+    {
+      do
+        ++v12;
+      while ( imageProg[v12] );
+    }
+    v14 = 0;
+    if ( v13 )
+    {
+      do
+        ++v14;
+      while ( imageProg[v14] );
+    }
+  }
+  v17 = v12;
+  v15 = MD5_BlockChecksum((byte *)imageProg, v14);
+  v16 = va("%ub%d.dds", v15, v17);
+  idStr::Append(fileName, 256, v16);
+}
+#endif
+
 void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char *fileName) const
 {
+#ifdef _SPLASHDAMAGExxx
+  int v4; // eax
+  char *v5; // edi
+  const char *v6; // esi
+  char *v7; // ebx
+  intptr_t v8; // edx
+  char *v9; // ecx
+  char v10; // al
+  char v11; // al
+  int v12; // ecx
+  char v13; // dl
+  size_t v14; // eax
+  int v15; // eax
+  char *v16; // eax
+  int v17; // [esp-4h] [ebp-14h]
+  char *Sourcea; // [esp+14h] [ebp+4h]
+
+  if ( idStr::CheckExtension(imageProg, "dds") )
+  {
+    idStr::Copynz(fileName, imageProg, 256);
+    return;
+  }
+  idStr::Copynz(fileName, "generated/dds/", 256);
+  v4 = 0;
+  if ( *fileName )
+  {
+    do
+      ++v4;
+    while ( fileName[v4] );
+  }
+  v5 = &fileName[v4];
+  Sourcea = 0;
+  v6 = imageProg;
+  v7 = imageProg;
+  if ( *imageProg )
+  {
+    v8 = -1 - (intptr_t)imageProg;
+    while ( 1 )
+    {
+      v9 = v7 + 1;
+      if ( &v7[v8 + 1] == (char *)128 )
+        goto LABEL_27;
+      v10 = *v7;
+      if ( *v7 == 47 || v10 == 92 || v10 == 40 )
+        break;
+LABEL_26:
+      v7 = v9;
+      if ( !*v9 )
+        goto LABEL_27;
+    }
+    if ( (intptr_t)Sourcea < 4 )
+    {
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( *v6 == 32 )
+      {
+        if ( ++v6 >= v7 )
+        {
+LABEL_25:
+          *v5++ = 47;
+          ++Sourcea;
+          v6 = v9;
+          goto LABEL_26;
+        }
+      }
+      if ( v6 >= v7 )
+        goto LABEL_25;
+      while ( 1 )
+      {
+        if ( idStr::IsBadFilenameChar(*v6) )
+        {
+          *v5 = 95;
+        }
+        else
+        {
+          v11 = *v6;
+          if ( *v6 == 41 || v11 == 44 )
+            goto LABEL_23;
+          *v5 = v11;
+        }
+        ++v5;
+LABEL_23:
+        if ( ++v6 >= v7 )
+        {
+          v8 = -1 - (intptr_t)imageProg;
+          v9 = v7 + 1;
+          goto LABEL_25;
+        }
+      }
+    }
+  }
+LABEL_27:
+  *v5 = 0;
+  v12 = 0;
+  v13 = *imageProg;
+  if ( 3 == 3 )
+  {
+    if ( v13 )
+    {
+      do
+        ++v12;
+      while ( imageProg[v12] );
+    }
+    v14 = 0;
+    if ( v13 )
+    {
+      do
+        ++v14;
+      while ( imageProg[v14] );
+    }
+  }
+  else
+  {
+    if ( v13 )
+    {
+      do
+        ++v12;
+      while ( imageProg[v12] );
+    }
+    v14 = 0;
+    if ( v13 )
+    {
+      do
+        ++v14;
+      while ( imageProg[v14] );
+    }
+  }
+  v17 = v12;
+  v15 = MD5_BlockChecksum((byte *)imageProg, v14);
+  v16 = va("%ub%d.dds", v15, v17);
+  idStr::Append(fileName, 256, v16);
+#else
 	const char	*s;
 	char	*f;
 
 #ifdef _SPLASHDAMAGE
 	strcpy(fileName, "generated/dds/");
-	idList<char> tmp;
-	tmp.SetNum(imgName.Length() + 1);
-	memcpy(tmp.Ptr(), imgName.c_str(), imgName.Length());
-	f = tmp.Ptr();
 #else
 	strcpy(fileName, "dds/");
-	f = fileName + strlen(fileName);
 #endif
+	f = fileName + strlen(fileName);
 
 	int depth = 0;
 
@@ -969,16 +1233,17 @@ void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char
 			}
 
 			f++;
-		} 
 #ifdef _SPLASHDAMAGE
-		else if ( idStr::IsBadFilenameChar(*s) )
+		} else if (*s == ' ' && *(f-1) == '/') {	// ignore a space right after a slash
+		} else if ( idStr::IsBadFilenameChar(*s) ) {
+			*f = '_';
+			f++;
 #else
-		else if (*s == '<' || *s == '>' || *s == ':' || *s == '|' || *s == '"' || *s == '.') 
-#endif
-		{
+		} else if (*s == '<' || *s == '>' || *s == ':' || *s == '|' || *s == '"' || *s == '.') {
 			*f = '_';
 			f++;
 		} else if (*s == ' ' && *(f-1) == '/') {	// ignore a space right after a slash
+#endif
 		} else if (*s == ')' || *s == ',') {		// always ignore these
 		} else {
 			*f = *s;
@@ -988,15 +1253,16 @@ void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char
 
 	*f++ = 0;
 #ifdef _SPLASHDAMAGE
-	int v14 = f - tmp.Ptr() - 1;
-	int v15 = MD5_BlockChecksum((byte *)tmp.Ptr(), v14);
-	idStr str = tmp.Ptr();
-	str.StripFilename();
+	int v14 = idStr::Length(imageProg);
+	int v15 = MD5_BlockChecksum((byte *)imageProg, v14);
 	const char *v16 = va("%ub%d", v15, v14);
+	idStr str = fileName;
+	str.StripFilename();
 	str.AppendPath(v16);
-	strcat(fileName, str.c_str());
+	idStr::Copynz(fileName, str.c_str(), MAX_IMAGE_NAME);
 #endif
 	strcat(fileName, ".dds");
+#endif
 }
 
 /*
@@ -1847,6 +2113,22 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 			char filename[MAX_IMAGE_NAME];
 			ImageProgramStringToCompressedFileName(imgName, filename);
 			LoadDDS(filename, &pic, &width, &height, &timestamp);
+			/*
+			Sys_Printf("CDDS:%s|%s|%p\n", imgName.c_str(), filename, pic);
+			R_StaticFree(pic);
+			pic = NULL;
+
+			iImageProgramStringToCompressedFileName((char *)imgName.c_str(), filename);
+			LoadDDS(filename, &pic, &width, &height, &timestamp);
+			Sys_Printf("CDD3:%s|%s|%p\n", imgName.c_str(), filename, pic);
+			R_StaticFree(pic);
+			pic = NULL;
+			iImageProgramStringToCompressedFileName((char *)imgName.c_str(), filename);
+			LoadDDS(filename, &pic, &width, &height, &timestamp);
+			Sys_Printf("CDD5:%s|%s|%p\n", imgName.c_str(), filename, pic);
+			R_StaticFree(pic);
+			pic = NULL;
+			*/
 		}
 #endif
 

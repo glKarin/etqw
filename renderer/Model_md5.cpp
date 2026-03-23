@@ -64,6 +64,9 @@ idMD5Mesh::idMD5Mesh()
 	numTris			= 0;
 	deformInfo		= NULL;
 	surfaceNum		= 0;
+#ifdef _SPLASHDAMAGE
+	flags			= 0;
+#endif
 }
 
 /*
@@ -101,6 +104,9 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 	idList<int>	numWeightsForVertex;
 	int			maxweight;
 	idList<vertexWeight_t> tempWeights;
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 name
+	idStr meshName;
+#endif
 
 	parser.ExpectTokenString("{");
 
@@ -109,6 +115,9 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 	//
 	if (parser.CheckTokenString("name")) {
 		parser.ReadToken(&name);
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 name
+		meshName = name.c_str();
+#endif
 	}
 
 	//
@@ -121,6 +130,35 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 
 	shader = declManager->FindMaterial(shaderName);
 
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 flags
+	parser.ReadToken(&token);
+	if(!idStr::Icmp(token, "flags"))
+	{
+		parser.ExpectTokenString("{");
+		while(true) {
+			if(!parser.ReadToken(&token))
+			{
+				break;
+			}
+			if(!idStr::Cmp(token, "}"))
+				break;
+
+			if(!idStr::Icmp(token, "vertexColor")) {
+				flags |= MD5MF_VERTEX_COLOR;
+				continue;
+			}
+
+			if(!idStr::Icmp(token, "noAnimate")) {
+				flags |= MD5MF_NO_ANIMATE;
+				continue;
+			}
+
+			common->Warning("Unknown flag '%s' in mesh '%s'", token.c_str(), meshName.c_str());
+		}
+	}
+	else
+		parser.UnreadToken(&token);
+#endif
 	//
 	// parse texture coordinates
 	//
@@ -134,6 +172,9 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 	texCoords.SetNum(count);
 	firstWeightForVertex.SetNum(count);
 	numWeightsForVertex.SetNum(count);
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
+	vertColors.SetNum(count);
+#endif
 
 	numWeights = 0;
 	maxweight = 0;
@@ -146,6 +187,19 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 
 		firstWeightForVertex[ i ]	= parser.ParseInt();
 		numWeightsForVertex[ i ]	= parser.ParseInt();
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
+		parser.ReadToken(&token);
+		if(!idStr::Cmp(token, "(")) // ( 1 1 1 1 )
+		{
+			vertColors[i].r = (byte)idMath::FtoiFast(parser.ParseFloat() * 255.0f);
+			vertColors[i].g = (byte)idMath::FtoiFast(parser.ParseFloat() * 255.0f);
+			vertColors[i].b = (byte)idMath::FtoiFast(parser.ParseFloat() * 255.0f);
+			vertColors[i].a = (byte)idMath::FtoiFast(parser.ParseFloat() * 255.0f);
+			parser.ExpectTokenString(")");
+		}
+		else
+			parser.UnreadToken(&token);
+#endif
 
 		if (!numWeightsForVertex[ i ]) {
 			parser.Error("Vertex without any joint weights.");
@@ -260,6 +314,15 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 	for (i = 0; i < texCoords.Num(); i++) {
 		verts[i].Clear();
 		verts[i].st = texCoords[i];
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
+		if(flags & MD5MF_VERTEX_COLOR)
+		{
+			verts[i].color[0] = vertColors[i].r;
+			verts[i].color[1] = vertColors[i].g;
+			verts[i].color[2] = vertColors[i].b;
+			verts[i].color[3] = vertColors[i].a;
+		}
+#endif
 	}
 
 	TransformVerts(verts, joints);
@@ -352,6 +415,15 @@ void idMD5Mesh::UpdateSurface(const struct renderEntity_s *ent, const idJointMat
 		for (i = 0; i < deformInfo->numSourceVerts; i++) {
 			tri->verts[i].Clear();
 			tri->verts[i].st = texCoords[i];
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
+			if(flags & MD5MF_VERTEX_COLOR)
+			{
+				tri->verts[i].color[0] = vertColors[i].r;
+				tri->verts[i].color[1] = vertColors[i].g;
+				tri->verts[i].color[2] = vertColors[i].b;
+				tri->verts[i].color[3] = vertColors[i].a;
+			}
+#endif
 		}
 	}
 

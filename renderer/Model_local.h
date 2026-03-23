@@ -179,6 +179,10 @@ class idRenderModelStatic : public idRenderModel
 		virtual bool				IsFinishedPartialLoading( void ) const;
 		virtual int					NumMeshes( const int lod = 0 ) const;
 		virtual idBounds			CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim );
+		bool						LoadModelBinary(const char *fileName);
+
+	private:
+		idStr						ModelBinaryName(const char *fileName);
 #endif
 
 	public:
@@ -250,6 +254,17 @@ class idMD5Mesh
 
 		void						TransformVerts(idDrawVert *verts, const idJointMat *joints);
 		void						TransformScaledVerts(idDrawVert *verts, const idJointMat *joints, float scale);
+#ifdef _SPLASHDAMAGE
+		struct vertColor_t {
+			byte r, g, b, a;
+		};
+		idList<vertColor_t>			vertColors;
+		int							flags;
+		enum md5meshFlags {
+			MD5MF_VERTEX_COLOR = 1,
+			MD5MF_NO_ANIMATE = 2,
+		};
+#endif
 };
 
 class idRenderModelMD5 : public idRenderModelStatic

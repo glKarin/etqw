@@ -205,6 +205,10 @@ void idGuiModel::EmitSurface(guiModelSurface_t *surf, float modelMatrix[16], flo
 
 	renderEntity_t renderEntity;
 	memset(&renderEntity, 0, sizeof(renderEntity));
+#ifdef _SPLASHDAMAGE
+	if(surf->registerShaderParms)
+		memcpy(renderEntity.shaderParms, surf->registers, sizeof(surf->registers));
+#endif
 	memcpy(renderEntity.shaderParms, surf->color, sizeof(surf->color));
 
 	viewEntity_t *guiSpace = (viewEntity_t *)R_ClearedFrameAlloc(sizeof(*guiSpace));
@@ -341,6 +345,10 @@ void idGuiModel::AdvanceSurf()
 	s.firstIndex = indexes.Num();
 	s.numVerts = 0;
 	s.firstVert = verts.Num();
+#ifdef _SPLASHDAMAGE
+	memset(&s.registers[0], 0, sizeof(s.registers));
+	s.registerShaderParms = false;
+#endif
 
 	surfaces.Append(s);
 	surf = &surfaces[ surfaces.Num() - 1 ];
@@ -853,4 +861,54 @@ idVec4 idGuiModel::CurrentColor()
 		return vec4_one;
 	return *((idVec4 *)&surf->color[0]);
 }
+
+void idGuiModel::SetRegister(int index, float value)
+{
+	if (!glConfig.isInitialized) {
+		return;
+	}
+	if(index >= MAX_ENTITY_SHADER_PARMS)
+		return;
+
+	if(surf->registers[index] == value && surf->registerShaderParms) {
+		return;	// no change
+	}
+
+	if (surf->numVerts) {
+		AdvanceSurf();
+	}
+
+	// change the parms
+	surf->registers[index] = value;
+	surf->registerShaderParms = true;
+}
+
+void idGuiModel::SetRegisters(const float *values)
+{
+	if (!glConfig.isInitialized) {
+		return;
+	}
+
+	bool enable = NULL != values;
+
+	if(enable) {
+		if(surf->registerShaderParms && memcmp(values, surf->registers, sizeof(surf->registers)) == 0)
+			return;	// no change
+	}
+	else
+	{
+		if(!surf->registerShaderParms)
+			return;	// no change
+	}
+
+	if (surf->numVerts) {
+		AdvanceSurf();
+	}
+
+	// change the parms
+	surf->registerShaderParms = enable;
+	if(enable)
+		memcpy(&surf->registers[0], values, sizeof(surf->registers));
+}
+
 #endif

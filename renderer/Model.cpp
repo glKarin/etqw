@@ -330,6 +330,11 @@ void idRenderModelStatic::InitFromFile(const char *fileName)
 	} else if (extension.Icmp("ma") == 0) {
 		loaded		= LoadMA(name);
 		reloadable	= true;
+#ifdef _SPLASHDAMAGE //karin: modelb
+	} else if (extension.Icmp("modelb") == 0) {
+		loaded		= LoadModelBinary(name);
+		reloadable	= true;
+#endif
 #ifdef MD5_STATIC_MESH_EXT
     } else if (extension.Icmp(MD5_STATIC_MESH_EXT) == 0) {
         loaded		= LoadMD5Mesh(name);
@@ -374,6 +379,14 @@ void idRenderModelStatic::InitFromFile(const char *fileName)
 		common->Warning("idRenderModelStatic::InitFromFile: unknown type for model: \'%s\'", name.c_str());
 		loaded		= false;
 	}
+#ifdef _SPLASHDAMAGE //karin: modelb
+	if (!loaded && extension.Icmp("modelb")) {
+		idStr modelbName = ModelBinaryName(name);
+		loaded		= LoadModelBinary(modelbName.c_str());
+		//printf("lll|%s|%s|%d\n", fileName, modelbName.c_str(),loaded);
+		reloadable	= true;
+	}
+#endif
 
 	if (!loaded) {
 		common->Warning("Couldn't load model: '%s'", name.c_str());
@@ -6009,3 +6022,110 @@ bool idRenderModelStatic::ConvertFBXToModelSurfaces( const idModelFbx* fbx )
 	return true;
 }
 #endif
+
+#ifdef _SPLASHDAMAGE
+idStr idRenderModelStatic::ModelBinaryName(const char *fileName)
+{
+	idStr str("generated/modelb");
+	str.AppendPath(fileName);
+	str.SetFileExtension(".modelb");
+	return str;
+}
+
+#define MODELB_VERSION 1
+bool idRenderModelStatic::LoadModelBinary(const char *fileName)
+{
+	idFile *file = fileSystem->OpenFileRead(fileName);
+	if(!file)
+	{
+		return false;
+	}
+
+	int version;
+	file->ReadInt(version);
+	if(version != MODELB_VERSION)
+	{
+		common->Warning("modelb : wrong version (%i should be %i) in '%s'", version, MODELB_VERSION, fileName);
+		fileSystem->CloseFile(file);
+		return false;
+	}
+
+	idBounds bounds;
+	file->ReadFloat(bounds[0][0]);
+	file->ReadFloat(bounds[0][1]);
+	file->ReadFloat(bounds[0][2]);
+	file->ReadFloat(bounds[1][0]);
+	file->ReadFloat(bounds[1][1]);
+	file->ReadFloat(bounds[1][2]);
+
+	int numSurf;
+	file->ReadInt(numSurf);
+	if(numSurf <= 0)
+	{
+		common->Warning("modelb : read %i surface in '%s'", numSurf, fileName);
+		fileSystem->CloseFile(file);
+		return false;
+	}
+
+
+	for(int i = 0; i < numSurf; i++)
+	{
+		srfTriangles_t *tri = R_AllocStaticTriSurf();
+		tri->generateNormals = false;
+
+		file->ReadFloat(tri->bounds[0][0]);
+		file->ReadFloat(tri->bounds[0][1]);
+		file->ReadFloat(tri->bounds[0][2]);
+		file->ReadFloat(tri->bounds[1][0]);
+		file->ReadFloat(tri->bounds[1][1]);
+		file->ReadFloat(tri->bounds[1][2]);
+
+		file->ReadInt(tri->numVerts);
+		file->ReadInt(tri->numIndexes);
+		idStr shader;
+		file->ReadString(shader);
+
+		R_AllocStaticTriSurfVerts(tri, tri->numVerts);
+		idDrawVert *dv = &tri->verts[0];
+		for(int m = 0; m < tri->numVerts; m++, dv++)
+		{
+			file->ReadVec3(dv->xyz);
+			file->ReadVec2(dv->st);
+			file->ReadVec3(dv->normal);
+			idVec4 tangents;
+			file->ReadVec4(tangents);
+			dv->SetTangent(tangents.ToVec3());
+			dv->SetBiTangentSign(tangents[3]);
+			file->ReadUnsignedChar(dv->color[0]);
+			file->ReadUnsignedChar(dv->color[1]);
+			file->ReadUnsignedChar(dv->color[2]);
+			file->ReadUnsignedChar(dv->color[3]);
+		}
+
+		R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
+		unsigned short sh;
+		for(int m = 0; m < tri->numIndexes; m++)
+		{
+			file->ReadUnsignedShort(sh);
+			tri->indexes[m] = sh;
+		}
+
+		modelSurface_t surf;
+		surf.id = i;
+		surf.geometry = tri;
+#ifdef _SPLASHDAMAGE
+		surf.material = declManager->FindMaterial(shader);
+#else
+		surf.shader = declManager->FindMaterial(shader);
+#endif
+		AddSurface(surf);
+	}
+
+	this->bounds = bounds;
+	
+	fileSystem->CloseFile(file);
+
+	return true;
+}
+#endif
+

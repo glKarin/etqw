@@ -287,6 +287,15 @@ bool idSoundShader::ParseShader(idLexer &src)
 			noShakes = true;
 		}
 #endif
+#ifdef _SPLASHDAMAGE //karin: sound shader parsing
+		else if (!token.Icmp("compression")) // compression wav
+		{
+			src.ExpectAnyToken(&token);
+		}
+		else if (!token.Icmp("occlude_once"))
+		{
+		}
+#endif
 		// shakes screen
 		else if (!token.Icmp("shakes")) {
 			src.ExpectAnyToken(&token);

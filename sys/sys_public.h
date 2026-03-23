@@ -352,12 +352,20 @@ public:
 
 	void						FreeData( void );
 
-	bool						IsKeyEvent( void ) const { return evType == SE_KEY; }
+	bool						IsKeyEvent( void ) const { return evType == SE_KEY
+#if 1
+		&& !(evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) 
+#endif
+		; }
 	bool						IsCharEvent( void ) const { return evType == SE_CHAR; }
 	bool						IsRealMouseEvent( void ) const { return evType == SE_MOUSE; }
 	bool						IsMouseEvent( void ) const { return evType == SE_MOUSE || evType == SE_CONTROLLER_MOUSE; }
 	bool						IsControllerMouseEvent( void ) const { return evType == SE_CONTROLLER_MOUSE; }
-	bool						IsMouseButtonEvent( void ) const { return evType == SE_MOUSE_BUTTON; }
+	bool						IsMouseButtonEvent( void ) const { return 
+#if 1
+		(evType == SE_KEY && evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) || 
+#endif
+		evType == SE_MOUSE_BUTTON; }
 	bool						IsConsoleEvent( void ) const { return evType == SE_CONSOLE; }
 	bool						IsControllerButtonEvent( void ) const { return evType == SE_CONTROLLER_BUTTON; }
 	bool						IsGuiEvent( void ) const { return evType == SE_GUI; }

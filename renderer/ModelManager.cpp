@@ -391,6 +391,11 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 		model = new hhRenderModelBeam;
 		model->InitFromFile(modelName);
 #endif
+#ifdef _SPLASHDAMAGE //karin: modelb
+	} else if (extension.Icmp("modelb") == 0) {
+		model = new idRenderModelStatic;
+		model->InitFromFile(modelName);
+#endif
 	} else {
 
 		if (extension.Length()) {

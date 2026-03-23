@@ -530,11 +530,18 @@ void Sys_SyncState(void)
             state |= STATE_LOADING;
         else
         {
-            idUserInterface *gui = sessLocal.GetActiveMenu();
-            if(!gui)
-                state |= STATE_GAME;
-            else
+#ifdef _SPLASHDAMAGE
+            if(game->IsMainMenuActive())
                 state |= STATE_MENU;
+            else
+                state |= STATE_GAME;
+#else
+            idUserInterface *gui = sessLocal.GetActiveMenu();
+            if(gui)
+                state |= STATE_MENU;
+            else
+                state |= STATE_GAME;
+#endif
         }
         if(console->Active())
             state |= STATE_CONSOLE;

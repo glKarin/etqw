@@ -34,6 +34,10 @@ typedef struct {
 	int					numVerts;
 	int					firstIndex;
 	int					numIndexes;
+#ifdef _SPLASHDAMAGE
+	float				registers[MAX_ENTITY_SHADER_PARMS];
+	bool				registerShaderParms;
+#endif
 } guiModelSurface_t;
 
 class idGuiModel
@@ -61,6 +65,8 @@ class idGuiModel
 		void	BeginEmitFullScreen();
 		void	End();
 		idVec4	CurrentColor();
+		void	SetRegister(int index, float value);
+		void	SetRegisters(const float *values);
 #endif
 
 		//---------------------------

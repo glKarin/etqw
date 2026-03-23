@@ -42,7 +42,11 @@ If you have questions concerning this license or the applicable additional terms
 #define MD5_MESH_EXT			"md5mesh"
 #define MD5_ANIM_EXT			"md5anim"
 #define MD5_CAMERA_EXT			"md5camera"
+#ifdef _SPLASHDAMAGE
+#define MD5_VERSION				11
+#else
 #define MD5_VERSION				10
+#endif
 
 #define MD5_STATIC_MESH_EXT     "md5meshs" // mark as static model, but file content is same as md5mesh
 
