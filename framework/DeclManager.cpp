@@ -1019,8 +1019,7 @@ int idDeclFile::LoadAndParse()
 #ifdef _SPLASHDAMAGE
 		idStrList dependencies;
 		int cd = src.GetCurrentDependency();
-		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd))
-		{
+		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd)) {
 			dependencies.AddUnique(d);
 		}
 		src.PushDependencies();
@@ -1090,12 +1089,12 @@ int idDeclFile::LoadAndParse()
 
 #ifdef _SPLASHDAMAGE
 		cd = src.GetCurrentDependency();
-		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd))
-		{
+		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd)) {
 			newDecl->AddIncludeDependency(d);
 		}
-		for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor)
+		for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor) {
 			newDecl->AddIncludeDependency(*itor);
+		}
 #endif
 		// if it is currently in use, reparse it immedaitely
 		if (reparse) {

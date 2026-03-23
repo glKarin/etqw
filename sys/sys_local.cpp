@@ -160,24 +160,24 @@ void idSysLocal::DLL_GetFileName(const char *baseName, char *dllName, int maxLen
 #ifdef _SPLASHDAMAGE
 const sdSysEvent* idSysLocal::GenerateMouseButtonEvent(int button, bool down)
 {
-	static sysEvent_t ev;
-	ev.evType = SE_KEY;
-	ev.evValue = K_MOUSE1 + button - 1;
-	ev.evValue2 = down;
-	ev.evPtrLength = 0;
-	ev.evPtr = NULL;
-	return &ev;
+	sysEvent_t *ev = new sysEvent_t;
+	ev->evType = SE_KEY;
+	ev->evValue = K_MOUSE1 + button - 1;
+	ev->evValue2 = down;
+	ev->evPtrLength = 0;
+	ev->evPtr = NULL;
+	return ev;
 }
 
 const sdSysEvent* idSysLocal::GenerateMouseMoveEvent(int deltax, int deltay)
 {
-	static sysEvent_t ev;
-	ev.evType = SE_MOUSE;
-	ev.evValue = deltax;
-	ev.evValue2 = deltay;
-	ev.evPtrLength = 0;
-	ev.evPtr = NULL;
-	return &ev;
+	sysEvent_t *ev = new sysEvent_t;
+	ev->evType = SE_MOUSE;
+	ev->evValue = deltax;
+	ev->evValue2 = deltay;
+	ev->evPtrLength = 0;
+	ev->evPtr = NULL;
+	return ev;
 }
 #else
 sysEvent_t idSysLocal::GenerateMouseButtonEvent(int button, bool down)
@@ -291,19 +291,26 @@ void sdSysEvent::Save( idFile* file ) {
 }
 
 void sdSysEvent::Restore( idFile* file ) {
-	file->ReadInt( (int&)evType );
+	int type;
+	file->ReadInt( type );
+	evType = (sysEventType_t)type;
 	file->ReadInt( evValue );
 	file->ReadInt( evValue2 );
-	file->ReadInt( evPtrLength );
+	int _evPtrLength;
+	file->ReadInt( _evPtrLength );
 
 	FreeData();
-	if ( evPtrLength ) {
-		evPtr = Mem_Alloc( evPtrLength );
-		file->Read( evPtr, evPtrLength );
+	evPtrLength = _evPtrLength;
+	if ( _evPtrLength ) {
+		evPtr = Mem_Alloc( _evPtrLength );
+		file->Read( evPtr, _evPtrLength );
 	}
 }
 
 sdSysEvent& sdSysEvent::operator=( const sdSysEvent& rhs ) {
+	if (&rhs == this)
+		return *this;
+
 	evType = rhs.evType;
 	evValue = rhs.evValue;
 	evValue2 = rhs.evValue2;
@@ -320,10 +327,38 @@ sdSysEvent& sdSysEvent::operator=( const sdSysEvent& rhs ) {
 #endif
 
 #ifdef _SPLASHDAMAGE
+#include <locale.h>
 #include "sys/sys_keyboard.h"
 #include "sys/sys_ime.h"
 
+ID_INLINE static void Sys_ConvertSysTimeToStdTm(struct tm &t, const sysTime_t &src) {
+	t.tm_sec = src.tm_sec;
+	t.tm_min = src.tm_min;
+	t.tm_hour = src.tm_hour;
+	t.tm_mday = src.tm_mday;
+	t.tm_mon = src.tm_mon;
+	t.tm_year = src.tm_year;
+	t.tm_wday = src.tm_wday;
+	t.tm_yday = src.tm_yday;
+	t.tm_isdst = src.tm_isdst;
+}
+
+ID_INLINE static void Sys_ConvertStdTmToSysTime(sysTime_t &t, const struct tm &src) {
+	t.tm_sec = src.tm_sec;
+	t.tm_min = src.tm_min;
+	t.tm_hour = src.tm_hour;
+	t.tm_mday = src.tm_mday;
+	t.tm_mon = src.tm_mon;
+	t.tm_year = src.tm_year;
+	t.tm_wday = src.tm_wday;
+	t.tm_yday = src.tm_yday;
+	t.tm_isdst = src.tm_isdst;
+}
+
 void idSysLocal::GetCPUInfo( cpuInfo_t& info ) {
+	int packageNum = 0;
+	Sys_CPUCount( info.logicalNum, info.physicalNum, packageNum );
+	info.hyperThreadedStatus = 0;
 }
 
 int idSysLocal::Milliseconds() {
@@ -331,22 +366,46 @@ int idSysLocal::Milliseconds() {
 }
 
 time_t idSysLocal::RealTime( sysTime_t* sysTime ) {
-	return 0;
+	time_t t = time(NULL);
+	SecondsToTime(t, *sysTime);
+	return t;
 }
 
 const char* idSysLocal::TimeToSystemStr( const sysTime_t& sysTime ) {
-	return "";
+	static char ret[64];
+	struct tm t;
+	Sys_ConvertSysTimeToStdTm(t, sysTime);
+	strftime(ret, sizeof(ret), "%H:%M:%S", &t);
+	return ret;
 }
 
 const char* idSysLocal::TimeAndDateToSystemStr( const sysTime_t& sysTime ) {
-	return "";
+	static char ret[64];
+	struct tm t;
+	Sys_ConvertSysTimeToStdTm(t, sysTime);
+	strftime(ret, sizeof(ret), "%Y-%m-%d %H:%M:%S", &t);
+	return ret;
 }
 
 time_t idSysLocal::TimeDiff( const sysTime_t& from, const sysTime_t& to ) {
-	return 0;
+	struct tm a, b;
+	Sys_ConvertSysTimeToStdTm(a, from);
+	Sys_ConvertSysTimeToStdTm(b, to);
+	time_t at = mktime(&a);
+	time_t bt = mktime(&b);
+	return bt - at;
 }
 
 void idSysLocal::SecondsToTime( const time_t t, sysTime_t& out, bool localTime ) {
+	struct tm res;
+	struct tm *tmp;
+	if (localTime) {
+		tmp = localtime(&t);
+	} else {
+		tmp = gmtime(&t);
+	}
+	memcpy(&res, tmp, sizeof(res));
+	Sys_ConvertStdTmToSysTime(out, res);
 }
 
 const char * idSysLocal::GetCurCallStackStr( int depth ) {
@@ -369,10 +428,14 @@ void idSysLocal::ProcessOSEvents() {
 }
 
 const sdSysEvent* idSysLocal::GenerateGuiEvent( int value ) {
-	return NULL;
+	sysEvent_t *ev = new sysEvent_t;
+	ev->evType = SE_GUI;
+	ev->evValue = value;
+	return ev;
 }
 
 void idSysLocal::FreeEvent( const sdSysEvent* event ) {
+	delete event;
 }
 
 idWStr idSysLocal::GetClipboardData( void ) {
@@ -399,17 +462,20 @@ sdIME& idSysLocal::IME() {
 }
 
 void idSysLocal::SetSystemLocale() {
+	//setlocale(LC_ALL, "");
+	//setlocale(LC_ALL, "C");
 }
 
 void idSysLocal::SetDefaultLocale() {
+	//setlocale(LC_ALL, "");
 }
 
 const char * idSysLocal::NetAdrToString( const netadr_t& a ) const {
-	return "";
+	return Sys_NetAdrToString(a);
 }
 
 bool idSysLocal::StringToNetAdr( const char *s, netadr_t *a, bool doDNSResolve ) const {
-	return true;
+	return Sys_StringToNetAdr(s, a, doDNSResolve);
 }
 
 #endif

@@ -270,7 +270,7 @@ typedef struct {
 	int					numVertexParms;
 	int					vertexParms[MAX_VERTEX_PARMS][4];	// evaluated register indexes
 
-#if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) //karin: fragment shader parms
+#if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) || defined(_SPLASHDAMAGE) //karin: fragment shader parms
 // RAVEN BEGIN
 // AReis: New Fragment Parm stuff.
     int                 numFragmentParms;
@@ -1037,6 +1037,17 @@ class idMaterial : public idDecl
 	private:
 		// parse the entire material
 		void				CommonInit();
+#ifdef _SPLASHDAMAGE
+		void				ParseMaterial(idParser &src);
+		bool				MatchToken(idParser &src, const char *match);
+		void				ParseSort(idParser &src);
+		void				ParseBlend(idParser &src, shaderStage_t *stage);
+		void				ParseVertexParm(idParser &src, newShaderStage_t *newStage);
+		void				ParseFragmentMap(idParser &src, newShaderStage_t *newStage);
+		void				ParseStage(idParser &src, const textureRepeat_t trpDefault = TR_REPEAT);
+		void				ParseDeform(idParser &src);
+		void				ParseDecalInfo(idParser &src);
+#else
 		void				ParseMaterial(idLexer &src);
 		bool				MatchToken(idLexer &src, const char *match);
 		void				ParseSort(idLexer &src);
@@ -1046,15 +1057,23 @@ class idMaterial : public idDecl
 		void				ParseStage(idLexer &src, const textureRepeat_t trpDefault = TR_REPEAT);
 		void				ParseDeform(idLexer &src);
 		void				ParseDecalInfo(idLexer &src);
+#endif
 		bool				CheckSurfaceParm(idToken *token);
 		int					GetExpressionConstant(float f);
 		int					GetExpressionTemporary(void);
 		expOp_t				*GetExpressionOp(void);
 		int					EmitOp(int a, int b, expOpType_t opType);
+#ifdef _SPLASHDAMAGE
+		int					ParseEmitOp(idParser &src, int a, expOpType_t opType, int priority);
+		int					ParseTerm(idParser &src);
+		int					ParseExpressionPriority(idParser &src, int priority);
+		int					ParseExpression(idParser &src);
+#else
 		int					ParseEmitOp(idLexer &src, int a, expOpType_t opType, int priority);
 		int					ParseTerm(idLexer &src);
 		int					ParseExpressionPriority(idLexer &src, int priority);
 		int					ParseExpression(idLexer &src);
+#endif
 		void				ClearStage(shaderStage_t *ss);
 		int					NameToSrcBlendMode(const idStr &name);
 		int					NameToDstBlendMode(const idStr &name);
@@ -1065,7 +1084,16 @@ class idMaterial : public idDecl
 #if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) //karin: fragment shader parms
 		void				ParseFragmentParm(idLexer &src, newShaderStage_t *newStage);
 #endif
+#ifdef _SPLASHDAMAGE //karin: fragment shader parms
+		void				ParseFragmentParm(idParser &src, newShaderStage_t *newStage);
+#endif
+#ifdef _GLSL_PROGRAM
+#ifdef _SPLASHDAMAGE
+		void				ParseGLSLProgram(idParser &src, newShaderStage_t *newStage);
+#else
         void                ParseGLSLProgram(idLexer &src, newShaderStage_t *newStage);
+#endif
+#endif
 
 	private:
 		idStr				desc;				// description

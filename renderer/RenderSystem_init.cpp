@@ -2102,8 +2102,6 @@ static void GfxInfo_f(const idCmdArgs &args)
 		"fullscreen"
 	};
 
-	idRenderModelMD5 md5;
-	md5.InitFromFile("models/weapons/knife/view.md5mesh");
 	common->Printf("\nGL_VENDOR: %s\n", glConfig.vendor_string);
 	common->Printf("GL_RENDERER: %s\n", glConfig.renderer_string);
 	common->Printf("GL_VERSION: %s\n", glConfig.version_string);

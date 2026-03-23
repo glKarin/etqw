@@ -436,7 +436,11 @@ idMaterial::MatchToken
 Sets defaultShader and returns false if the next token doesn't match
 ===============
 */
+#ifdef _SPLASHDAMAGE
+bool idMaterial::MatchToken(idParser &src, const char *match)
+#else
 bool idMaterial::MatchToken(idLexer &src, const char *match)
+#endif
 {
 	if (!src.ExpectTokenString(match)) {
 		SetMaterialFlag(MF_DEFAULTED);
@@ -451,7 +455,11 @@ bool idMaterial::MatchToken(idLexer &src, const char *match)
 idMaterial::ParseSort
 =================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseSort(idParser &src)
+#else
 void idMaterial::ParseSort(idLexer &src)
+#endif
 {
 	idToken token;
 
@@ -495,7 +503,11 @@ void idMaterial::ParseSort(idLexer &src)
 idMaterial::ParseDecalInfo
 =================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseDecalInfo(idParser &src)
+#else
 void idMaterial::ParseDecalInfo(idLexer &src)
+#endif
 {
 	idToken token;
 
@@ -651,7 +663,12 @@ int idMaterial::EmitOp(int a, int b, expOpType_t opType)
 idMaterial::ParseEmitOp
 =================
 */
+
+#ifdef _SPLASHDAMAGE
+int idMaterial::ParseEmitOp(idParser &src, int a, expOpType_t opType, int priority)
+#else
 int idMaterial::ParseEmitOp(idLexer &src, int a, expOpType_t opType, int priority)
+#endif
 {
 	int		b;
 
@@ -666,7 +683,11 @@ idMaterial::ParseTerm
 Returns a register index
 =================
 */
+#ifdef _SPLASHDAMAGE
+int idMaterial::ParseTerm(idParser &src)
+#else
 int idMaterial::ParseTerm(idLexer &src)
+#endif
 {
 	idToken token;
 	int		a, b;
@@ -902,7 +923,11 @@ Returns a register index
 =================
 */
 #define	TOP_PRIORITY 4
+#ifdef _SPLASHDAMAGE
+int idMaterial::ParseExpressionPriority(idParser &src, int priority)
+#else
 int idMaterial::ParseExpressionPriority(idLexer &src, int priority)
+#endif
 {
 	idToken token;
 	int		a;
@@ -990,7 +1015,11 @@ idMaterial::ParseExpression
 Returns a register index
 =================
 */
+#ifdef _SPLASHDAMAGE
+int idMaterial::ParseExpression(idParser &src)
+#else
 int idMaterial::ParseExpression(idLexer &src)
+#endif
 {
 	return ParseExpressionPriority(src, TOP_PRIORITY);
 }
@@ -1106,7 +1135,11 @@ int idMaterial::NameToDstBlendMode(const idStr &name)
 idMaterial::ParseBlend
 ================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseBlend(idParser &src, shaderStage_t *stage)
+#else
 void idMaterial::ParseBlend(idLexer &src, shaderStage_t *stage)
+#endif
 {
 	idToken token;
 	int		srcBlend, dstBlend;
@@ -1192,7 +1225,11 @@ If there are two values, 3 = 0.0, 4 = 1.0
 if there are three values, 4 = 1.0
 ================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseVertexParm(idParser &src, newShaderStage_t *newStage)
+#else
 void idMaterial::ParseVertexParm(idLexer &src, newShaderStage_t *newStage)
+#endif
 {
 	idToken				token;
 
@@ -1248,7 +1285,11 @@ void idMaterial::ParseVertexParm(idLexer &src, newShaderStage_t *newStage)
 idMaterial::ParseFragmentMap
 ================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseFragmentMap(idParser &src, newShaderStage_t *newStage)
+#else
 void idMaterial::ParseFragmentMap(idLexer &src, newShaderStage_t *newStage)
+#endif
 {
 	const char			*str;
 	textureFilter_t		tf;
@@ -1426,7 +1467,11 @@ An open brace has been parsed
 
 =================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseStage(idParser &src, const textureRepeat_t trpDefault)
+#else
 void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
+#endif
 {
 	idToken				token;
 	const char			*str;
@@ -1930,11 +1975,42 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			ParseExpression(src);
 			continue;
 		}
-		if (!token.Icmp("parameters")) { // parameters 0
+		if (!token.Icmp("parameters")) { // parameters 0[, 1[, 2[, 3]]]
+			idToken				t;
+
+			// 0:
 			ParseExpression(src);
+
+			// 1:
+			src.ReadToken(&t);
+			if (!t.Cmp(",")) {
+				ParseExpression(src);
+				// 2:
+				src.ReadToken(&t);
+				if (!t.Cmp(",")) {
+					ParseExpression(src);
+					// 3:
+					src.ReadToken(&t);
+					if (!t.Cmp(",")) {
+						ParseExpression(src);
+					} else {
+						src.UnreadToken(&t);
+					}
+				} else {
+					src.UnreadToken(&t);
+				}
+			} else {
+				src.UnreadToken(&t);
+			}
 			continue;
 		}
 		if (!token.Icmp("lightProjectionMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("selfIllumMap")) {
 			/*str = */R_ParsePastImageProgram(src);
 			//idStr::Copynz(imageName, str, sizeof(imageName));
 			//SETUP_STAGE_PROGRAM_PARMS();
@@ -1955,6 +2031,52 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		}
 		if (!token.Icmp("destinationBuffer")) { // destinationBuffer 1
 			(void)src.ParseInt();
+			continue;
+		}
+		if (!token.Icmp("vertexAlpha")) { // vertexAlpha
+			continue;
+		}
+		if (!token.Icmp("cullFace")) { // cullFace front none
+			idToken t;
+			src.ReadToken(&t);
+			if(!idStr::Icmp(t, "front"))
+				cullType = CT_FRONT_SIDED;
+			else if(!idStr::Icmp(t, "none"))
+				cullType = CT_TWO_SIDED;
+			else if(!idStr::Icmp(t, "back"))
+				cullType = CT_BACK_SIDED;
+			else
+				common->Warning("unknown cull face '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
+			continue;
+		}
+		// diffusemap for stage shortcut
+		if (!token.Icmp("diffusemap")) {
+			str = R_ParsePastImageProgram(src);
+			idStr::Copynz(imageName, str, sizeof(imageName));
+#ifdef _SPLASHDAMAGE
+			SETUP_STAGE_PROGRAM_PARMS();
+#endif
+			ss->lighting = SL_DIFFUSE;
+			continue;
+		}
+		// specularmap for stage shortcut
+		if (!token.Icmp("specularmap")) {
+			str = R_ParsePastImageProgram(src);
+			idStr::Copynz(imageName, str, sizeof(imageName));
+#ifdef _SPLASHDAMAGE
+			SETUP_STAGE_PROGRAM_PARMS();
+#endif
+			ss->lighting = SL_SPECULAR;
+			continue;
+		}
+		// normalmap for stage shortcut
+		if (!token.Icmp("bumpmap")) {
+			str = R_ParsePastImageProgram(src);
+			idStr::Copynz(imageName, str, sizeof(imageName));
+#ifdef _SPLASHDAMAGE
+			SETUP_STAGE_PROGRAM_PARMS();
+#endif
+			ss->lighting = SL_BUMP;
 			continue;
 		}
 #endif
@@ -2086,7 +2208,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			ParseFragmentMap(src, &newStage);
 			continue;
 		}
-#if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) //karin: fragment shader parms
+#if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) || defined(_SPLASHDAMAGE) //karin: fragment shader parms
         if (!token.Icmp("fragmentparm")) {
 			ParseFragmentParm(src, &newStage);
             continue;
@@ -2271,7 +2393,11 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 idMaterial::ParseDeform
 ===============
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseDeform(idParser &src)
+#else
 void idMaterial::ParseDeform(idLexer &src)
+#endif
 {
 	idToken token;
 
@@ -2404,7 +2530,11 @@ It is valid to have a reflection map and a bump map for bumpy reflection
 void idMaterial::AddImplicitStages(const textureRepeat_t trpDefault /* = TR_REPEAT  */)
 {
 	char	buffer[1024];
+#ifdef _SPLASHDAMAGE
+	idParser		newSrc;
+#else
 	idLexer		newSrc;
+#endif
 	bool hasDiffuse = false;
 	bool hasSpecular = false;
 	bool hasBump = false;
@@ -2511,13 +2641,21 @@ Parse it into the global material variable. Later functions will optimize it.
 If there is any error during parsing, defaultShader will be set.
 =================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseMaterial(idParser &src)
+#else
 void idMaterial::ParseMaterial(idLexer &src)
+#endif
 {
 	idToken		token;
 	int			s;
 	char		buffer[1024];
 	const char	*str;
+#ifdef _SPLASHDAMAGE
+	idParser		newSrc;
+#else
 	idLexer		newSrc;
+#endif
 	int			i;
 
 	s = 0;
@@ -3050,13 +3188,22 @@ bool idMaterial::Parse(const char *text, const int textLength, bool noCaching)
 bool idMaterial::Parse(const char *text, const int textLength)
 #endif
 {
+#ifdef _SPLASHDAMAGE
+	idParser	src;
+#else
 	idLexer	src;
+#endif
 	idToken	token;
 	mtrParsingData_t parsingData;
 
 	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
 	src.SetFlags(DECL_LEXER_FLAGS);
 	src.SkipUntilString("{");
+#ifdef _SPLASHDAMAGE
+	src.AddIncludes(GetIncludeDependencies());
+	if (GetFileLevelIncludeDependencies())
+		src.AddIncludes(*GetFileLevelIncludeDependencies());
+#endif
 
 	// reset to the unparsed state
 	CommonInit();
@@ -3873,7 +4020,7 @@ void idMaterial::EvaluateRegisters( float *regs, const float entityParms[MAX_ENT
 }
 #endif
 
-#if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) //karin: fragment shader parms
+#if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) || defined(_SPLASHDAMAGE) //karin: fragment shader parms
 /*
 ================
 idMaterial::ParseFragmentParm
@@ -3883,7 +4030,11 @@ If there are two values, 3 = 0.0, 4 = 1.0
 if there are three values, 4 = 1.0
 ================
 */
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseFragmentParm(idParser &src, newShaderStage_t *newStage)
+#else
 void idMaterial::ParseFragmentParm(idLexer &src, newShaderStage_t *newStage)
+#endif
 {
 	idToken				token;
 
@@ -3935,7 +4086,11 @@ void idMaterial::ParseFragmentParm(idLexer &src, newShaderStage_t *newStage)
 #endif
 
 #ifdef _GLSL_PROGRAM
+#ifdef _SPLASHDAMAGE
+void idMaterial::ParseGLSLProgram(idParser &src, newShaderStage_t *newStage)
+#else
 void idMaterial::ParseGLSLProgram(idLexer &src, newShaderStage_t *newStage)
+#endif
 {
     idToken token;
 

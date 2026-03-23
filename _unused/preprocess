@@ -6,6 +6,8 @@
 #else
 #endif
 
+idParser
+
 #if !defined(_SPLASHDAMAGE)
 #endif
 

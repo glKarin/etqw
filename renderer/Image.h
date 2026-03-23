@@ -615,6 +615,10 @@ IMAGEPROGRAM
 */
 
 void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL);
+#ifdef _SPLASHDAMAGE
+const char *R_ParsePastImageProgram(idParser &src);
+#else
 const char *R_ParsePastImageProgram(idLexer &src);
+#endif
 
 #endif

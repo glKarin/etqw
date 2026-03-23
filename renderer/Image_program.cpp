@@ -383,7 +383,11 @@ static void AppendToken(idToken &token)
 MatchAndAppendToken
 ===================
 */
+#ifdef _SPLASHDAMAGE
+static void MatchAndAppendToken(idParser &src, const char *match)
+#else
 static void MatchAndAppendToken(idLexer &src, const char *match)
+#endif
 {
 	if (!src.ExpectTokenString(match)) {
 		return;
@@ -402,8 +406,13 @@ If both pic and timestamps are NULL, it will just advance past it, which can be
 used to parse an image program from a text stream.
 ===================
 */
+#ifdef _SPLASHDAMAGE
+static bool R_ParseImageProgram_r(idParser &src, byte **pic, int *width, int *height,
+								  ID_TIME_T *timestamps, textureDepth_t *depth)
+#else
 static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *height,
                                   ID_TIME_T *timestamps, textureDepth_t *depth)
+#endif
 {
 	idToken		token;
 	float		scale;
@@ -717,7 +726,11 @@ void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, I
 #ifdef _SPLASHDAMAGE
 	stageParms.Clear();
 #endif
+#ifdef _SPLASHDAMAGE
+	idParser src;
+#else
 	idLexer src;
+#endif
 
 	src.LoadMemory(name, strlen(name), name);
 	src.SetFlags(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES);
@@ -738,7 +751,11 @@ void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, I
 R_ParsePastImageProgram
 ===================
 */
+#ifdef _SPLASHDAMAGE
+const char *R_ParsePastImageProgram(idParser &src)
+#else
 const char *R_ParsePastImageProgram(idLexer &src)
+#endif
 {
 #ifdef _SPLASHDAMAGE
 	stageParms.Clear();

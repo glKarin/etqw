@@ -272,6 +272,7 @@ const char *idListWindow::HandleEvent(const sysEvent_t *event, bool *updateVisua
 #ifdef _SPLASHDAMAGE
 		const sysEvent_t *ev = sys->GenerateMouseButtonEvent(1, true);
 		idWindow::HandleEvent(ev, updateVisuals);
+		sys->FreeEvent(ev);
 #else
 		const sysEvent_t ev = sys->GenerateMouseButtonEvent(1, true);
 		idWindow::HandleEvent(&ev, updateVisuals);

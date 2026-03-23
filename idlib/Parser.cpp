@@ -4817,6 +4817,7 @@ void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
 		if (token2.type != TT_STRING) {
 			if (token2 == "}") {
 				intent--;
+				nl = true;
 			}
 		}
 		if (nl) {
@@ -4834,10 +4835,7 @@ void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
 			f->Write("\"", 1);
 		}
 		if (token2.type != TT_STRING) {
-			if (token2 == "}") {
-				nl = true;
-			}
-			else if (token2 == ";") {
+			if (token2 == ";") {
 				nl = true;
 			}
 			else if (token2 == "{") {
@@ -4856,3 +4854,4 @@ void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
 	}
 	idLib::fileSystem->CloseFile(f);
 }
+

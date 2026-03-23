@@ -257,6 +257,7 @@ class idMD5Mesh
 #ifdef _SPLASHDAMAGE
 		struct vertColor_t {
 			byte r, g, b, a;
+			vertColor_t() : r(0), g(0), b(0), a(0) {}
 		};
 		idList<vertColor_t>			vertColors;
 		int							flags;
