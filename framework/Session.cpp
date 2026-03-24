@@ -179,7 +179,11 @@ static void Session_Map_f(const idCmdArgs &args)
 	// make sure the level exists before trying to change, so that
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
+#ifdef _SPLASHDAMAGE
+	sprintf(string, "maps/%s.world", map.c_str());
+#else
 	sprintf(string, "maps/%s.map", map.c_str());
+#endif
 	ff = fileSystem->FindFile(string, true);
 
 	switch (ff) {

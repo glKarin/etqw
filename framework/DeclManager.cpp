@@ -1078,6 +1078,12 @@ int idDeclFile::LoadAndParse()
 
 #ifdef _RAVEN
 		newDecl->SetTextLocal(finalPreprocessedBuffer.c_str() + startMarker, size);
+#elif defined(_SPLASHDAMAGE)
+		idStr finalPreprocessedBuffer;
+		if (sdDeclTemplate::Expand(finalPreprocessedBuffer, buffer + startMarker, size))
+			newDecl->SetTextLocal(finalPreprocessedBuffer, finalPreprocessedBuffer.Length());
+		else
+			newDecl->SetTextLocal(buffer + startMarker, size);
 #else
 		newDecl->SetTextLocal(buffer + startMarker, size);
 #endif
@@ -1236,6 +1242,16 @@ void idDeclManagerLocal::Init(void)
 	{
 		declTypeTables[i] = declIdentifierList[i];
 	}
+	// compte for DOOM3
+	declTypeTables[DECL_FONT] = "font";
+	declTypeTables[DECL_MODELDEF] = "modelDef";
+	declTypeTables[DECL_FX] = "fx";
+	declTypeTables[DECL_PARTICLE] = "particle";
+	declTypeTables[DECL_PDA] = "pda";
+	declTypeTables[DECL_VIDEO] = "video";
+	declTypeTables[DECL_AUDIO] = "audio";
+	declTypeTables[DECL_EMAIL] = "email";
+	declTypeTables[DECL_MAPDEF] = "mapDef";
 #endif
 
 #ifdef _SPLASHDAMAGE
@@ -1244,16 +1260,31 @@ void idDeclManagerLocal::Init(void)
 	RegisterDeclType(&declMaterialType);
 	RegisterDeclType(&declSkinType);
 	RegisterDeclType(&declSoundType);
-
 	RegisterDeclType(&declEntityDefType);
-	RegisterDeclType(&declMapDefType);
+	RegisterDeclType(&declEffectType);
+	RegisterDeclType(&declAFType);
+	RegisterDeclType(&declAtmosphereType);
+	RegisterDeclType(&declAmbientCubeMapType);
+	RegisterDeclType(&declStuffTypeType);
+	RegisterDeclType(&declSurfaceTypeType);
+	// DECL_SURFACETYPEMAP
+	RegisterDeclType(&declRenderProgramType);
+	RegisterDeclType(&declRenderBindingType);
+	RegisterDeclType(&declTemplateType);
+	RegisterDeclType(&declImposterType);
+	RegisterDeclType(&declImposterGeneratorType);
+	RegisterDeclType(&declLocStrType);
+	RegisterDeclType(&declDecalType);
+	// DECL_MODELEXPORT
+	// DECL_FONT
+	// DECL_MODELDEF
 	RegisterDeclType(&declFxType);
 	RegisterDeclType(&declParticleType);
-	RegisterDeclType(&declAFType);
 	RegisterDeclType(&declPDAType);
-	RegisterDeclType(&declEmailType);
 	RegisterDeclType(&declVideoType);
 	RegisterDeclType(&declAudioType);
+	RegisterDeclType(&declEmailType);
+	RegisterDeclType(&declMapDefType);
 #else
 	// decls used throughout the engine
 	RegisterDeclType("table",				DECL_TABLE,			idDeclAllocator<idDeclTable>);
@@ -1284,22 +1315,6 @@ void idDeclManagerLocal::Init(void)
 
 #ifdef _HUMANHEAD
     RegisterDeclType(	"beam",			DECL_BEAM,		idDeclAllocator<hhDeclBeam>);
-#endif
-
-#ifdef _SPLASHDAMAGE
-	RegisterDeclType(&declEffectType);
-	RegisterDeclType(&declAtmosphereType);
-	RegisterDeclType(&declAmbientCubeMapType);
-	RegisterDeclType(&declDecalType);
-	RegisterDeclType(&declSurfaceTypeType);
-	RegisterDeclType(&declImposterType);
-	RegisterDeclType(&declImposterGeneratorType);
-	RegisterDeclType(&declStuffTypeType);
-	RegisterDeclType(&declRenderBindingType);
-	RegisterDeclType(&declRenderProgramType);
-	RegisterDeclType(&declLocStrType);
-
-	RegisterDeclType(&declTemplateType);
 #endif
 
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
@@ -1976,6 +1991,12 @@ idDecl *idDeclManagerLocal::CreateNewDecl(declType_t type, const char *name, con
 	declText[header.Length() + 1 + idStr::Length(canonicalName)] = ' ';
 	memcpy(declText + header.Length() + 1 + idStr::Length(canonicalName) + 1, defaultText, defaultText.Length() + 1);
 
+#ifdef _SPLASHDAMAGExxx
+	idStr finalPreprocessedBuffer;
+	if (sdDeclTemplate::Expand(finalPreprocessedBuffer, declText, size))
+		decl->SetTextLocal(finalPreprocessedBuffer, finalPreprocessedBuffer.Length());
+	else
+#endif
 	decl->SetTextLocal(declText, size);
 	decl->sourceFile = sourceFile;
 	decl->sourceTextOffset = sourceFile->fileSize;

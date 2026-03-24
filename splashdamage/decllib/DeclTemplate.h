@@ -24,8 +24,11 @@ public:
 	virtual void			FreeData( void );
 	virtual void			Print( void ) const;
 
+	static bool				Expand(idStr &out, const char *text, int textLength);
+
 private:
 	bool					ParseParameters(idParser &src);
+	void					Expand(idLexer &src, idStr &newDecl) const;
 
 private:
     idStrList				parameters;

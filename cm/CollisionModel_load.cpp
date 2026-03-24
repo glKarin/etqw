@@ -4654,7 +4654,7 @@ bool idCollisionModelManagerLocal::TrmFromModel(const char *modelName, idTraceMo
 #endif
 }
 
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 /*
 ================
 idCollisionModelManagerLocal::BuildModels
@@ -4717,7 +4717,9 @@ void idCollisionModelManagerLocal::BuildModels(const idMapFile *mapFile, bool fo
 	PrintModelInfo(&model);
 	common->Printf("%.0f msec to load collision data.\n", timer.Milliseconds());
 }
+#endif
 
+#ifdef _RAVEN
 /*
 ================
 idCollisionModelManagerLocal::LoadMap
@@ -5320,15 +5322,17 @@ int idCollisionModelManagerLocal::GetThreadCount( void ) {
 }
 
 void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceReload ) {
-#if 0
-	if (mapFile == NULL) {
-		common->Error("idCollisionModelManagerLocal::LoadMap: NULL mapFile");
+	idMapFile mapFile;
+
+	if ( !mapFile.Parse( idStr( fileName ) + ".map" ) ) {
+		common->Error( "LoadMap:: Couldn't load %s", fileName );
+		return;
 	}
 
 	// check whether we can keep the current collision map based on the mapName and mapFileTime
 	if (loaded) {
-		if (mapName.Icmp(mapFile->GetName()) == 0) {
-			if (mapFile->GetFileTime() == mapFileTime) {
+		if (mapName.Icmp(mapFile.GetName()) == 0) {
+			if (mapFile.GetFileTime() == mapFileTime) {
 				common->DPrintf("Using loaded version\n");
 				return;
 			}
@@ -5336,7 +5340,7 @@ void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceRelo
 			common->DPrintf("Reloading modified map\n");
 		}
 
-		FreeMap(mapFile->GetName());
+		FreeMap();
 	}
 
 	// clear the collision map
@@ -5354,16 +5358,15 @@ void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceRelo
 	SetupTrmModelStructure();
 
 	// build collision models
-	BuildModels(mapFile, forceCreateMap);
+	BuildModels(&mapFile, forceReload);
 
 	// save name and time stamp
-	mapName = mapFile->GetName();
-	mapFileTime = mapFile->GetFileTime();
+	mapName = mapFile.GetName();
+	mapFileTime = mapFile.GetFileTime();
 	loaded = true;
 
 	// shutdown the hash
 	ShutdownHash();
-#endif
 }
 
 void idCollisionModelManagerLocal::PurgeModels( void ) {
@@ -5376,7 +5379,7 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 int idCollisionModelManagerLocal::Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec3 *dir, const float depth,
 								  const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
 								  idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) {
-	return 0;
+	return Contacts(contacts, maxContacts, start, idVec6(dir->x, dir->y, dir->z, dir->x, dir->y, dir->z), depth, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
 }
 
 

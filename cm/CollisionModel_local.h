@@ -603,7 +603,7 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		void			OptimizeArrays(cm_model_t *model);
 		void			FinishModel(cm_model_t *model);
 		void			BuildModels(const idMapFile *mapFile);
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	    void			BuildModels( const idMapFile *mapFile, bool forceCreateMap);
 #endif
 		cmHandle_t		FindModel(const char *name);

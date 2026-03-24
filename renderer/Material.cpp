@@ -3275,6 +3275,14 @@ void idMaterial::ParseMaterial(idLexer &src)
 			continue;
 		} else if (!token.Icmp("noplant")) {
 			continue;
+		} else if (!token.Icmp("rendermodelclip")) {
+			continue;
+		} else if (!token.Icmp("noareas")) {
+			continue;
+		} else if (!token.Icmp("projectileclip")) {
+			continue;
+		} else if (!token.Icmp("allcontent")) {
+			continue;
 #endif
 
 #ifdef _NO_LIGHT
