@@ -46,6 +46,8 @@ If you have questions concerning this license or the applicable additional terms
 #define CM_DOOM3_FILEVERSION		"1.00"
 #define CM_IS_QUAKE4_VERSION() (cmVersion == CM_FILEVERSION)
 #define CM_WRITE_IS_QUAKE4_VERSION() (cmVersion == CM_FILEVERSION)
+#elif defined(_SPLASHDAMAGE)
+#define CM_FILEVERSION		"2.70"
 #else
 #define CM_FILEVERSION		"1.00"
 #endif
@@ -148,8 +150,14 @@ void idCollisionModelManagerLocal::WritePolygons(idFile *fp, cm_node_t *node)
         fp->WriteFloatString(" %d\n", 0); // TODO: export cm v3 file
         }
         else
-#endif
 		fp->WriteFloatString(" \"%s\"\n", p->material->GetName());
+#elif defined(_SPLASHDAMAGE)
+        fp->WriteFloatString(" \"%s\"", p->material->GetName());
+        fp->WriteFloatString(" %f %f %f %f %f %f", 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        fp->WriteFloatString(" %d %d\n", 0, 0);
+#else
+		fp->WriteFloatString(" \"%s\"\n", p->material->GetName());
+#endif
 	}
 
 	if (node->planeType != -1) {
@@ -223,8 +231,12 @@ void idCollisionModelManagerLocal::WriteBrushes(idFile *fp, cm_node_t *node)
         fp->WriteFloatString(" ( %f %f %f ) \"%s\" %d\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents), 0); // TODO: export cm v3 file
         }
         else
-#endif
 		fp->WriteFloatString(" ( %f %f %f ) \"%s\"\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents));
+#elif defined(_SPLASHDAMAGE)
+        fp->WriteFloatString(" ( %f %f %f ) \"%s\" %d\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents), 0);
+#else
+		fp->WriteFloatString(" ( %f %f %f ) \"%s\"\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents));
+#endif
 	}
 
 	if (node->planeType != -1) {
@@ -246,8 +258,12 @@ void idCollisionModelManagerLocal::WriteCollisionModel(idFile *fp, cm_model_t *m
     if(CM_WRITE_IS_QUAKE4_VERSION()) //karin: for compat doom3 cm
     fp->WriteFloatString("collisionModel \"%s\" %d {\n", model->name.c_str(), 0); // TODO: export cm v3 file
     else
-#endif
 	fp->WriteFloatString("collisionModel \"%s\" {\n", model->name.c_str());
+#elif defined(_SPLASHDAMAGE)
+    fp->WriteFloatString("collisionModel \"%s\" %d {\n", model->name.c_str(), 0);
+#else
+	fp->WriteFloatString("collisionModel \"%s\" {\n", model->name.c_str());
+#endif
 	// vertices
 	fp->WriteFloatString("\tvertices { /* numVertices = */ %d\n", model->numVertices);
 
@@ -273,10 +289,14 @@ void idCollisionModelManagerLocal::WriteCollisionModel(idFile *fp, cm_model_t *m
 	polygonMemory = CountPolygonMemory(model->node);
 #ifdef _RAVEN // Quake4 cm write
     if(CM_WRITE_IS_QUAKE4_VERSION())
-    fp->WriteFloatString("\tpolygons /* polygonMemory = */ %d /* numPolygonEdges = */ %d {\n", polygonMemory, 0); // TODO: export cm v3 file
+    fp->WriteFloatString("\tpolygons /* numPolygons = */ %d /* numPolygonEdges = */ %d {\n", polygonMemory, 0); // TODO: export cm v3 file
     else
-#endif
 	fp->WriteFloatString("\tpolygons /* polygonMemory = */ %d {\n", polygonMemory);
+#elif defined(_SPLASHDAMAGE)
+    fp->WriteFloatString("\tpolygons /* numPolygons = */ %d /* numPolygonEdges = */ %d {\n", polygonMemory, 0);
+#else
+	fp->WriteFloatString("\tpolygons /* polygonMemory = */ %d {\n", polygonMemory);
+#endif
 	checkCount++;
 	WritePolygons(fp, model->node);
 	fp->WriteFloatString("\t}\n");
@@ -285,10 +305,14 @@ void idCollisionModelManagerLocal::WriteCollisionModel(idFile *fp, cm_model_t *m
 	brushMemory = CountBrushMemory(model->node);
 #ifdef _RAVEN // Quake4 cm write
     if(CM_WRITE_IS_QUAKE4_VERSION())
-    fp->WriteFloatString("\tbrushes /* brushMemory = */ %d /* numBrushPlanes = */ %d {\n", brushMemory, 0); // TODO: export cm v3 file
+    fp->WriteFloatString("\tbrushes /* numBrushes = */ %d /* numBrushPlanes = */ %d {\n", brushMemory, 0); // TODO: export cm v3 file
     else
-#endif
 	fp->WriteFloatString("\tbrushes /* brushMemory = */ %d {\n", brushMemory);
+#elif defined(_SPLASHDAMAGE)
+    fp->WriteFloatString("\tbrushes /* numBrushes = */ %d /* numBrushPlanes = */ %d {\n", brushMemory, 0);
+#else
+	fp->WriteFloatString("\tbrushes /* brushMemory = */ %d {\n", brushMemory);
+#endif
 	checkCount++;
 	WriteBrushes(fp, model->node);
 	fp->WriteFloatString("\t}\n");
@@ -501,6 +525,11 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
         common->Warning("%s: Expect integer number of numPolygonEdges, but read %s", __FUNCTION__, token.c_str());
     }
 #endif
+#ifdef _SPLASHDAMAGE
+	if (!src->CheckTokenType(TT_NUMBER, 0, &token)) {
+		common->Warning("%s: Expect integer number of numPolygonEdges, but read %s", __FUNCTION__, token.c_str());
+	}
+#endif
 
 	src->ExpectTokenString("{");
 
@@ -540,6 +569,17 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
         src->ParseInt();
         }
 #endif
+#ifdef _SPLASHDAMAGE
+		// 0 0 0.0000305196 -0 0 -0.0000305157 32768 32768
+		src->ParseFloat();
+		src->ParseFloat();
+		src->ParseFloat();
+		src->ParseFloat();
+		src->ParseFloat();
+		src->ParseFloat();
+		src->ParseInt();
+		src->ParseInt();
+#endif
 	}
 }
 
@@ -567,6 +607,11 @@ void idCollisionModelManagerLocal::ParseBrushes(idLexer *src, cm_model_t *model)
     if (!src->CheckTokenType(TT_NUMBER, 0, &token)) {
         common->Warning("%s: Expect integer number of numBrushPlanes, but read %s", __FUNCTION__, token.c_str());
     }
+#endif
+#ifdef _SPLASHDAMAGE
+	if (!src->CheckTokenType(TT_NUMBER, 0, &token)) {
+		common->Warning("%s: Expect integer number of numBrushPlanes, but read %s", __FUNCTION__, token.c_str());
+	}
 #endif
 
     src->ExpectTokenString("{");
@@ -606,6 +651,9 @@ void idCollisionModelManagerLocal::ParseBrushes(idLexer *src, cm_model_t *model)
         // other unknown integer
         src->ParseInt();
         }
+#endif
+#ifdef _SPLASHDAMAGE
+        src->ParseInt();
 #endif
 	}
 }
@@ -656,6 +704,13 @@ bool idCollisionModelManagerLocal::ParseCollisionModel(idLexer *src)
 	}
 #endif
 	//HUMANHEAD END
+#endif
+#ifdef _SPLASHDAMAGE
+	if (!src->ExpectTokenType(TT_NUMBER, TT_INTEGER, &token))
+	{
+		common->Warning("%s: Expect integer number, but read %s", __FUNCTION__, token.c_str());
+		return false;
+	}
 #endif
 
 	src->ExpectTokenString("{");
@@ -772,11 +827,13 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile(const char *name, unsi
 
 	crc = token.GetUnsignedLongValue();
 
+#if !defined(_SPLASHDAMAGE) //karin: 0
 	if (mapFileCRC && crc != mapFileCRC) {
 		common->Printf("%s is out of date\n", fileName.c_str());
 		delete src;
 		return false;
 	}
+#endif
 
 	// parse the file
 	while (1) {
