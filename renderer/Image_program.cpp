@@ -460,6 +460,27 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
 		return true;
 	}
+	if (!token.Icmp("picmip")) {
+		stageParms.Append(token);
+		int i = src.ParseInt();
+		stageParms.Append(va("%d", i));
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("picmipmin")) {
+		stageParms.Append(token);
+		int i = src.ParseInt();
+		stageParms.Append(va("%d", i));
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
+	if (!token.Icmp("maxLod")) {
+		stageParms.Append(token);
+		int i = src.ParseInt();
+		stageParms.Append(va("%d", i));
+		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
+		return true;
+	}
 #endif
 	AppendToken(token);
 

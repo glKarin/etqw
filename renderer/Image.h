@@ -392,6 +392,9 @@ ID_INLINE idImage::idImage()
 
     imageReferencePtr = NULL;
 #endif
+#ifdef _SPLASHDAMAGE
+	sourceWidth = sourceHeight = 0;
+#endif
 }
 
 

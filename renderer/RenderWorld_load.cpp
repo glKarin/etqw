@@ -1347,13 +1347,13 @@ idRenderModel *idRenderWorldLocal::ParseModel_Binary(idFile *file, const idStrLi
 			file->ReadInt(tri->indexes[j]);
 		}
 
-		for (j = 0 ; j < tri->numIndexes ; j++) {
+		for (j = 0 ; j < privateCount; j++) {
 			float fArr[6];
 			for (int m = 0; m < 6; m++) {
 				file->ReadFloat(fArr[m]);
 			}
 			int iArr[4];
-			for (int m = 0; m < 6; m++) {
+			for (int m = 0; m < 4; m++) {
 				file->ReadInt(iArr[m]);
 			}
 		}
@@ -1491,7 +1491,6 @@ bool idRenderWorldLocal::Parse_Binary() {
 		file->ReadInt(chunkLength);
 		idRenderModel 	*lastModel;
 		int p = file->Tell();
-		Sys_Printf("ID:%s|%d|%d\n", id.c_str(),chunkLength, file->Tell());
 
 		if (!idStr::Icmp(id, "model")) {
 			lastModel = ParseModel_Binary(file, materials);
@@ -1501,13 +1500,11 @@ bool idRenderWorldLocal::Parse_Binary() {
 
 			// save it in the list to free when clearing this map
 			localModels.Append(lastModel);
-			Sys_Printf("model:%d|%d\n", p+chunkLength, file->Tell());
 			continue;
 		}
 
 		if (!idStr::Icmp(id, "interAreaPortals")) {
 			ParseInterAreaPortals_Binary(file);
-			Sys_Printf("interAreaPortals:%d|%d\n", p+chunkLength, file->Tell());
 			continue;
 
 		}
@@ -1519,13 +1516,11 @@ bool idRenderWorldLocal::Parse_Binary() {
 
 			// save it in the list to free when clearing this map
 			localModels.Append(lastModel);
-			Sys_Printf("shadowModel:%d|%d\n", p+chunkLength, file->Tell());
 			continue;
 		}
 
 		if (!idStr::Icmp(id, "nodes")) {
 			ParseNodes_Binary(file);
-			Sys_Printf("nodes:%d|%d\n", p+chunkLength, file->Tell());
 			continue;
 		}
 

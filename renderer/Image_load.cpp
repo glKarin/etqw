@@ -446,6 +446,10 @@ void idImage::GenerateImage(const byte *pic, int width, int height,
 	// make sure it is a power of 2
 	scaled_width = MakePowerOfTwo(width);
 	scaled_height = MakePowerOfTwo(height);
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 
 	if (scaled_width != width || scaled_height != height) {
 		common->Error("R_CreateImage: not a power of 2 image");
@@ -697,6 +701,10 @@ void idImage::Generate3DImage(const byte *pic, int width, int height, int picDep
 	scaled_width = MakePowerOfTwo(width);
 	scaled_height = MakePowerOfTwo(height);
 	scaled_depth = MakePowerOfTwo(picDepth);
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 
 	if (scaled_width != width || scaled_height != height || scaled_depth != picDepth) {
 		common->Error("R_Create3DImage: not a power of 2 image");
@@ -850,6 +858,10 @@ void idImage::GenerateCubeImage(const byte *pic[6], int size,
 #endif
 
 	width = height = size;
+#ifdef _SPLASHDAMAGE
+	sourceWidth = width;
+	sourceHeight = height;
+#endif
 
 	// generate the texture number
 	qglGenTextures(1, &texnum);
@@ -1739,6 +1751,10 @@ void idImage::UploadPrecompressedImage(byte *data, int len)
 
 	precompressedFile = true;
 
+#ifdef _SPLASHDAMAGE
+	sourceWidth = header->dwWidth;
+	sourceHeight = header->dwHeight;
+#endif
 	uploadWidth = header->dwWidth;
 	uploadHeight = header->dwHeight;
 	if (header->ddspf.dwFlags & DDSF_FOURCC) {
@@ -1911,6 +1927,10 @@ int idImage::GenerateImageETC(int width, int height,
 		common->Error("R_CreateImage: not a power of 2 image");
 	}
 
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 	// Optionally modify our width/height based on options/hardware
 	GetDownsize(scaled_width, scaled_height);
 
@@ -2432,6 +2452,10 @@ void idImage::CopyFramebuffer(int x, int y, int imageWidth, int imageHeight, boo
 	potWidth = MakePowerOfTwo(imageWidth);
 	potHeight = MakePowerOfTwo(imageHeight);
 
+#ifdef _SPLASHDAMAGE
+	int scaled_width = potWidth;
+	int scaled_height = potHeight;
+#endif
 	//k: fix berserk/double/grabber/helltime vision
 #if !defined(GL_ES_VERSION_2_0)
 	GetDownsize(imageWidth, imageHeight);
@@ -2447,6 +2471,10 @@ void idImage::CopyFramebuffer(int x, int y, int imageWidth, int imageHeight, boo
 	// otherwise subview renderings could thrash this
 	if ((useOversizedBuffer && (uploadWidth < potWidth || uploadHeight < potHeight))
 	    || (!useOversizedBuffer && (uploadWidth != potWidth || uploadHeight != potHeight))) {
+#ifdef _SPLASHDAMAGE
+		sourceWidth = scaled_width;
+		sourceHeight = scaled_height;
+#endif
 		uploadWidth = potWidth;
 		uploadHeight = potHeight;
 
@@ -2510,6 +2538,10 @@ void idImage::CopyDepthbuffer(int x, int y, int imageWidth, int imageHeight)
 	potHeight = MakePowerOfTwo(imageHeight);
 
 	if (uploadWidth != potWidth || uploadHeight != potHeight) {
+#ifdef _SPLASHDAMAGE
+		sourceWidth = potWidth;
+		sourceHeight = potHeight;
+#endif
 		uploadWidth = potWidth;
 		uploadHeight = potHeight;
 
@@ -2558,6 +2590,10 @@ void idImage::UploadScratch(const byte *data, int cols, int rows)
 
 		// if the scratchImage isn't in the format we want, specify it as a new texture
 		if (cols != uploadWidth || rows != uploadHeight) {
+#ifdef _SPLASHDAMAGExxx
+			sourceWidth = cols;
+			sourceHeight = rows;
+#endif
 			uploadWidth = cols;
 			uploadHeight = rows;
 
@@ -2591,6 +2627,10 @@ void idImage::UploadScratch(const byte *data, int cols, int rows)
 
 		// if the scratchImage isn't in the format we want, specify it as a new texture
 		if (cols != uploadWidth || rows != uploadHeight) {
+#ifdef _SPLASHDAMAGExxx
+			sourceWidth = cols;
+			sourceHeight = rows;
+#endif
 			uploadWidth = cols;
 			uploadHeight = rows;
 			qglTexImage2D(GL_TEXTURE_2D, 0, IF_GL_RGBA, cols, rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -2848,8 +2888,12 @@ void		idImage::GenerateShadow2DDepthImage(int width, int height, textureFilter_t
         common->Error("GenerateShadow2DDepthImage: not a power of 2 image");
     }
 
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
     // Optionally modify our width/height based on options/hardware
-    GetDownsize(scaled_width, scaled_height);
+    //GetDownsize(scaled_width, scaled_height);
 
     scaledBuffer = NULL;
 
@@ -2929,8 +2973,12 @@ void		idImage::GenerateShadow2DRGBAImage(int width, int height, textureFilter_t 
 		common->Error("GenerateShadow2DRGBAImage: not a power of 2 image");
 	}
 
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 	// Optionally modify our width/height based on options/hardware
-	GetDownsize(scaled_width, scaled_height);
+	//GetDownsize(scaled_width, scaled_height);
 
 	scaledBuffer = NULL;
 
@@ -2990,8 +3038,12 @@ void idImage::GenerateShadowCubeRGBAImage(int size, textureFilter_t filterParm, 
 		common->Error("GenerateShadowCubeRGBAImage: not a power of 2 image");
 	}
 
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 	// Optionally modify our width/height based on options/hardware
-	GetDownsize(scaled_width, scaled_height);
+	//GetDownsize(scaled_width, scaled_height);
 
 	width = height = size;
 
@@ -3077,8 +3129,12 @@ void idImage::GenerateShadowCubeDepthImage(int size, textureFilter_t filterParm,
 		common->Error("GenerateShadowCubeDepthImage: not a power of 2 image");
 	}
 
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 	// Optionally modify our width/height based on options/hardware
-	GetDownsize(scaled_width, scaled_height);
+	//GetDownsize(scaled_width, scaled_height);
 
 	width = height = size;
 
@@ -3176,11 +3232,19 @@ void idImage::GenerateShadowArray( int width, int height, int numSides, textureF
 	}
 
 	// make sure it is a power of 2
-	scaled_width = width;
-	scaled_height = height;
+	scaled_width = MakePowerOfTwo(width);
+	scaled_height = MakePowerOfTwo(height);
 
+	if (scaled_width != width || scaled_height != height) {
+		common->Error("GenerateShadowArray: not a power of 2 image");
+	}
+
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 	// Optionally modify our width/height based on options/hardware
-	GetDownsize(scaled_width, scaled_height);
+	//GetDownsize(scaled_width, scaled_height);
 
 	scaled_width = width;
 	scaled_height = height;
@@ -3270,16 +3334,24 @@ void idImage::GenerateDepthStencilImage( int width, int height, bool allowDownSi
 	}
 
 	// make sure it is a power of 2
-	scaled_width = width;
-	scaled_height = height;
+	scaled_width = MakePowerOfTwo(width);
+	scaled_height = MakePowerOfTwo(height);
 
+	if (scaled_width != width || scaled_height != height) {
+		common->Error("GenerateDepthStencilImage: not a power of 2 image");
+	}
+
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
 	// Optionally modify our width/height based on options/hardware
-	GetDownsize(scaled_width, scaled_height);
+	//GetDownsize(scaled_width, scaled_height);
 
 	scaled_width = width;
 	scaled_height = height;
-	uploadHeight = scaled_height;
 	uploadWidth = scaled_width;
+	uploadHeight = scaled_height;
 
 	GLenum dataType;
 #ifdef GL_ES_VERSION_3_0

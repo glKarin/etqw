@@ -4842,6 +4842,9 @@ void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
 				intent++;
 				nl = true;
 			}
+			else if (token2 == "}") {
+				nl = true;
+			}
 			else {
 				nl = false;
 				f->Write(" ", 1);

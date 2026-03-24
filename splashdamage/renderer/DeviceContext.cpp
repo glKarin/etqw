@@ -54,6 +54,8 @@ void sdDeviceContextLocal::BeginEmitFullScreen() {
 
 void sdDeviceContextLocal::End() {
 	tr.guiModel->End();
+	tr.guiModel->SetRegisters(NULL);
+	renderSystem->SetColor4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void sdDeviceContextLocal::SetColor( const idVec4& color ) {
@@ -159,7 +161,9 @@ void sdDeviceContextLocal::DrawMaterial( const sdBounds2D& rect, const idMateria
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, const idVec2& st0, const idVec2& st1 ) {
 	DC_DRAW("DCDraw:DrawMaterial5|%s\n", material?material->GetName():NULL);
-	DrawStretchPic(x, y, w, h, st0.x, st0.y, st1.x, st1.y, material);
+	if(!material || !material->GetStage(0) || !material->GetStage(0)->texture.image)
+		return;
+	DrawStretchPic(x, y, w, h, st0.x/(float)material->GetImageWidth(), st0.y/(float)material->GetImageHeight(), (st0.x+st1.x)/(float)material->GetImageWidth(), (st0.y+st1.y)/(float)material->GetImageHeight(), material);
 }
 
 void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idVec2 extents, const idMaterial* material, const idVec4& color ) {

@@ -42,6 +42,7 @@ using namespace sdUtility;
 
 class sdDeclRenderBinding;
 class sdDeclRenderProgram;
+class sdDeclSurfaceType;
 #endif
 
 class idImage;
@@ -1186,6 +1187,9 @@ class idMaterial : public idDecl
 		bool				suppressInSubview;
 		bool				portalSky;
 		int					refCount;
+#ifdef _SPLASHDAMAGE
+		const sdDeclSurfaceType*	surfaceTypeDecl;
+#endif
 #ifdef _NO_LIGHT
 		bool 				noLight;
 #endif

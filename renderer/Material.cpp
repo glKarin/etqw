@@ -38,6 +38,8 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #ifdef _SPLASHDAMAGE
+#include "decllib/DeclSurfaceType.h"
+
 extern idStrList stageParms;
 #define SETUP_STAGE_PROGRAM_PARMS() \
 	for(int _i = 0; _i < stageParms.Num(); _i++) { \
@@ -145,6 +147,9 @@ void idMaterial::CommonInit()
 #ifdef _HUMANHEAD
 	subviewClass = SC_MIRROR;
 	directPortalDistance = -1;
+#endif
+#ifdef _SPLASHDAMAGE
+	surfaceTypeDecl = NULL;
 #endif
 #ifdef _NO_LIGHT
 	noLight = false;
@@ -2004,6 +2009,35 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			}
 			continue;
 		}
+		if (!token.Icmp("parameters2")) { // parameters 0[, 1[, 2[, 3]]]
+			idToken				t;
+
+			// 0:
+			ParseExpression(src);
+
+			// 1:
+			src.ReadToken(&t);
+			if (!t.Cmp(",")) {
+				ParseExpression(src);
+				// 2:
+				src.ReadToken(&t);
+				if (!t.Cmp(",")) {
+					ParseExpression(src);
+					// 3:
+					src.ReadToken(&t);
+					if (!t.Cmp(",")) {
+						ParseExpression(src);
+					} else {
+						src.UnreadToken(&t);
+					}
+				} else {
+					src.UnreadToken(&t);
+				}
+			} else {
+				src.UnreadToken(&t);
+			}
+			continue;
+		}
 		if (!token.Icmp("lightProjectionMap")) {
 			/*str = */R_ParsePastImageProgram(src);
 			//idStr::Copynz(imageName, str, sizeof(imageName));
@@ -2011,6 +2045,36 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("selfIllumMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("diffuseDetailMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("bumpDetailMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("specDetailMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("detailWeightMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("mask")) {
 			/*str = */R_ParsePastImageProgram(src);
 			//idStr::Copynz(imageName, str, sizeof(imageName));
 			//SETUP_STAGE_PROGRAM_PARMS();
@@ -2053,9 +2117,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("diffusemap")) {
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
-#ifdef _SPLASHDAMAGE
 			SETUP_STAGE_PROGRAM_PARMS();
-#endif
 			ss->lighting = SL_DIFFUSE;
 			continue;
 		}
@@ -2063,9 +2125,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("specularmap")) {
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
-#ifdef _SPLASHDAMAGE
 			SETUP_STAGE_PROGRAM_PARMS();
-#endif
 			ss->lighting = SL_SPECULAR;
 			continue;
 		}
@@ -2073,10 +2133,79 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("bumpmap")) {
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
-#ifdef _SPLASHDAMAGE
 			SETUP_STAGE_PROGRAM_PARMS();
-#endif
 			ss->lighting = SL_BUMP;
+			continue;
+		}
+		if (!token.Icmp("detailMult")) { // detailMult 0,1,2,3
+			idToken				t;
+
+			// 0:
+			ParseExpression(src);
+
+			// 1:
+			src.ReadToken(&t);
+			if (!t.Cmp(",")) {
+				ParseExpression(src);
+				// 2:
+				src.ReadToken(&t);
+				if (!t.Cmp(",")) {
+					ParseExpression(src);
+					// 3:
+					src.ReadToken(&t);
+					if (!t.Cmp(",")) {
+						ParseExpression(src);
+					} else {
+						src.UnreadToken(&t);
+					}
+				} else {
+					src.UnreadToken(&t);
+				}
+			} else {
+				src.UnreadToken(&t);
+			}
+			continue;
+		}
+		if (!token.Icmp("alphatocoverage")) {
+			continue;
+		}
+		if (!token.Icmp("specularPower")) { // specularPower 32
+			ParseExpression(src);
+			continue;
+		}
+		if (!token.Icmp("specularColor")) { // specularColor 0,1,2,3
+			idToken				t;
+
+			// 0:
+			ParseExpression(src);
+
+			// 1:
+			src.ReadToken(&t);
+			if (!t.Cmp(",")) {
+				ParseExpression(src);
+				// 2:
+				src.ReadToken(&t);
+				if (!t.Cmp(",")) {
+					ParseExpression(src);
+					// 3:
+					src.ReadToken(&t);
+					if (!t.Cmp(",")) {
+						ParseExpression(src);
+					} else {
+						src.UnreadToken(&t);
+					}
+				} else {
+					src.UnreadToken(&t);
+				}
+			} else {
+				src.UnreadToken(&t);
+			}
+			continue;
+		}
+		if (!token.Icmp("textureMatrix")) { // textureMatrix diffuseMatrix { scale 1, 1 }
+			idToken t;
+			src.ExpectAnyToken(&t);
+			src.SkipBracedSection(true);
 			continue;
 		}
 #endif
@@ -2500,6 +2629,14 @@ void idMaterial::ParseDeform(idLexer &src)
 		return;
 	}
 	if (!token.Icmp("beam")) {
+		cullType = CT_TWO_SIDED;
+		src.SkipRestOfLine();
+		SetMaterialFlag(MF_NOSHADOWS);
+		return;
+	}
+#endif
+#ifdef _SPLASHDAMAGE
+	if (!token.Icmp("flarevcol")) {
 		cullType = CT_TWO_SIDED;
 		src.SkipRestOfLine();
 		SetMaterialFlag(MF_NOSHADOWS);
@@ -3104,10 +3241,42 @@ void idMaterial::ParseMaterial(idLexer &src)
 			continue;
 #undef _SURFTYPE
 #endif
+
 #ifdef _SPLASHDAMAGE //karin: material parms
-		} else if (!token.Icmp("noAtmosphere")) { // noAtmosphere
+		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
+			continue;
+		} else if (!token.Icmp("surfaceTypeMap")) { // surfaceTypeMap "name"
+			idToken t;
+			src.ExpectAnyToken(&t);
+			continue;
+		} else if (!token.Icmp("surfaceType")) { // surfaceType "metal"
+            src.ReadToken(&token);
+            surfaceTypeDecl = (const sdDeclSurfaceType *)declManager->FindType(DECL_SURFACETYPE, token, false);
+            if ( !surfaceTypeDecl || surfaceTypeDecl->IsImplicit() )
+            {
+                common->Warning("UNKNOWN: surfaceType '%s' in '%s'", token.c_str(), GetName());
+            }
+            continue;
+		} else if (!token.Icmp("occlusionQuery")) {
+			continue;
+		} else if (!token.Icmp("massive")) {
+			continue;
+		} else if (!token.Icmp("vertexPositionOnly")) {
+			continue;
+		} else if (!token.Icmp("portal")) { // portal occlusionQuery
+			idToken t;
+			src.ExpectAnyToken(&t);
+			continue;
+		} else if (!token.Icmp("explosionclip")) {
+			continue;
+		} else if (!token.Icmp("onlyAtmosphereInteraction")) {
+			continue;
+		} else if (!token.Icmp("forcefieldclip")) {
+			continue;
+		} else if (!token.Icmp("noplant")) {
 			continue;
 #endif
+
 #ifdef _NO_LIGHT
 		} else if (!token.Icmp("noLight")) {
 			noLight = true;
