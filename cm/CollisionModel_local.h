@@ -629,6 +629,16 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		void			ParseBrushes(idLexer *src, cm_model_t *model);
 		bool			ParseCollisionModel(idLexer *src);
 		bool			LoadCollisionModelFile(const char *name, unsigned int mapFileCRC);
+#ifdef _SPLASHDAMAGE
+		cm_node_t 		*ParseNodes_Binary(idFile *file, cm_model_t *model, cm_node_t *parent);
+		void			ParseVertices_Binary(idFile *file, cm_model_t *model);
+		void			ParseEdges_Binary(idFile *file, cm_model_t *model);
+		void			ParsePolygons_Binary(idFile *file, cm_model_t *model, const idStrList &materials);
+		void			ParseBrushes_Binary(idFile *file, cm_model_t *model);
+		bool			ParseCollisionModel_Binary(idFile *file);
+		bool			LoadCollisionModelFile_Binary(const char *name, unsigned int mapFileCRC);
+		void			ParseMaterials_Binary(idFile *file, idStrList &materials);
+#endif
 
 	private:			// CollisionMap_debug
 		int				ContentsFromString(const char *string) const;

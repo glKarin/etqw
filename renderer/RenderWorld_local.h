@@ -270,7 +270,7 @@ class idRenderWorldLocal : public idRenderWorld
 		void					ParseNodes_Binary(idFile *file);
 		idRenderModel 			*ParseModel_Binary(idFile *file, const idStrList &materialsTable);
 		void					ParseInterAreaPortals_Binary(idFile *file);
-		bool					Parse_Binary();
+		bool					InitFromMap_Binary(const char *name);
 #endif
 
 #ifdef _D3BFG_CULLING

@@ -677,6 +677,13 @@ bool idRenderWorldLocal::InitFromMap(const char *name)
 	// load it
 	filename = name;
 	filename.SetFileExtension(PROC_FILE_EXT);
+#ifdef _SPLASHDAMAGE
+	if (InitFromMap_Binary(name)) {
+		return true;
+	} else {
+		common->Printf("idRenderWorldLocal::InitFromMap: unable to load binary proc file '%s', try ascii proc file.\n", filename.c_str());
+	}
+#endif
 
 	// if we are reloading the same map, check the timestamp
 	// and try to skip all the work
@@ -1139,7 +1146,7 @@ bool idRenderWorldLocal::HasSkybox(int areaNum)
 #ifdef _SPLASHDAMAGE
 idRenderModel *idRenderWorldLocal::ParseShadowModel_Binary(idFile *file) {
 	idRenderModel	*model;
-	idToken			token;
+	idStr			token;
 	int				j;
 	srfTriangles_t	*tri;
 	modelSurface_t	surf;
@@ -1234,7 +1241,7 @@ void idRenderWorldLocal::ParseNodes_Binary(idFile *file) {
 
 idRenderModel *idRenderWorldLocal::ParseModel_Binary(idFile *file, const idStrList &materialsTable) {
 	idRenderModel	*model;
-	idToken			token;
+	idStr			token;
 	int				i, j;
 	srfTriangles_t	*tri;
 	modelSurface_t	surf;
@@ -1455,20 +1462,56 @@ void idRenderWorldLocal::ParseInterAreaPortals_Binary(idFile *file) {
 	}
 }
 
-bool idRenderWorldLocal::Parse_Binary() {
-	idStr fileName(mapName);
+bool idRenderWorldLocal::InitFromMap_Binary(const char *name) {
+	idStr fileName(name);
 	fileName.SetFileExtension(".procb");
+
+	// if we are reloading the same map, check the timestamp
+	// and try to skip all the work
+	ID_TIME_T currentTimeStamp;
+	fileSystem->ReadFile(fileName, NULL, &currentTimeStamp);
+
+	if (currentTimeStamp == FILE_NOT_FOUND_TIMESTAMP) {
+		common->Printf("idRenderWorldLocal::InitFromMap_Binary: %s not found\n", fileName.c_str());
+		ClearWorld();
+		return false;
+	}
+
+	if (name == mapName) {
+		if (currentTimeStamp == mapTimeStamp) {
+			common->Printf("idRenderWorldLocal::InitFromMap_Binary: retaining existing map\n");
+			FreeDefs();
+			TouchWorldModels();
+			AddWorldModelEntities();
+			ClearPortalStates();
+			return true;
+		}
+
+		common->Printf("idRenderWorldLocal::InitFromMap_Binary: timestamp has changed, reloading.\n");
+	}
+
+	FreeWorld();
 
 	idFile *file = fileSystem->OpenFileRead(fileName.c_str());
 	if (!file) {
+		ClearWorld();
 		return false;
+	}
+
+
+	mapName = name;
+	mapTimeStamp = currentTimeStamp;
+
+	// if we are writing a demo, archive the load command
+	if (session->writeDemo) {
+		WriteLoadMap();
 	}
 
 	//karin: 1. parse magic/version
 	idStr version;
 	file->ReadString(version);
 	if (idStr::Icmp(version, PROC_FILE_ID)) {
-		common->Warning("procb : wrong version (%s should be %s) in '%s'", version.c_str(), PROC_FILE_ID, fileName.c_str());
+		common->Printf("idRenderWorldLocal::InitFromMap_Binary: bad id '%s' instead of '%s'\n", version.c_str(), PROC_FILE_ID);
 		fileSystem->CloseFile(file);
 		return false;
 	}
@@ -1541,7 +1584,22 @@ bool idRenderWorldLocal::Parse_Binary() {
 		file->Seek(chunkLength, FS_SEEK_CUR); //TODO: skip
 	}
 
+	common->Printf("InitFromMap_Binary: binary proc file '%s' loaded\n", fileName.c_str());
+
 	fileSystem->CloseFile(file);
+
+	// if it was a trivial map without any areas, create a single area
+	if (!numPortalAreas) {
+		ClearWorld();
+	}
+
+	// find the points where we can early-our of reference pushing into the BSP tree
+	CommonChildrenArea_r(&areaNodes[0]);
+
+	AddWorldModelEntities();
+	ClearPortalStates();
+
+	// done!
 	return true;
 }
 
