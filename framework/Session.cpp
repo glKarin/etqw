@@ -2062,12 +2062,14 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 
 	// set the user info
 	for (i = 0; i < numClients; i++) {
-#if !defined(_SPLASHDAMAGE)
 #ifdef _RAVEN
 		game->SetUserInfo( i, mapSpawnData.userInfo[i], false );
+#elif defined(_SPLASHDAMAGE)
+		game->ValidateUserInfo( i, mapSpawnData.userInfo[i] );
 #else
 		game->SetUserInfo(i, mapSpawnData.userInfo[i], idAsyncNetwork::client.IsActive(), false);
 #endif
+#if !defined(_SPLASHDAMAGE)
 		game->SetPersistentPlayerInfo(i, mapSpawnData.persistentPlayerInfo[i]);
 #endif
 	}
@@ -3381,6 +3383,7 @@ void idSessionLocal::Frame()
 #ifdef _RAVEN
 		game->SetUserInfo(0, mapSpawnData.userInfo[0], false);
 #elif defined(_SPLASHDAMAGE)
+		game->ValidateUserInfo(0, mapSpawnData.userInfo[0]);
 #else
 		game->SetUserInfo(0, mapSpawnData.userInfo[0], false, false);
 #endif

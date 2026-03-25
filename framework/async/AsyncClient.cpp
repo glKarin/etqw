@@ -1050,6 +1050,7 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 #ifdef _RAVEN
 				game->SetUserInfo(clientNum, info, true);
 #elif defined(_SPLASHDAMAGE)
+				game->ValidateUserInfo(clientNum, info);
 #else
 				game->SetUserInfo(clientNum, info, true, false);
 #endif
@@ -1124,6 +1125,7 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 #ifdef _RAVEN
 				game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true);
 #elif defined(_SPLASHDAMAGE)
+				game->ValidateUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ]);
 #else
 				game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false);
 #endif
@@ -2028,6 +2030,7 @@ void idAsyncClient::RunFrame(void)
 #ifdef _RAVEN
 		game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true);
 #elif defined(_SPLASHDAMAGE)
+		game->ValidateUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ]);
 #else
 		game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false);
 #endif

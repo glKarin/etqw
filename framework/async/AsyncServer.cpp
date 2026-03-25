@@ -424,7 +424,9 @@ void idAsyncServer::ExecuteMapChange(void)
 	if (localClientNum >= 0) {
 		BeginLocalClient();
 	} else {
-#if !defined(_SPLASHDAMAGE)
+#ifdef _SPLASHDAMAGE
+		game->SetClientNum(-1, idAsyncNetwork::server.IsActive());
+#else
 		game->SetLocalClient(-1);
 #endif
 	}
@@ -828,12 +830,15 @@ idAsyncServer::BeginLocalClient
 */
 void idAsyncServer::BeginLocalClient(void)
 {
-#if !defined(_SPLASHDAMAGE)
+#ifdef _SPLASHDAMAGE
+	game->SetClientNum(localClientNum, idAsyncNetwork::server.IsActive());
+#else
 	game->SetLocalClient(localClientNum);
 #endif
 #ifdef _RAVEN
 	game->SetUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum], false);
 #elif defined(_SPLASHDAMAGE)
+	game->ValidateUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum]);
 #else
 	game->SetUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum], false, false);
 #endif
@@ -1030,6 +1035,11 @@ void idAsyncServer::SendUserInfoBroadcast(int userInfoNum, const idDict &info, b
 #ifdef _RAVEN
 	gameInfo = game->SetUserInfo(userInfoNum, info, false);
 #elif defined(_SPLASHDAMAGE)
+	idDict tempInfo = info;
+	if (game->ValidateUserInfo(localClientNum, tempInfo))
+		gameInfo = &tempInfo;
+	else
+		gameInfo = NULL;
 #else
 	gameInfo = game->SetUserInfo(userInfoNum, info, false, true);
 #endif
