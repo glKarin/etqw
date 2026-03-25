@@ -39,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _SPLASHDAMAGE
 #include "decllib/DeclSurfaceType.h"
+#include "decllib/DeclSurfaceTypeMap.h"
 
 extern idStrList stageParms;
 #define SETUP_STAGE_PROGRAM_PARMS() \
@@ -2220,7 +2221,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			src.ReadToken(&t);
 			if(!idStr::Icmp(t, "cvar")) {
 				ss->conditionRegister = GetExpressionConstant(0.0f); //TODO: always false
-				src.SkipUntilString(")"); //skip to end
+				// src.SkipUntilString(")"); //skip to end
+				src.SkipRestOfLine(); // no ( )
 			}
 			else
 			{
@@ -3250,16 +3252,16 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
 			continue;
 		} else if (!token.Icmp("surfaceTypeMap")) { // surfaceTypeMap "name"
-			idToken t;
-			src.ExpectAnyToken(&t);
+			src.ReadToken(&token);
+			surfaceTypeMapDecl = static_cast<const sdDeclSurfaceTypeMap *>(declManager->FindType(DECL_SURFACETYPEMAP, token, false));
+			if ( !surfaceTypeMapDecl || surfaceTypeMapDecl->IsImplicit() )
+				common->Warning("UNKNOWN: surfaceTypeMap '%s' in '%s'", token.c_str(), GetName());
 			continue;
 		} else if (!token.Icmp("surfaceType")) { // surfaceType "metal"
             src.ReadToken(&token);
-            surfaceTypeDecl = (const sdDeclSurfaceType *)declManager->FindType(DECL_SURFACETYPE, token, false);
+            surfaceTypeDecl = static_cast<const sdDeclSurfaceType *>(declManager->FindType(DECL_SURFACETYPE, token, false));
             if ( !surfaceTypeDecl || surfaceTypeDecl->IsImplicit() )
-            {
                 common->Warning("UNKNOWN: surfaceType '%s' in '%s'", token.c_str(), GetName());
-            }
             continue;
 		} else if (!token.Icmp("occlusionQuery")) {
 			continue;

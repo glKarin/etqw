@@ -3190,6 +3190,7 @@ if(SPLASHDAMAGE)
 			splashdamage/decllib/DeclSurfaceType.cpp
 			splashdamage/decllib/DeclType.cpp
 			splashdamage/decllib/DeclTemplate.cpp
+			splashdamage/decllib/declSurfaceTypeMap.cpp
 	)
 	set(splashdamage_bse_src
 			raven/bse/BSE_Effect.cpp

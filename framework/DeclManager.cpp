@@ -48,6 +48,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "decllib/DeclSurfaceType.h"
 #include "decllib/declRenderProgram.h"
 #include "decllib/DeclTemplate.h"
+#include "decllib/DeclSurfaceTypeMap.h"
 
 #define GENERATED_PREFIX "generated"
 #define GENERATED_DECLB "declb"
@@ -1169,6 +1170,7 @@ static sdDeclInfo declRenderBindingInfo("renderBinding");
 static sdDeclInfo declRenderProgramInfo("renderProgram");
 static sdDeclInfo declLocStrInfo("locString");
 static sdDeclInfo declTemplateInfo("template");
+static sdDeclInfo declSurfaceTypeMapInfo("surfaceTypeMap");
 
 
 static idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
@@ -1189,6 +1191,7 @@ static idDeclTypeTemplate< sdDeclAtmosphere, &declAtmosphereInfo > declAtmospher
 static idDeclTypeTemplate< sdDeclAmbientCubeMap, &declAmbientCubeMapInfo > declAmbientCubeMapType;
 static idDeclTypeTemplate< sdDeclDecal, &declDecalInfo > declDecalType;
 static idDeclTypeTemplate< sdDeclSurfaceType, &declSurfaceTypeInfo > declSurfaceTypeType;
+static idDeclTypeTemplate< sdDeclSurfaceTypeMap, &declSurfaceTypeMapInfo > declSurfaceTypeMapType;
 static idDeclTypeTemplate< sdDeclImposter, &declImposterInfo > declImposterType;
 static idDeclTypeTemplate< sdDeclImposterGenerator, &declImposterGeneratorInfo > declImposterGeneratorType;
 static idDeclTypeTemplate< sdDeclStuffType, &declStuffTypeInfo > declStuffTypeType;
@@ -1261,7 +1264,7 @@ void idDeclManagerLocal::Init(void)
 	RegisterDeclType(&declAmbientCubeMapType);
 	RegisterDeclType(&declStuffTypeType);
 	RegisterDeclType(&declSurfaceTypeType);
-	// DECL_SURFACETYPEMAP
+	RegisterDeclType(&declSurfaceTypeMapType);
 	RegisterDeclType(&declRenderProgramType);
 	RegisterDeclType(&declRenderBindingType);
 	RegisterDeclType(&declTemplateType);
@@ -1339,6 +1342,7 @@ void idDeclManagerLocal::Init(void)
     RegisterDeclFolder("ambientCubemap",			".atm",				DECL_AMBIENTCUBEMAP);
     RegisterDeclFolder("decals",			".decal",				DECL_DECAL);
     RegisterDeclFolder("surfacetypes",			".stp",				DECL_SURFACETYPE);
+    RegisterDeclFolder("surfacetypes",			".stmap",				DECL_SURFACETYPEMAP);
     RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTER);
     RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTERGENERATOR);
     RegisterDeclFolder("stuff",			".stuff",				DECL_STUFFTYPE);

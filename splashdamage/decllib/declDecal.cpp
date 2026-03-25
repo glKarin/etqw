@@ -14,7 +14,6 @@ sdDeclDecal::sdDeclDecal(void)
 {
     startColor.Set(1.0f, 0.0f, 0.0f, 1.0f);
     endColor.Set(1.0f, 0.0f, 0.0f, 1.0f);
-    idList< sdBounds2D >	images;
 }
 
 const char* sdDeclDecal::DefaultDefinition( void ) const {

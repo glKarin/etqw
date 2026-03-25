@@ -43,6 +43,7 @@ using namespace sdUtility;
 class sdDeclRenderBinding;
 class sdDeclRenderProgram;
 class sdDeclSurfaceType;
+class sdDeclSurfaceTypeMap;
 #endif
 
 class idImage;
@@ -1214,6 +1215,7 @@ class idMaterial : public idDecl
 		int					refCount;
 #ifdef _SPLASHDAMAGE
 		const sdDeclSurfaceType*	surfaceTypeDecl;
+		const sdDeclSurfaceTypeMap*	surfaceTypeMapDecl;
 #endif
 #ifdef _NO_LIGHT
 		bool 				noLight;
