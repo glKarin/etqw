@@ -224,6 +224,7 @@ class idCollisionModelManager
 	    
 	    // Sets up a trace model for collision with other trace models.
 	    virtual idCollisionModel *	ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes ) = 0;
+		virtual idCollisionModel*	LoadModel( const char *mapName, const char *modelName ) = 0;
 #endif
 
 		// Gets the clip handle for a model.

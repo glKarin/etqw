@@ -1078,12 +1078,6 @@ int idDeclFile::LoadAndParse()
 
 #ifdef _RAVEN
 		newDecl->SetTextLocal(finalPreprocessedBuffer.c_str() + startMarker, size);
-#elif defined(_SPLASHDAMAGE)
-		idStr finalPreprocessedBuffer;
-		if (sdDeclTemplate::Expand(finalPreprocessedBuffer, buffer + startMarker, size))
-			newDecl->SetTextLocal(finalPreprocessedBuffer, finalPreprocessedBuffer.Length());
-		else
-			newDecl->SetTextLocal(buffer + startMarker, size);
 #else
 		newDecl->SetTextLocal(buffer + startMarker, size);
 #endif
@@ -1339,6 +1333,7 @@ void idDeclManagerLocal::Init(void)
 #endif
 
 #ifdef _SPLASHDAMAGE
+    RegisterDeclFolder("localization",			".locstr",				DECL_LOCSTR);
     RegisterDeclFolder("effects",			".effect",				DECL_EFFECT);
     RegisterDeclFolder("atmosphere",			".atm",				DECL_ATMOSPHERE);
     RegisterDeclFolder("ambientCubemap",			".atm",				DECL_AMBIENTCUBEMAP);
@@ -1349,7 +1344,6 @@ void idDeclManagerLocal::Init(void)
     RegisterDeclFolder("stuff",			".stuff",				DECL_STUFFTYPE);
     RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERBINDING);
     RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERPROGRAM);
-    RegisterDeclFolder("localization",			".lostr",				DECL_LOCSTR);
 #endif
 
 	// add console commands
@@ -2865,6 +2859,16 @@ void idDeclLocal::ParseLocal(void)
 	// parse
 	char *declText = (char *) _alloca((GetTextLength() + 1) * sizeof(char));
 	GetText(declText);
+#ifdef _SPLASHDAMAGE
+	idStr finalPreprocessedBuffer;
+	Sys_Printf("rrr|%s|%s\n", GetFileName(), GetName());
+	if (sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
+	{
+		Sys_Printf("OOO|%s|\n----------------\n|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
+		self->Parse(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length());
+	}
+	else
+#endif
 	self->Parse(declText, GetTextLength());
 
 	// free generated text

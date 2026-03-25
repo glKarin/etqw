@@ -95,6 +95,9 @@ void sdDeviceContextLocal::PopClipRect() {
 void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, float angle ) {
 	DC_DRAW("DCDraw:DrawRect|%s\n", material?material->GetName():NULL);
 
+	if(!material)
+		return;
+
 	AdjustCoords(&x, &y, &w, &h);
 
 	DrawStretchPicRotated(x, y, w, h, s1, t1, s2, t2, material, angle);
@@ -102,6 +105,9 @@ void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, float s
 
 void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, float angle ) {
 	DC_DRAW("DCDraw:DrawClippedRect|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 
 	if (ClippedCoords(&x, &y, &w, &h, &s1, &t1, &s2, &t2)) {
 		return;
@@ -112,26 +118,44 @@ void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, 
 
 void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, float h, float s01, float t01, float s02, float t02, float s11, float t11, float s12, float t12, const idMaterial* material, float angle ) {
 	DC_PLACEHOLDER("DC:DrawMaskedClippedRect|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawCinematic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, idSoundEmitter* referenceSound, float angle ) {
 	DC_PLACEHOLDER("DC:DrawCinematic|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawClippedWinding( const idWinding2D& winding, const idMaterial* material ) {
 	DC_PLACEHOLDER("DC:DrawClippedWinding|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawClippedWindingMasked( const idWinding2D& winding, const idMaterial* material, float minx, float miny, float width, float height ) {
 	DC_PLACEHOLDER("DC:DrawClippedWindingMasked|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float h, float u0, float v0, float u1, float v1, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
 	DC_PLACEHOLDER("DC:DrawMaskedMaterial|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
 	DC_DRAW("DCDraw:DrawMaterial|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 
 	if (color.w == 0.0f) {
 		return;
@@ -161,13 +185,24 @@ void sdDeviceContextLocal::DrawMaterial( const sdBounds2D& rect, const idMateria
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, const idVec2& st0, const idVec2& st1 ) {
 	DC_DRAW("DCDraw:DrawMaterial5|%s\n", material?material->GetName():NULL);
+	//printf("dddmmm|%f %f %f %f\n",st0.x, st0.y, st1.x, st1.y);
+
 	if(!material || !material->GetStage(0) || !material->GetStage(0)->texture.image)
 		return;
-	DrawStretchPic(x, y, w, h, st0.x/(float)material->GetImageWidth(), st0.y/(float)material->GetImageHeight(), (st0.x+st1.x)/(float)material->GetImageWidth(), (st0.y+st1.y)/(float)material->GetImageHeight(), material);
+
+	DrawStretchPic(x, y, w, h, 
+			st0.x / (float)material->GetImageWidth(), 
+			st0.y / (float)material->GetImageHeight(), 
+			(st0.x + st1.x) / (float)material->GetImageWidth(), 
+			(st0.y + st1.y) / (float)material->GetImageHeight(), 
+			material);
 }
 
 void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idVec2 extents, const idMaterial* material, const idVec4& color ) {
 	DC_DRAW("DCDraw:DrawRotatedMaterial|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 
 	if (color.w == 0.0f) {
 		return;
@@ -227,6 +262,9 @@ void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idV
 
 void sdDeviceContextLocal::DrawWindingMaterial( const idWinding2D& winding, const idMaterial* material, const idVec4& color ) {
 	DC_PLACEHOLDER("DC:DrawWindingMaterial|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, const idVec4 &color ) {
@@ -293,10 +331,16 @@ void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, f
 
 void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float rotation ) {
 	DC_PLACEHOLDER("DC:DrawCircleMaterial|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float rotation, float s11, float t11, float s12, float t12 ) {
 	DC_PLACEHOLDER("DC:DrawCircleMaterialMasked|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec2& radius, const float width, const int numSides, const idVec4& color ) {
@@ -305,6 +349,9 @@ void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec
 
 void sdDeviceContextLocal::DrawLineMaterial( const idVec2& start, const idVec2& end, const float width, const idMaterial* material, const idVec4& color ) {
 	DC_PLACEHOLDER("DC:DrawLineMaterial|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawLine( const idVec2& start, const idVec2& end, const float width, const idVec4 &color ) {
@@ -313,10 +360,16 @@ void sdDeviceContextLocal::DrawLine( const idVec2& start, const idVec2& end, con
 
 void sdDeviceContextLocal::DrawFilledArc( const float x, const float y, const float radius, int numSides, float percent, const idVec4 &color, float startAngle, const idMaterial *material ) {
 	DC_PLACEHOLDER("DC:DrawFilledArc|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawFilledArcMasked( const float x, const float y, const float radius, int numSides, float percent, const idVec4 &color, float s11, float t11, float s12, float t12, float startAngle, const idMaterial *material ) {
 	DC_PLACEHOLDER("DC:DrawFilledArcMasked|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 void sdDeviceContextLocal::DrawArc( const float x, const float y, const float radius, const float width, const int numSides, const float percent, const idVec4 &color, const float startAngle ) {
@@ -325,6 +378,9 @@ void sdDeviceContextLocal::DrawArc( const float x, const float y, const float ra
 
 void sdDeviceContextLocal::DrawTimer( const float x, const float y, const float w, const float h, float percent, const idVec4 &color, const idMaterial* material, bool invert, const idVec2& st0, const idVec2& st1 ) {
 	DC_PLACEHOLDER("DC:DrawTimer|%s\n", material?material->GetName():NULL);
+
+	if(!material)
+		return;
 }
 
 qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
@@ -544,6 +600,7 @@ bool sdDeviceContextLocal::ClippedCoords(float *x, float *y, float *w, float *h,
 
 void sdDeviceContextLocal::DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader)
 {
+	//printf("ttt|%f %f %f %f\n",s1,t1,s2,t2);
 	idDrawVert verts[4];
 	glIndex_t indexes[6];
 	indexes[0] = 3;
@@ -646,6 +703,7 @@ void sdDeviceContextLocal::AdjustCoords(float *x, float *y, float *w, float *h)
 void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle)
 {
 
+	//printf("rrr|%f %f %f %f\n",s1,t1,s2,t2);
 	idDrawVert verts[4];
 	glIndex_t indexes[6];
 	indexes[0] = 3;

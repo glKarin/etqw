@@ -24,14 +24,21 @@ public:
 	virtual void			FreeData( void );
 	virtual void			Print( void ) const;
 
-	static bool				Expand(idStr &out, const char *text, int textLength);
+	static bool				ExpandTemplate(idStr &out, const char *text, int textLength);
 
 private:
 	bool					ParseParameters(idParser &src);
 	void					Expand(idLexer &src, idStr &newDecl) const;
+	static int				ReplacePlaceholder( int start, // include
+		int end, // exclude
+		idStr replaceStr, idStr &toStr);
 
 private:
-    idStrList				parameters;
+	struct parameter_t {
+		idStr name;
+		idStr defaultValue;
+	};
+    idList<parameter_t>		parameters;
     idStr					text;
 };
 

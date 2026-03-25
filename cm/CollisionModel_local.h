@@ -470,6 +470,7 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		virtual void				GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const;
 
 		virtual void				DumpCollisionModelStats( void );
+		virtual idCollisionModel*	LoadModel( const char *mapName, const char *modelName );
 #endif
 
 	private:			// CollisionMap_translate.cpp
@@ -538,9 +539,10 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		void			FreePolygon(cm_model_t *model, cm_polygon_t *poly);
 		void			FreeBrush(cm_model_t *model, cm_brush_t *brush);
 		void			FreeTree_r(cm_model_t *model, cm_node_t *headNode, cm_node_t *node);
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		cm_model_t 	    *AllocModel(cm_model_t * &model);
 		void            ClearModel(cm_model_t *model);
+		cmHandle_t		FindModelAndIndex(const char *name, int &index);
 #endif
 		// merging polygons
 		void			ReplacePolygons(cm_model_t *model, cm_node_t *node, cm_polygon_t *p1, cm_polygon_t *p2, cm_polygon_t *newp);
@@ -651,14 +653,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 #endif
 		void			DrawNodePolygons(cm_model_t *model, cm_node_t *node, const idVec3 &origin, const idMat3 &axis,
 		                const idVec3 &viewOrigin, const float radius);
-#ifdef _RAVEN // quake4 cm file
-	private:
-		cmHandle_t		FindModelAndIndex(const char *name, int &index);
-
-	    int				numInlinedProcClipModels;
-        idStr           cmVersion;
-        idStr           cmWriteVersion; //karin: for compat doom3 cm
-#endif
 
 	private:			// collision map data
 		idStr			mapName;
@@ -690,6 +684,11 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
         bool					anyInlinedProcClipMats;
 #endif
 	    //HUMANHEAD END
+#endif
+#ifdef _RAVEN // quake4 cm file
+	    int				numInlinedProcClipModels;
+        idStr           cmVersion;
+        idStr           cmWriteVersion; //karin: for compat doom3 cm
 #endif
 };
 

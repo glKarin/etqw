@@ -4957,7 +4957,9 @@ void	idCollisionModelManagerLocal::FreeModel(cmHandle_t modelHandle)
 #endif
 	//FreeModel_memory(models[modelHandle]); // do not free
 }
+#endif
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 cmHandle_t idCollisionModelManagerLocal::FindModelAndIndex(const char *name, int &index)
 {
 	int i;
@@ -5015,6 +5017,9 @@ cm_model_t 	* idCollisionModelManagerLocal::AllocModel(cm_model_t * &model)
 	memset(model->_trmPolygons, 0, sizeof(cm_polygonRef_t *) * MAX_TRACEMODEL_POLYS);
 	model->_trmBrushes[0] = 0;
 	model->refCount++;
+#ifdef _SPLASHDAMAGE
+	model->isWorld = false;
+#endif
 
 	return model;
 }
@@ -5373,7 +5378,165 @@ void idCollisionModelManagerLocal::PurgeModels( void ) {
 }
 
 idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes ) {
-	return NULL;
+	int i, j;
+	cm_vertex_t *vertex;
+	cm_edge_t *edge;
+	cm_polygon_t *poly;
+	cm_model_t *model;
+	const traceModelVert_t *trmVert;
+	const traceModelEdge_t *trmEdge;
+	const traceModelPoly_t *trmPoly;
+	cmHandle_t handle;
+	cm_node_t *node;
+	int handleIndex;
+
+	assert( models );
+
+	handle = FindModelAndIndex(modelName, handleIndex);
+	model = NULL;
+	if(handle)
+	{
+		model = static_cast<cm_model_t *>(handle);
+		//if(!model->isTraceModel) { common->Error("Collision model is not trace model from `ModelFromTrm`"); return NULL; }
+		model->refCount++;
+		if(!model->markRemove)
+		{
+			return handle;
+		}
+	}
+
+	bool usingNewHandle = false;
+	if(model)
+	{
+		ClearModel(model); // free model structure, but model pointer not free. It make model address not changed.
+	}
+	else
+	{
+		if (numModels >= MAX_SUBMODELS) {
+			common->Error("idCollisionModelManagerLocal::ModelFromTrm: no free slots\n");
+			return 0;
+		}
+		usingNewHandle = true;
+	}
+	model = AllocModel(model);
+	if(!model)
+	{
+		common->Error("idCollisionModelManagerLocal::ModelFromTrm: AllocModel is NULL\n");
+		return 0;
+	}
+	if(usingNewHandle)
+	{
+		handleIndex = numModels++;
+		models[handleIndex] = model;
+	}
+	handle = model;
+	model->name = modelName;
+	model->isTraceModel = true;
+
+	// create node to hold the collision data
+	node = (cm_node_t *) AllocNode(model, 1);
+	node->planeType = -1;
+	model->node = node;
+	// allocate vertex and edge arrays
+	model->numVertices = 0;
+	model->maxVertices = MAX_TRACEMODEL_VERTS;
+	model->vertices = (cm_vertex_t *) Mem_ClearedAlloc(model->maxVertices * sizeof(cm_vertex_t));
+	model->numEdges = 0;
+	model->maxEdges = MAX_TRACEMODEL_EDGES+1;
+	model->edges = (cm_edge_t *) Mem_ClearedAlloc(model->maxEdges * sizeof(cm_edge_t));
+	// create a material for the trace model polygons
+	const idMaterial *material;
+	if(trmMaterial)
+		material = trmMaterial;
+	else
+		material = declManager->FindMaterial("_tracemodel", false);
+
+	// allocate polygons
+	for (i = 0; i < MAX_TRACEMODEL_POLYS; i++) {
+		model->_trmPolygons[i] = AllocPolygonReference(model, MAX_TRACEMODEL_POLYS);
+		model->_trmPolygons[i]->p = AllocPolygon(model, MAX_TRACEMODEL_POLYEDGES);
+		model->_trmPolygons[i]->p->bounds.Clear();
+		model->_trmPolygons[i]->p->plane.Zero();
+		model->_trmPolygons[i]->p->checkcount = 0;
+		model->_trmPolygons[i]->p->contents = -1;		// all contents
+		model->_trmPolygons[i]->p->material = material;
+		model->_trmPolygons[i]->p->numEdges = 0;
+	}
+
+	// allocate brush for position test
+	model->_trmBrushes[0] = AllocBrushReference(model, 1);
+	model->_trmBrushes[0]->b = AllocBrush(model, MAX_TRACEMODEL_POLYS);
+	model->_trmBrushes[0]->b->primitiveNum = 0;
+	model->_trmBrushes[0]->b->bounds.Clear();
+	model->_trmBrushes[0]->b->checkcount = 0;
+	model->_trmBrushes[0]->b->contents = -1;		// all contents
+	model->_trmBrushes[0]->b->numPlanes = 0;
+	model->_trmBrushes[0]->b->material = material;
+
+	model->node->brushes = NULL;
+	model->node->polygons = NULL;
+
+	// if not a valid trace model
+	if ( trm.type == TRM_INVALID || !trm.numPolys ) {
+		return handle;
+	}
+
+	// vertices
+	model->numVertices = trm.numVerts;
+	vertex = model->vertices;
+	trmVert = trm.verts;
+	for ( i = 0; i < trm.numVerts; i++, vertex++, trmVert++ ) {
+		vertex->p = *trmVert;
+		vertex->sideSet = 0;
+	}
+	// edges
+	model->numEdges = trm.numEdges;
+	edge = model->edges + 1;
+	trmEdge = trm.edges + 1;
+	for ( i = 0; i < trm.numEdges; i++, edge++, trmEdge++ ) {
+		edge->vertexNum[0] = trmEdge->v[0];
+		edge->vertexNum[1] = trmEdge->v[1];
+		edge->normal = trmEdge->normal;
+		edge->internal = false;
+		edge->sideSet = 0;
+	}
+	// polygons
+	model->numPolygons = trm.numPolys;
+	trmPoly = trm.polys;
+	for ( i = 0; i < trm.numPolys; i++, trmPoly++ ) {
+		poly = model->_trmPolygons[i]->p;
+		poly->numEdges = trmPoly->numEdges;
+		for ( j = 0; j < trmPoly->numEdges; j++ ) {
+			poly->edges[j] = trmPoly->edges[j];
+		}
+		poly->plane.SetNormal( trmPoly->normal );
+		poly->plane.SetDist( trmPoly->dist );
+		poly->bounds = trmPoly->bounds;
+		poly->material = material;
+		// link polygon at node
+		model->_trmPolygons[i]->next = model->node->polygons;
+		model->node->polygons = model->_trmPolygons[i];
+	}
+	// if the trace model is convex
+	model->_trmBrushes[0]->b->material = 0; //k
+	if ( trm.isConvex ) {
+		// setup brush for position test
+		model->_trmBrushes[0]->b->numPlanes = trm.numPolys;
+		for ( i = 0; i < trm.numPolys; i++ ) {
+			model->_trmBrushes[0]->b->planes[i] = model->_trmPolygons[i]->p->plane;
+		}
+		model->_trmBrushes[0]->b->bounds = trm.bounds;
+		// link brush at node
+		model->_trmBrushes[0]->next = model->node->brushes;
+		model->node->brushes = model->_trmBrushes[0];
+		model->_trmBrushes[0]->b->material = material;
+	}
+	// model bounds
+	model->bounds = trm.bounds;
+	// convex
+	model->isConvex = trm.isConvex;
+
+	return handle;
 }
 
 int idCollisionModelManagerLocal::Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec3 *dir, const float depth,
@@ -5396,4 +5559,9 @@ void idCollisionModelManagerLocal::GetFullModelName( idStr& out, const char* map
 void idCollisionModelManagerLocal::DumpCollisionModelStats( void ) {
 }
 
+idCollisionModel* idCollisionModelManagerLocal::LoadModel( const char *mapName, const char *modelName )
+{
+	(void)mapName;
+	return LoadModel(modelName, true);
+}
 #endif

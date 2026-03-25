@@ -87,11 +87,27 @@ bool sdDeclTemplate::ParseParameters( idParser &src ) {
 			break;
 		}
 
-		if (!token.Icmp(">")) {
+		if (!token.Cmp(">")) {
 			break;
 		}
 
-		parameters.Append(token);
+		if (!token.Cmp(",")) {
+			continue;
+		}
+
+		parameter_t parm;
+		parm.name = token.c_str();
+		
+		src.ReadToken(&token);
+		if(!token.Cmp("="))
+		{
+			src.ReadToken(&token);
+			parm.defaultValue = token.c_str();
+		}
+		else
+			src.UnreadToken(&token);
+
+		parameters.Append(parm);
 	}
 
 	return true;
@@ -104,7 +120,15 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 	src.ExpectTokenString("<");
 	for (int i = 0; i < parameters.Num(); i++ )
 	{
+		const parameter_t &parm = parameters[i];
 		src.ReadToken(&token);
+		if(token == ">")
+		{
+			src.UnreadToken(&token);
+			newDecl.Replace(parm.name.c_str(), parm.defaultValue.c_str());
+		}
+		else
+		{
 #if 0
 		if (token.type == TT_STRING) {
 			idStr str("\"");
@@ -114,61 +138,25 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 		}
 		else
 #endif
-			newDecl.Replace(parameters[i].c_str(), token);
+			newDecl.Replace(parm.name.c_str(), token);
+		}
 	}
 	src.ExpectTokenString(">");
 }
 
-//karin: helper struct
-struct rvGuidePlaceholder
+int sdDeclTemplate::ReplacePlaceholder( int start, // include
+		int end, // exclude
+		idStr replaceStr, idStr &toStr)
 {
-	// [start, end)
-	int start; // include
-	int end; // exclude
-	idStr replaceStr;
+	int length = end - start;
+	int newLength = replaceStr.Length();
+	idStr front = toStr.Left(start);
+	idStr back = toStr.Right(toStr.Length() - end);
+	toStr = front + replaceStr + back;
+	return newLength - length;
+}
 
-	rvGuidePlaceholder(int start = 0, int end = 0, const idStr &str = idStr())
-		: start(start),
-		end(end),
-		replaceStr(str)
-	{ }
-	void ReplaceSpace(idStr &str)
-	{
-		for(int m = start; m < end; m++)
-		{
-			if(!isspace(str[m])) //karin: keep raw format for debug
-				str[m] = ' ';
-		}
-	}
-	int Replace(int offset, idStr &toStr)
-	{
-		int length = end - start;
-		int newLength = replaceStr.Length();
-		idStr front = toStr.Left(start + offset);
-		idStr back = toStr.Right(toStr.Length() - end - offset);
-		toStr = front + replaceStr + back;
-		return newLength - length;
-	}
-};
-
-struct rvGuidePlaceholderList : public idList<rvGuidePlaceholder>
-{
-	void ReplaceSpace(idStr &str)
-	{
-		for(int i = 0; i < Num(); i++)
-			this->operator[](i).ReplaceSpace(str);
-	}
-	void Replace(idStr &str)
-	{
-		int offset = 0;
-		for(int i = 0; i < Num(); i++)
-		{
-			offset += this->operator[](i).Replace(offset, str);
-		}
-	}
-};
-
-bool sdDeclTemplate::Expand(idStr &finalBuffer, const char *text, int textLength) {
+bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int textLength) {
 	idStr _text(text, 0, textLength);
 	if (_text.Find("useTemplate") == -1)
 		return false;
@@ -177,56 +165,50 @@ bool sdDeclTemplate::Expand(idStr &finalBuffer, const char *text, int textLength
     idLexer src;
     idToken	token, token2;
 
-    finalBuffer = "";
-
     src.LoadMemory(_text, textLength, "", 0);
     src.SetFlags(DECL_LEXER_FLAGS);
-	rvGuidePlaceholderList guideRanges; //karin: record a pair of read guide characters offset: start, end, characters in range will be replaced ' '
 
     while (1)
     {
         if (!src.ReadToken(&token))
-        {
             break;
-        }
 
-        if (token == "useTemplate")
-        {
-			int range_start = src.GetFileOffset() - idStr::Length("useTemplate"); //karin: record range start before next `ReadToken`
-            idToken name;
-            idStr newDecl;
+        if (idStr::Icmp(token, "useTemplate"))
+			continue;
 
-            src.ReadToken(&name);
-        	const idDecl *decl = declManager->FindType(DECL_TEMPLATE, name, false);
+		int range_start = src.GetFileOffset() - idStr::Length("useTemplate"); //karin: record range start before next `ReadToken`
+		idToken name;
 
-        	if (decl == NULL)
-        	{
-        		common->Warning("Failed to find template '%s'\n", token.c_str());
-        		// skip this template
-        		src.SkipUntilString("<");
-        		src.SkipUntilString(">");
-        		continue;
-        	}
+		src.ReadToken(&name);
+		const idDecl *decl = declManager->FindType(DECL_TEMPLATE, name, false);
 
-        	const sdDeclTemplate *declTemplate = static_cast<const sdDeclTemplate *>(decl);
+		if (!decl)
+		{
+			common->Warning("Failed to find template '%s'", name.c_str());
+			// skip this template
+			src.SkipUntilString("<");
+			src.SkipUntilString(">");
+			continue;
+		}
 
-        	declTemplate->Expand(src, newDecl);
+		const sdDeclTemplate *declTemplate = static_cast<const sdDeclTemplate *>(decl);
 
-            newDecl += "\n";
+		idStr newDecl;
+		declTemplate->Expand(src, newDecl);
 
-            finalBuffer += newDecl;
-			int range_end = src.GetFileOffset(); //karin: record range end after last `ReadToken`
-			guideRanges.Append(rvGuidePlaceholder(range_start, range_end));
-        	ret = true;
-        }
-    }
+		finalBuffer = _text;
 
-	//karin: replace all old guide source to space
-	idStr oldText(_text);
-	guideRanges.ReplaceSpace(oldText);
-    finalBuffer += oldText;
+		int range_end = src.GetFileOffset(); //karin: record range end after last `ReadToken`
+		ReplacePlaceholder(range_start, range_end, newDecl, finalBuffer);
+		ret = true;
 
-	Sys_Printf("OOO|%s|\n----------------\n|%s|\n", _text.c_str(), finalBuffer.c_str());
+		newDecl = "";
+		if(ExpandTemplate(newDecl, finalBuffer.c_str(), finalBuffer.Length()))
+		{
+			finalBuffer = newDecl;
+		}
+		break;
+	}
 
 	return ret;
 }

@@ -374,6 +374,30 @@ typedef enum {
 #else
 	SS_SUBVIEW = -3,	// mirrors, viewscreens, etc
 #endif
+#ifdef _SPLASHDAMAGE
+	SS_BAD = -1,
+	SS_OPAQUEFIRST,		// opaque
+	SS_OPAQUE,			// opaque
+	SS_OPAQUENEARER,	// used for materials with expensive shaders, such as the megaTexture
+	SS_OPAQUENEAREST,	// used for materials that definitely should be rendered 'last'
+	SS_DECAL,			// scorch marks, etc.
+
+	SS_GUI,		// guis
+
+	SS_REFRACTABLE,			// Translucent, but drawn before refraction surfaces
+	SS_REFRACTION,			// Stage using refraction screen copy to texture
+
+	SS_FAR_PRE_ATMOS,		// Translucent materials drawn before the atmosphere, this is usally not what we want
+	SS_MEDIUM_PRE_ATMOS,	// as translucent mats don't fill the z-buffer and thus get fogged like what's behind them
+	SS_CLOSE_PRE_ATMOS,		// instead of for their own depth.
+
+	//
+	//	Anything whith the following sort orders will need to be fogged "manually" (i.e. by setting up the shader properly)
+	//
+	SS_ATMOSPHERE,			// Not really used; just as a new phase
+
+	SS_PORTAL_SKY, // compat for DOOM3
+#else
 	SS_GUI = -2,		// guis
 	SS_BAD = -1,
 	SS_OPAQUE,			// opaque
@@ -381,6 +405,7 @@ typedef enum {
 	SS_PORTAL_SKY,
 
 	SS_DECAL,			// scorch marks, etc.
+#endif
 
 	SS_FAR,
 	SS_MEDIUM,			// normal translucent

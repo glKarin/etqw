@@ -498,6 +498,10 @@ void idMaterial::ParseSort(idLexer &src)
 	} else if (!token.Icmp("gui")) {
 		sort = SS_GUI;
 #endif
+#ifdef _SPLASHDAMAGE
+	} else if (!token.Icmp("opaqueNearer")) {
+		sort = SS_OPAQUENEARER;
+#endif
 	} else {
 		sort = atof(token);
 	}
@@ -3282,6 +3286,13 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("projectileclip")) {
 			continue;
 		} else if (!token.Icmp("allcontent")) {
+			continue;
+		} else if (!token.Icmp("staticOccluder")) {
+			continue;
+		} else if (!token.Icmp("slopTexCoordMod")) { // slopTexCoordMod 0.0001
+			(void)src.ParseFloat();
+			continue;
+		} else if (!token.Icmp("lowrangeuvs")) {
 			continue;
 #endif
 

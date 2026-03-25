@@ -319,7 +319,13 @@ ID_INLINE void idStaticList<type,size>::DeleteContents(bool clear)
 {
 	int i;
 
-	for (i = 0; i < size; i++) {
+//#if 1 //karin: list is not initialized. It can't memset in constructor if T is non-pod class object. But it maybe call this function if T is pointer
+#if defined(_SPLASHDAMAGE)
+	for (i = 0; i < num; i++) 
+#else
+	for (i = 0; i < size; i++) 
+#endif
+	{
 		delete list[ i ];
 		list[ i ] = NULL;
 	}
