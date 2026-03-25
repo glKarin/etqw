@@ -1,0 +1,38 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# declb file struct
+declb {
+    # header
+    fileID: int32 = 1112294212 / [4]char8 = DCLB
+    version: int32 = 3
+    checksum: uint32
+    numDecls: uint32
+
+    # decl entry headers
+    declEntries: [numDecls]DeclEntry_t
+        DeclEntry_t {
+            declTypeName: string
+            declName: string
+            whitespace: int8 = 8
+            dataOffsetOfFile: uint32
+        }
+
+    # decl entry data
+    declCompressedData: [numDecls]DeclCompressedData_t
+        <SEEK_SET> DeclEntry_t.dataOffsetOfFile
+        DeclCompressedData_t {
+            uncompressedLength: uint32
+            compressedLength: uint32
+            compressedData: [compressedLength]uint8
+        }
+    <EOF>
+}
+
+# uncompressed data struct
+uncompressedData {
+    ??? # I guess using idCompressor_FixedHuffman, I don't known
+}

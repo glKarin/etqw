@@ -3968,6 +3968,8 @@ static idCVar r_megaDrawMethod("r_megaDrawMethod", "0", CVAR_INTEGER | CVAR_REND
 static idCVar com_gpuSpec("com_gpuSpec", "0", CVAR_INTEGER | CVAR_SYSTEM, "");
 static idCVar r_useAlphaToCoverage("r_useAlphaToCoverage", "0", CVAR_BOOL | CVAR_RENDERER, "");
 
+//karin: cvar used on game, must not null
+static idCVar com_unlockFPS("com_unlockFPS", "0", CVAR_BOOL | CVAR_SYSTEM, "");
 #endif
 
 #include <zlib.h>

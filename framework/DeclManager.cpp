@@ -2865,10 +2865,10 @@ void idDeclLocal::ParseLocal(void)
 	GetText(declText);
 #ifdef _SPLASHDAMAGE
 	idStr finalPreprocessedBuffer;
-	Sys_Printf("rrr|%s|%s\n", GetFileName(), GetName());
+	//Sys_Printf("rrr|%s|%s\n", GetFileName(), GetName());
 	if (sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
 	{
-		Sys_Printf("OOO|%s|\n----------------\n|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
+		//Sys_Printf("OOO|%s|\n----------------\n|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
 		self->Parse(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length());
 	}
 	else

@@ -1,0 +1,129 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# procb file struct
+# https://wiki.splashdamage.com/index.php/PROCB
+procb {
+    # header
+    fileID: string = mapProcFile010
+
+    # materials
+    maxMaterials: int32
+    materials: [numMaterials]string
+
+    # chunk data list
+    chunkData: [until EOF]ChunkData_t
+        ChunkData_t {
+            type: string
+            chunkLength: int32
+            data: [chunkLength]uint8 ->
+                if type == "model": []Model_t
+                if type == "interAreaPortals": []InterAreaPortal_t
+                if type == "shadowModel": []ShadowModel_t
+                if type == "nodes": []Node_t
+                if type == "atmosLightProjection": ?
+                if type == "megaTextureInfo": ?
+                if type == "mapEnvBounds": ?
+
+                # model
+                Model_t {
+                    modelName: string
+                    numSurfaces: int32
+                    numAreas: int32
+                    areas: [numAreas]int32
+                    surfaces: [numSurfaces]Surface_t
+                        Surface_t {
+                            materialIndex: int32
+                            hasVertexColor: bool8
+                            bounds.min.x: float32
+                            bounds.min.y: float32
+                            bounds.min.z: float32
+                            bounds.max.x: float32
+                            bounds.max.y: float32
+                            bounds.max.z: float32
+                            numVerts: int32
+                            numIndexes: int32
+                            privateCount: int32
+                            # verts
+                            verts: [numVerts]Vert_t
+                                Vert_t {
+                                    numVertexElements: int32 = 12
+                                    position.x: float32
+                                    position.y: float32
+                                    position.z: float32
+                                    texCoord.s: float32
+                                    texCoord.t: float32
+                                    normal.x: float32
+                                    normal.y: float32
+                                    normal.z: float32
+                                    tangent.x: float32
+                                    tangent.y: float32
+                                    tangent.z: float32
+                                    biTangentSign: float32
+                                    if Surface_t.hasVertexColor: {
+                                        numColorElements: int32
+                                        color: [numColorElements]uint8 # R G B A
+                                    }
+                                }
+                            # indexes
+                            indexes: [numIndexes]int32
+                            privateData: [privateCount]PrivateData_t
+                                PrivateData_t {
+                                    unknownFloats: [6]float32
+                                    unknownInts: [4]int32
+                                }
+                        }
+                }
+
+                # inter area portals
+                InterAreaPortal_t {
+                    numPortalAreas: int32
+                    numInterAreaPortals: int32
+                    interAreaPortals: [numInterAreaPortals]AreaPortal_t
+                        AreaPortal_t {
+                            numPoints: int32
+                            a1: int32
+                            a2: int32
+                            unknownInt1: int32
+                            unknownInt2: int32
+                            points: [numPoints]Point_t
+                                Point_t {
+                                    numFloats: int32
+                                    floats: [numFloats]float32
+                                }
+                        }
+                }
+
+                # shadow models
+                ShadowModel_t {
+                    modelName: string
+                    numVerts: int32
+                    numShadowIndexesNoCaps: int32
+                    numShadowIndexesNoFrontCaps: int32
+                    numIndexes: int32
+                    shadowCapPlaneBits: int32
+                    verts: [numVerts] Vert_t
+                        Vert_t {
+                            numFloats: int32
+                            floats: [numFloats]float32
+                        }
+                    indexes: [numIndexes]int32
+                }
+
+                # nodes
+                Node_t {
+                    numAreaNodes: int32
+                    areaNodes: [numAreaNodes]AreaNode_t
+                        AreaNode_t {
+                            numFloats: int32
+                            floats: [numFloats]float32
+                            children0: int32
+                            children1: int32
+                        }
+                }
+        ...
+    <EOF>
+}

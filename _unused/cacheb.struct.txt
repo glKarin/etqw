@@ -1,0 +1,33 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# cacheb file struct
+# file name is globaltokens.cacheb
+cacheb {
+    # header
+    fileID: int32 = 1212367428 / [4]char8 = DBCH
+    version: int32 = 2
+
+    # data
+    uncompressedLength: uint32
+    compressedLength: uint32
+    compressedData: [compressedLength]uint8 # decompress by idCompressor_Huffman(outFile, false, 8)
+    <EOF>
+}
+
+# uncompressed data struct
+uncompressedData {
+    numTokens: int32
+    tokens: [numTokens]Token_t # class idToken
+        Token_t {
+            token: string
+            type: uint8
+            subtype: int32
+            linesCrossed: int32
+            flags: int32
+            whiteSpace: int8 = 0 # end of token
+        }
+}

@@ -1,0 +1,98 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# cmb file struct
+cmb {
+    # header
+    fileID: string = CM
+    version: string = 2.7
+    crc?: uint32 = 0
+
+    # collision models
+    collisionModels: [until EOF]CollisionModel_t
+        CollisionModel_t {
+            modelName: string
+            unknown: int32 = 0
+
+            # vertices
+            maxVertices: int32
+            vertices: [maxVertices]Vertex_t
+                Vertex_t {
+                    x: float32
+                    y: float32
+                    z: float32
+                }
+
+            # edges
+            numEdges: int32
+            edges: [numEdges]Edge_t
+                Edge_t {
+                    vertexNum0: uin16
+                    vertexNum1: uin16
+                    internal: uin16
+                    numUsers: uin16
+                }
+
+            # nodes
+            nodes: [recursive]Node_t
+                Node_t {
+                    planeType: int32 # if planeType != -1, continue to parse 2 nodes
+                    planeDist: float32
+                }
+
+            # materials table
+            numMaterials: int32
+            materials: [numMaterials]string
+
+            # polygons
+            numPolygons: int32
+            numPolygonEdges: int32
+            polygons: [numPolygons]Polygon_t
+                Polygon_t {
+                    numEdges: uint16
+                    edges: [numEdges]int16
+                    plane.normal.x: float32
+                    plane.normal.y: float32
+                    plane.normal.z: float32
+                    plane.dist: float32
+                    bounds.min.x: int16
+                    bounds.min.y: int16
+                    bounds.min.z: int16
+                    bounds.max.x: int16
+                    bounds.max.y: int16
+                    bounds.max.z: int16
+                    materialIndex: int32
+                    unknownFloats: [6]float32
+                    unknownUshorts: [2]uint16
+                }
+            endOfPolygons: uint16 = 0xFFFF / int16 = -1
+
+            # brushes
+            numBrushes: int32
+            numBrushComponents?: int32
+            brushes: [numBrushes]Brush_t
+                Brush_t {
+                    numPlanes: int32
+                    planes: [numPlanes]Plane_t
+                        Plane_t {
+                            normal.x: float32
+                            normal.y: float32
+                            normal.z: float32
+                            dist: float32
+                        }
+                    bounds.min.x: int16
+                    bounds.min.y: int16
+                    bounds.min.z: int16
+                    bounds.max.x: int16
+                    bounds.max.y: int16
+                    bounds.max.z: int16
+                    token: string
+                }
+            endOfBrushes: uint32 = 0xFFFFFFFF / int32 = -1
+        }
+    ...
+    <EOF>
+}

@@ -353,7 +353,7 @@ public:
 							// in some cases you may need to use this directly
 	virtual void			ClearDirCache( void ) = 0;
 
-	virtual idFile_Memory*	OpenMemoryFile( const char* name ) = 0;
+	virtual idFile_Memory*	OpenMemoryFile( const char* name ) = 0; //k 55=220
 
 	virtual idFile_Buffered*OpenBufferedFile( idFile* file ) = 0;
 

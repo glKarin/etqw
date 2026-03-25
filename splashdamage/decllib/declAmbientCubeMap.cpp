@@ -81,6 +81,29 @@ bool sdDeclAmbientCubeMap::Parse( const char* text, const int textLength ) {
 			continue;
 		}
 
+		if( !token.Icmp( "envMap" )) {
+			if( !src.ReadToken(&token)) {
+				src.Error( "sdDeclAmbientCubeMap::Parse: failed to parse envMap" );
+				break;
+			}
+			envMap = token.c_str();
+			continue;
+		}
+
+		if (!token.Icmp("minSpecAmbientColor")) {
+			minSpecAmbientColor[0] = src.ParseFloat();
+			minSpecAmbientColor[1] = src.ParseFloat();
+			minSpecAmbientColor[2] = src.ParseFloat();
+			continue;
+		}
+
+		if (!token.Icmp("minSpecShadowColor")) {
+			minSpecShadowColor[0] = src.ParseFloat();
+			minSpecShadowColor[1] = src.ParseFloat();
+			minSpecShadowColor[2] = src.ParseFloat();
+			continue;
+		}
+
 		src.Warning( "sdDeclAmbientCubeMap::Parse: unexpected token '%s'.", token.c_str() );
 		src.SkipBracedSection(false);
 		break;
@@ -155,6 +178,16 @@ bool sdDeclAmbientCubeMap::ParseAmbientLight( idParser *src ) {
 				break;
 			}
 			item.name = token.c_str();
+			continue;
+		}
+
+		if (!token.Icmp("specular")) {
+			item.specular = src->ParseBool();
+			continue;
+		}
+
+		if (!token.Icmp("ambient")) {
+			item.ambient = src->ParseBool();
 			continue;
 		}
 

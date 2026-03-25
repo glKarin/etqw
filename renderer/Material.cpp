@@ -873,6 +873,9 @@ int idMaterial::ParseTerm(idLexer &src)
 	if (!token.Icmp("sun_b")) {
 		return GetExpressionConstant(1.0f);
 	}
+	if (!token.Icmp("sun_azimuth")) {
+		return GetExpressionConstant(1.0f);
+	}
 #endif
 
 	if (!token.Icmp("fragmentPrograms")) {
@@ -2049,6 +2052,12 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			//SETUP_STAGE_PROGRAM_PARMS();
 			continue;
 		}
+		if (!token.Icmp("lightFallOffMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
 		if (!token.Icmp("selfIllumMap")) {
 			/*str = */R_ParsePastImageProgram(src);
 			//idStr::Copynz(imageName, str, sizeof(imageName));
@@ -2211,6 +2220,28 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idToken t;
 			src.ExpectAnyToken(&t);
 			src.SkipBracedSection(true);
+			continue;
+		}
+		if (!token.Icmp("writeDepth")) {
+			continue;
+		}
+		if (!token.Icmp("matrix")) { // matrix a, b, c, d, e, f
+			idToken				t;
+			while (true) {
+				ParseExpression(src);
+				src.ReadToken(&t);
+				if (t.Cmp(",")) {
+					src.UnreadToken(&t);
+					break;
+				}
+			}
+			continue;
+		}
+		if (!token.Icmp("skies_cloudColor")) { // skies_cloudColor 1, 1, 1, 1
+			ParseExpression(src);
+			ParseExpression(src);
+			ParseExpression(src);
+			ParseExpression(src);
 			continue;
 		}
 #endif
@@ -3295,6 +3326,8 @@ void idMaterial::ParseMaterial(idLexer &src)
 			(void)src.ParseFloat();
 			continue;
 		} else if (!token.Icmp("lowrangeuvs")) {
+			continue;
+		} else if (!token.Icmp("shadowMapped")) {
 			continue;
 #endif
 

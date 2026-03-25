@@ -1,0 +1,56 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# modelb file struct
+modelb {
+    # header
+    version: int32 = 1
+
+    # bounds
+    bounds.min.x: float32
+    bounds.min.y: float32
+    bounds.min.z: float32
+    bounds.max.x: float32
+    bounds.max.y: float32
+    bounds.max.z: float32
+
+    # surfaces
+    numSurf: int32
+    surfaces: [numSurf]Surface_t
+        Surface_t {
+            bounds.min.x: float32
+            bounds.min.y: float32
+            bounds.min.z: float32
+            bounds.max.x: float32
+            bounds.max.y: float32
+            bounds.max.z: float32
+            numVerts: int32
+            numIndexes: int32
+            material: string
+            verts: [numVerts]Vert_t
+                Vert_t {
+                    position.x: float32
+                    position.y: float32
+                    position.z: float32
+                    texCoord.s: float32
+                    texCoord.t: float32
+                    normal.x: float32
+                    normal.y: float32
+                    normal.z: float32
+                    tangent.x: float32
+                    tangent.y: float32
+                    tangent.z: float32
+                    biTangentSign: float32
+                    color.r: uint8
+                    color.g: uint8
+                    color.b: uint8
+                    color.a: uint8
+                }
+            indexes: [numIndexes]uint16
+        }
+        ...
+    <EOF>
+}

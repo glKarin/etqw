@@ -1,0 +1,91 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# md5b file struct
+# md5mesh version 11
+# https://github.com/XeNTaXBackup/XeNTaXBackup.github.io/blob/2c6074a1bcb085e77f527fcf620620a4ee1e76da/markdown/Quake%20Wars%20models_2802.md#L10
+md5b {
+    # header
+    majorVersion: int32 = 1
+    minorVersion: int32 = 1
+
+    # joints
+    numJoints: int32
+    joints: [numJoints]Joint_t
+        Joint_t {
+            jointName: string
+            parentIndex: int32
+            rotationQuat.x: float32
+            rotationQuat.y: float32
+            rotationQuat.z: float32
+            unknownFloat1: float32
+            position.x: float32
+            position.y: float32
+            position.z: float32
+            unknownFloat2: float32
+            poseMat: [12]float32
+        }
+
+    # meshes
+    numMeshes: int32
+    meshes: [numMeshes]Mesh_t
+        Mesh_t {
+            meshName: string
+            noAnimate: int32
+            vertexColor: int32
+            unknownInt1: int32
+            numVerts: int32
+            vertexBufferIndex?: uint8
+            vertexBufferSharedFlags?: uint8
+            vertexRigidFlag: uint8
+            shader: string
+            unknownInt2: int32
+            unknownInt3: int32
+            numTris: int32
+            tris: [numTris * 3]uint16
+            numShadowIndices?: int32
+            rawVertices?: [numVertices * 2]uint8
+            numverts_unused?: [numVertices * 2]uint8
+            numVertices: int32
+            numExtendedVerts?: int32
+            extendedVertices?: [numExtendedVerts]int32
+            unknownInt4: int32
+            unknownInt5: int32
+            numJointTables: int32
+            jointIndices: [numJointTables]uint8
+            drawVerts: [numVertices]DrawVert_t
+                DrawVert_t {
+                    position.x: float32
+                    position.y: float32
+                    position.z: float32
+                    texCoord.s: float32
+                    texCoord.t: float32
+                    normal.x: float32
+                    normal.y: float32
+                    normal.z: float32
+                    tangent.x: float32
+                    tangent.y: float32
+                    tangent.z: float32
+                    biTangentSign: float32
+                    color.r: uint8
+                    color.g: uint8
+                    color.b: uint8
+                    color.a: uint8
+                }
+            if vertexRigidFlag == 1: # vertex only 1 joint
+            vertJointIndices: [numVertices]uint8 # VALUE / 3 == joint index
+            elseif vertexRigidFlag == 4: # vertex > 1 joints
+            vertJointIndices: [numVertices]VertJointIndex_t
+                VertJointIndex_t {
+                    jointIndex: uint8 # VALUE / 3 == joint index
+                    weight: uint8 # VALUE / 255 == float joint weight, no more weights if equals 0
+                }
+            unknownBytes: [5]int8
+        }
+        ...
+    <SEEK_CUR 28>
+    <EOF>
+}
