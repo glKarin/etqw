@@ -153,17 +153,17 @@ void idEventDef::InitArgs( int numargs ) {
 		switch( formatspec[ i ] ) {
 		case D_EVENT_FLOAT :
 			bits |= 1 << i;
-			argsize += sizeof( float );
+			argsize += sizeof( intptr_t ); //k64
 			break;
 
 		case D_EVENT_INTEGER :
 		case D_EVENT_BOOLEAN :
 		case D_EVENT_HANDLE :
-			argsize += sizeof( int );
+			argsize += sizeof( intptr_t ); //k64
 			break;
 
 		case D_EVENT_VECTOR :
-			argsize += sizeof( idVec3 );
+			argsize += E_EVENT_SIZEOF_VEC; //k64
 			break;
 
 		case D_EVENT_STRING :
@@ -177,7 +177,7 @@ void idEventDef::InitArgs( int numargs ) {
 		case D_EVENT_OBJECT :
 		case D_EVENT_ENTITY :
 		case D_EVENT_ENTITY_NULL :
-			argsize += sizeof( int );
+			argsize += sizeof( intptr_t ); //k64
 			break;
 
 		default :

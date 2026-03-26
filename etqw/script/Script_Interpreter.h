@@ -7,7 +7,7 @@
 #include "Script_Program.h"
 
 #define MAX_STACK_DEPTH 	32
-#define LOCALSTACK_SIZE 	6144
+#define LOCALSTACK_SIZE 	(6144 * 2) //k64
 
 class idThread;
 class idVarDef;
@@ -45,7 +45,8 @@ private:
 	void				PopParms( int numParms );
 	void				PushString( const char *string );
 	void				PushWString( const wchar_t *string );
-	void				Push( int value );
+	void				PushVector(const idVec3 &vector); //k64
+	void				Push(intptr_t value); //k64
 	const char			*FloatToString( float value );
 	const wchar_t		*FloatToWString( float value );
 	void				AppendString( idVarDef *def, const char *from );
@@ -150,11 +151,27 @@ ID_INLINE void idInterpreter::AssureStack( int size ) {
 idInterpreter::Push
 ====================
 */
-ID_INLINE void idInterpreter::Push( int value ) {
-	AssureStack( localstackUsed + sizeof( int ) );
+ID_INLINE void idInterpreter::Push( intptr_t value ) { //k64
+	AssureStack( localstackUsed + sizeof( intptr_t ) ); //k64
 
-	*( int * )&localstack[ localstackUsed ]	= value;
-	localstackUsed += sizeof( int );
+	*( intptr_t * )&localstack[ localstackUsed ]	= value; //k64
+	localstackUsed += sizeof( intptr_t ); //k64
+	if ( localstackUsed > s_stackHigh ) {
+		s_stackHigh = localstackUsed;
+	}
+}
+
+/*
+====================
+idInterpreter::PushVector
+====================
+*/
+ID_INLINE void idInterpreter::PushVector(const idVec3 &vector) //k64
+{
+	AssureStack( localstackUsed + E_EVENT_SIZEOF_VEC );
+
+	*(idVec3 *)&localstack[ localstackUsed ]	= vector;
+	localstackUsed += E_EVENT_SIZEOF_VEC;
 	if ( localstackUsed > s_stackHigh ) {
 		s_stackHigh = localstackUsed;
 	}

@@ -456,6 +456,8 @@ public:
 	void											AddToHash( idTypeDef* type, int index = -1 );
 
 	idVarDef*										AllocDef( idTypeDef *type, const char *name, idVarDef *scope );
+	idVarDef *										AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope); //k64
+	byte *											AllocMem(size_t size); //k64
 	idVarDef*										GetDef( const idTypeDef *type, const char *name, const idVarDef *scope ) const;
 	void											FreeDef( idVarDef *d, const idVarDef *scope );
 	idVarDef*										FindFreeResultDef( idTypeDef *type, idVarDef *scope, const idVarDef *a, const idVarDef *b );

@@ -18,7 +18,7 @@ static char THIS_FILE[] = __FILE__;
 
 #include "../../framework/Licensee.h"
 
-const int SCRIPT_TYPE_PTR_SIZE = sizeof( int );
+const int SCRIPT_TYPE_PTR_SIZE = sizeof( intptr_t ); //k64
 
 // simple types.  function types are dynamically allocated
 idTypeDef	type_void( ev_void, &def_void, "void", 0, NULL );
@@ -26,18 +26,18 @@ idTypeDef	type_scriptevent( ev_scriptevent, &def_scriptevent, "scriptevent", SCR
 idTypeDef	type_namespace( ev_namespace, &def_namespace, "namespace", SCRIPT_TYPE_PTR_SIZE, NULL );
 idTypeDef	type_string( ev_string, &def_string, "string", MAX_STRING_LEN, NULL );
 idTypeDef	type_wstring( ev_wstring, &def_wstring, "wstring", MAX_STRING_LEN * sizeof( wchar_t ), NULL );
-idTypeDef	type_float( ev_float, &def_float, "float", sizeof( float ), NULL );
-idTypeDef	type_vector( ev_vector, &def_vector, "vector", sizeof( idVec3 ), NULL );
+idTypeDef	type_float( ev_float, &def_float, "float", sizeof( intptr_t ), NULL ); //k64
+idTypeDef	type_vector( ev_vector, &def_vector, "vector", E_EVENT_SIZEOF_VEC, NULL ); //k64
 idTypeDef	type_field( ev_field, &def_field, "field", SCRIPT_TYPE_PTR_SIZE, NULL );
 idTypeDef	type_function( ev_function, &def_function, "function", sizeof( void * ), &type_void );
-idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof( int ), NULL );
+idTypeDef	type_virtualfunction( ev_virtualfunction, &def_virtualfunction, "virtual function", sizeof( intptr_t ), NULL ); //k64
 idTypeDef	type_pointer( ev_pointer, &def_pointer, "pointer", sizeof( void * ), NULL );
 
 idTypeDef	type_object( ev_object, &def_object, "object", SCRIPT_TYPE_PTR_SIZE, NULL );
 
-idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof( int ), NULL );		// only used for jump opcodes
-idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof( int ), NULL );				// only used for function call and thread opcodes
-idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof( int ), NULL );
+idTypeDef	type_jumpoffset( ev_jumpoffset, &def_jumpoffset, "<jump>", sizeof( intptr_t ), NULL );		// only used for jump opcodes //k64
+idTypeDef	type_argsize( ev_argsize, &def_argsize, "<argsize>", sizeof( intptr_t ), NULL );				// only used for function call and thread opcodes //k64
+idTypeDef	type_boolean( ev_boolean, &def_boolean, "boolean", sizeof( intptr_t ), NULL ); //k64
 idTypeDef	type_internalscriptevent( ev_internalscriptevent, &def_internalscriptevent, "virtual", SCRIPT_TYPE_PTR_SIZE/*sizeof( void * )*/, NULL );
 
 idVarDef	def_void( &type_void );
@@ -1146,6 +1146,47 @@ void idProgram::AddDefToNameList( idVarDef *def, const char *name ) {
 
 /*
 ============
+idProgram::AllocMem
+*/
+byte *idProgram::AllocMem(size_t size) //64
+============
+{
+	byte *bytePtr;
+
+	bytePtr = &variables[ numVariables ];
+	numVariables += size;
+
+	if ( numVariables > sizeof( variables ) ) {
+		throw idCompileError(va("Exceeded global memory size (%zd bytes)", sizeof(variables)));
+	}
+
+	memset(bytePtr, 0, size);
+
+	return bytePtr;
+}
+
+/*
+============
+idProgram::AllocVarDef
+============
+*/
+idVarDef *idProgram::AllocVarDef(idTypeDef *type, const char *name, idVarDef *scope) { //k64
+	idVarDef	*def;
+
+	def = varDefAllocator.Alloc();
+	def->Init( type );
+	def->scope		= scope;
+	def->numUsers	= 1;
+	varDefs.Append( def );
+
+	// add the def to the list with defs with this name and set the name pointer
+	AddDefToNameList( def, name );
+
+	return def;
+}
+
+/*
+============
 idProgram::AllocDef
 ============
 */
@@ -1178,7 +1219,7 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			scope->value.functionPtr->locals += type->Size();
 		} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
 			idTypeDef	newtype( ev_field, NULL, "float field", 0, &type_float );
-			idTypeDef	*type = GetType( newtype, true );
+			idTypeDef	*_type = GetType( newtype, true );
 
 			// set the value to the variable's position in the object
 			def->value.ptrOffset = scope->TypeDef()->Size();
@@ -1186,31 +1227,60 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			// make automatic defs for the vectors elements
 			// origin can be accessed as origin_x, origin_y, and origin_z
 			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocDef( type, element, scope );
+			def_x = AllocDef( _type, element, scope );
 
 			sprintf( element, "%s_y", def->Name() );
-			def_y = AllocDef( type, element, scope );
-			def_y->value.ptrOffset = def_x->value.ptrOffset + type_float.Size();
+			def_y = AllocDef( _type, element, scope );
+			def_y->value.ptrOffset = def_x->value.ptrOffset + sizeof( float ); //k64
 
 			sprintf( element, "%s_z", def->Name() );
-			def_z = AllocDef( type, element, scope );
-			def_z->value.ptrOffset = def_y->value.ptrOffset + type_float.Size();
+			def_z = AllocDef( _type, element, scope );
+			def_z->value.ptrOffset = def_y->value.ptrOffset + sizeof( float ); //k64
 		} else {
+			idTypeDef	newtype(ev_float, &def_float, "float vector", 0, NULL); //k64
+			idTypeDef	*_type = GetType(newtype, true); //k64
+
 			// make automatic defs for the vectors elements
 			// origin can be accessed as origin_x, origin_y, and origin_z
 			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocDef( &type_float, element, scope );
+			def_x = AllocVarDef(_type, element, scope ); //k64
 
 			sprintf( element, "%s_y", def->Name() );
-			def_y = AllocDef( &type_float, element, scope );
+			def_y = AllocVarDef( _type, element, scope ); //k64
 
 			sprintf( element, "%s_z", def->Name() );
-			def_z = AllocDef( &type_float, element, scope );
+			def_z = AllocVarDef( _type, element, scope ); //k64
 
-			// point the vector def to the x coordinate
-			def->value					= def_x->value;
-			def->settings.initialized	= def_x->settings.initialized;
-			def->settings.isReturn		= def_x->settings.isReturn;
+			// point the vector def to the coordinates
+			if (scope->Type() == ev_function) { //k64
+				//
+				// stack variable
+				//
+				def->value.stackOffset	= scope->value.functionPtr->locals;
+				def->settings.initialized		= idVarDef::stackVariable;
+
+				scope->value.functionPtr->locals += type->Size();
+
+				def_x->value.stackOffset = def->value.stackOffset;
+				def_y->value.stackOffset = def_x->value.stackOffset + sizeof( float );
+				def_z->value.stackOffset = def_y->value.stackOffset + sizeof( float );
+			} else { //k64
+				//
+				// global variable
+				//
+				def->value.bytePtr = AllocMem(type->Size());
+				def_x->value.bytePtr = def->value.bytePtr;
+				def_y->value.bytePtr = def_x->value.bytePtr + sizeof( float );
+				def_z->value.bytePtr = def_y->value.bytePtr + sizeof( float );
+			}
+
+			def_x->settings.initialized = def->settings.initialized; //k64
+			def_y->settings.initialized = def->settings.initialized; //k64
+			def_z->settings.initialized = def->settings.initialized; //k64
+
+			def_x->settings.isReturn = def->settings.isReturn; //k64
+			def_y->settings.isReturn = def->settings.isReturn; //k64
+			def_z->settings.isReturn = def->settings.isReturn; //k64
 		}
 	} else if ( scope->TypeDef()->Inherits( &type_object ) ) {
 		//

@@ -239,7 +239,7 @@ typedef idScriptVariable<float, ev_float, int>					idScriptInt;
 typedef idScriptVariable<idVec3, ev_vector, idVec3>				idScriptVector;
 typedef idScriptVariable<idStr, ev_string, const char *>		idScriptString;
 typedef idScriptVariable<idWStr, ev_wstring, const wchar_t *>	idScriptWString;
-typedef idScriptVariable<int, ev_object, idEntity* >			idScriptEntity;
+typedef idScriptVariable<intptr_t, ev_object, idEntity* >			idScriptEntity; //k64
 
 typedef idEntity* idEntityPtr_t;
 

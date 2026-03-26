@@ -261,16 +261,16 @@ void idScriptObject::SetSynced( const char *name, bool broadcast ) {
 			int size = 0;
 			switch ( etype ) {
 				case ev_object:
-					size = sizeof( int );
+					size = sizeof( intptr_t ); //k64
 					break;
 				case ev_vector:
-					size = sizeof( idVec3 );
+					size = E_EVENT_SIZEOF_VEC; //k64
 					break;
 				case ev_boolean:
-					size = sizeof( int );
+					size = sizeof( intptr_t ); //k64
 					break;
 				case ev_float:
-					size = sizeof( float );
+					size = sizeof( intptr_t ); //k64
 					break;
 			}
 

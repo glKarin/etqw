@@ -147,7 +147,7 @@ void sdScriptHelper::Push( float value ) {
 	arg->integer		= *reinterpret_cast< int* >( &value );
 	arg->string		= NULL;
 
-	size += sizeof( int );
+	size += sizeof( intptr_t ); //k64
 }
 
 /*
@@ -165,7 +165,7 @@ void sdScriptHelper::Push( idScriptObject* obj ) {
 	arg->integer		= obj->GetHandle();
 	arg->string		= NULL;
 
-	size += sizeof( int );
+	size += sizeof( intptr_t ); //k64
 }
 
 /*

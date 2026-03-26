@@ -268,7 +268,7 @@ idClass::FindUninitializedMemory
 */
 void idClass::FindUninitializedMemory( void ) {
 #if 0 //def ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned long *ptr = ( ( unsigned long * )this ) - 1;
+	unsigned int *ptr = ( ( unsigned int * )this ) - 1; //k64
 	int size = *ptr;
 	assert( ( size & 3 ) == 0 );
 	size >>= 2;
@@ -478,16 +478,16 @@ idClass::new
 #endif
 
 void * idClass::operator new( size_t s ) {
-	size_t *p;
+	int *p; //k64 same with operator delete size_t *p;
 
-	s += sizeof( size_t );
-	p = (size_t *)Mem_Alloc( s );
+	s += sizeof( int );//k64
+	p = (int *)Mem_Alloc( s );//k64
 	*p = s;
 	memused += s;
 	numobjects++;
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned long *ptr = (unsigned long *)p;
+	unsigned int *ptr = (unsigned int *)p; //k64
 	size_t size = s;
 	assert( ( size & 3 ) == 0 );
 	size >>= 3;
@@ -500,16 +500,16 @@ void * idClass::operator new( size_t s ) {
 }
 
 void * idClass::operator new( size_t s, int, int, char *, int ) {
-	size_t *p;
+	int *p; //k64 same with operator delete size_t *p;
 
-	s += sizeof( size_t );
-	p = (size_t *)Mem_Alloc( s );
+	s += sizeof( int ); //k64
+	p = (int *)Mem_Alloc( s ); //k64
 	*p = s;
 	memused += s;
 	numobjects++;
 
 #ifdef ID_DEBUG_UNINITIALIZED_MEMORY
-	unsigned long *ptr = (unsigned long *)p;
+	unsigned int *ptr = (unsigned int *)p; //k int
 	size_t size = s;
 	assert( ( size & 3 ) == 0 );
 	size >>= 3;
