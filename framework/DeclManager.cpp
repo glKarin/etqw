@@ -948,9 +948,13 @@ int idDeclFile::LoadAndParse()
 #ifdef _SPLASHDAMAGE
 	//declManagerLocal.LoadDeclBinary(fileName); // test
 	src.PushDependencies();
+	bool isFirst = true; // if is first decl in this file
 #endif
 	while (1) {
-
+#ifdef _SPLASHDAMAGE //karin: fisrt decl source since postion 0, the source has include depences, so it don't need add depence includes
+		const bool addIncludes = !isFirst;
+		isFirst = false; // mark not first decl now
+#endif
 		startMarker = src.GetFileOffset();
 		sourceLine = src.GetLineNum();
 
@@ -1089,12 +1093,15 @@ int idDeclFile::LoadAndParse()
 		newDecl->declState = DS_UNPARSED;
 
 #ifdef _SPLASHDAMAGE
+		if(addIncludes)
+		{
 		cd = src.GetCurrentDependency();
 		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd)) {
 			newDecl->AddIncludeDependency(d);
 		}
 		for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor) {
 			newDecl->AddIncludeDependency(*itor);
+		}
 		}
 #endif
 		// if it is currently in use, reparse it immedaitely
@@ -1991,7 +1998,7 @@ idDecl *idDeclManagerLocal::CreateNewDecl(declType_t type, const char *name, con
 
 #ifdef _SPLASHDAMAGExxx
 	idStr finalPreprocessedBuffer;
-	if (sdDeclTemplate::Expand(finalPreprocessedBuffer, declText, size))
+	if (sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, size))
 		decl->SetTextLocal(finalPreprocessedBuffer, finalPreprocessedBuffer.Length());
 	else
 #endif
@@ -2863,17 +2870,31 @@ void idDeclLocal::ParseLocal(void)
 	// parse
 	char *declText = (char *) _alloca((GetTextLength() + 1) * sizeof(char));
 	GetText(declText);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: make final decl source text
 	idStr finalPreprocessedBuffer;
-	//Sys_Printf("rrr|%s|%s\n", GetFileName(), GetName());
-	if (sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
+	//Sys_Printf("rrr|%s|%s|\n\n", GetFileName(), GetName()/*,idStr(declText,0,GetTextLength()).c_str()*/ );
+	//karin: 1. expand template if has useTemplate keyword
+	if (!sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
+		finalPreprocessedBuffer.Append(declText, GetTextLength());
+	//karin: include depences
+	const idStrList &includeDependencies = GetIncludeDependencies();
+	if(includeDependencies.Num() > 0)
 	{
-		//Sys_Printf("OOO|%s|\n----------------\n|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
-		self->Parse(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length());
+		sdStringBuilder_Heap buf;
+		for(int i = 0; i < includeDependencies.Num(); i++)
+		{
+			buf.Append("#include \"");
+			buf.Append(GetIncludeDependencies()[i]);
+			buf.Append("\"\n");
+		}
+		buf.Append(finalPreprocessedBuffer.c_str());
+		finalPreprocessedBuffer = buf.c_str();;
 	}
-	else
-#endif
+	//Sys_Printf("OOO|%s|\n----------------\nPPP|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
+	self->Parse(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length());
+#else
 	self->Parse(declText, GetTextLength());
+#endif
 
 	// free generated text
 	if (generatedDefaultText) {

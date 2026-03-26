@@ -4,7 +4,7 @@
 #include "idlib/precompiled.h"
 
 #include "DeclSurfaceTypeMap.h"
-#include "declSurfaceType.h"
+#include "DeclSurfaceType.h"
 #include "framework/DeclParseHelper.h"
 
 sdDeclSurfaceTypeMap::sdDeclSurfaceTypeMap(void)

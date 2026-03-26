@@ -3422,7 +3422,7 @@ bool idMaterial::Parse(const char *text, const int textLength)
 	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
 	src.SetFlags(DECL_LEXER_FLAGS);
 	src.SkipUntilString("{");
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGExxx
 	src.AddIncludes(GetIncludeDependencies());
 	if (GetFileLevelIncludeDependencies())
 		src.AddIncludes(*GetFileLevelIncludeDependencies());

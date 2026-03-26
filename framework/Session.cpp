@@ -1987,6 +1987,9 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		declManager->BeginLevelLoad();
 		renderSystem->BeginLevelLoad();
 		soundSystem->BeginLevelLoad();
+#ifdef _SPLASHDAMAGE
+		game->BeginLevelLoad();
+#endif
 	}
 #ifdef _HUMANHEAD //k: play level music when map loading
 	if(g_levelloadmusic.GetBool())
@@ -2126,6 +2129,9 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		soundSystem->EndLevelLoad(mapString.c_str());
 		declManager->EndLevelLoad();
 		SetBytesNeededForMapLoad(mapString.c_str(), fileSystem->GetReadCount());
+#ifdef _SPLASHDAMAGE
+		game->EndLevelLoad();
+#endif
 	}
 
 	uiManager->EndLevelLoad();
