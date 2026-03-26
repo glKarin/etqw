@@ -2573,6 +2573,10 @@ void idCompiler::ParseVariableDef( idTypeDef *type, const char *name ) {
 				EmitOpcode( OP_STORE_FTOBOOL, def2, def );
 			} else if ( ( type == &type_float ) && ( def2->TypeDef() == &type_boolean ) ) {
 				EmitOpcode( OP_STORE_BOOLTOF, def2, def );
+#ifdef _ETQW //karin: e.g. float varF = vec3Var_x; See idProgram::AllocDef
+			} else if ( ( type == &type_float ) && ( def2->TypeDef()->Type() == ev_float && !idStr::Cmp(def2->TypeDef()->Name(), "float vector") ) ) {
+				EmitOpcode( OP_STORE_F, def2, def );
+#endif
 			} else {
 				Error( "bad initialization for '%s'", name );
 			}

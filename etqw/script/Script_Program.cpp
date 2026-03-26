@@ -1147,9 +1147,9 @@ void idProgram::AddDefToNameList( idVarDef *def, const char *name ) {
 /*
 ============
 idProgram::AllocMem
+============
 */
 byte *idProgram::AllocMem(size_t size) //64
-============
 {
 	byte *bytePtr;
 
@@ -1243,7 +1243,7 @@ idVarDef *idProgram::AllocDef( idTypeDef *type, const char *name, idVarDef *scop
 			// make automatic defs for the vectors elements
 			// origin can be accessed as origin_x, origin_y, and origin_z
 			sprintf( element, "%s_x", def->Name() );
-			def_x = AllocVarDef(_type, element, scope ); //k64
+			def_x = AllocVarDef( _type, element, scope ); //k64
 
 			sprintf( element, "%s_y", def->Name() );
 			def_y = AllocVarDef( _type, element, scope ); //k64
