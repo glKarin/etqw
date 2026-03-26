@@ -180,7 +180,7 @@ static void Session_Map_f(const idCmdArgs &args)
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
 #ifdef _SPLASHDAMAGE
-	sprintf(string, "maps/%s.world", map.c_str());
+	sprintf(string, "maps/%s.entities", map.c_str());
 #else
 	sprintf(string, "maps/%s.map", map.c_str());
 #endif
@@ -2102,8 +2102,8 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	if (loadingSaveGame && savegameFile) {
 #ifdef _RAVEN
 		if (game->InitFromSaveGame(fullMapName + ".map", rw, savegameFile) == false)
-#elif defined(_SPLASHDAMAGE)
-		if (true)
+#elif defined(_SPLASHDAMAGE) //karin: online game only
+		if (false)
 #else
 		if (game->InitFromSaveGame(fullMapName + ".map", rw, sw, savegameFile) == false)
 #endif

@@ -46,6 +46,9 @@ extern idStrList stageParms;
 	for(int _i = 0; _i < stageParms.Num(); _i++) { \
 		const idStr &p = stageParms[_i]; \
 		if(!idStr::Icmp(p, "clamp")) trp = TR_CLAMP; \
+		else if(!idStr::Icmp(p, "clamp_x")) trp = TR_CLAMP_X; \
+		else if(!idStr::Icmp(p, "clamp_y")) trp = TR_CLAMP_Y; \
+		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
 		else if(!idStr::Icmp(p, "linear")) tf = TF_LINEAR; \
 		else if(!idStr::Icmp(p, "nearest")) tf = TF_NEAREST; \
 		else if(!idStr::Icmp(p, "highquality")) { \
@@ -502,6 +505,14 @@ void idMaterial::ParseSort(idLexer &src)
 #ifdef _SPLASHDAMAGE
 	} else if (!token.Icmp("opaqueNearer")) {
 		sort = SS_OPAQUENEARER;
+	} else if (!token.Icmp("opaqueNearest")) {
+		sort = SS_OPAQUENEAREST;
+	} else if (!token.Icmp("refractable")) {
+		sort = SS_REFRACTABLE;
+	} else if (!token.Icmp("refraction")) {
+		sort = SS_REFRACTION;
+	} else if (!token.Icmp("opaqueFirst")) {
+		sort = SS_OPAQUEFIRST;
 #endif
 	} else {
 		sort = atof(token);
@@ -874,6 +885,9 @@ int idMaterial::ParseTerm(idLexer &src)
 		return GetExpressionConstant(1.0f);
 	}
 	if (!token.Icmp("sun_azimuth")) {
+		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("wind_x")) {
 		return GetExpressionConstant(1.0f);
 	}
 #endif
@@ -3019,6 +3033,9 @@ void idMaterial::ParseMaterial(idLexer &src)
 		// foglight
 		else if (!token.Icmp("fogLight")) {
 			fogLight = true;
+#ifdef _SPLASHDAMAGE
+			src.SkipRestOfLine();
+#endif
 			continue;
 		}
 		// blendlight
@@ -3318,6 +3335,8 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("lowrangeuvs")) {
 			continue;
 		} else if (!token.Icmp("shadowMapped")) {
+			continue;
+		} else if (!token.Icmp("forceAtmosphere")) {
 			continue;
 #endif
 

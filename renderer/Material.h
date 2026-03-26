@@ -76,6 +76,11 @@ typedef enum {
 	// set AFTER image format selection
 	TR_CLAMP_TO_ZERO_ALPHA	// guarantee 0 alpha edge for projected textures,
 	// set AFTER image format selection
+#ifdef _SPLASHDAMAGE
+	,
+	TR_CLAMP_X,				// only clamp x direction
+	TR_CLAMP_Y,				// only clamp y direction
+#endif
 } textureRepeat_t;
 
 #ifdef _RAVENxxx //karin: TODO decal in Quake4

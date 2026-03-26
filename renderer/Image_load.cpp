@@ -310,6 +310,16 @@ void idImage::SetImageFilterAndRepeat() const
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			break;
+#ifdef _SPLASHDAMAGE
+		case TR_CLAMP_X:
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			break;
+		case TR_CLAMP_Y:
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			break;
+#endif
 		default:
 			common->FatalError("R_CreateImage: bad texture repeat");
 	}
@@ -2848,6 +2858,14 @@ void idImage::Print() const
 		case TR_CLAMP:
 			common->Printf("clmp ");
 			break;
+#ifdef _SPLASHDAMAGE
+		case TR_CLAMP_X:
+			common->Printf("clpx ");
+			break;
+		case TR_CLAMP_Y:
+			common->Printf("clpy ");
+			break;
+#endif
 		default:
 			common->Printf("<BAD REPEAT:%i>", repeat);
 			break;

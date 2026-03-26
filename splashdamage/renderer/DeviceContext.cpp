@@ -13,6 +13,7 @@
 #define DC_PLACEHOLDER(...)
 #define DC_DRAW(...)
 #endif
+#define DC_UNUSED_ON_GAME
 
 #define AsASCIICharLang(text_, len_) ( !_hasWideCharFont || idStr::IsPureASCII(text_, len_) )
 
@@ -117,10 +118,118 @@ void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, 
 }
 
 void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, float h, float s01, float t01, float s02, float t02, float s11, float t11, float s12, float t12, const idMaterial* material, float angle ) {
+	DC_UNUSED_ON_GAME
 	DC_PLACEHOLDER("DC:DrawMaskedClippedRect|%s\n", material?material->GetName():NULL);
 
 	if(!material)
 		return;
+
+	//printf("rrr|%f %f %f %f\n",s1,t1,s2,t2);
+	idDrawVert verts[4];
+	glIndex_t indexes[6];
+	indexes[0] = 3;
+	indexes[1] = 0;
+	indexes[2] = 2;
+	indexes[3] = 2;
+	indexes[4] = 0;
+	indexes[5] = 1;
+	verts[0].xyz[0] = x;
+	verts[0].xyz[1] = y;
+	verts[0].xyz[2] = 0;
+	verts[0].st[0] = s01;
+	verts[0].st[1] = t01;
+	verts[0].normal[0] = 0;
+	verts[0].normal[1] = 0;
+	verts[0].normal[2] = 1;
+	verts[0].tangents[0][0] = 1;
+	verts[0].tangents[0][1] = 0;
+	verts[0].tangents[0][2] = 0;
+	verts[0].tangents[1][0] = 0;
+	verts[0].tangents[1][1] = 1;
+	verts[0].tangents[1][2] = 0;
+	verts[1].xyz[0] = x + w;
+	verts[1].xyz[1] = y;
+	verts[1].xyz[2] = 0;
+	verts[1].st[0] = s02;
+	verts[1].st[1] = t02;
+	verts[1].normal[0] = 0;
+	verts[1].normal[1] = 0;
+	verts[1].normal[2] = 1;
+	verts[1].tangents[0][0] = 1;
+	verts[1].tangents[0][1] = 0;
+	verts[1].tangents[0][2] = 0;
+	verts[1].tangents[1][0] = 0;
+	verts[1].tangents[1][1] = 1;
+	verts[1].tangents[1][2] = 0;
+	verts[2].xyz[0] = x + w;
+	verts[2].xyz[1] = y + h;
+	verts[2].xyz[2] = 0;
+	verts[2].st[0] = s12;
+	verts[2].st[1] = t12;
+	verts[2].normal[0] = 0;
+	verts[2].normal[1] = 0;
+	verts[2].normal[2] = 1;
+	verts[2].tangents[0][0] = 1;
+	verts[2].tangents[0][1] = 0;
+	verts[2].tangents[0][2] = 0;
+	verts[2].tangents[1][0] = 0;
+	verts[2].tangents[1][1] = 1;
+	verts[2].tangents[1][2] = 0;
+	verts[3].xyz[0] = x;
+	verts[3].xyz[1] = y + h;
+	verts[3].xyz[2] = 0;
+	verts[3].st[0] = s11;
+	verts[3].st[1] = t11;
+	verts[3].normal[0] = 0;
+	verts[3].normal[1] = 0;
+	verts[3].normal[2] = 1;
+	verts[3].tangents[0][0] = 1;
+	verts[3].tangents[0][1] = 0;
+	verts[3].tangents[0][2] = 0;
+	verts[3].tangents[1][0] = 0;
+	verts[3].tangents[1][1] = 1;
+	verts[3].tangents[1][2] = 0;
+
+	//Generate a translation so we can translate to the center of the image rotate and draw
+	idVec3 origTrans;
+	origTrans.x = x+(w/2);
+	origTrans.y = y+(h/2);
+	origTrans.z = 0;
+
+
+	//Rotate the verts about the z axis before drawing them
+	idMat4 rotz;
+	rotz.Identity();
+	float sinAng = idMath::Sin(angle);
+	float cosAng = idMath::Cos(angle);
+	rotz[0][0] = cosAng;
+	rotz[0][1] = sinAng;
+	rotz[1][0] = -sinAng;
+	rotz[1][1] = cosAng;
+
+	for (int i = 0; i < 4; i++) {
+		//Translate to origin
+		verts[i].xyz -= origTrans;
+
+		//Rotate
+		verts[i].xyz = rotz * verts[i].xyz;
+
+		//Translate back
+		verts[i].xyz += origTrans;
+	}
+
+	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, material, (angle == 0.0) ? false : true);
+
+	idVec4 c = tr.guiModel->CurrentColor();
+	renderSystem->SetColor(colorRed);
+	idStr str = "";
+	str.Append(material->GetName());
+	idWStr wstr = StrToWStr(str);
+	sdBounds2D bb = sdBounds2D(x,y,w,h);
+	bb.GetRight() = 640;
+	DrawText(wstr.c_str(), bb, 0);
+
+	renderSystem->SetColor(c);
 }
 
 void sdDeviceContextLocal::DrawCinematic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, idSoundEmitter* referenceSound, float angle ) {
@@ -138,6 +247,7 @@ void sdDeviceContextLocal::DrawClippedWinding( const idWinding2D& winding, const
 }
 
 void sdDeviceContextLocal::DrawClippedWindingMasked( const idWinding2D& winding, const idMaterial* material, float minx, float miny, float width, float height ) {
+	DC_UNUSED_ON_GAME
 	DC_PLACEHOLDER("DC:DrawClippedWindingMasked|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -149,6 +259,55 @@ void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float 
 
 	if(!material)
 		return;
+
+	if (color.w == 0.0f) {
+		return;
+	}
+
+	//
+	//  handle negative scales as well
+	if (scaleX < 0) {
+		w *= -1;
+		scaleX *= -1;
+	}
+
+	if (scaleY < 0) {
+		h *= -1;
+		scaleY *= -1;
+	}
+
+	//
+	if (w < 0) {	// flip about vertical
+		w  = -w;
+		idSwap(u0, u1);
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	} else {
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	}
+
+	if (h < 0) {	// flip about horizontal
+		h  = -h;
+		idSwap(v0, v1);
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	} else {
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	}
+
+	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
+		return;
+	}
+
+	SetTempColor(color);
+
+	AdjustCoords(&x, &y, &w, &h);
+
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
@@ -199,6 +358,7 @@ void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, con
 }
 
 void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idVec2 extents, const idMaterial* material, const idVec4& color ) {
+	DC_UNUSED_ON_GAME
 	DC_DRAW("DCDraw:DrawRotatedMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -348,6 +508,7 @@ void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec
 }
 
 void sdDeviceContextLocal::DrawLineMaterial( const idVec2& start, const idVec2& end, const float width, const idMaterial* material, const idVec4& color ) {
+	DC_UNUSED_ON_GAME
 	DC_PLACEHOLDER("DC:DrawLineMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -359,6 +520,7 @@ void sdDeviceContextLocal::DrawLine( const idVec2& start, const idVec2& end, con
 }
 
 void sdDeviceContextLocal::DrawFilledArc( const float x, const float y, const float radius, int numSides, float percent, const idVec4 &color, float startAngle, const idMaterial *material ) {
+	DC_UNUSED_ON_GAME
 	DC_PLACEHOLDER("DC:DrawFilledArc|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -373,6 +535,7 @@ void sdDeviceContextLocal::DrawFilledArcMasked( const float x, const float y, co
 }
 
 void sdDeviceContextLocal::DrawArc( const float x, const float y, const float radius, const float width, const int numSides, const float percent, const idVec4 &color, const float startAngle ) {
+	DC_UNUSED_ON_GAME
 	DC_PLACEHOLDER("DC:DrawArc\n");
 }
 
@@ -384,7 +547,9 @@ void sdDeviceContextLocal::DrawTimer( const float x, const float y, const float 
 }
 
 qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
+#if 1
 	name = "fonts";
+#endif
 	int c = fonts.Num();
 
 	for (int i = 0; i < c; i++) {
