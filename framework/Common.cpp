@@ -3377,6 +3377,10 @@ void idCommonLocal::LoadGameDLL(void)
 	// initialize the game object
 	if (game != NULL) {
 		game->Init();
+#ifdef _SPLASHDAMAGE
+		game->OnLanguageInit();
+		game->OnInputInit();
+#endif
 	}
 }
 
@@ -3390,6 +3394,10 @@ void idCommonLocal::UnloadGameDLL(void)
 
 	// shut down the game object
 	if (game != NULL) {
+#ifdef _SPLASHDAMAGE
+		game->OnInputShutdown();
+		game->OnLanguageShutdown();
+#endif
 		game->Shutdown();
 	}
 

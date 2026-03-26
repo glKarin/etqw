@@ -2152,32 +2152,13 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("detailMult")) { // detailMult 0,1,2,3
-			idToken				t;
-
-			// 0:
 			ParseExpression(src);
-
-			// 1:
-			src.ReadToken(&t);
-			if (!t.Cmp(",")) {
-				ParseExpression(src);
-				// 2:
-				src.ReadToken(&t);
-				if (!t.Cmp(",")) {
-					ParseExpression(src);
-					// 3:
-					src.ReadToken(&t);
-					if (!t.Cmp(",")) {
-						ParseExpression(src);
-					} else {
-						src.UnreadToken(&t);
-					}
-				} else {
-					src.UnreadToken(&t);
-				}
-			} else {
-				src.UnreadToken(&t);
-			}
+			MatchToken(src, ",");
+			ParseExpression(src);
+			MatchToken(src, ",");
+			ParseExpression(src);
+			MatchToken(src, ",");
+			ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("alphatocoverage")) {
@@ -2187,7 +2168,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			ParseExpression(src);
 			continue;
 		}
-		if (!token.Icmp("specularColor")) { // specularColor 0,1,2,3
+		if (!token.Icmp("specularColor")) { // specularColor 0,1,2[,3]
 			idToken				t;
 
 			// 0:
@@ -2239,9 +2220,18 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		}
 		if (!token.Icmp("skies_cloudColor")) { // skies_cloudColor 1, 1, 1, 1
 			ParseExpression(src);
+			MatchToken(src, ",");
 			ParseExpression(src);
+			MatchToken(src, ",");
 			ParseExpression(src);
+			MatchToken(src, ",");
 			ParseExpression(src);
+			continue;
+		}
+		if (!token.Icmp("fillMode")) { // fillMode	lines	1
+			idToken t;
+			src.ExpectAnyToken(&t);
+			(float)src.ParseFloat();
 			continue;
 		}
 #endif
@@ -3285,8 +3275,8 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("surfaceTypeMap")) { // surfaceTypeMap "name"
 			src.ReadToken(&token);
 			surfaceTypeMapDecl = static_cast<const sdDeclSurfaceTypeMap *>(declManager->FindType(DECL_SURFACETYPEMAP, token, false));
-			if ( !surfaceTypeMapDecl || surfaceTypeMapDecl->IsImplicit() )
-				common->Warning("UNKNOWN: surfaceTypeMap '%s' in '%s'", token.c_str(), GetName());
+			// if ( !surfaceTypeMapDecl || surfaceTypeMapDecl->IsImplicit() )
+			// 	common->Warning("UNKNOWN: surfaceTypeMap '%s' in '%s'", token.c_str(), GetName());
 			continue;
 		} else if (!token.Icmp("surfaceType")) { // surfaceType "metal"
             src.ReadToken(&token);

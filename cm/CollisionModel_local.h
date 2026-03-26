@@ -542,7 +542,10 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		cm_model_t 	    *AllocModel(cm_model_t * &model);
 		void            ClearModel(cm_model_t *model);
+		void			FreeModel_memory(cm_model_t *model);
 		cmHandle_t		FindModelAndIndex(const char *name, int &index);
+#else
+		void			FreeModel(cm_model_t *model);
 #endif
 		// merging polygons
 		void			ReplacePolygons(cm_model_t *model, cm_node_t *node, cm_polygon_t *p1, cm_polygon_t *p2, cm_polygon_t *newp);

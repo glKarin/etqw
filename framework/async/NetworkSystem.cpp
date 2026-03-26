@@ -306,6 +306,7 @@ void idNetworkSystem::RemoveFriend(int clientNum) { (void)clientNum; }
 #endif
 
 #ifdef _SPLASHDAMAGE
+#include "../Session_local.h"
 void idNetworkSystem::ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info ) {
 
 }
@@ -354,7 +355,7 @@ bool idNetworkSystem::IsActive( void ) {
 
 
 netadr_t idNetworkSystem::ClientGetServerAddress( void ) const {
-	return netadr_t();
+	return idAsyncNetwork::client.serverAddress;
 }
 
 void idNetworkSystem::idNetworkSystem::EnableVoip( voiceMode_t mode ) {
@@ -372,7 +373,7 @@ int idNetworkSystem::GetLastVoiceReceivedTime( int clientIndex ) {
 }
 
 int idNetworkSystem::ClientGetFrameTime( void ) {
-	return 0;
+	return idAsyncNetwork::client.clientTime;
 }
 
 int idNetworkSystem::GetDemoState( int& time, int& position, int& length, int& startPosition, int& endPosition, int &cutStartMarker, int &cutEndMarker ) {
@@ -394,12 +395,11 @@ bool idNetworkSystem::idNetworkSystem::CanPlayDemo( const char* fileName ) {
 }
 
 const idDict& idNetworkSystem::GetUserInfo( int clientNum ) {
-	static idDict dict;
-	return dict;
+	return sessLocal.mapSpawnData.userInfo[ clientNum ];
 }
 
 bool idNetworkSystem::idNetworkSystem::IsRankedServer( void ) {
-	return false;
+	return true;
 }
 
 void idNetworkSystem::idNetworkSystem::StartSoundTest( int duration ) {

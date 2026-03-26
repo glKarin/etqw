@@ -639,13 +639,12 @@ void idCollisionModelManagerLocal::FreeTree_r(cm_model_t *model, cm_node_t *head
 idCollisionModelManagerLocal::FreeModel
 ================
 */
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+void idCollisionModelManagerLocal::FreeModel_memory(cm_model_t *model)
+#else
 void idCollisionModelManagerLocal::FreeModel(idCollisionModel *_model)
+#endif
 {
-	if (!_model)
-		return;
-
-	cm_model_t *model = static_cast<cm_model_t *>(_model);
-
 	cm_polygonRefBlock_t *polygonRefBlock, *nextPolygonRefBlock;
 	cm_brushRefBlock_t *brushRefBlock, *nextBrushRefBlock;
 	cm_nodeBlock_t *nodeBlock, *nextNodeBlock;
@@ -4941,7 +4940,9 @@ cmHandle_t idCollisionModelManagerLocal::ModelFromTrm(const char* mapName, const
 
 	return handle;
 }
+#endif
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 void	idCollisionModelManagerLocal::FreeModel(cmHandle_t modelHandle)
 {
 	//k: 0 not free
@@ -4957,9 +4958,7 @@ void	idCollisionModelManagerLocal::FreeModel(cmHandle_t modelHandle)
 #endif
 	//FreeModel_memory(models[modelHandle]); // do not free
 }
-#endif
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 cmHandle_t idCollisionModelManagerLocal::FindModelAndIndex(const char *name, int &index)
 {
 	int i;

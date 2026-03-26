@@ -666,6 +666,9 @@ void idSessionLocal::ShowLoadingGui()
 
 	console->Close();
 
+#ifdef _SPLASHDAMAGE
+	game->ShowLevelLoadScreen(mapSpawnData.serverInfo.GetString("si_map"));
+#endif
 	// introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
 #if 1
 	// Try and prevent the while loop from being skipped over (long hitch on the main thread?)
@@ -1151,7 +1154,11 @@ void idSessionLocal::StartPlayingRenderDemo(idStr demoName)
 #else
 	guiLoading = uiManager->FindGui("guis/map/loading.gui", true, false, true);
 #endif
+#ifdef _SPLASHDAMAGE
+	game->UpdateLevelLoadScreen(common->GetLanguageDict()->GetString("#str_02087"));
+#else
 	guiLoading->SetStateString("demo", common->GetLanguageDict()->GetString("#str_02087"));
+#endif
 	readDemo = new idDemoFile;
 	demoName.DefaultFileExtension(".demo");
 
@@ -1168,7 +1175,11 @@ void idSessionLocal::StartPlayingRenderDemo(idStr demoName)
 	insideExecuteMapChange = true;
 	UpdateScreen();
 	insideExecuteMapChange = false;
+#ifdef _SPLASHDAMAGE
+	game->UpdateLevelLoadScreen(L"");
+#else
 	guiLoading->SetStateString("demo", "");
+#endif
 
 	// setup default render demo settings
 	// that's default for <= Doom3 v1.1
@@ -1199,8 +1210,12 @@ void idSessionLocal::TimeRenderDemo(const char *demoName, bool twice)
 
 	if (twice && readDemo) {
 		// cycle through once to precache everything
+#ifdef _SPLASHDAMAGE
+		game->UpdateLevelLoadScreen(common->GetLanguageDict()->GetString("#str_04852"));
+#else
 		guiLoading->SetStateString("demo", common->GetLanguageDict()->GetString("#str_04852"));
 		guiLoading->StateChanged(com_frameTime);
+#endif
 
 		while (readDemo) {
 			insideExecuteMapChange = true;
@@ -1209,7 +1224,11 @@ void idSessionLocal::TimeRenderDemo(const char *demoName, bool twice)
 			AdvanceRenderDemo(true);
 		}
 
+#ifdef _SPLASHDAMAGE
+		game->UpdateLevelLoadScreen(L"");
+#else
 		guiLoading->SetStateString("demo", "");
+#endif
 		StartPlayingRenderDemo(demo);
 	}
 
@@ -1762,6 +1781,7 @@ idSessionLocal::LoadLoadingGui
 */
 void idSessionLocal::LoadLoadingGui(const char *mapName)
 {
+#if !defined(_SPLASHDAMAGE)
 	// load / program a gui to stay up on the screen while loading
 	idStr stripped = mapName;
 	stripped.StripFileExtension();
@@ -1847,6 +1867,7 @@ void idSessionLocal::LoadLoadingGui(const char *mapName)
 	}
 
 	guiLoading->SetStateFloat("map_loading", 0.0f);
+#endif
 }
 
 /*
@@ -2111,7 +2132,12 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
 	}
-
+#ifdef _SPLASHDAMAGE
+	idStr reason;
+	idStr mapName = mapString;
+	userMapChangeResult_e changeResult = game->OnUserStartMap("", reason, mapName);
+	Sys_Printf("OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
+#endif
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
 		// spawn players
 		for (i = 0; i < numClients; i++) {
@@ -2159,6 +2185,18 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 
 	common->PrintWarnings();
 
+#ifdef _SPLASHDAMAGE
+	if (bytesNeededForMapLoad) {
+		float pct = 0.0f;
+
+		while (pct < 1.0f) {
+			game->PacifierUpdate();
+			Sys_GenerateEvents();
+			UpdateScreen();
+			pct += 0.05f;
+		}
+	}
+#else
 	if (guiLoading && bytesNeededForMapLoad) {
 		float pct = guiLoading->State().GetFloat("map_loading");
 
@@ -2174,6 +2212,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 			pct += 0.05f;
 		}
 	}
+#endif
 
 	// capture the current screen and start a wipe
 	StartWipe("wipe2Material");
@@ -2202,6 +2241,9 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 
 	// stop drawing the laoding screen
 	insideExecuteMapChange = false;
+#ifdef _SPLASHDAMAGE
+	game->HideLevelLoadScreen();
+#endif
 
 	Sys_SetPhysicalWorkMemory(-1, -1);
 
@@ -2998,6 +3040,9 @@ void idSessionLocal::PacifierUpdate()
 
 	lastPacifierTime = time;
 
+#ifdef _SPLASHDAMAGE
+	game->PacifierUpdate();
+#else
 	if (guiLoading && bytesNeededForMapLoad) {
 		float n = fileSystem->GetReadCount();
 		float pct = (n / bytesNeededForMapLoad);
@@ -3005,6 +3050,7 @@ void idSessionLocal::PacifierUpdate()
 		guiLoading->SetStateFloat("map_loading", pct);
 		guiLoading->StateChanged(com_frameTime);
 	}
+#endif
 
 	Sys_GenerateEvents();
 
