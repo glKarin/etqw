@@ -44,6 +44,12 @@ const int MAX_ASYNC_CLIENTS			= 16;
 const int MAX_ASYNC_CLIENTS			= 32;
 
 #endif
+
+#ifdef SD_SUPPORT_REPEATER
+
+const int REPEATER_CLIENT_INDEX		= -1;
+
+#endif // SD_SUPPORT_REPEATER
 #endif
 
 #ifdef _RAVEN
@@ -187,7 +193,14 @@ class idNetworkSystem
     	
     	virtual voiceMode_t		GetVoiceMode( void );
 
-    	virtual void			RegisterServerInterest( const netadr_t& address );
+		virtual void			RegisterServerInterest( const netadr_t& address );
+#ifdef SD_SUPPORT_REPEATER
+		virtual void			RepeaterSendReliableMessage( int clientNum, const idBitMsg& msg, bool ignoreRelays );
+
+		virtual void			RepeaterSetInfo( const idDict& info );
+		virtual const idDict&	RepeaterGetClientInfo( int clientNum );
+		virtual void			SetClientRepeaterUserOrigin( const repeaterUserOrigin_t& origin );
+#endif // SD_SUPPORT_REPEATER
 #endif
 
 #ifdef _RAVEN

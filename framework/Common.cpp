@@ -2879,6 +2879,8 @@ void idCommonLocal::PrintLoadingMessage(const char *msg)
 	int len = strlen(msg);
 #ifdef _RAVEN // quake4 bigchar font
 	renderSystem->DrawSmallStringExt((640 - len * SMALLCHAR_WIDTH) / 2, 410, msg, idVec4(0.94f, 0.62f, 0.05f, 1.0f), true, declManager->FindMaterial("fonts/english/bigchars"));
+#elif defined(_SPLASHDAMAGE) //karin: text color
+	renderSystem->DrawSmallStringExt((640 - len * SMALLCHAR_WIDTH) / 2, 410, msg, idVec4(1.0f, 0.5f, 0.0f, 0.85f), true, declManager->FindMaterial("textures/bigchars"));
 #else
 	renderSystem->DrawSmallStringExt((640 - len * SMALLCHAR_WIDTH) / 2, 410, msg, idVec4(0.0f, 0.81f, 0.94f, 1.0f), true, declManager->FindMaterial("textures/bigchars"));
 #endif

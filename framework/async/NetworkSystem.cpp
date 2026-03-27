@@ -424,6 +424,25 @@ voiceMode_t idNetworkSystem::GetVoiceMode( void ) {
 void idNetworkSystem::idNetworkSystem::RegisterServerInterest( const netadr_t& address ) {
 }
 
+#ifdef SD_SUPPORT_REPEATER
+void idNetworkSystem::RepeaterSendReliableMessage( int clientNum, const idBitMsg& msg, bool ignoreRelays ) {
+
+}
+		
+void idNetworkSystem::RepeaterSetInfo( const idDict& info ) {
+
+}
+
+const idDict& idNetworkSystem::RepeaterGetClientInfo( int clientNum ) {
+	return sessLocal.mapSpawnData.userInfo[ clientNum ];
+}
+
+void idNetworkSystem::SetClientRepeaterUserOrigin( const repeaterUserOrigin_t& origin ) {
+
+}
+
+#endif // SD_SUPPORT_REPEATER
+
 #if !defined( SD_PUBLIC_TOOLS )
 bool idNetworkSystem::idNetworkSystem::HTTPEnable( bool enable ) {
 	return false;

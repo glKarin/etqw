@@ -728,6 +728,10 @@ void idAASFileLocal::Clear(void)
 	featureIndexes.Clear();
 	features.Clear();
 #endif
+#ifdef _SPLASHDAMAGE
+	obstaclePVS.Clear();
+	reachabilityNames.Clear();
+#endif
 }
 
 /*
@@ -1392,6 +1396,14 @@ bool idAASFileLocal::Load(const idStr &fileName, unsigned int mapFileCRC)
 	int depth;
 	unsigned int c;
 
+#ifdef _SPLASHDAMAGE
+	if (LoadBinary(name, mapFileCRC)) {
+		return true;
+	} else {
+		common->Printf("idAASFileLocal::Load: unable to load binary aasb file '%s', try ascii aas file.\n", fileName.c_str());
+	}
+#endif
+
 	name = fileName;
 	crc = mapFileCRC;
 
@@ -1704,6 +1716,374 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
 
 bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const {
 	return false;
+}
+
+/*
+================
+idAASFileLocal::LoadBinary
+================
+*/
+bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
+{
+	idLexer src(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGESCAPECHARS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWPATHNAMES);
+	idToken token;
+	int depth;
+	unsigned int c;
+
+	name = fileName;
+	crc = mapFileCRC;
+
+	idStr binName(name);
+	binName.Append("b");
+
+	common->Printf("[Load AASB]\n");
+	common->Printf("loading %s\n", binName.c_str());
+
+	idFile *file = fileSystem->OpenFileRead(fileName.c_str());
+	if (!file) {
+		return false;
+	}
+
+	//karin: 1. read fileID
+	file->ReadString(token);
+	if (idStr::Icmp(token, AAS_FILE_ID_BINARY)) {
+		common->Warning("Not an AASB file: '%s'", name.c_str());
+		fileSystem->CloseFile(file);
+		return false;
+	}
+
+	//karin: 2. read version
+	idStr version;
+	file->ReadString(version);
+	if (version != AAS_FILE_VERSION)
+	{
+		common->Warning("AASB file '%s' has version %s instead of %s", name.c_str(), token.c_str(), AAS_FILEVERSION);
+		fileSystem->CloseFile(file);
+		return false;
+	}
+
+	file->ReadUnsignedInt(c);
+#if 0
+	if (mapFileCRC && c != mapFileCRC) {
+		common->Warning("AASB file '%s' is out of date", name.c_str());
+		return false;
+	}
+#endif
+
+	//karin: 3. read type
+	int type;
+	file->ReadInt(type);
+#if 0
+	if (type != 0 && type != 1)
+	{
+		common->Warning("AASB file '%s' has invalid type %d", name.c_str(), type);
+		fileSystem->CloseFile(file);
+		return false;
+	}
+#endif
+
+	// clear the file in memory
+	Clear();
+
+	//karin: 4. parse settings
+	if (!settings.ReadFromFileBinary(file)) {
+		fileSystem->CloseFile(file);
+		return false;
+	}
+
+	//karin: 5. parse the file
+	if (!ParsePlanesBinary(file))
+		return false;
+
+	if (!ParseVerticesBinary(file))
+		return false;
+
+	if (!ParseEdgesBinary(file))
+		return false;
+	if (!ParseIndexBinary(file, edgeIndex))
+		return false;
+
+	if (!ParseAreasBinary(file))
+		return false;
+
+	if (!ParseNodesBinary(file))
+		return false;
+
+	if (!ParsePortalsBinary(file))
+		return false;
+	if (!ParseIndexBinary(file, portalIndex))
+		return false;
+
+	if (!ParseClustersBinary(file))
+		return false;
+
+	if (!ParseObstaclePVSsBinary(file))
+		return false;
+
+	if (!ParseReachabilityNamesBinary(file))
+		return false;
+
+	FinishAreas();
+
+	depth = MaxTreeDepth();
+
+	if (depth > MAX_AAS_TREE_DEPTH) {
+		src.Error("idAASFileLocal::Load: tree depth = %d", depth);
+	}
+
+	common->Printf("done.\n");
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParsePlanesBinary
+================
+*/
+bool idAASFileLocal::ParsePlanesBinary(idFile *file)
+{
+	int numPlanes, i;
+	idPlane plane;
+	idVec4 vec;
+
+	file->ReadInt(numPlanes);
+	planeList.Resize(numPlanes);
+
+	for (i = 0; i < numPlanes; i++) {
+		file->ReadFloat(vec[0]);
+		file->ReadFloat(vec[1]);
+		file->ReadFloat(vec[2]);
+		file->ReadFloat(vec[3]);
+
+		plane.SetNormal(vec.ToVec3());
+		plane.SetDist(vec[3]);
+		planeList.Append(plane);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseVerticesBinary
+================
+*/
+bool idAASFileLocal::ParseVerticesBinary(idFile *file)
+{
+	int numVertices, i;
+	idVec3 vec;
+
+	file->ReadInt(numVertices);
+	vertices.Resize(numVertices);
+
+	for (i = 0; i < numVertices; i++) {
+		file->ReadFloat(vec[0]);
+		file->ReadFloat(vec[1]);
+		file->ReadFloat(vec[2]);
+
+		vertices.Append(vec);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseEdgesBinary
+================
+*/
+bool idAASFileLocal::ParseEdgesBinary(idFile *file)
+{
+	int numEdges, i;
+	aasEdge_t edge;
+
+	file->ReadInt(numEdges);
+	edges.Resize(numEdges);
+
+	for (i = 0; i < numEdges; i++) {
+		file->ReadInt(edge.vertexNum[0]);
+		file->ReadInt(edge.vertexNum[1]);
+		file->ReadInt(edge.flags);
+		edges.Append(edge);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseIndexBinary
+================
+*/
+bool idAASFileLocal::ParseIndexBinary(idFile *file, idList<aasIndex_t> &indexes)
+{
+	int numIndexes, i;
+	aasIndex_t index;
+
+	file->ReadInt(numIndexes);
+	indexes.Resize(numIndexes);
+
+	for (i = 0; i < numIndexes; i++) {
+		file->ReadInt(index);
+		indexes.Append(index);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseAreasBinary
+================
+*/
+bool idAASFileLocal::ParseAreasBinary(idFile *file)
+{
+	int numAreas, i;
+	aasArea_t area;
+	unsigned short uh;
+
+	file->ReadInt(numAreas);
+	areas.Resize(numAreas);
+
+	for (i = 0; i < numAreas; i++) {
+		file->ReadUnsignedShort(uh);
+		area.travelFlags = uh;
+		file->ReadUnsignedShort(area.flags);
+		area.contents = 0;
+		file->ReadInt(area.firstEdge);
+		file->ReadInt(area.numEdges);
+		file->ReadShort(area.cluster);
+		file->ReadShort(area.clusterAreaNum);
+		file->ReadUnsignedInt(area.obstaclePVSOffset);
+		file->Seek(4 * 2, FS_SEEK_CUR); // 2 32bits pointers
+		area.reach = NULL;
+		area.rev_reach = NULL;
+		area.bounds.Zero();
+		area.center.Zero();
+		areas.Append(area);
+		//ParseReachabilities(src, i);
+	}
+
+	LinkReversedReachability();
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseNodesBinary
+================
+*/
+bool idAASFileLocal::ParseNodesBinary(idFile *file)
+{
+	int numNodes, i;
+	aasNode_t node;
+
+	file->ReadInt(numNodes);
+	if (numNodes <= 1) //karin: at least 2
+		return false;
+
+	nodes.Resize(numNodes);
+
+	for (i = 0; i < numNodes; i++) {
+		file->ReadUnsignedShort(node.planeNum);
+		file->ReadUnsignedShort(node.flags);
+		file->ReadInt(node.children[0]);
+		file->ReadInt(node.children[1]);
+		nodes.Append(node);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParsePortalsBinary
+================
+*/
+bool idAASFileLocal::ParsePortalsBinary(idFile *file)
+{
+	int numPortals, i;
+	aasPortal_t portal;
+
+	file->ReadInt(numPortals);
+	portals.Resize(numPortals);
+
+	for (i = 0; i < numPortals; i++) {
+		file->ReadUnsignedShort(portal.areaNum);
+		file->ReadShort(portal.clusters[0]);
+		file->ReadShort(portal.clusters[1]);
+		file->ReadUnsignedShort(portal.clusterAreaNum[0]);
+		file->ReadUnsignedShort(portal.clusterAreaNum[1]);
+		file->ReadUnsignedShort(portal.maxAreaTravelTime);
+		portals.Append(portal);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseClustersBinary
+================
+*/
+bool idAASFileLocal::ParseClustersBinary(idFile *file)
+{
+	int numClusters, i;
+	aasCluster_t cluster;
+
+	file->ReadInt(numClusters);
+	clusters.Resize(numClusters);
+
+	for (i = 0; i < numClusters; i++) {
+		file->ReadInt(cluster.numAreas);
+		file->ReadInt(cluster.numReachableAreas);
+		file->ReadInt(cluster.firstPortal);
+		file->ReadInt(cluster.numPortals);
+		clusters.Append(cluster);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseObstaclePVSsBinary
+================
+*/
+bool idAASFileLocal::ParseObstaclePVSsBinary(idFile *file)
+{
+	int numIndexes, i;
+
+	file->ReadInt(numIndexes);
+	obstaclePVS.Resize(numIndexes);
+
+	for (i = 0; i < numIndexes; i++) {
+		file->ReadUnsignedChar(obstaclePVS[i]);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseReachabilityNamesBinary
+================
+*/
+bool idAASFileLocal::ParseReachabilityNamesBinary(idFile *file)
+{
+	int numIndexes, i;
+
+	file->ReadInt(numIndexes);
+	reachabilityNames.Resize(numIndexes);
+
+	for (i = 0; i < numIndexes; i++) {
+		file->Read(reachabilityNames[i].name, sizeof(reachabilityNames[i].name));
+		file->ReadInt(reachabilityNames[i].index);
+	}
+
+	return true;
 }
 
 #endif

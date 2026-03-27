@@ -67,6 +67,20 @@ class idAASFileLocal : public idAASFile
 		bool						Write(const idStr &fileName, unsigned int mapFileCRC);
 
 #ifdef _SPLASHDAMAGE
+		bool						LoadBinary(const idStr &fileName, unsigned int mapFileCRC);
+		bool						ParseIndexBinary(idFile *file, idList<aasIndex_t> &indexes);
+		bool						ParsePlanesBinary(idFile *file);
+		bool						ParseVerticesBinary(idFile *file);
+		bool						ParseEdgesBinary(idFile *file);
+		bool						ParseFacesBinary(idFile *file);
+		bool						ParseReachabilitiesBinary(idFile *file, int areaNum);
+		bool						ParseAreasBinary(idFile *file);
+		bool						ParseNodesBinary(idFile *file);
+		bool						ParsePortalsBinary(idFile *file);
+		bool						ParseClustersBinary(idFile *file);
+		bool						ParseObstaclePVSsBinary(idFile *file);
+		bool						ParseReachabilityNamesBinary(idFile *file);
+
 		size_t						MemorySize(void) const;
 #else
 		int							MemorySize(void) const;

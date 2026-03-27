@@ -2139,6 +2139,9 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	Sys_Printf("OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
 #endif
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
+#ifdef _SPLASHDAMAGE
+		game->SetClientNum(GetLocalClientNum(), idAsyncNetwork::server.IsActive());
+#endif
 		// spawn players
 		for (i = 0; i < numClients; i++) {
 #ifdef _SPLASHDAMAGE
@@ -2147,9 +2150,6 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 			game->SpawnPlayer(i);
 #endif
 		}
-#ifdef _SPLASHDAMAGE
-		game->SetClientNum(GetLocalClientNum(), idAsyncNetwork::server.IsActive());
-#endif
 	}
 
 	// actually purge/load the media

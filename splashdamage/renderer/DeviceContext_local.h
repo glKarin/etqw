@@ -107,6 +107,10 @@ private:
 	bool					ParseFontConfig(const char *path, sdLocFont_t &config);
 	sdLocFont_t *			FindFontConfig(const char *name);
 	void					LoadFontConfigs(const char *lang);
+	int						DrawText(float x, float y, float scale, idVec4 color, const wchar_t *text, float adjust, int limit, int style, int cursor);
+	int						DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit);
+	void					DrawText( const char* text, const sdBounds2D& rect, unsigned int flags );
+	void					GetTextDimensions( const char* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale = NULL, int** charAdvances = NULL, idList< int >* lineBreaks = NULL );
 
 private:
 	enum {

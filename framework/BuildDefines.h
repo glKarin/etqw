@@ -158,8 +158,16 @@ If you have questions concerning this license or the applicable additional terms
 #define GAME_NAME_ID "quake4"
 #elif defined(_HUMANHEAD)
 #define GAME_NAME_ID "prey"
+#elif defined(_SPLASHDAMAGE)
+#define GAME_NAME_ID "etqw"
 #else
 #define GAME_NAME_ID "doom3"
+#endif
+
+#ifdef _SPLASHDAMAGE
+#if !defined( SD_DEMO_BUILD ) && !defined( SD_PUBLIC_TOOLS )
+	#define SD_SUPPORT_REPEATER
+#endif
 #endif
 
 #if !defined(_IDTECH4AMM_PATCH)

@@ -32,6 +32,9 @@ const int VIRTUAL_HEIGHT = 480;
 idList<fontInfoEx_t> sdDeviceContextLocal::fonts;
 idList<sdLocFont_t> sdDeviceContextLocal::fontConfigs;
 
+static idCVar harm_r_fontDefaultScale("harm_r_fontDefaultScale", "0.3", CVAR_FLOAT | CVAR_ARCHIVE | CVAR_RENDERER, "");
+#define DC_DEFAULT_FONT_SCALE (harm_r_fontDefaultScale.GetFloat())
+
 sdDeviceContextLocal::sdDeviceContextLocal()
 : whiteImage(NULL)
 {
@@ -691,13 +694,13 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	DrawText(str.c_str(), 0.3f, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
+	DrawText(str.c_str(), DC_DEFAULT_FONT_SCALE, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
 	idStr str = WStrToStr(text);
 
-	float fontScale = 0.3f;
+	float fontScale = DC_DEFAULT_FONT_SCALE;
 	SetFont(font);
 	bool wrap = (flags & DTF_WORDWRAP) && (flags & DTF_SINGLELINE) == 0;
 	int textAlign;
@@ -1636,6 +1639,267 @@ void sdDeviceContextLocal::LoadFontConfigs(const char *lang) {
 	}
 
 	fileSystem->FreeFileList(fileList);
+}
+
+int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, const wchar_t *text, float adjust, int limit, int style, int cursor)
+{
+	int			len, count;
+	idVec4		newColor;
+	const glyphInfo_t *glyph;
+	float		useScale;
+	SetFontByScale(scale);
+	useScale = scale * useFont->glyphScale;
+	count = 0;
+
+	if (text && color.w != 0.0f) {
+		const wchar_t *s = text;
+		renderSystem->SetColor(color);
+		memcpy(&newColor[0], &color[0], sizeof(idVec4));
+		len = idWStr::Length(text);
+
+		if (limit > 0 && len > limit) {
+			len = limit;
+		}
+
+        int charIndex = 0;
+
+        while( charIndex < len ) {
+            uint32_t textChar = text[charIndex];
+
+            glyph = R_Font_GetGlyphInfo(useFont, textChar);
+            if (!glyph) {
+                continue;
+            }
+
+            //karin: charIndex will increment when read UTF8 character, so use last charIndex
+            if( idWStr::IsColor( s ) ) {
+                // textChar == '^' and charIndex is color value current
+				if (*(s+1) == WC_COLOR_DEFAULT) {
+                    newColor = color;
+                } else {
+                    newColor = idWStr::ColorForIndex( *(s+1) );
+                    newColor[3] = color[3];
+                }
+                if( cursor == count || cursor == count+1 ) {
+                    float partialSkip = ((glyph->xSkip * useScale) + adjust) / 5.0f;
+
+                    if (cursor == count) {
+                        partialSkip *= 2.0f;
+                    } else {
+                        renderSystem->SetColor(newColor);
+                    }
+
+                    DrawEditCursor(x - partialSkip, y, scale);
+                }
+            	renderSystem->SetColor( newColor );
+            	s += 2;
+            	count += 2;
+                continue;
+            } else {
+                float yadj = useScale * glyph->top;
+                PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph);
+
+                if( cursor == count ) {
+                    DrawEditCursor( x, y, scale );
+                }
+
+            	x += (glyph->xSkip * useScale) + adjust;
+            	s++;
+            	count++;
+            }
+        }
+
+		if (cursor == len) {
+			DrawEditCursor(x, y, scale);
+		}
+	}
+
+	return count;
+}
+
+int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit)
+{
+	const wchar_t	*p, *textPtr, *newLinePtr;
+	wchar_t		buff[1024];
+	int			len, newLine, newLineWidth, count;
+	float		y;
+	float		textWidth;
+
+	float		charSkip = MaxCharWidth(textScale) + 1;
+	float		lineSkip = MaxCharHeight(textScale);
+
+	float		cursorSkip = (cursor >= 0 ? charSkip : 0);
+
+	bool		lineBreak, wordBreak;
+
+	SetFontByScale(textScale);
+
+	textWidth = 0;
+	newLinePtr = NULL;
+
+	SetTempColor(color);
+	if (!calcOnly && !(text && *text)) {
+		if (cursor == 0) {
+			renderSystem->SetColor(color);
+			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale);
+		}
+
+		UnsetTempColor();
+		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
+	}
+
+	textPtr = text;
+
+	y = lineSkip + rectDraw.GetTop();
+	len = 0;
+	buff[0] = '\0';
+	newLine = 0;
+	newLineWidth = 0;
+	p = textPtr;
+
+	if (breaks) {
+		breaks->Append(0);
+	}
+
+	count = 0;
+	lineBreak = false;
+	wordBreak = false;
+
+	while (p) {
+		if (*p == '\n' || *p == '\r' || *p == '\0') {
+			lineBreak = true;
+
+			if ((*p == '\n' && *(p + 1) == '\r') || (*p == '\r' && *(p + 1) == '\n')) {
+				p++;
+			}
+		}
+
+		int nextCharWidth = (idStr::CharIsPrintable(*p) ? R_Font_GetCharWidth(useFont, *p, textScale) : cursorSkip);
+		// FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
+		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
+		//	The following line and the !linebreak in the if statement below should be removed
+		nextCharWidth = 0;
+
+		if( !lineBreak && ( (textWidth + nextCharWidth) > rectDraw.GetWidth() ) ) {
+			// The next character will cause us to overflow, if we haven't yet found a suitable
+			// break spot, set it to be this character
+			if (len > 0 && newLine == 0) {
+				newLine = len;
+				newLinePtr = p;
+				newLineWidth = textWidth;
+			}
+
+            wordBreak = true;
+		} else if( lineBreak || ( wrap && ( *p == ' ' || *p == '\t' ) ) ) {
+			// The next character is in view, so if we are a break character, store our position
+			newLine = len;
+			newLinePtr = p + 1;
+			newLineWidth = textWidth;
+        }
+
+        if( lineBreak || wordBreak ) {
+        	float x = rectDraw.GetLeft();
+
+        	if (textAlign == ALIGN_RIGHT) {
+        		x = rectDraw.GetLeft() + rectDraw.GetWidth() - newLineWidth;
+        	} else if (textAlign == ALIGN_CENTER) {
+        		x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
+        	}
+
+        	if (wrap || newLine > 0) {
+        		buff[newLine] = '\0';
+
+        		// This is a special case to handle breaking in the middle of a word.
+        		// if we didn't do this, the cursor would appear on the end of this line
+        		// and the beginning of the next.
+        		if (wordBreak && cursor >= newLine && newLine == len) {
+        			cursor++;
+        		}
+        	}
+
+            // Draw what's in the current text buffer.
+            if( !calcOnly ) {
+				count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor);
+            }
+
+        	if (cursor < newLine) {
+        		cursor = -1;
+        	} else if (cursor >= 0) {
+        		cursor -= (newLine + 1);
+        	}
+
+        	if (!wrap) {
+        		UnsetTempColor();
+        		return newLine;
+        	}
+
+        	if ((limit && count > limit) || *p == '\0') {
+        		break;
+        	}
+
+        	y += lineSkip + 5;
+
+        	if (!calcOnly && y > rectDraw.GetBottom()) {
+        		break;
+        	}
+
+        	p = newLinePtr;
+
+        	if (breaks) {
+        		breaks->Append(p - text);
+        	}
+
+        	len = 0;
+        	newLine = 0;
+        	newLineWidth = 0;
+        	textWidth = 0;
+        	lineBreak = false;
+        	wordBreak = false;
+        	continue;
+        }
+
+		buff[len++] = *p++;
+		buff[len] = '\0';
+
+		// update the width
+		if (*(buff + len - 1) != C_COLOR_ESCAPE && (len <= 1 || *(buff + len - 2) != C_COLOR_ESCAPE)) {
+            textWidth += R_Font_GetCharWidth( useFont, *(buff + len - 1), textScale );
+		}
+    }
+
+	UnsetTempColor();
+
+	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
+}
+
+void sdDeviceContextLocal::DrawText( const char* text, const sdBounds2D& rect, unsigned int flags ) {
+	bool wrap = (flags & DTF_WORDWRAP) && (flags & DTF_SINGLELINE) == 0;
+	int textAlign;
+	if (flags & DTF_CENTER)
+		textAlign = ALIGN_CENTER;
+	else if (flags & DTF_RIGHT)
+		textAlign = ALIGN_RIGHT;
+	else
+		textAlign = ALIGN_LEFT;
+	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
+}
+
+void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
+	float fontScale = DC_DEFAULT_FONT_SCALE;
+	SetFont(font);
+	bool wrap = (flags & DTF_WORDWRAP) && (flags & DTF_SINGLELINE) == 0;
+	int textAlign;
+	if (flags & DTF_CENTER)
+		textAlign = ALIGN_CENTER;
+	else if (flags & DTF_RIGHT)
+		textAlign = ALIGN_RIGHT;
+	else
+		textAlign = ALIGN_LEFT;
+	width = DrawText(text, fontScale, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+	height = MaxCharHeight(fontScale);
+
+	if (scale)
+		*scale = fontScale;
 }
 
 

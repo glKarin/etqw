@@ -1,0 +1,160 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# aasb file struct
+aasb {
+    # header
+    fileID: string = ETQWAASB
+    version: string = 2.2
+    crc?: uint32 = 0
+    type?: int32 # 0 = player; 1 = vehicle
+
+    # settings
+    setting: idAASSettings_t
+        idAASSettings_t {
+            boundingBox.min.x: float32
+            boundingBox.min.y: float32
+            boundingBox.min.z: float32
+            boundingBox.max.x: float32
+            boundingBox.max.y: float32
+            boundingBox.max.z: float32
+            primitiveModeBrush: int32
+            primitiveModePatch: int32
+            primitiveModeModel: int32
+            primitiveModeTerrain: int32
+            gravity.x: float32
+            gravity.y: float32
+            gravity.z: float32
+            gravityDir.x: float32
+            gravityDir.y: float32
+            gravityDir.z: float32
+            invGravityDir.x: float32
+            invGravityDir.y: float32
+            invGravityDir.z: float32
+            maxStepHeight: float32
+            maxBarrierHeight: float32
+            maxWaterJumpHeight: float32
+            maxFallHeight: float32
+            minFloorCos: float32
+            minHighCeiling: float32
+            groundSpeed: float32
+            waterSpeed: float32
+            ladderSpeed: float32
+            wallCornerEdgeRadius: float32
+            ledgeCornerEdgeRadius: float32
+            obstaclePVSRadius: float32
+            tt_barrierJump: int32
+            tt_waterJump: int32
+            tt_startWalkOffLedge: int32
+            tt_startLadderClimb: int32
+        }
+
+    # planes
+    numPlanes: int32
+    planes: [numPlanes]aasPlane_t
+        aasPlane_t {
+            x: float32
+            y: float32
+            z: float32
+            d: float32
+        }
+
+    # vertices
+    numVertices: int32
+    vertices: [numVertices]aasVertex_t
+        aasVertex_t {
+            x: float32
+            y: float32
+            z: float32
+        }
+
+    # edges
+    numEdges: int32
+    vertices: [numEdges]aasEdge_t
+        aasEdge_t {
+            vertexNum1: int32
+            vertexNum2: int32
+            flags: int32
+        }
+    # edgeIndices
+    numEdgeIndices: int32
+    edgeIndices: [numEdgeIndices]int32
+
+    # reachabilities
+    numReachabilities: int32
+    reachabilities: [numReachabilities]aasReachability_t
+        aasReachability_t { sizeof(32)
+            travelFlags: uint16
+            travelTime: uint16
+            fromAreaNum: uint16
+            toAreaNum: uint16
+            start: [3]int16
+            end: [3]int16
+            areaTTOfsAndNumber: uint32
+            next: pointer32 # unused, placeholder only
+            rev_next: pointer32 # unused, placeholder only
+        }
+
+    # areas
+    numAreas: int32
+    areas: [numAreas]aasArea_t
+        aasArea_t { sizeof(28)
+            travelFlags: uint16
+            flags: uint16
+            numEdges: int32
+            firstEdge: int32
+            cluster: int16
+            clusterAreaNum: int16
+            obstaclePVSOffset: uint32
+            reach: pointer32 # unused, placeholder only
+            rev_reach: pointer32 # unused, placeholder only
+        }
+
+    # nodes
+    numNodes: int32
+    nodes: [numNodes]aasNode_t
+        aasNode_t { sizeof(12)
+            planeNum: uint16
+            flags: uint16
+            children: [2]int32
+        }
+
+    # protals
+    numProtals: int32
+    protals: [numProtals]aasPortal_t
+        aasPortal_t {
+            areaNum: uint16
+            clusters: [2]int16
+            clusterAreaNum: [2]uint16
+            maxAreaTravelTime: uint16
+        }
+    # protalsIndices
+    numProtalsIndices: int32
+    protalsIndices: [numProtalsIndices]int32
+
+    # clusters
+    numClusters: int32
+    clusters: [numClusters]aasCluster_t
+        aasCluster_t {
+            numAreas: int32
+            numReachableAreas: int32
+            numPortals: int32
+            firstPortal: int32
+        }
+
+    # obstaclePVSs
+    numObstaclePVSs: int32
+    obstaclePVSs: [numObstaclePVSs]uint8
+
+    # names
+    numNames: int32
+    names: [numNames]aasName_t
+        aasName_t {
+            name: [128]char8
+            index: int32
+        }
+    <EOF>
+}

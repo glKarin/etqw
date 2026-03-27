@@ -381,14 +381,25 @@ typedef struct aasArea_s {
 // nodes of the bsp tree
 typedef struct aasNode_s {
 	unsigned short				planeNum;			// number of the plane that splits the subspace at this node
+#ifdef _SPLASHDAMAGE
+	unsigned short				flags;				// node flags
+#endif
 	int							children[2];		// child nodes, zero is solid, negative is -(area number)
 } aasNode_t;
 
 // cluster portal
 typedef struct aasPortal_s {
+#ifdef _SPLASHDAMAGE
+	unsigned short				areaNum;			// number of the area that is the actual portal
+#else
 	short						areaNum;			// number of the area that is the actual portal
+#endif
 	short						clusters[2];		// number of cluster at the front and back of the portal
+#ifdef _SPLASHDAMAGE
+	unsigned short				clusterAreaNum[2];	// number of this portal area in the front and back cluster
+#else
 	short						clusterAreaNum[2];	// number of this portal area in the front and back cluster
+#endif
 	unsigned short				maxAreaTravelTime;	// maximum travel time through the portal area
 } aasPortal_t;
 
@@ -518,6 +529,9 @@ class idAASSettings
 		bool						WriteToFile(idFile *fp) const;
 		bool						ValidForBounds(const idBounds &bounds) const;
 		bool						ValidEntity(const char *classname) const;
+#ifdef _SPLASHDAMAGE
+		bool						ReadFromFileBinary(idFile *file);
+#endif
 
 	private:
 		bool						ParseBool(idLexer &src, bool &b);
