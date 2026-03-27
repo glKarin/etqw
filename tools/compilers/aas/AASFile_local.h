@@ -72,8 +72,7 @@ class idAASFileLocal : public idAASFile
 		bool						ParsePlanesBinary(idFile *file);
 		bool						ParseVerticesBinary(idFile *file);
 		bool						ParseEdgesBinary(idFile *file);
-		bool						ParseFacesBinary(idFile *file);
-		bool						ParseReachabilitiesBinary(idFile *file, int areaNum);
+		bool						ParseReachabilitiesBinary(idFile *file);
 		bool						ParseAreasBinary(idFile *file);
 		bool						ParseNodesBinary(idFile *file);
 		bool						ParsePortalsBinary(idFile *file);

@@ -1702,6 +1702,80 @@ void idAASFileLocal::DeleteClusters(void)
 }
 
 #ifdef _SPLASHDAMAGE
+
+/*
+============
+idAASSettings::FromFile
+============
+*/
+bool idAASSettings::ReadFromFileBinary(idFile *file)
+{
+	idBounds bounds;
+
+	numBoundingBoxes = 0;
+
+	file->ReadFloat(bounds[0][0]);
+	file->ReadFloat(bounds[0][1]);
+	file->ReadFloat(bounds[0][2]);
+	file->ReadFloat(bounds[1][0]);
+	file->ReadFloat(bounds[1][1]);
+	file->ReadFloat(bounds[1][2]);
+
+	boundingBoxes[numBoundingBoxes++] = bounds;
+	boundingBox = bounds;
+
+	file->ReadInt(primitiveModeBrush);
+	file->ReadInt(primitiveModePatch);
+	file->ReadInt(primitiveModeModel);
+	file->ReadInt(primitiveModeTerrain);
+
+	file->ReadFloat(gravity[0]);
+	file->ReadFloat(gravity[1]);
+	file->ReadFloat(gravity[2]);
+
+	file->ReadFloat(gravityDir[0]);
+	file->ReadFloat(gravityDir[1]);
+	file->ReadFloat(gravityDir[2]);
+
+	file->ReadFloat(invGravityDir[0]);
+	file->ReadFloat(invGravityDir[1]);
+	file->ReadFloat(invGravityDir[2]);
+
+	file->ReadFloat(maxStepHeight);
+	file->ReadFloat(maxBarrierHeight);
+	file->ReadFloat(maxWaterJumpHeight);
+	file->ReadFloat(maxFallHeight);
+	file->ReadFloat(minFloorCos);
+	file->ReadFloat(minHighCeiling);
+
+	file->ReadFloat(groundSpeed);
+	file->ReadFloat(waterSpeed);
+	file->ReadFloat(ladderSpeed);
+
+	file->ReadFloat(wallCornerEdgeRadius);
+	file->ReadFloat(ledgeCornerEdgeRadius);
+	file->ReadFloat(obstaclePVSRadius);
+
+	file->ReadInt(tt_barrierJump);
+	file->ReadInt(tt_waterJump);
+	file->ReadInt(tt_startWalkOffLedge);
+	file->ReadInt(tt_startLadderClimb);
+
+	usePatches = false;
+	writeBrushMap = false;
+	playerFlood = false;
+	allowSwimReachabilities = false;
+	allowFlyReachabilities = false;
+	idStr fileName(file->GetName());
+	idStr ext;
+	fileName.ExtractFileExtension(ext);
+	ext.StripLeading('.');
+	fileExtension = ext;
+	tt_startCrouching = false;
+
+	return true;
+}
+
 int idAASFileLocal::FindReachabilityByName( const char *name ) const {
 	return -1;
 }
@@ -1803,6 +1877,9 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 	if (!ParseIndexBinary(file, edgeIndex))
 		return false;
 
+	if (!ParseReachabilitiesBinary(file))
+		return false;
+
 	if (!ParseAreasBinary(file))
 		return false;
 
@@ -1822,6 +1899,21 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 
 	if (!ParseReachabilityNamesBinary(file))
 		return false;
+
+	/*for (int i = 0; i < areas.Num(); ++i) {
+		aasArea_t *area = &areas[i];
+		//area->travelFlags = AreaContentsTravelFlags(reach->fromAreaNum);
+	}*/
+
+	for (int i = 0; i < reachabilities.Num(); ++i) {
+		idReachability *reach = &reachabilities[i];
+		aasArea_t *area = &areas[reach->fromAreaNum];
+
+		reach->next = area->reach;
+		area->reach = reach;
+	}
+
+	LinkReversedReachability();
 
 	FinishAreas();
 
@@ -1962,10 +2054,7 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		area.bounds.Zero();
 		area.center.Zero();
 		areas.Append(area);
-		//ParseReachabilities(src, i);
 	}
-
-	LinkReversedReachability();
 
 	return true;
 }
@@ -2081,6 +2170,42 @@ bool idAASFileLocal::ParseReachabilityNamesBinary(idFile *file)
 	for (i = 0; i < numIndexes; i++) {
 		file->Read(reachabilityNames[i].name, sizeof(reachabilityNames[i].name));
 		file->ReadInt(reachabilityNames[i].index);
+	}
+
+	return true;
+}
+
+/*
+================
+idAASFileLocal::ParseReachabilitiesBinary
+================
+*/
+bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
+{
+	int num, j;
+	idReachability reach, *newReach;
+
+	file->ReadInt(num);
+
+	reachabilities.SetNum(num);
+	for (j = 0; j < num; j++) {
+		file->ReadUnsignedShort(reach.travelFlags);
+		file->ReadUnsignedShort(reach.travelTime);
+		file->ReadUnsignedShort(reach.fromAreaNum);
+		file->ReadUnsignedShort(reach.toAreaNum);
+		file->ReadShort(reach.start[0]);
+		file->ReadShort(reach.start[1]);
+		file->ReadShort(reach.start[2]);
+		file->ReadShort(reach.end[0]);
+		file->ReadShort(reach.end[1]);
+		file->ReadShort(reach.end[2]);
+		file->ReadUnsignedInt(reach.areaTTOfsAndNumber);
+
+		reach.travelType = reach.travelFlags;
+		reach.edgeNum = 0;
+
+		newReach = &reachabilities[j];
+		newReach->CopyBase(reach);
 	}
 
 	return true;

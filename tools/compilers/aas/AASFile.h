@@ -226,12 +226,14 @@ class idReachability
 {
 	public:
 		int							travelType;			// type of travel required to get to the area
-		short						toAreaNum;			// number of the reachable area
-		short						fromAreaNum;		// number of area the reachability starts
 #ifdef _SPLASHDAMAGE
+		unsigned short				toAreaNum;			// number of area the reachability leads to
+		unsigned short				fromAreaNum;		// number of area the reachability starts
 		short						start[3];			// start point of inter area movement
 		short						end[3];				// end point of inter area movement
 #else
+		short						toAreaNum;			// number of the reachable area
+		short						fromAreaNum;		// number of area the reachability starts
 		idVec3						start;				// start point of inter area movement
 		idVec3						end;				// end point of inter area movement
 #endif
@@ -513,11 +515,25 @@ class idAASSettings
 #endif
 
 #ifdef _SPLASHDAMAGE
-	    // collision settings
-	    idBounds					boundingBox;
+		// collision settings
+		idBounds					boundingBox;
+
+		int							primitiveModeBrush;
+		int							primitiveModePatch;
+		int							primitiveModeModel;
+		int							primitiveModeTerrain;
+
+		float						minHighCeiling;
     	float						groundSpeed;				// in units per second
-    	float						waterSpeed;					// in units per second
+		float						waterSpeed;					// in units per second
+		float						ladderSpeed;				// in units per second
+
+		// navigation settings
+		float						wallCornerEdgeRadius;
+		float						ledgeCornerEdgeRadius;
     	float						obstaclePVSRadius;
+
+		int							tt_startLadderClimb;
 #endif
 
 	public:
