@@ -52,7 +52,11 @@ idCVar si_pure(						"si_pure",					"1",					CVAR_GAME | CVAR_SERVERINFO | CVAR_
 idCVar si_spectators(				"si_spectators",			"1",					CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_BOOL, "allow spectators or require all clients to play" );
 idCVar si_rules(					"si_rules",					"sdGameRulesCampaign",	CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_RANKLOCKED, "ruleset for game", sdGameRules::ArgCompletion_RuleTypes );
 idCVar si_timeLimit(				"si_timelimit",				"20",					CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_FLOAT | CVAR_RANKLOCKED, "time limit (mins)" );
+#ifdef _ETQW //karin: allow write
+idCVar si_map(						"si_map",					"",						CVAR_GAME | CVAR_SERVERINFO /*| CVAR_ROM*/, "current active map" );
+#else
 idCVar si_map(						"si_map",					"",						CVAR_GAME | CVAR_SERVERINFO | CVAR_ROM, "current active map" );
+#endif
 idCVar si_campaign(					"si_campaign",				"",						CVAR_GAME | CVAR_SERVERINFO | CVAR_ROM, "current active campaign" );
 idCVar si_campaignInfo(				"si_campaignInfo",			"",						CVAR_GAME | CVAR_SERVERINFO | CVAR_ROM, "current campaign map info" );
 idCVar si_teamForceBalance(			"si_teamForceBalance",		"1",					CVAR_GAME | CVAR_SERVERINFO | CVAR_ARCHIVE | CVAR_BOOL | CVAR_RANKLOCKED,		"Stop players from unbalancing teams" );

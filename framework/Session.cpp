@@ -2147,6 +2147,9 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 			game->SpawnPlayer(i);
 #endif
 		}
+#ifdef _SPLASHDAMAGE
+		game->SetClientNum(GetLocalClientNum(), idAsyncNetwork::server.IsActive());
+#endif
 	}
 
 	// actually purge/load the media
@@ -2488,6 +2491,9 @@ idSessionLocal::SaveGame
 */
 bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 {
+#ifdef _SPLASHDAMAGE
+	return true;
+#else
 #ifdef	ID_DEDICATED
 	common->Printf("Dedicated servers cannot save games.\n");
 	return false;
@@ -2682,6 +2688,7 @@ bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 
 
 	return true;
+#endif
 #endif
 }
 
@@ -3115,10 +3122,6 @@ void idSessionLocal::Draw()
 		}
 
 		guiActive->Redraw(com_frameTime);
-#ifdef _SPLASHDAMAGE
-	} else if (game->IsMainMenuActive()) {
-		game->DrawMainMenu();
-#endif
 	} else if (readDemo) {
 		rw->RenderScene(&currentDemoRenderView);
 		renderSystem->DrawDemoPics();
@@ -3151,6 +3154,10 @@ void idSessionLocal::Draw()
 		if (writeDemo) {
 			renderSystem->WriteDemoPics();
 		}
+#ifdef _SPLASHDAMAGE
+	} else if (game->IsMainMenuActive()) {
+		game->DrawMainMenu();
+#endif
 	} else {
 #if ID_CONSOLE_LOCK
 

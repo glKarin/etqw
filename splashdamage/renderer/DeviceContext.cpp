@@ -15,6 +15,8 @@
 #endif
 #define DC_UNUSED_ON_GAME
 
+#define DEFAULT_FONT_TEXTURE_SIZE 1024
+
 #define AsASCIICharLang(text_, len_) ( !_hasWideCharFont || idStr::IsPureASCII(text_, len_) )
 
 extern idCVar harm_gui_useD3BFGFont;
@@ -22,10 +24,13 @@ extern idCVar gui_smallFontLimit;
 extern idCVar gui_mediumFontLimit;
 static bool _hasWideCharFont = false;
 
+extern bool R_ExportTrueTypeFont(const char *fontPath, const char *fontType, const char *language, int width);
+
 const int VIRTUAL_WIDTH = 640;
 const int VIRTUAL_HEIGHT = 480;
 
 idList<fontInfoEx_t> sdDeviceContextLocal::fonts;
+idList<sdLocFont_t> sdDeviceContextLocal::fontConfigs;
 
 sdDeviceContextLocal::sdDeviceContextLocal()
 : whiteImage(NULL)
@@ -547,7 +552,7 @@ void sdDeviceContextLocal::DrawTimer( const float x, const float y, const float 
 }
 
 qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
-#if 1
+#if 0
 	name = "fonts";
 #endif
 	int c = fonts.Num();
@@ -559,8 +564,17 @@ qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
 	}
 
 	// If the font was not found, try to register it
-	idStr fileName = name;
+	idStr fileName;
+	if(!idStr::Icmpn(name, "fonts", 5))
+		fileName = name;
+	else
+	{
+		fileName = "fonts";
+		fileName.AppendPath(name);
+	}
 	fileName.Replace("fonts", va("fonts/%s", fontLang.c_str()));
+
+	sdLocFont_t *fc = FindFontConfig(name);
 
 	fontInfoEx_t fontInfo;
     memset(&fontInfo, 0, sizeof(fontInfoEx_t));
@@ -622,10 +636,29 @@ qhandle_t sdDeviceContextLocal::FindFont( const char* name ) {
 				_hasWideCharFont = true;
 		}
 #endif
+		if(fc)
+			fc->fontId = index;
 		return index;
 	} else {
-		common->Printf("Could not register font %s [%s]\n", name, fileName.c_str());
-		return -1;
+		if(fc)
+		{
+			common->Printf("Converting and caching true type font '%s' to DOOM3 font......\n", name);
+			if(R_ExportTrueTypeFont(fc->file.c_str(), name, fontLang.c_str(), DEFAULT_FONT_TEXTURE_SIZE))
+			{
+				common->Printf("Convert and cached true type font '%s' to DOOM3 font successful.\n", name);
+				fontLoaded = renderSystem->RegisterFont(fileName, fonts[index]);
+			}
+			else	
+				common->Warning("Couldn't convert and cache true type font '%s' to DOOM3 font.", name);
+		}
+		if (fontLoaded) {
+			idStr::Copynz(fonts[index].name, name, sizeof(fonts[index].name));
+			fc->fontId = index;
+			return index;
+		} else {
+			common->Printf("Could not register font %s [%s]\n", name, fileName.c_str());
+			return -1;
+		}
 	}
 }
 
@@ -664,6 +697,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
 	idStr str = WStrToStr(text);
 
+	float fontScale = 0.3f;
 	SetFont(font);
 	bool wrap = (flags & DTF_WORDWRAP) && (flags & DTF_SINGLELINE) == 0;
 	int textAlign;
@@ -673,11 +707,11 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	width = DrawText(str.c_str(), 0.3f, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0);
-	height = MaxCharHeight(0.3f);
+	width = DrawText(str.c_str(), fontScale, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+	height = MaxCharHeight(fontScale);
 
 	if (scale)
-		*scale = 0.3f;
+		*scale = fontScale;
 }
 
 void sdDeviceContextLocal::OverrideAspectRationCorrection( bool setOverride ) {
@@ -992,6 +1026,12 @@ void sdDeviceContextLocal::SetupFonts() {
 
 	// Default font has to be added first
 	FindFont("fonts");
+
+	common->Printf("Loading font configs......\n");
+	LoadFontConfigs("english");
+	if(idStr::Icmp(fontLang, "english"))
+		LoadFontConfigs(fontLang);
+	common->Printf("%d font configs found.\n", fontConfigs.Num());
 }
 
 void sdDeviceContextLocal::SetFontByScale(float scale)
@@ -1508,6 +1548,94 @@ void sdDeviceContextLocal::UnsetTempColor()
 		usingTempColor = false;
 		renderSystem->SetColor(tempColor);
 	}
+}
+
+bool sdDeviceContextLocal::ParseFontConfig(const char *path, sdLocFont_t &config) {
+	idLexer src;
+	src.SetFlags(LEXFL_ALLOWPATHNAMES);
+	if(!src.LoadFile(path))
+		return false;
+
+	idToken token;
+	while(true)
+	{
+		if(!src.ReadToken(&token))
+			break;
+
+		if(!idStr::Icmp(token, "file"))
+		{
+			if(!src.ReadToken(&token))
+			{
+				src.Error( "Parse font config: failed to parse file" );
+				return false;
+			}
+			config.file = token.c_str();
+			continue;
+		}
+
+		if(!idStr::Icmp(token, "faceIndex"))
+		{
+			config.faceIndex = src.ParseInt();
+			continue;
+		}
+
+		src.Warning( "Parse font config: unexpected token '%s'.", token.c_str() );
+	}
+	return true;
+}
+
+sdLocFont_t * sdDeviceContextLocal::FindFontConfig(const char *name)
+{
+	for(int i = 0; i < fontConfigs.Num(); i++)
+	{
+		if(!idStr::Icmp(fontConfigs[i].name, name))
+			return &fontConfigs[i];
+	}
+	return NULL;
+}
+
+void sdDeviceContextLocal::LoadFontConfigs(const char *lang) {
+	idStr path("localization");
+	if(!lang || !lang[0])
+		lang = cvarSystem->GetCVarString("sys_lang");
+	path.AppendPath(lang);
+	path.AppendPath("fonts");
+
+	idFileList* fileList = fileSystem->ListFiles(path.c_str(), ".font");
+
+	common->Printf("Load font config on %s.....\n", path.c_str());
+
+	for (int i = 0; i < fileList->GetNumFiles(); i++)
+	{
+		idLexer src;
+		idToken	token;
+		idStr fileName = fileList->GetList()[i];
+
+		idStr str(path);
+		str.AppendPath(fileName);
+
+		sdLocFont_t config;
+		if(!ParseFontConfig(str.c_str(), config))
+			continue;
+
+		fileName.StripFileExtension();
+		sdLocFont_t *exists = FindFontConfig(fileName.c_str());
+		if(exists)
+		{
+			exists->file = config.file;
+			exists->faceIndex = config.faceIndex;
+			common->Printf("Override %s font config '%s'.\n", lang, fileName.c_str());
+		}
+		else
+		{
+			config.name = fileName;
+			config.fontId = -1;
+			fontConfigs.Append(config);
+			common->Printf("Add %s font config '%s'.\n", lang, fileName.c_str());
+		}
+	}
+
+	fileSystem->FreeFileList(fileList);
 }
 
 

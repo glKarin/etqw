@@ -328,7 +328,11 @@ void idAsyncServer::ExecuteMapChange(void)
 	cmdSystem->BufferCommandText(CMD_EXEC_NOW, "rescanSI");
 
 	sprintf(mapName, "maps/%s", sessLocal.mapSpawnData.serverInfo.GetString("si_map"));
+#ifdef _SPLASHDAMAGE
+	mapName.SetFileExtension(".entities");
+#else
 	mapName.SetFileExtension(".map");
+#endif
 	ff = fileSystem->FindFile(mapName, !serverReloadingEngine);
 
 	switch (ff) {

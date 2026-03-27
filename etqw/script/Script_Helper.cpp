@@ -162,7 +162,14 @@ void sdScriptHelper::Push( idScriptObject* obj ) {
 		return;
 	}
 
+#ifdef _ETQW //karin: NULL???
+	if(obj)
+#endif
 	arg->integer		= obj->GetHandle();
+#ifdef _ETQW //karin: NULL???
+	else
+		arg->integer	= 0;
+#endif
 	arg->string		= NULL;
 
 	size += sizeof( intptr_t ); //k64
@@ -186,6 +193,7 @@ void sdScriptHelper::Push( const idVec3& vec ) {
 	Push( vec[ 0 ] );
 	Push( vec[ 1 ] );
 	Push( vec[ 2 ] );
+	Push( 0 ); //k64
 }
 
 /*
@@ -197,6 +205,7 @@ void sdScriptHelper::Push( const idAngles& angles ) {
 	Push( angles.pitch );
 	Push( angles.yaw );
 	Push( angles.roll );
+	Push( 0 ); //k64
 }
 
 

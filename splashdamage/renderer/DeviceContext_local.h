@@ -6,6 +6,17 @@
 
 #include "DeviceContext.h"
 
+/*
+ * file "localization/fonts/lcdsh-regular.ttf"
+faceIndex 0
+ */
+struct sdLocFont_t {
+	idStr name;
+	idStr file;
+	int faceIndex;
+	int fontId;
+};
+
 class sdDeviceContextLocal : public sdDeviceContext
 {
 public:
@@ -93,6 +104,9 @@ private:
 	int						CharWidth(const char c, float scale);
 	void					SetTempColor(const idVec4 &c);
 	void					UnsetTempColor();
+	bool					ParseFontConfig(const char *path, sdLocFont_t &config);
+	sdLocFont_t *			FindFontConfig(const char *name);
+	void					LoadFontConfigs(const char *lang);
 
 private:
 	enum {
@@ -119,6 +133,8 @@ private:
 	static idList<fontInfoEx_t> fonts;
 	idStr					fontLang;
 	bool					overStrikeMode;
+
+	static idList<sdLocFont_t> fontConfigs;
 };
 
 #endif /* !__DEVICECONTEXT_LOCAL_H__ */
