@@ -280,6 +280,10 @@ const float MAX_BOUND_SIZE = 65536.0f;
 // RAVEN END
 #endif
 
+#ifdef _SPLASHDAMAGE
+#include "decllib/DeclTypeInfo.h"
+#endif
+
 // game
 #if defined(_D3XP)
 

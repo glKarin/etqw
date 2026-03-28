@@ -3932,11 +3932,9 @@ idWStr idCommonLocal::LocalizeText( const char* declName, const idWStrList& argu
 }
 
 idWStr idCommonLocal::LocalizeText( const sdDeclLocStr* loc, const idWStrList& arguments ) {
-	idWStr ret = loc->GetText();
-	for (idWStrList::ConstIterator itor = arguments.Begin(); itor != arguments.End(); ++itor) {
-		ret.Append(L", ");
-		ret.Append(*itor);
-	}
+	idWStr ret;
+	if (loc)
+		loc->Format(ret, arguments);
 	return ret;
 }
 

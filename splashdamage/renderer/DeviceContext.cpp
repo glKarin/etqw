@@ -8,9 +8,12 @@
 
 #if 0
 #define DC_PLACEHOLDER(...) Sys_Printf(__VA_ARGS__)
-#define DC_DRAW(...) Sys_Printf(__VA_ARGS__)
 #else
 #define DC_PLACEHOLDER(...)
+#endif
+#if 0
+#define DC_DRAW(...) Sys_Printf(__VA_ARGS__)
+#else
 #define DC_DRAW(...)
 #endif
 #define DC_UNUSED_ON_GAME
@@ -127,7 +130,7 @@ void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, 
 
 void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, float h, float s01, float t01, float s02, float t02, float s11, float t11, float s12, float t12, const idMaterial* material, float angle ) {
 	DC_UNUSED_ON_GAME
-	DC_PLACEHOLDER("DC:DrawMaskedClippedRect|%s\n", material?material->GetName():NULL);
+	DC_DRAW("DCDraw:DrawMaskedClippedRect|%s\n", material?material->GetName():NULL);
 
 	if(!material)
 		return;
@@ -263,7 +266,7 @@ void sdDeviceContextLocal::DrawClippedWindingMasked( const idWinding2D& winding,
 }
 
 void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float h, float u0, float v0, float u1, float v1, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
-	DC_PLACEHOLDER("DC:DrawMaskedMaterial|%s\n", material?material->GetName():NULL);
+	DC_DRAW("DCDraw:DrawMaskedMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
 		return;
@@ -352,17 +355,27 @@ void sdDeviceContextLocal::DrawMaterial( const sdBounds2D& rect, const idMateria
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, const idVec2& st0, const idVec2& st1 ) {
 	DC_DRAW("DCDraw:DrawMaterial5|%s\n", material?material->GetName():NULL);
-	//printf("dddmmm|%f %f %f %f\n",st0.x, st0.y, st1.x, st1.y);
 
-	if(!material || !material->GetStage(0) || !material->GetStage(0)->texture.image)
+	if(!material)
 		return;
 
-	DrawStretchPic(x, y, w, h, 
-			st0.x / (float)material->GetImageWidth(), 
-			st0.y / (float)material->GetImageHeight(), 
-			(st0.x + st1.x) / (float)material->GetImageWidth(), 
-			(st0.y + st1.y) / (float)material->GetImageHeight(), 
-			material);
+	//printf("dddmmm|%f %f %f %f\n",st0.x, st0.y, st1.x, st1.y);
+	float s0 = st0[0];
+	float t0 = st0[1];
+	float s1 = st1[0];
+	float t1 = st1[1];
+
+	if (ClippedCoords(&x, &y, &w, &h, &s0, &t0, &s1, &t1)) {
+		return;
+	}
+
+	SetTempColor(color);
+
+	AdjustCoords(&x, &y, &w, &h);
+
+	DrawStretchPic(x, y, w, h, s0, t0, s1, t1, material);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idVec2 extents, const idMaterial* material, const idVec4& color ) {

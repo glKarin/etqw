@@ -2008,9 +2008,6 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		declManager->BeginLevelLoad();
 		renderSystem->BeginLevelLoad();
 		soundSystem->BeginLevelLoad();
-#ifdef _SPLASHDAMAGE
-		game->BeginLevelLoad();
-#endif
 	}
 #ifdef _HUMANHEAD //k: play level music when map loading
 	if(g_levelloadmusic.GetBool())
@@ -2029,6 +2026,9 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	subtitleTextScaleInited = false; // reload subtitles's text scale
 #endif
 
+#ifdef _SPLASHDAMAGE
+	game->BeginLevelLoad();
+#endif
 	uiManager->BeginLevelLoad();
 	uiManager->Reload(true);
 
@@ -2158,11 +2158,11 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		soundSystem->EndLevelLoad(mapString.c_str());
 		declManager->EndLevelLoad();
 		SetBytesNeededForMapLoad(mapString.c_str(), fileSystem->GetReadCount());
-#ifdef _SPLASHDAMAGE
-		game->EndLevelLoad();
-#endif
 	}
 
+#ifdef _SPLASHDAMAGE
+	game->EndLevelLoad();
+#endif
 	uiManager->EndLevelLoad();
 
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
@@ -2824,7 +2824,12 @@ idSessionLocal::ProcessEvent
 bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 {
 	// hitting escape anywhere brings up the menu
-	if (!guiActive && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) {
+#ifdef _SPLASHDAMAGE //karin: escape on main menu console
+	if (!(game->IsMainMenuActive() && !mapSpawned) && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
+#else
+	if (!guiActive && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
+#endif
+	{
 		console->Close();
 
 #if !defined(_SPLASHDAMAGE)
@@ -2871,7 +2876,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 
 	// menus / etc
 #ifdef _SPLASHDAMAGE //karin: send UI event to game
-	if (game->IsMainMenuActive())
+	if (game->IsMainMenuActive() && !mapSpawned)
 #else
 	if (guiActive)
 #endif
@@ -3866,7 +3871,7 @@ idSessionLocal::SetPlayingSoundWorld
 void idSessionLocal::SetPlayingSoundWorld()
 {
 #ifdef _SPLASHDAMAGE
-	if (game->IsMainMenuActive()) 
+	if (game->IsMainMenuActive() && !mapSpawned) 
 #else
 	if (guiActive && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) 
 #endif

@@ -314,10 +314,10 @@ sdSysEvent& sdSysEvent::operator=( const sdSysEvent& rhs ) {
 	evType = rhs.evType;
 	evValue = rhs.evValue;
 	evValue2 = rhs.evValue2;
-	evPtrLength = rhs.evPtrLength;
 
 	FreeData();
-	if ( rhs.evPtr ) {
+	if ( rhs.evPtr && rhs.evPtrLength > 0 ) {
+		evPtrLength = rhs.evPtrLength;
 		evPtr = Mem_Alloc( evPtrLength );
 		::memcpy( evPtr, rhs.evPtr, rhs.evPtrLength );
 	}

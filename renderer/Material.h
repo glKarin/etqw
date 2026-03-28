@@ -1065,6 +1065,9 @@ class idMaterial : public idDecl
 #ifdef _NO_LIGHT
 		bool IsNoLight(void) const { return noLight; }
 #endif
+#ifdef _SPLASHDAMAGE
+    	static void				CacheFromDict( const idDict& dict );
+#endif
 
 	private:
 		// parse the entire material

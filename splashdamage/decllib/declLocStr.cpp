@@ -72,6 +72,80 @@ void sdDeclLocStr::Print( void ) const {
 }
 
 bool sdDeclLocStr::Format( idWStr& result, const idWStrList& inputs ) const {
-	result = common->LocalizeText(this, inputs);
+	sdWStringBuilder_Heap buf;
+	wchar_t ch;
+	bool found = false;
+	idStr temp;
+	int i = 0;
+
+	while (i < locText.Length()) {
+		if (idWStr::IsColor(locText.c_str() + i)) {
+			buf.Append(locText.c_str() + i, 2);
+			i += 2;
+			continue;
+		}
+		ch = locText[i];
+		if (ch == L'%') {
+			if (found) {
+				if (temp.IsEmpty()) { // %%
+					found = false;
+					buf.Append(L'%');
+				}
+				else { // %1
+					int placeholderIndex = atoi(temp.c_str()) - 1;
+					if (placeholderIndex >= 0 && placeholderIndex < inputs.Num()) {
+						buf.Append(inputs[placeholderIndex].c_str());
+					}
+					else {
+						for (int m = 0; m < temp.Length(); ++m) {
+							buf.Append(temp[i]);
+						}
+					}
+					temp.Clear();
+					found = false;
+				}
+			}
+			else {
+				found = true;
+				temp.Clear();
+			}
+		}
+		else if (ch >= L'0' && ch <= L'9') {
+			if (found) {
+				temp.Append((char)ch);
+			}
+			else {
+				buf.Append(ch);
+			}
+		}
+		else {
+			if (found) {
+				if (temp.IsEmpty()) { // %%
+					found = false;
+					buf.Append(L'%');
+				}
+				else { // %1
+					int placeholderIndex = atoi(temp.c_str()) - 1;
+					if (placeholderIndex >= 0 && placeholderIndex < inputs.Num()) {
+						buf.Append(inputs[placeholderIndex].c_str());
+					}
+					else {
+						for (int m = 0; m < temp.Length(); ++m) {
+							buf.Append(temp[i]);
+						}
+					}
+					temp.Clear();
+					found = false;
+				}
+			}
+			buf.Append(ch);
+		}
+		i++;
+	}
+	result = buf.c_str();
+	// for (int i = 0; i < inputs.Num(); i++) {
+	// 	common->Printf("%d:%ls|||", i, inputs[i].c_str());
+	// }
+	// common->Printf("\nLLL|%ls|%ls\n", locText.c_str(), buf.c_str());
 	return true;
 }

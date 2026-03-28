@@ -2144,25 +2144,34 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		// diffusemap for stage shortcut
 		if (!token.Icmp("diffusemap")) {
 			str = R_ParsePastImageProgram(src);
+			if(!imageName[0])
+			{
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			SETUP_STAGE_PROGRAM_PARMS();
 			ss->lighting = SL_DIFFUSE;
+			}
 			continue;
 		}
 		// specularmap for stage shortcut
 		if (!token.Icmp("specularmap")) {
 			str = R_ParsePastImageProgram(src);
+			if(!imageName[0])
+			{
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			SETUP_STAGE_PROGRAM_PARMS();
 			ss->lighting = SL_SPECULAR;
+			}
 			continue;
 		}
 		// normalmap for stage shortcut
 		if (!token.Icmp("bumpmap")) {
 			str = R_ParsePastImageProgram(src);
+			if(!imageName[0])
+			{
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			SETUP_STAGE_PROGRAM_PARMS();
 			ss->lighting = SL_BUMP;
+			}
 			continue;
 		}
 		if (!token.Icmp("detailMult")) { // detailMult 0,1,2,3
@@ -4414,5 +4423,17 @@ void idMaterial::ParseGLSLProgram(idLexer &src, newShaderStage_t *newStage)
     }
 
     newStage->glslProgram = shaderManager->GetHandle(name.c_str());
+}
+#endif
+
+#ifdef _SPLASHDAMAGE
+void idMaterial::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
+
+	while( kv = dict.MatchPrefix( "mtr", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declMapDefType[ kv->GetValue() ];
+		}
+	}
 }
 #endif

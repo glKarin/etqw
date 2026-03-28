@@ -393,6 +393,12 @@ void idAsyncServer::ExecuteMapChange(void)
 	gameTimeResidual = 0;
 	memset(userCmds, 0, sizeof(userCmds));
 
+#ifdef _SPLASHDAMAGE
+	idStr reason;
+	idStr mapName2 = mapName;
+	userMapChangeResult_e changeResult = game->OnUserStartMap("", reason, mapName2);
+	Sys_Printf("Server::OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
+#endif
 	if (idAsyncNetwork::serverDedicated.GetInteger() == 0) {
 		InitLocalClient(0);
 	} else {

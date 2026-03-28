@@ -38,17 +38,6 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #ifdef _SPLASHDAMAGE
-#include "decllib/declAmbientCubeMap.h"
-#include "decllib/declAtmosphere.h"
-#include "decllib/declDecal.h"
-#include "decllib/declImposter.h"
-#include "decllib/declLocStr.h"
-#include "decllib/declRenderBinding.h"
-#include "decllib/declStuffType.h"
-#include "decllib/DeclSurfaceType.h"
-#include "decllib/declRenderProgram.h"
-#include "decllib/DeclTemplate.h"
-#include "decllib/DeclSurfaceTypeMap.h"
 
 #define GENERATED_PREFIX "generated"
 #define GENERATED_DECLB "declb"
@@ -1151,61 +1140,62 @@ int idDeclFile::LoadAndParse()
 const char *listDeclStrings[] = { "current", "all", "ever", NULL };
 
 #ifdef _SPLASHDAMAGE
-static sdDeclInfo declTableInfo("table");
-static sdDeclInfo declMaterialInfo("material");
-static sdDeclInfo declSkinInfo("skin");
-static sdDeclInfo declSoundInfo("sound");
-static sdDeclInfo declEntityDefInfo("entityDef");
-static sdDeclInfo declMapDefInfo("mapDef");
-static sdDeclInfo declFxInfo("fx");
-static sdDeclInfo declParticleInfo("particle");
-static sdDeclInfo declAFInfo("articulatedFigure");
-static sdDeclInfo declPDAInfo("pda");
-static sdDeclInfo declEmailInfo("email");
-static sdDeclInfo declVideoInfo("video");
-static sdDeclInfo declAudioInfo("audio");
+sdDeclInfo declTableInfo("table");
+sdDeclInfo declMaterialInfo("material", DIF_ALLOW_TEMPLATES, idMaterial::CacheFromDict);
+sdDeclInfo declSkinInfo("skin");
+sdDeclInfo declSoundInfo("sound");
+sdDeclInfo declEntityDefInfo("entityDef");
+sdDeclInfo declMapDefInfo("mapDef");
+sdDeclInfo declFxInfo("fx");
+sdDeclInfo declParticleInfo("particle");
+sdDeclInfo declAFInfo("articulatedFigure");
+sdDeclInfo declPDAInfo("pda");
+sdDeclInfo declEmailInfo("email");
+sdDeclInfo declVideoInfo("video");
+sdDeclInfo declAudioInfo("audio");
 
-static sdDeclInfo declEffectInfo("effect");
-static sdDeclInfo declAtmosphereInfo("atmosphere");
-static sdDeclInfo declAmbientCubeMapInfo("ambientCubemap");
-static sdDeclInfo declDecalInfo("decal");
-static sdDeclInfo declSurfaceTypeInfo("surfaceType");
-static sdDeclInfo declImposterInfo("imposter");
-static sdDeclInfo declImposterGeneratorInfo("imposterGenerator");
-static sdDeclInfo declStuffTypeInfo("stuffType");
-static sdDeclInfo declRenderBindingInfo("renderBinding");
-static sdDeclInfo declRenderProgramInfo("renderProgram");
-static sdDeclInfo declLocStrInfo("locString");
-static sdDeclInfo declTemplateInfo("template");
-static sdDeclInfo declSurfaceTypeMapInfo("surfaceTypeMap");
+sdDeclInfo declEffectInfo("effect");
+sdDeclInfo declAtmosphereInfo("atmosphere");
+sdDeclInfo declAmbientCubeMapInfo("ambientCubemap");
+sdDeclInfo declDecalInfo("decal");
+sdDeclInfo declSurfaceTypeInfo("surfaceType");
+sdDeclInfo declImposterInfo("imposter");
+sdDeclInfo declImposterGeneratorInfo("imposterGenerator");
+sdDeclInfo declStuffTypeInfo("stuffType");
+sdDeclInfo declRenderBindingInfo("renderBinding");
+sdDeclInfo declRenderProgramInfo("renderProgram");
+sdDeclInfo declLocStrInfo("locString");
+sdDeclInfo declTemplateInfo("template");
+sdDeclInfo declSurfaceTypeMapInfo("surfaceTypeMap");
 
 
-static idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
-static idDeclTypeTemplate< idMaterial, &declMaterialInfo > declMaterialType;
-static idDeclTypeTemplate< idDeclSkin, &declSkinInfo > declSkinType;
-static idDeclTypeTemplate< idSoundShader, &declSoundInfo > declSoundType;
-static idDeclTypeTemplate< idDeclEntityDef, &declEntityDefInfo > declEntityDefType;
-static idDeclTypeTemplate< idDeclEntityDef, &declMapDefInfo > declMapDefType;
-static idDeclTypeTemplate< idDeclFX, &declFxInfo > declFxType;
-static idDeclTypeTemplate< idDeclParticle, &declParticleInfo > declParticleType;
-static idDeclTypeTemplate< idDeclAF, &declAFInfo > declAFType;
-static idDeclTypeTemplate< idDeclPDA, &declPDAInfo > declPDAType;
-static idDeclTypeTemplate< idDeclEmail, &declEmailInfo > declEmailType;
-static idDeclTypeTemplate< idDeclVideo, &declVideoInfo > declVideoType;
-static idDeclTypeTemplate< idDeclAudio, &declAudioInfo > declAudioType;
-static idDeclTypeTemplate< rvDeclEffect, &declEffectInfo > declEffectType;
-static idDeclTypeTemplate< sdDeclAtmosphere, &declAtmosphereInfo > declAtmosphereType;
-static idDeclTypeTemplate< sdDeclAmbientCubeMap, &declAmbientCubeMapInfo > declAmbientCubeMapType;
-static idDeclTypeTemplate< sdDeclDecal, &declDecalInfo > declDecalType;
-static idDeclTypeTemplate< sdDeclSurfaceType, &declSurfaceTypeInfo > declSurfaceTypeType;
-static idDeclTypeTemplate< sdDeclSurfaceTypeMap, &declSurfaceTypeMapInfo > declSurfaceTypeMapType;
-static idDeclTypeTemplate< sdDeclImposter, &declImposterInfo > declImposterType;
-static idDeclTypeTemplate< sdDeclImposterGenerator, &declImposterGeneratorInfo > declImposterGeneratorType;
-static idDeclTypeTemplate< sdDeclStuffType, &declStuffTypeInfo > declStuffTypeType;
-static idDeclTypeTemplate< sdDeclRenderBinding, &declRenderBindingInfo > declRenderBindingType;
-static idDeclTypeTemplate< sdDeclRenderProgram, &declRenderProgramInfo > declRenderProgramType;
-static idDeclTypeTemplate< sdDeclLocStr, &declLocStrInfo > declLocStrType;
-static idDeclTypeTemplate< sdDeclTemplate, &declTemplateInfo > declTemplateType;
+idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
+idDeclTypeTemplate< idMaterial, &declMaterialInfo > declMaterialType;
+idDeclTypeTemplate< idDeclSkin, &declSkinInfo > declSkinType;
+idDeclTypeTemplate< idSoundShader, &declSoundInfo > declSoundType;
+idDeclTypeTemplate< idDeclEntityDef, &declEntityDefInfo > declEntityDefType;
+idDeclTypeTemplate< idDeclEntityDef, &declMapDefInfo > declMapDefType;
+idDeclTypeTemplate< idDeclFX, &declFxInfo > declFxType;
+idDeclTypeTemplate< idDeclParticle, &declParticleInfo > declParticleType;
+idDeclTypeTemplate< idDeclAF, &declAFInfo > declAFType;
+idDeclTypeTemplate< idDeclPDA, &declPDAInfo > declPDAType;
+idDeclTypeTemplate< idDeclEmail, &declEmailInfo > declEmailType;
+idDeclTypeTemplate< idDeclVideo, &declVideoInfo > declVideoType;
+idDeclTypeTemplate< idDeclAudio, &declAudioInfo > declAudioType;
+idDeclTypeTemplate< rvDeclEffect, &declEffectInfo > declEffectType;
+idDeclTypeTemplate< sdDeclAtmosphere, &declAtmosphereInfo > declAtmosphereType;
+idDeclTypeTemplate< sdDeclAmbientCubeMap, &declAmbientCubeMapInfo > declAmbientCubeMapType;
+idDeclTypeTemplate< sdDeclDecal, &declDecalInfo > declDecalType;
+idDeclTypeTemplate< sdDeclSurfaceType, &declSurfaceTypeInfo > declSurfaceTypeType;
+idDeclTypeTemplate< sdDeclSurfaceTypeMap, &declSurfaceTypeMapInfo > declSurfaceTypeMapType;
+idDeclTypeTemplate< sdDeclImposter, &declImposterInfo > declImposterType;
+idDeclTypeTemplate< sdDeclImposterGenerator, &declImposterGeneratorInfo > declImposterGeneratorType;
+idDeclTypeTemplate< sdDeclStuffType, &declStuffTypeInfo > declStuffTypeType;
+idDeclTypeTemplate< sdDeclRenderBinding, &declRenderBindingInfo > declRenderBindingType;
+idDeclTypeTemplate< sdDeclRenderProgram, &declRenderProgramInfo > declRenderProgramType;
+idDeclTypeTemplate< sdDeclLocStr, &declLocStrInfo > declLocStrType;
+idDeclTypeTemplate< sdDeclTemplate, &declTemplateInfo > declTemplateType;
+
 #endif
 /*
 ===================
@@ -3589,6 +3579,14 @@ int idDeclManagerLocal::GetNumMaterials( void ) {
 }
 
 void idDeclManagerLocal::CacheFromDict( const idDict& dict ) {
+	for(int i = 0; i < declTypes.Num(); i++)
+	{
+		const idDeclType *declType = declTypes[i];
+		if(declType && !declType->NotPrecached() && declType->type <= DECL_MAPDEF)
+		{
+			declType->CacheFromDict(dict);
+		}
+	}
 }
 
 const rvDeclEffect * idDeclManagerLocal::FindEffect( const char *name, bool makeDefault ) {

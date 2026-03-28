@@ -99,15 +99,16 @@ void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char
 #endif
 }
 
-void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char* binding, int& numKeys, idKey** keys ) {
+void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char* binding, int& numKeys, idKey** _keys ) {
 #if 1
 	(void)context;
+	int max = numKeys;
 	numKeys = 0;
 	if (binding && *binding) {
 		for (int i = 0; i < MAX_KEYS; i++) {
-			if (::keys[i].binding.Icmp(binding) == 0) {
-				numKeys = 1;
-				keys[i] = &::keys[i];
+			if (keys[i].binding.Icmp(binding) == 0) {
+				if(_keys && numKeys < max)
+					_keys[numKeys++] = &keys[i];
 			}
 		}
 	}
