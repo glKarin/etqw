@@ -646,6 +646,10 @@ void idUsercmdGenLocal::KeyMove(void)
 	cmd.forwardmove = idMath::ClampChar(forward);
 	cmd.rightmove = idMath::ClampChar(side);
 	cmd.upmove = idMath::ClampChar(up);
+
+#ifdef _SPLASHDAMAGE
+	//game->KeyMove(cmd.forwardmove, cmd.rightmove, cmd.upmove, cmd);
+#endif
 }
 
 /*

@@ -126,9 +126,9 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 		{
 			src.UnreadToken(&token);
 			newDecl.Replace(parm.name.c_str(), parm.defaultValue.c_str());
+			break;
 		}
-		else
-		{
+
 #if 0
 		if (token.type == TT_STRING) {
 			idStr str("\"");
@@ -139,6 +139,11 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 		else
 #endif
 			newDecl.Replace(parm.name.c_str(), token);
+
+		src.ReadToken(&token);
+		if(token != ",") //karin: maybe has ,
+		{
+			src.UnreadToken(&token);
 		}
 	}
 	src.ExpectTokenString(">");
@@ -165,7 +170,7 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
     idLexer src;
     idToken	token, token2;
 
-    src.LoadMemory(_text, textLength, "", 0);
+    src.LoadMemory(_text, textLength, "useTemplate", 0);
     src.SetFlags(DECL_LEXER_FLAGS);
 
     while (1)
@@ -182,19 +187,19 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
 		src.ReadToken(&name);
 		const idDecl *decl = declManager->FindType(DECL_TEMPLATE, name, false);
 
+		idStr newDecl;
 		if (!decl)
 		{
 			common->Warning("Failed to find template '%s'", name.c_str());
 			// skip this template
 			src.SkipUntilString("<");
 			src.SkipUntilString(">");
-			continue;
 		}
-
-		const sdDeclTemplate *declTemplate = static_cast<const sdDeclTemplate *>(decl);
-
-		idStr newDecl;
-		declTemplate->Expand(src, newDecl);
+		else
+		{
+			const sdDeclTemplate *declTemplate = static_cast<const sdDeclTemplate *>(decl);
+			declTemplate->Expand(src, newDecl);
+		}
 
 		finalBuffer = _text;
 

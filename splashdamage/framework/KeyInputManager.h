@@ -99,6 +99,7 @@ void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char
 #endif
 }
 
+//karin: _keys maybe null if only for get num keys
 void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char* binding, int& numKeys, idKey** _keys ) {
 #if 1
 	(void)context;
