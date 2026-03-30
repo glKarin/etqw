@@ -549,9 +549,9 @@ class idFileSystemLocal : public idFileSystem
 
         void                    RemoveDir_r(const char *OSPath, int type = 0);
 #ifdef _SPLASHDAMAGE
-		bool					ParseMetaConfFile(const char *text, int length, bool IsAddon);
+		bool					ParseMetaConfFile(const char *text, int length, bool isAddon, const char *type = NULL);
 		bool					ParseMetaConf(idLexer &src, metaDataContext_t &md);
-		void					InitMetaConf(void);
+		void					InitMetaConf(const char *type = NULL);
 #endif
 };
 
@@ -3392,7 +3392,7 @@ void idFileSystemLocal::Init(void)
 	if (ReadFile("public.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
 	}
-	InitMetaConf();
+	//InitMetaConf();
 #else
 	if (ReadFile("default.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
@@ -5185,7 +5185,7 @@ idFile * idFileSystemLocal::GetNewFileMemory( void )
 #endif
 
 #ifdef _SPLASHDAMAGE
-void idFileSystemLocal::InitMetaConf(void)
+void idFileSystemLocal::InitMetaConf(const char *type)
 {
 	searchpath_t 	*search;
 	idStr			netpath;
@@ -5265,7 +5265,7 @@ void idFileSystemLocal::InitMetaConf(void)
 					buf = new char[ f->Length() + 1 ];
 					f->Read((void *)buf, f->Length());
 					buf[ f->Length()] = '\0';
-					ParseMetaConfFile(buf, f->Length(), isAddon);
+					ParseMetaConfFile(buf, f->Length(), isAddon, type);
 					delete[] buf;
 				}
 
@@ -5291,7 +5291,7 @@ void idFileSystemLocal::InitMetaConf(void)
 							buf = new char[ file->Length() + 1 ];
 							file->Read((void *)buf, file->Length());
 							buf[ file->Length()] = '\0';
-							ParseMetaConfFile(buf, file->Length(), pak->addon);
+							ParseMetaConfFile(buf, file->Length(), pak->addon, type);
 							delete[] buf;
 						}
 
@@ -5331,7 +5331,7 @@ bool idFileSystemLocal::ParseMetaConf(idLexer &src, metaDataContext_t &md)
 	return true;
 }
 
-bool idFileSystemLocal::ParseMetaConfFile(const char *text, int length, bool isAddon)
+bool idFileSystemLocal::ParseMetaConfFile(const char *text, int length, bool isAddon, const char *type)
 {
 	idLexer src;
 	idToken token;
@@ -5352,9 +5352,14 @@ bool idFileSystemLocal::ParseMetaConfFile(const char *text, int length, bool isA
 		metaDataContext_t md;
 		if(ParseMetaConf(src, md))
 		{
-			md.addon = isAddon;
-			sdAddonMetaDataList *list = ListAddonMetaData(token);
-			list->meta.Append(md);
+			if (!type || !type[0] || !idStr::Icmp(token, type)) {
+				sdAddonMetaDataList *list = ListAddonMetaData(token);
+				const metaDataContext_t *exists = list->FindMetaDataContext(md.meta->GetString("metadata_name"));
+				if (!exists) {
+					md.addon = isAddon;
+					list->meta.Append(md);
+				}
+			}
 		}
 	}
 
@@ -5367,6 +5372,7 @@ sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataT
 		return value;
 	addonMetaDataList.Set(metaDataTag, sdAddonMetaDataList());
 	addonMetaDataList.Get(metaDataTag, &value);
+	InitMetaConf(metaDataTag);
 	return value;
 }
 

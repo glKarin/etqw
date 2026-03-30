@@ -10,11 +10,7 @@
 #include "../vehicles/Transport.h"
 #include "../vehicles/VehicleView.h"
 #include "../vehicles/VehicleControl.h"
-#ifdef _ETQW
-#include "../ContentMask.h"
-#else
-#include "../../game/ContentMask.h"
-#endif
+#include "../ContentMask.h" //karin: include
 
 #include "aas/ObstacleAvoidance.h"
 #include "Bot.h"

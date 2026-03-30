@@ -832,7 +832,6 @@ void sdUserInterfaceLocal::UpdateToolTip() {
 
 		sdProperties::sdProperty* toolText	= toolTipSource->GetScope().GetProperty( "toolTipText", PT_WSTRING );
 
-#if !defined(_ETQW) //karin: tooltip is not defined
 		sdProperties::sdProperty* active	= toolTipWindow->GetScope().GetProperty( "active", PT_FLOAT );
 		sdProperties::sdProperty* tipText	= toolTipWindow->GetScope().GetProperty( "tipText", PT_WSTRING );
 		sdProperties::sdProperty* rect		= toolTipWindow->GetScope().GetProperty( "rect", PT_VEC4 );
@@ -856,7 +855,6 @@ void sdUserInterfaceLocal::UpdateToolTip() {
 			}
 			*rect->value.vec4Value = temp;
 		}
-#endif
 		tooltipAnchor = cursorPos;
 		nextAllowToolTipTime = 0;
 	}

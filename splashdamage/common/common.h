@@ -262,4 +262,13 @@ template< typename T > ID_INLINE void Swap( T& l, T& r ) {
 #define PATHSEPERATOR_CHAR PATHSEPARATOR_CHAR
 #endif
 
+//karin: check this in non-virtual class method
+#ifdef _MSC_VER
+#define ID_THIS this
+#define ID_CHECK_THIS(x) x
+#else
+#define ID_THIS ((volatile void *)this != NULL)
+#define ID_CHECK_THIS(x) ((volatile void *)x != NULL)
+#endif
+
 #endif // _COMMON_COMMON_H_

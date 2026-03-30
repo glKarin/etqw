@@ -59,6 +59,8 @@ extern idStrList stageParms;
 		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
 		else if(!idStr::Icmp(p, "partialLoad")); \
 	}
+
+extern idStr R_RestorePastImageProgram(const char *img, bool clearParms);
 #endif
 
 // jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
@@ -890,6 +892,15 @@ int idMaterial::ParseTerm(idLexer &src)
 	if (!token.Icmp("wind_x")) {
 		return GetExpressionConstant(1.0f);
 	}
+	if (!token.Icmp("wind_y")) {
+		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("AmbientMult")) {
+		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("InteractionMult")) {
+		return GetExpressionConstant(1.0f);
+	}
 #endif
 
 	if (!token.Icmp("fragmentPrograms")) {
@@ -1516,6 +1527,10 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #ifdef _RAVEN //karin: GLSL newShaderStage
 	rvNewShaderStage	newShaderStage;
 #endif
+#ifdef _SPLASHDAMAGE //karin: fake interaction program
+	bool isInteractionProgram = false;
+	idStrList extrasTextures; // if is interaction shader, split this stage
+#endif
 
 	if (numStages >= MAX_SHADER_STAGES) {
 		SetMaterialFlag(MF_DEFAULTED);
@@ -2061,9 +2076,12 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("lightProjectionMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
+			if(!imageName[0])
+			{
+			str = R_ParsePastImageProgram(src);
+			idStr::Copynz(imageName, str, sizeof(imageName));
+			SETUP_STAGE_PROGRAM_PARMS();
+			}
 			continue;
 		}
 		if (!token.Icmp("lightFallOffMap")) {
@@ -2102,6 +2120,18 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			//SETUP_STAGE_PROGRAM_PARMS();
 			continue;
 		}
+		if (!token.Icmp("fogMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
+		if (!token.Icmp("fogEnterMap")) {
+			/*str = */R_ParsePastImageProgram(src);
+			//idStr::Copynz(imageName, str, sizeof(imageName));
+			//SETUP_STAGE_PROGRAM_PARMS();
+			continue;
+		}
 		if (!token.Icmp("mask")) {
 			/*str = */R_ParsePastImageProgram(src);
 			//idStr::Copynz(imageName, str, sizeof(imageName));
@@ -2116,6 +2146,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			else if(!idStr::Icmp(t, "always"))
 				ss->drawStateBits |= GLS_DEPTHFUNC_ALWAYS;
 			else if(!idStr::Icmp(t, "lequal"))
+				ss->drawStateBits |= GLS_DEPTHFUNC_LESS;
+			else if(!idStr::Icmp(t, "less"))
 				ss->drawStateBits |= GLS_DEPTHFUNC_LESS;
 			else
 				common->Warning("unknown depth func '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
@@ -2144,34 +2176,23 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		// diffusemap for stage shortcut
 		if (!token.Icmp("diffusemap")) {
 			str = R_ParsePastImageProgram(src);
-			if(!imageName[0])
-			{
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			SETUP_STAGE_PROGRAM_PARMS();
 			ss->lighting = SL_DIFFUSE;
-			}
 			continue;
 		}
 		// specularmap for stage shortcut
 		if (!token.Icmp("specularmap")) {
 			str = R_ParsePastImageProgram(src);
-			if(!imageName[0])
-			{
-			idStr::Copynz(imageName, str, sizeof(imageName));
-			SETUP_STAGE_PROGRAM_PARMS();
-			ss->lighting = SL_SPECULAR;
-			}
+			if(isInteractionProgram)
+			extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
 			continue;
 		}
 		// normalmap for stage shortcut
 		if (!token.Icmp("bumpmap")) {
 			str = R_ParsePastImageProgram(src);
-			if(!imageName[0])
-			{
-			idStr::Copynz(imageName, str, sizeof(imageName));
-			SETUP_STAGE_PROGRAM_PARMS();
-			ss->lighting = SL_BUMP;
-			}
+			if(isInteractionProgram)
+			extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
 			continue;
 		}
 		if (!token.Icmp("detailMult")) { // detailMult 0,1,2,3
@@ -2295,7 +2316,11 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
                     if(shaderProgram && shaderProgram->program > 0)
                         newStage.glslProgram = shaderProgram->program;
                     else
+					{
                         newStage.glslProgram = SHADER_HANDLE_INVALID;
+						common->Printf("Stage program '%s' not found in material '%s' at file '%s'\n", token.c_str(), GetName(), GetFileName());
+						isInteractionProgram = !idStr::Icmpn(token.c_str(), "interaction", idStr::Length("interaction"));
+					}
                 }
 #endif
 			}
@@ -2565,6 +2590,22 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		common->Warning("material '%s' had stage with no image", GetName());
 		ts->image = globalImages->defaultImage;
 	}
+#ifdef _SPLASHDAMAGE
+	if(isInteractionProgram)
+	for(int i = 0; i < extrasTextures.Num(); i++)
+	{
+		idStr &text = extrasTextures[i];
+		int index = text.Find(' ');
+		idStr tempName = text.Left(index);
+		tempName.Append(" extras");
+		text.Insert("blend ", 0);
+		idParser newSrc;
+		newSrc.LoadMemory(text.c_str(), text.Length(), tempName);
+		newSrc.SetFlags(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES);
+		ParseStage(newSrc, trpDefault);
+		newSrc.FreeSource();
+	}
+#endif
 }
 
 /*
@@ -3313,6 +3354,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("occlusionQuery")) {
 			continue;
 		} else if (!token.Icmp("massive")) {
+			SetMaterialFlag(MF_ADVERT);
 			continue;
 		} else if (!token.Icmp("vertexPositionOnly")) {
 			continue;
@@ -3346,6 +3388,10 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("shadowMapped")) {
 			continue;
 		} else if (!token.Icmp("forceAtmosphere")) {
+			continue;
+		} else if (!token.Icmp("backSide")) { // backSide water/underwater
+			idToken t;
+			src.ExpectAnyToken(&t);
 			continue;
 #endif
 

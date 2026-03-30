@@ -162,14 +162,7 @@ void sdScriptHelper::Push( idScriptObject* obj ) {
 		return;
 	}
 
-#ifdef _ETQW //karin: NULL???
-	if(obj)
-#endif
 	arg->integer		= obj->GetHandle();
-#ifdef _ETQW //karin: NULL???
-	else
-		arg->integer	= 0;
-#endif
 	arg->string		= NULL;
 
 	size += sizeof( intptr_t ); //k64

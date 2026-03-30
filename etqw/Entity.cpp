@@ -5624,7 +5624,7 @@ idEntity::GetEntityAllegiance
 */
 teamAllegiance_t idEntity::GetEntityAllegiance( const idEntity* other ) const {
 	sdTeamInfo* otherTeam = other ? other->GetGameTeam() : NULL;
-	sdTeamInfo* thisTeam =  this ? this->GetGameTeam() : NULL;
+	sdTeamInfo* thisTeam =  ID_THIS ? this->GetGameTeam() : NULL; //karin: check this NULL
 
 	if ( !thisTeam || !otherTeam ) {
 		return TA_NEUTRAL;

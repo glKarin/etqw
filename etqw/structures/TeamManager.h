@@ -62,7 +62,7 @@ public:
 										sdTeamInfo( void );
 										~sdTeamInfo( void );
 
-	bool								operator== ( const sdTeamInfo& other ) { return ( this && ( &other ) ) && other.index == index; }
+	bool								operator== ( const sdTeamInfo& other ) { return ( ID_THIS && ID_CHECK_THIS( &other ) ) && other.index == index; } //karin: check this NULL
 	bool								operator!= ( const sdTeamInfo& other ) { return !( *this == other ); }
 
 	void								PreInit( int _index );

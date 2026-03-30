@@ -284,9 +284,26 @@ const char* idNetworkSystem::GetServerAddress(void)
 		return "";
 }
 
-int idNetworkSystem::GetNumScannedServers(void) { return 0; }
+int idNetworkSystem::GetNumScannedServers(void) {
+	return idAsyncNetwork::client.serverList.Num();
+}
 
-const scannedServer_t* idNetworkSystem::GetScannedServerInfo(int serverNum) { (void)serverNum; return 0; }
+const scannedServer_t* idNetworkSystem::GetScannedServerInfo(int serverNum) {
+	if (serverNum < 0 || serverNum >= idAsyncNetwork::client.serverList.Num())
+		return NULL;
+
+	static scannedServer_t sv;
+	const networkServer_t &ns = idAsyncNetwork::client.serverList[serverNum];
+	sv.adr = ns.adr;
+	sv.serverInfo = ns.serverInfo;
+	sv.ping = ns.ping;
+	sv.clients = ns.clients;
+	sv.OSMask = ns.OSMask;
+	sv.favorite = false;
+	sv.dedicated = false;
+	sv.performanceFiltered = false;
+	return &sv;
+}
 
 void idNetworkSystem::UseSortFunction(const sortInfo_t& sortInfo, bool use) { (void)sortInfo; (void)use; }
 
@@ -296,9 +313,17 @@ bool idNetworkSystem::RemoveSortFunction(const sortInfo_t& sortInfo) { (void)sor
 
 const char* idNetworkSystem::GetClientGUID(int clientNum) { (void)clientNum; return 0; }
 
-int idNetworkSystem::ServerGetClientNum(int clientId) { (void)clientId; return 0; }
+int idNetworkSystem::ServerGetClientNum(int clientId) {
+	for (int i = 0; i < idAsyncNetwork::server.clients.Num(); i++) {
+		if (idAsyncNetwork::server.clients[i].clientId == clientId)
+			return i;
+	}
+	return -1;
+}
 
-int idNetworkSystem::ServerGetServerTime(void) { return 0; }
+int idNetworkSystem::ServerGetServerTime(void) {
+	return idAsyncNetwork::server.gameTime;
+}
 
 void idNetworkSystem::AddFriend(int clientNum) { (void)clientNum; }
 
@@ -308,7 +333,6 @@ void idNetworkSystem::RemoveFriend(int clientNum) { (void)clientNum; }
 #ifdef _SPLASHDAMAGE
 #include "../Session_local.h"
 void idNetworkSystem::ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info ) {
-
 }
 
 void idNetworkSystem::ServerGetClientNetId( int clientNum, sdNetClientId& netClientId ) {

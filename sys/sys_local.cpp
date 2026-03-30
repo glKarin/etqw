@@ -268,7 +268,7 @@ const char *Sys_TimeStampToStr(ID_TIME_T timeStamp)
 
 #ifdef _SPLASHDAMAGE
 sysEvent_s::~sysEvent_s( void ) {
-	Mem_Free( evPtr );
+	//Mem_Free( evPtr ); //karin: as return value or copy, so using FreeData/FreeEvent to manual delete, or declare operator=/constructor
 }
 
 void sysEvent_s::FreeData( void ) {
@@ -435,7 +435,11 @@ const sdSysEvent* idSysLocal::GenerateGuiEvent( int value ) {
 }
 
 void idSysLocal::FreeEvent( const sdSysEvent* event ) {
-	delete event;
+	if (event) {
+		if (event->evPtr)
+			Mem_Free(event->evPtr);
+		delete event;
+	}
 }
 
 idWStr idSysLocal::GetClipboardData( void ) {

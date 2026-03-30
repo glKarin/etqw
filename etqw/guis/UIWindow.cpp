@@ -1510,7 +1510,7 @@ sdUIWindow::OnFlagsChanged
 void sdUIWindow::OnFlagsChanged( const float oldValue, const float newValue ) {
 	// if we've gained mouse capture, remove focus from all other windows in the GUI
 	if ( FlagActivated( oldValue, newValue, WF_CAPTURE_MOUSE ) ) {
-#ifdef _ETQW //karin: why have not desktop on UI
+#ifdef _ETQWxxx //karin: why have not desktop on UI
 		sdUIWindow *dk = GetUI()->GetDesktop();
 		if(!dk) {
 			sdUIObject *w = GetUI()->GetWindow( "desktop" );

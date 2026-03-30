@@ -5,11 +5,7 @@
 #pragma hdrstop
 
 #include "../Game_local.h"
-#ifdef _ETQW
-#include "../ContentMask.h"
-#else
-#include "../../game/ContentMask.h"
-#endif
+#include "../ContentMask.h" //karin: include
 #include "BotThreadData.h"
 #include "BotAI_Main.h"
 

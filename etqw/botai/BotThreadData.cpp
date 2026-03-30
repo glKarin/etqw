@@ -11,11 +11,7 @@
 #include "../Game_local.h" 
 #include "../misc/DefenceTurret.h"
 #include "../decls/GameDeclIdentifiers.h"
-#ifdef _ETQW
-#include "../ContentMask.h"
-#else
-#include "../../game/ContentMask.h"
-#endif
+#include "../ContentMask.h" //karin: include
 #include "../misc/PlayerBody.h"
 #include "../script/Script_Helper.h"
 #include "../script/Script_ScriptObject.h"

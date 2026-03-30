@@ -41,7 +41,7 @@ public:
 	networkFieldModeSync_t			networkFields[ NSM_NUM_MODES ];
 
 	idClass*						GetClass( void ) const { return _object; }
-	int								GetHandle( void ) const { return this ? _handle : 0; }
+	int								GetHandle( void ) const { return ID_THIS ? _handle : 0; } //karin: check this NULL
 
 	void							SetSynced( const char *name, bool snap );
 	void							SetSyncCallback( const char *name, const char* functionName );

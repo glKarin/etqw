@@ -318,7 +318,7 @@ public:
 	virtual float			GetRadiusPushScale( void ) const { return 1.0f; }
 	virtual void			ApplyRadiusPush( const idVec3& pushOrigin, const idVec3& entityOrigin, const sdDeclDamage* damageDecl, float pushScale, float radius );
 
-	virtual idScriptObject*	GetScriptObject( void ) const { return this ? scriptObject : NULL; }
+	virtual idScriptObject*	GetScriptObject( void ) const { return ID_THIS ? scriptObject : NULL; } //karin: check this NULL
 
 	// command map
 	void					SetSpotted( idEntity* other );

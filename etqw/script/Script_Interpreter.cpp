@@ -753,11 +753,7 @@ bool idInterpreter::Execute( void ) {
 				newThread->Init( this, func, func->parmTotal, st->op == OP_GUIOBJTHREAD );
 				newThread->GetAutoNode().AddToEnd( obj->GetAutoThreads() );
 				
-#ifdef _ETQW //karin: NULL???
-				idEntity* ent = obj->GetClass() ? obj->GetClass()->Cast< idEntity >() : NULL;
-#else
 				idEntity* ent = obj->GetClass()->Cast< idEntity >();
-#endif
 				if ( ent != NULL ) {
 					newThread->SetName( va( "%s_%s", func->type->Name(), ent->name.c_str() ) );
 				}

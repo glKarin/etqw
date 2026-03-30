@@ -5,11 +5,7 @@
 #ifndef __GAME_ROLES_OBJECTIVEMANAGER_H__
 #define __GAME_ROLES_OBJECTIVEMANAGER_H__
 
-#ifdef _ETQW //karin: include
-#include "../botai/BotAI_Actions.h" //mal: gonna need this for the bot actions
-#else
-#include "../../game/botai/BotAI_Actions.h" //mal: gonna need this for the bot actions
-#endif
+#include "../botai/BotAI_Actions.h" //mal: gonna need this for the bot actions //karin: include
 
 class idScriptObject;
 class sdDeclLocStr;

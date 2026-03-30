@@ -5687,12 +5687,7 @@ void idPlayer::UpdateViewAngles( void ) {
 		}
 	}
 
-#ifdef _ETQW //karin: NULL???
-	if ( sdScriptEntity* scriptEnt = remoteCamera.GetEntity() ? remoteCamera.GetEntity()->Cast< sdScriptEntity >() : NULL )
-#else
-	if ( sdScriptEntity* scriptEnt = remoteCamera.GetEntity()->Cast< sdScriptEntity >() ) 
-#endif
-	{
+	if ( sdScriptEntity* scriptEnt = remoteCamera.GetEntity()->Cast< sdScriptEntity >() ) {
 		scriptEnt->SetRemoteViewAngles( cameraViewAngles, this );
 		UpdateDeltaViewAngles( oldViewAngles );
 	} else {
