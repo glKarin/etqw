@@ -5266,7 +5266,7 @@ int sdTransport::PlayHitBeep( idPlayer* player, bool headshot ) const {
 sdTransport::OnKeyMove
 ================
 */
-bool sdTransport::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdTransport::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	if ( vehicleControl != NULL ) {
 		return vehicleControl->OnKeyMove( forward, right, up, cmd );
 	} else {

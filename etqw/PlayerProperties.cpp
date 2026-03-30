@@ -1953,7 +1953,11 @@ void sdPlayerProperties::SetActiveWeapon( idWeapon* weapon ) {
 
 		idPlayer* viewPlayer = gameLocal.GetLocalViewPlayer();
 		if ( viewPlayer != NULL ) {
+#ifdef _ETQW //karin: allow NULL???
+			sdTransport* transport = viewPlayer->GetProxyEntity() ? viewPlayer->GetProxyEntity()->Cast<sdTransport>() : NULL;
+#else
 			sdTransport* transport = viewPlayer->GetProxyEntity()->Cast<sdTransport>();
+#endif
 			if ( transport != NULL ) {
 				sdVehicleWeapon* vehicleWeap = transport->GetActiveWeapon( viewPlayer );
 				if ( vehicleWeap != NULL ) {

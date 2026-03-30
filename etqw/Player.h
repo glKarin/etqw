@@ -425,7 +425,7 @@ public:
 	void					UsercommandCallback( usercmd_t& cmd );
 	bool					GetSensitivity( float& scaleX, float& scaleY );
 
-	bool					KeyMove( char forward, char right, char up, usercmd_t& cmd );
+	bool					KeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	void					ControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 											const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 	void					MouseMove( const idAngles& baseAngles, idAngles& angleDelta );

@@ -1001,7 +1001,7 @@ public:
 
 	int								GetNumMapEntities( void ) const { return mapFile == NULL ? 0 : mapFile->GetNumEntities(); }
 
-	virtual bool					KeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool					KeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void					ControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 													const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 	virtual void					MouseMove( const idVec3& angleBase, idVec3& angleDelta );

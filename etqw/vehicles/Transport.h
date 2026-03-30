@@ -501,7 +501,7 @@ public:
 
 	virtual int							PlayHitBeep( idPlayer* player, bool headshot ) const;
 
-	virtual bool						OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool						OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void						OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 												const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 

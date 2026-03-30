@@ -192,7 +192,7 @@ public:
 
 	virtual void				UpdateLevelLoadScreen( const wchar_t* status ) = 0;
 
-	virtual bool				KeyMove( char forward, char right, char up, usercmd_t& cmd ) = 0;
+	virtual bool				KeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) = 0; //karin: add signed
 	virtual void				ControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 													const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd ) = 0;
 	virtual void				MouseMove( const idVec3& angleBase, idVec3& angleDelta ) = 0;

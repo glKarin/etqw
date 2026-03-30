@@ -677,7 +677,7 @@ public:
 	virtual float			GetDamageXPScale( void ) const { return 1.f; }
 
 	// input -> usercmd translation
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) { return false; }
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { return false; } //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 											const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 	virtual void			OnMouseMove( idPlayer* player, const idAngles& baseAngles, idAngles& angleDelta ) {}

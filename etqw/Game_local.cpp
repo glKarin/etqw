@@ -1852,7 +1852,7 @@ void idGameLocal::SetRules( idTypeInfo* type ) {
 idGameLocal::KeyMove
 ============
 */
-bool idGameLocal::KeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool idGameLocal::KeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	idPlayer* player = GetLocalPlayer();
 	if ( !player ) {
 		return false;

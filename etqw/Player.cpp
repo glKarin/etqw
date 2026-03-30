@@ -2244,7 +2244,7 @@ idPlayer::KeyMove
 //idCVar g_hackPlayerMove( "g_hackPlayerMove", "0", CVAR_BOOL | CVAR_GAME, "Hacks player movement for the local player so that they run back & forward constantly (worst case for network prediction)" );
 //idCVar g_hackPlayerMoveTime( "g_hackPlayerMoveTime", "5", CVAR_INTEGER | CVAR_GAME, "How many frames between forward/backward switch" );
 
-bool idPlayer::KeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool idPlayer::KeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	// pass move to any proxy
 	idEntity* proxyEntity = GetProxyEntity();
 	if ( proxyEntity ) {

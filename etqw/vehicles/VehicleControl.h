@@ -73,7 +73,7 @@ public:
 	virtual sdEntityStateNetworkData*	CreateNetworkStructure( networkStateMode_t mode ) const { return NULL; }
 	virtual void			ResetNetworkState( networkStateMode_t mode, const sdEntityStateNetworkData& newState ) { ; }
 
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) { return false; }
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { return false; } //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 										const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd ) {}
 
@@ -136,7 +136,7 @@ public:
 	virtual void			Init( sdTransport* transport );
 	virtual void			Update();
 
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 										const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 
@@ -202,7 +202,7 @@ public:
 	virtual void			SetSiegeMode( bool siege ) { inSiegeMode = siege; }
 	virtual void			CancelSiegeMode( void ) { wantsSiegeMode = false; }
 
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 										const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 
@@ -253,7 +253,7 @@ public:
 	virtual void			OnPlayerEntered( idPlayer* player, int position, int oldPosition );
 	virtual void			OnTeleport( void );
 
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 										const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 
@@ -328,7 +328,7 @@ protected:
 */
 class sdTitanControl : public sdWheeledVehicleControl {
 public:
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual bool			IsSquisher( void ) const { return true; }
 
 protected:
@@ -480,7 +480,7 @@ public:
 
 	virtual bool			GetLandingGearDown() { return landingGearDown; }
 
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 										const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 
@@ -668,7 +668,7 @@ public:
 	virtual void			Init( sdTransport* transport );
 	virtual void			Update();
 
-	virtual bool			OnKeyMove( char forward, char right, char up, usercmd_t& cmd );
+	virtual bool			OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ); //karin: add signed
 	virtual void			OnControllerMove( bool doGameCallback, const int numControllers, const int* controllerNumbers,
 										const float** controllerAxis, idVec3& viewAngles, usercmd_t& cmd );
 

@@ -112,7 +112,7 @@ void sdVehicleScriptControl::Update() {
 sdVehicleScriptControl::OnKeyMove
 ================
 */
-bool sdVehicleScriptControl::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdVehicleScriptControl::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	return false;
 }
 
@@ -429,7 +429,7 @@ void sdDesecratorControl::OnPlayerExited( idPlayer* player, int position ) {
 sdDesecratorControl::OnKeyMove
 ================
 */
-bool sdDesecratorControl::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdDesecratorControl::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	return false;
 }
 
@@ -599,7 +599,7 @@ float sdWheeledVehicleControl::SelectGear( idVec3& directions, float absSpeedKPH
 sdWheeledVehicleControl::OnKeyMove
 ================
 */
-bool sdWheeledVehicleControl::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdWheeledVehicleControl::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 
 	const sdVehicleInput& input = owner->GetInput();
 	idPlayer* player = input.GetPlayer();
@@ -1114,7 +1114,7 @@ void sdWheeledControlNetworkData::Read( idFile* file ) {
 sdTitanControl::OnKeyMove
 ================
 */
-bool sdTitanControl::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdTitanControl::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	return false;
 }
 
@@ -1949,7 +1949,7 @@ void sdAirVehicleControl::HandlePhysics() {
 sdAirVehicleControl::OnKeyMove
 ================
 */
-bool sdAirVehicleControl::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdAirVehicleControl::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	return false;
 }
 
@@ -3039,7 +3039,7 @@ bool sdWalkerControl::SetupNextState( controlState_t state, int time, int blendT
 sdWalkerControl::OnKeyMove
 ================
 */
-bool sdWalkerControl::OnKeyMove( char forward, char right, char up, usercmd_t& cmd ) {
+bool sdWalkerControl::OnKeyMove( signed char forward, signed char right, signed char up, usercmd_t& cmd ) { //karin: add signed
 	return false;
 }
 
