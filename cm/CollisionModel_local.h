@@ -209,6 +209,8 @@ typedef struct cm_model_s
 	cm_brushRef_t           *_trmBrushes[1];
 	int                     refCount;
 #ifdef _SPLASHDAMAGE
+	idList<cm_polygon_t *>	polygons;
+	idList<cm_brush_t *>	brushes;
 	bool					isWorld;
 #endif
 
@@ -643,6 +645,8 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		bool			ParseCollisionModel_Binary(idFile *file);
 		bool			LoadCollisionModelFile_Binary(const char *name, unsigned int mapFileCRC);
 		void			ParseMaterials_Binary(idFile *file, idStrList &materials);
+
+		void			InitModels(void);
 #endif
 
 	private:			// CollisionMap_debug

@@ -749,6 +749,9 @@ bool idCollisionModelManagerLocal::ParseCollisionModel(idLexer *src)
 		src->Error("ParseCollisionModel: bad token \"%s\"", token.c_str());
 	}
 
+#ifdef _SPLASHDAMAGE
+	model->SetWorld(!idStr::Icmpn(model->name, WORLD_MODEL_NAME, idStr::Length(WORLD_MODEL_NAME)));
+#endif
 	// calculate edge normals
 	checkCount++;
 	CalculateEdgeNormals(model, model->node);
@@ -1092,6 +1095,8 @@ bool idCollisionModelManagerLocal::ParseCollisionModel_Binary(idFile *file) {
 	ParsePolygons_Binary(file, model, materials);
 
 	ParseBrushes_Binary(file, model);
+
+	model->SetWorld(!idStr::Icmpn(model->name, WORLD_MODEL_NAME, idStr::Length(WORLD_MODEL_NAME)));
 
 	// calculate edge normals
 	checkCount++;

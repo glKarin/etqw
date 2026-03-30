@@ -566,6 +566,9 @@ void idCollisionModelManagerLocal::FreePolygon(cm_model_t *model, cm_polygon_t *
 	if (model->polygonBlock == NULL) {
 		Mem_Free(poly);
 	}
+#ifdef _SPLASHDAMAGE
+	model->polygons.Remove(poly);
+#endif
 }
 
 /*
@@ -581,6 +584,9 @@ void idCollisionModelManagerLocal::FreeBrush(cm_model_t *model, cm_brush_t *brus
 	if (model->brushBlock == NULL) {
 		Mem_Free(brush);
 	}
+#ifdef _SPLASHDAMAGE
+	model->brushes.Remove(brush);
+#endif
 }
 
 /*
@@ -887,6 +893,10 @@ cm_model_t *idCollisionModelManagerLocal::AllocModel(void)
 	model->_trmBrushes[0] = 0;
 	model->refCount = 1;
 #endif
+#ifdef _SPLASHDAMAGE
+	model->polygons.Clear();
+	model->brushes.Clear();
+#endif
 
 	return model;
 }
@@ -1009,6 +1019,9 @@ cm_polygon_t *idCollisionModelManagerLocal::AllocPolygon(cm_model_t *model, int 
 	} else {
 		poly = (cm_polygon_t *) Mem_Alloc(size);
 	}
+#ifdef _SPLASHDAMAGE
+	model->polygons.Append(poly);
+#endif
 
 	return poly;
 }
@@ -1036,6 +1049,9 @@ cm_brush_t *idCollisionModelManagerLocal::AllocBrush(cm_model_t *model, int numP
 	}
 #ifdef _RAVEN
 	brush->material = NULL;
+#endif
+#ifdef _SPLASHDAMAGE
+	model->brushes.Append(brush);
 #endif
 
 	return brush;
@@ -1201,6 +1217,9 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 	// polygons
 	model->numPolygons = trm.numPolys;
 	trmPoly = trm.polys;
+#ifdef _SPLASHDAMAGE
+	model->polygons.SetNum(model->numPolygons);
+#endif
 
 	for (i = 0; i < trm.numPolys; i++, trmPoly++) {
 		poly = trmPolygons[i]->p;
@@ -1217,6 +1236,9 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 		// link polygon at node
 		trmPolygons[i]->next = model->node->polygons;
 		model->node->polygons = trmPolygons[i];
+#ifdef _SPLASHDAMAGE
+		model->polygons[i] = poly;
+#endif
 	}
 
 	// if the trace model is convex
@@ -5018,6 +5040,8 @@ cm_model_t 	* idCollisionModelManagerLocal::AllocModel(cm_model_t * &model)
 	model->refCount++;
 #ifdef _SPLASHDAMAGE
 	model->isWorld = false;
+	model->polygons.Clear();
+	model->brushes.Clear();
 #endif
 
 	return model;
@@ -5222,8 +5246,8 @@ const idBounds& cm_model_t::GetBounds( void ) const {
 	return bounds;
 }
 
-void cm_model_t::GetBounds( idBounds& bounds, int surfaceMask, bool inclusive ) const {
-	bounds = this->bounds;
+void cm_model_t::GetBounds( idBounds& _bounds, int surfaceMask, bool inclusive ) const {
+	_bounds = bounds;
 }
 
 int cm_model_t::GetContents( void ) const {
@@ -5253,26 +5277,48 @@ void cm_model_t::GetEdge( int edgeNum, idVec3& start, idVec3& end ) const {
 }
 
 void cm_model_t::GetPolygon( int polygonNum, idFixedWinding &winding ) const {
-	int i, edgeNum;
-	cm_polygon_t *poly;
-
-	poly = *reinterpret_cast<cm_polygon_t **>(&polygonNum);
 	winding.Clear();
 
-	for (i = 0; i < poly->numEdges; i++) {
-		edgeNum = poly->edges[i];
-		winding += vertices[ edges[abs(edgeNum)].vertexNum[INTSIGNBITSET(edgeNum)] ].p;
+	if (polygonNum < 0 || polygonNum >= numPolygons) {
+		common->Printf("idCollisionModelManagerLocal::GetPolygonMaterial: invalid polygon number\n");
+		return;
+	}
+
+	int i, edgeNum;
+	cm_polygon_t *poly = polygons[polygonNum];
+
+	if(poly)
+	{
+		for (i = 0; i < poly->numEdges; i++) {
+			edgeNum = poly->edges[i];
+			winding += vertices[ edges[abs(edgeNum)].vertexNum[INTSIGNBITSET(edgeNum)] ].p;
+		}
 	}
 }
 
 int cm_model_t::GetNumBrushPlanes( void ) const {
-	return numBrushes;
+	int num = 0;
+
+	for(int i = 0; i < numBrushes; i++)
+	{
+		num += brushes[i]->numPlanes;
+	}
+	return num;
 }
 
 const idPlane& cm_model_t::GetBrushPlane( int planeNum ) const {
-	if (planeNum < 0 || planeNum >= numBrushes) {
-		common->Printf("idCollisionModelManagerLocal::GetBrushPlane: invalid plane number\n");
-		return plane_origin;
+	int num = 0;
+
+	for(int i = 0; i < numBrushes; i++)
+	{
+		for(int m = 0; m < brushes[i]->numPlanes; i++)
+		{
+			if(num == planeNum)
+			{
+				return brushes[i]->planes[m];
+			}
+			num++;
+		}
 	}
 
 	return plane_origin;
@@ -5280,11 +5326,13 @@ const idPlane& cm_model_t::GetBrushPlane( int planeNum ) const {
 
 const idMaterial* cm_model_t::GetPolygonMaterial( int polygonNum ) const {
 	if (polygonNum < 0 || polygonNum >= numPolygons) {
-		common->Printf("idCollisionModelManagerLocal::GetPolygonPlane: invalid polygon number\n");
+		common->Printf("idCollisionModelManagerLocal::GetPolygonMaterial: invalid polygon number\n");
 		return NULL;
 	}
 
-	return NULL;
+	cm_polygon_t *poly = polygons[polygonNum];
+
+	return poly ? poly->material : NULL;
 }
 
 const idPlane& cm_model_t::GetPolygonPlane( int polygonNum ) const {
@@ -5293,7 +5341,8 @@ const idPlane& cm_model_t::GetPolygonPlane( int polygonNum ) const {
 		return plane_origin;
 	}
 
-	return plane_origin;
+	cm_polygon_t *poly = polygons[polygonNum];
+	return poly ? poly->plane : plane_origin;
 }
 
 int cm_model_t::GetNumPolygons( void ) const {
@@ -5347,19 +5396,10 @@ void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceRelo
 		FreeMap();
 	}
 
-	// clear the collision map
-	Clear();
-
-	// models
-	maxModels = MAX_SUBMODELS;
-	numModels = 0;
-	models = (cm_model_t **) Mem_ClearedAlloc((maxModels+1) * sizeof(cm_model_t *));
+	InitModels(); //karin: it called before LoadMap(), so alloc here
 
 	// setup hash to speed up finding shared vertices and edges
 	SetupHash();
-
-	// setup trace model structure
-	SetupTrmModelStructure();
 
 	// build collision models
 	BuildModels(&mapFile, forceReload);
@@ -5374,6 +5414,7 @@ void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceRelo
 }
 
 void idCollisionModelManagerLocal::PurgeModels( void ) {
+	FreeMap();
 }
 
 idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapName, const char *modelName, const idTraceModel &trm, bool includeBrushes ) {
@@ -5390,6 +5431,8 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 	int handleIndex;
 
 	assert( models );
+
+	InitModels();
 
 	handle = FindModelAndIndex(modelName, handleIndex);
 	model = NULL;
@@ -5501,6 +5544,9 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 	}
 	// polygons
 	model->numPolygons = trm.numPolys;
+#ifdef _SPLASHDAMAGE
+	model->polygons.SetNum(model->numPolygons);
+#endif
 	trmPoly = trm.polys;
 	for ( i = 0; i < trm.numPolys; i++, trmPoly++ ) {
 		poly = model->_trmPolygons[i]->p;
@@ -5515,6 +5561,9 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 		// link polygon at node
 		model->_trmPolygons[i]->next = model->node->polygons;
 		model->node->polygons = model->_trmPolygons[i];
+#ifdef _SPLASHDAMAGE
+		model->polygons[i] = poly;
+#endif
 	}
 	// if the trace model is convex
 	model->_trmBrushes[0]->b->material = 0; //k
@@ -5562,5 +5611,29 @@ idCollisionModel* idCollisionModelManagerLocal::LoadModel( const char *mapName, 
 {
 	(void)mapName;
 	return LoadModel(modelName, true);
+}
+
+void idCollisionModelManagerLocal::InitModels(void)
+{
+	if (models) {
+		return;
+	}
+
+	// clear the collision map
+	Clear();
+
+	// models
+	maxModels = MAX_SUBMODELS;
+	numModels = 0;
+	models = (cm_model_t **) Mem_ClearedAlloc((maxModels+1) * sizeof(cm_model_t *));
+
+	// setup hash to speed up finding shared vertices and edges
+	SetupHash();
+
+	// setup trace model structure
+	SetupTrmModelStructure();
+
+	// shutdown the hash
+	ShutdownHash();
 }
 #endif
