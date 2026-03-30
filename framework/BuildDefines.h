@@ -165,6 +165,23 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #ifdef _SPLASHDAMAGE
+
+#if !defined( SD_SLIMLINE_ENGINE ) && !defined( SD_PUBLIC_TOOLS )
+//#define SD_SUPPORT_VOIP
+#endif // SD_SLIMLINE_BUILD
+
+// enable this define to make the idStr and idWStr allocators thread safe
+#ifndef ID_THREAD_SAFE_STR
+	//#define ID_THREAD_SAFE_STR
+#endif
+
+// put defines here which should only be used for QA builds
+//#define SD_QA_BUILD
+#if defined( SD_QA_BUILD )
+	//#define SD_PUBLIC_BUILD
+#endif
+
+
 #if !defined( SD_DEMO_BUILD ) && !defined( SD_PUBLIC_TOOLS )
 	#define SD_SUPPORT_REPEATER
 #endif

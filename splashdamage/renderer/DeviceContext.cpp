@@ -11,11 +11,19 @@
 #else
 #define DC_PLACEHOLDER(...)
 #endif
+
 #if 0
 #define DC_DRAW(...) Sys_Printf(__VA_ARGS__)
 #else
 #define DC_DRAW(...)
 #endif
+
+#if 0
+#define DC_DEBUG_MATERIAL(...) R_DC_DebugMaterial(__VA_ARGS__)
+#else
+#define DC_DEBUG_MATERIAL(...)
+#endif
+
 #define DC_UNUSED_ON_GAME
 
 #define DEFAULT_FONT_TEXTURE_SIZE 1024
@@ -37,6 +45,19 @@ idList<sdLocFont_t> sdDeviceContextLocal::fontConfigs;
 
 static idCVar harm_r_fontDefaultScale("harm_r_fontDefaultScale", "0.3", CVAR_FLOAT | CVAR_ARCHIVE | CVAR_RENDERER, "");
 #define DC_DEFAULT_FONT_SCALE (harm_r_fontDefaultScale.GetFloat())
+
+static void R_DC_DebugMaterial(const idMaterial *shader, float x, float y, float w, float h)
+{
+	if(!shader)
+		return;
+
+	idVec4 c = tr.guiModel->CurrentColor();
+	renderSystem->SetColor(idVec4(1.0f, 0.0f, 0.0f, 0.5f));
+	idWStr str = StrToWStr(shader->GetName());
+	sdBounds2D bb = sdBounds2D(x, y, 640/* - x - w*/, 480/* - y - h*/);
+	deviceContext->DrawText(str.c_str(), bb, DTF_WORDWRAP);
+	renderSystem->SetColor(c);
+}
 
 sdDeviceContextLocal::sdDeviceContextLocal()
 : whiteImage(NULL)
@@ -231,16 +252,7 @@ void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, flo
 
 	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, material, (angle == 0.0) ? false : true);
 
-	idVec4 c = tr.guiModel->CurrentColor();
-	renderSystem->SetColor(colorRed);
-	idStr str = "";
-	str.Append(material->GetName());
-	idWStr wstr = StrToWStr(str);
-	sdBounds2D bb = sdBounds2D(x,y,w,h);
-	bb.GetRight() = 640;
-	DrawText(wstr.c_str(), bb, 0);
-
-	renderSystem->SetColor(c);
+	DC_DEBUG_MATERIAL(material, x, y, w, h);
 }
 
 void sdDeviceContextLocal::DrawCinematic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, idSoundEmitter* referenceSound, float angle ) {
@@ -376,6 +388,8 @@ void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, con
 	DrawStretchPic(x, y, w, h, s0, t0, s1, t1, material);
 
 	UnsetTempColor();
+
+	DC_DEBUG_MATERIAL(material, x, y, w, h);
 }
 
 void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idVec2 extents, const idMaterial* material, const idVec4& color ) {
@@ -882,6 +896,8 @@ void sdDeviceContextLocal::DrawStretchPic(float x, float y, float w, float h, fl
 	verts[3].tangents[1][2] = 0;
 
 	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, false);
+
+	//DC_DEBUG_MATERIAL(shader, x, y, w, h);
 }
 
 void sdDeviceContextLocal::SetSize(float width, float height)
@@ -1014,20 +1030,7 @@ void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, floa
 
 	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, (angle == 0.0) ? false : true);
 
-	if(shader)
-	{
-
-	idVec4 c = tr.guiModel->CurrentColor();
-	renderSystem->SetColor(colorRed);
-	idStr str = "";
-	str.Append(shader->GetName());
-	idWStr wstr = StrToWStr(str);
-	sdBounds2D bb = sdBounds2D(x,y,w,h);
-	bb.GetRight() = 640;
-	DrawText(wstr.c_str(), bb, 0);
-
-	renderSystem->SetColor(c);
-	}
+	DC_DEBUG_MATERIAL(shader, x, y, w, h);
 }
 
 void sdDeviceContextLocal::SetupFonts() {

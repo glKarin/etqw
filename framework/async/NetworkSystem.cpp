@@ -399,7 +399,7 @@ const idDict& idNetworkSystem::GetUserInfo( int clientNum ) {
 }
 
 bool idNetworkSystem::idNetworkSystem::IsRankedServer( void ) {
-	return true;
+	return false;
 }
 
 void idNetworkSystem::idNetworkSystem::StartSoundTest( int duration ) {

@@ -37,6 +37,9 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _HUMANHEAD
 #include "../ui/UserInterfaceLocal.h"
 #endif
+#ifdef _SPLASHDAMAGE 
+#include "sdnet/SDNet.h"
+#endif
 
 #ifdef _RAVEN
 //karin: pause when finished loading
@@ -2135,7 +2138,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 #ifdef _SPLASHDAMAGE
 	idStr reason;
 	idStr mapName = mapString;
-	userMapChangeResult_e changeResult = game->OnUserStartMap("", reason, mapName);
+	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_etqwmap", reason, mapName);
 	Sys_Printf("OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
 #endif
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
@@ -3405,6 +3408,7 @@ void idSessionLocal::Frame()
 		}
 	}
 #ifdef _SPLASHDAMAGE
+	networkService->RunFrame();
 	game->RunFrame();
 #endif
 
@@ -3830,7 +3834,7 @@ void idSessionLocal::Init()
 
 	ReadCDKey();
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGExxx
 	idAsyncNetwork::client.SendVersionCheck();
 #endif
 

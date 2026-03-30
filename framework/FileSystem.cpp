@@ -334,6 +334,9 @@ typedef struct searchpath_s {
 #define MAX_GAME_OS	6
 #define BINARY_CONFIG "binary.conf"
 #define ADDON_CONFIG "addon.conf"
+#ifdef _SPLASHDAMAGE
+#define PAKMETA_CONFIG "pakmeta.conf"
+#endif
 
 class idDEntry : public idStrList
 {
@@ -545,6 +548,11 @@ class idFileSystemLocal : public idFileSystem
         void                    InitExtraGame(const char *configFile);
 
         void                    RemoveDir_r(const char *OSPath, int type = 0);
+#ifdef _SPLASHDAMAGE
+		bool					ParseMetaConfFile(const char *text, int length, bool IsAddon);
+		bool					ParseMetaConf(idLexer &src, metaDataContext_t &md);
+		void					InitMetaConf(void);
+#endif
 };
 
 // Init game addon resource config file
@@ -3384,6 +3392,7 @@ void idFileSystemLocal::Init(void)
 	if (ReadFile("public.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
 	}
+	InitMetaConf();
 #else
 	if (ReadFile("default.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
@@ -5176,6 +5185,182 @@ idFile * idFileSystemLocal::GetNewFileMemory( void )
 #endif
 
 #ifdef _SPLASHDAMAGE
+void idFileSystemLocal::InitMetaConf(void)
+{
+	searchpath_t 	*search;
+	idStr			netpath;
+	pack_t 		*pak;
+	fileInPack_t 	*pakFile;
+	directory_t 	*dir;
+	int				hash;
+	FILE 			*fp;
+
+	if (!searchPaths) {
+		common->FatalError("Filesystem call made without initialization\n");
+	}
+
+	//
+	// search through the path, one element at a time
+	//
+
+	const char *relativePaths[] = {
+		ADDON_CONFIG,
+		PAKMETA_CONFIG,
+		NULL
+	};
+
+	const char **p = &relativePaths[0];
+	while(*p)
+	{
+		const char *relativePath = *p;
+		p++;
+		hash = HashFileName(relativePath);
+
+		for (search = searchPaths; search; search = search->next) {
+			idFile *f = NULL;
+			bool isAddon = false;
+			if (search->dir) {
+				// check a file in the directory tree
+
+				dir = search->dir;
+
+				netpath = BuildOSPath(dir->path, dir->gamedir, relativePath);
+				fp = OpenOSFileCorrectName(netpath, "rb");
+
+				if (!fp) {
+					continue;
+				}
+
+				idFile_Permanent *file = new idFile_Permanent();
+				file->o = fp;
+				file->name = relativePath;
+				file->fullPath = netpath;
+				file->mode = (1 << FS_READ);
+				file->fileSize = DirectFileLength(file->o);
+				f = file;
+			} else if (search->pack) {
+
+				if (!search->pack->hashTable[hash]) {
+					continue;
+				}
+
+				// look through all the pak file elements
+				pak = search->pack;
+
+				for (pakFile = pak->hashTable[hash]; pakFile; pakFile = pakFile->next) {
+					// case and separator insensitive comparisons
+					if (!FilenameCompare(pakFile->name, relativePath)) {
+						idFile_InZip *file = ReadFileFromZip(pak, pakFile, relativePath);
+						isAddon = pak->addon;
+						f = file;
+						break;
+					}
+				}
+			}
+
+			if(f)
+			{
+				if (f->Length()) {
+					char *buf;
+					buf = new char[ f->Length() + 1 ];
+					f->Read((void *)buf, f->Length());
+					buf[ f->Length()] = '\0';
+					ParseMetaConfFile(buf, f->Length(), isAddon);
+					delete[] buf;
+				}
+
+				if (f) {
+					CloseFile(f);
+				}
+			}
+		}
+
+		for (search = addonPaks; search; search = search->next) {
+			assert(search->pack);
+			fileInPack_t	*pakFile;
+			pak = search->pack;
+
+			for (pakFile = pak->hashTable[hash]; pakFile; pakFile = pakFile->next) {
+				if (!FilenameCompare(pakFile->name, relativePath)) {
+					idFile_InZip *file = ReadFileFromZip(pak, pakFile, relativePath);
+
+					if(file)
+					{
+						if (file->Length()) {
+							char *buf;
+							buf = new char[ file->Length() + 1 ];
+							file->Read((void *)buf, file->Length());
+							buf[ file->Length()] = '\0';
+							ParseMetaConfFile(buf, file->Length(), pak->addon);
+							delete[] buf;
+						}
+
+						if (file) {
+							CloseFile(file);
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+bool idFileSystemLocal::ParseMetaConf(idLexer &src, metaDataContext_t &md)
+{
+	idToken token;
+
+	if(!src.ReadToken(&token))
+	{
+		return false;
+	}
+
+	idDict dict;
+	if(!dict.Parse(src))
+	{
+		src.SkipBracedSection(false);
+		return false;
+	}
+
+	dict.Set("metadata_name", token.c_str());
+	md.addon = false;
+	idDict *meta = new idDict;
+	meta->Swap(dict);
+	md.meta = meta;
+
+	return true;
+}
+
+bool idFileSystemLocal::ParseMetaConfFile(const char *text, int length, bool isAddon)
+{
+	idLexer src;
+	idToken token;
+	src.SetFlags(DECL_LEXER_FLAGS);
+
+	if(!src.LoadMemory(text, length, "<metadata.conf>"))
+	{
+		return false;
+	}
+
+	while(true)
+	{
+		if(!src.ReadToken(&token))
+		{
+			break;
+		}
+
+		metaDataContext_t md;
+		if(ParseMetaConf(src, md))
+		{
+			md.addon = isAddon;
+			sdAddonMetaDataList *list = ListAddonMetaData(token);
+			list->meta.Append(md);
+		}
+	}
+
+	return true;
+}
+
 sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataTag ) {
 	sdAddonMetaDataList *value;
 	if (addonMetaDataList.Get(metaDataTag, &value))
