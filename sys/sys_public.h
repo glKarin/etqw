@@ -337,6 +337,7 @@ typedef enum {
 
 typedef struct sysEvent_s {
 #ifdef _SPLASHDAMAGE
+#if 0 //karin: make as POD
 public:
 								sysEvent_s() :
 									evPtrLength( 0 ),
@@ -346,11 +347,13 @@ public:
 									evValue = evValue2 = 0;
 #endif
 								}
-#if 0 //karin: make as POD
 								~sysEvent_s( void );
+	sysEvent_s&					operator=( const sysEvent_s& rhs );
 #endif
 
-	void						Init( sysEventType_t _type, int _value, int _value2, int _ptrLength, void* _ptr );
+	void						Memset();
+
+	void						Init( sysEventType_t _type = SE_NONE, int _value = 0, int _value2 = 0, int _ptrLength = 0, void* _ptr = NULL );
 
 	void						FreeData( void );
 
@@ -409,7 +412,6 @@ public:
 	void						Save( class idFile* file );
 	void						Restore( class idFile* file );
 
-	sysEvent_s&					operator=( const sysEvent_s& rhs );
 #endif
 	sysEventType_t	evType;
 	int				evValue;

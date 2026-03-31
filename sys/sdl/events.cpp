@@ -703,11 +703,7 @@ sysEvent_t Sys_GetEvent() {
 	sysEvent_t res = { };
 	int key;
 
-#ifdef _SPLASHDAMAGE
-	static const sysEvent_t res_none;
-#else
 	static const sysEvent_t res_none = { SE_NONE, 0, 0, 0, NULL };
-#endif
 
 #if SDL_VERSION_ATLEAST(2, 0, 0)
 	static char s[SDL_TEXTINPUTEVENT_TEXT_SIZE] = {0};
