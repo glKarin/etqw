@@ -74,77 +74,77 @@ sdLock& sdNetTeamManager_Local::GetLock() {
 
 	// Initialize team list
 sdNetTask* sdNetTeamManager_Local::Init() {
-	return new sdNetTask_Local;
+	return new sdNetTask_TeamManager_Init;
 }
 
 	// Create a team
 sdNetTask* sdNetTeamManager_Local::CreateTeam( const char* teamname ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_CreateTeam(teamname);
 }
 
 	// Invite a user to become a team member
 sdNetTask* sdNetTeamManager_Local::ProposeMembership( const char* username, const wchar_t* reason ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_ProposeMembership(username, reason);
 }
 
 	// Withdraw a membership proposal
 sdNetTask* sdNetTeamManager_Local::WithdrawMembership( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_WithdrawMembership(username);
 }
 
 	// Accept a membership proposal
 sdNetTask* sdNetTeamManager_Local::AcceptMembership( const char* username, const sdNetTeamId& teamId ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_AcceptMembership(username, teamId);
 }
 
 	// Reject a membership proposal
 sdNetTask* sdNetTeamManager_Local::RejectMembership( const char* username, const sdNetTeamId& teamId ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_RejectMembership(username, teamId);
 }
 
 	// Remove a member from the team
 sdNetTask* sdNetTeamManager_Local::RemoveMember( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_RemoveMember(username);
 }
 
 	// Send a message to a member
 sdNetTask* sdNetTeamManager_Local::SendMessage( const char* username, const wchar_t* text ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_TeamSendMessage(username, text);
 }
 
 	// Send a message to the whole team
 sdNetTask* sdNetTeamManager_Local::BroadcastMessage( const wchar_t* text ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_BroadcastMessage(text);
 }
 
 	// Invite a member to a session
 sdNetTask* sdNetTeamManager_Local::Invite( const char* username, const netadr_t& sessionAddress ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_TeamInvite(username, sessionAddress);
 }
 
 	// Promote a user to administrator
 sdNetTask* sdNetTeamManager_Local::PromoteMember( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_PromoteMember(username);
 }
 
 	// Demote an administrator to a normal member
 sdNetTask* sdNetTeamManager_Local::DemoteMember( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_DemoteMember(username);
 }
 
 	// Transfer ownership to another member
 sdNetTask* sdNetTeamManager_Local::TransferOwnership( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_TransferOwnership(username);
 }
 
 	// Disband the team
 sdNetTask* sdNetTeamManager_Local::DisbandTeam() {
-	return new sdNetTask_Local;
+	return new sdNetTask_DisbandTeam;
 }
 
 	// Leave the team, must specify a new member to be the owner if this member is the current owner
 sdNetTask* sdNetTeamManager_Local::LeaveTeam( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_LeaveTeam(username);
 }
 
 #endif /* !SD_DEMO_BUILD */

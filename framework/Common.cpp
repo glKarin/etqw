@@ -3855,11 +3855,18 @@ void idCommonLocal::ShutdownGame(bool reloading)
 	// shut down the renderSystem
 	renderSystem->Shutdown();
 
+#if !defined(_SPLASHDAMAGE) //karin: move to after game shutdown, because call declManager->UnregisterXXX on game shutdown
 	// shutdown the decl manager
 	declManager->Shutdown();
+#endif
 
 	// unload the game dll
 	UnloadGameDLL();
+
+#ifdef _SPLASHDAMAGE) //karin: move to after game shutdown, because call declManager->UnregisterXXX on game shutdown
+	// shutdown the decl manager
+	declManager->Shutdown();
+#endif
 
 	// dump warnings to "warnings.txt"
 #ifdef DEBUG

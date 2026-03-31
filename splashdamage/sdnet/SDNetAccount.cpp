@@ -38,31 +38,31 @@ void sdNetAccount_Local::GetNetClientId( sdNetClientId& netClientId ) const {
 
 	// Create an account to sign to online service
 sdNetTask* sdNetAccount_Local::CreateAccount( const char* username, const char* password, const char* key ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_CreateAccount(username, password, key);
 }
 
 	// Change password
 sdNetTask* sdNetAccount_Local::ChangePassword( const char* password, const char* newPassword ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_ChangePassword(password, newPassword);
 }
 
 	// Reset password using license code
 sdNetTask* sdNetAccount_Local::ResetPassword( const char* key, const char* newPassword ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_ResetPassword(key, newPassword);
 }
 
 	// Delete an account
 sdNetTask* sdNetAccount_Local::DeleteAccount() {
-	return new sdNetTask_Local;
+	return new sdNetTask_DeleteAccount;
 }
 
 	// Sign in to online service
 sdNetTask* sdNetAccount_Local::SignIn() {
-	return new sdNetTask_Local;
+	return new sdNetTask_SignIn;
 }
 
 	// Sign out from online service
 sdNetTask* sdNetAccount_Local::SignOut() {
-	return new sdNetTask_Local;
+	return new sdNetTask_SignOut;
 }
 

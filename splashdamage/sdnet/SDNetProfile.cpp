@@ -33,19 +33,19 @@ const idDict& sdNetProfile_Local::GetProperties() const {
 #if !defined( SD_DEMO_BUILD )
 	// Assures the profile exists, creates it if it isn't there
 sdNetTask* sdNetProfile_Local::AssureExists() {
-	return new sdNetTask_Local;
+	return new sdNetTask_AssureExists;
 }
 
 
 	// Stores the profile properties remotely
 sdNetTask* sdNetProfile_Local::Store( bool publicProfile, bool privateProfile ) const {
-	return new sdNetTask_Local;
+	return new sdNetTask_Store(publicProfile, privateProfile);
 }
 
 
 	// Restores the remote profile properties, merging with local properties as required
 sdNetTask* sdNetProfile_Local::Restore() {
-	return new sdNetTask_Local;
+	return new sdNetTask_Restore;
 }
 
 #endif /* !SD_DEMO_BUILD */

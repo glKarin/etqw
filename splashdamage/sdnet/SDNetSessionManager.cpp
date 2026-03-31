@@ -37,30 +37,30 @@ void sdNetSessionManager_Local::FreeSession( sdNetSession* session ) {
 
 	// Register a session with the master
 sdNetTask* sdNetSessionManager_Local::CreateSession( sdNetSession& session ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_CreateSession(session);
 }
 
 	// Update session details
 sdNetTask* sdNetSessionManager_Local::UpdateSession( sdNetSession& session ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_UpdateSession(session);
 }
 
 	// Remove session from the master
 sdNetTask* sdNetSessionManager_Local::DeleteSession( sdNetSession& session ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_DeleteSession(session);
 }
 
 	// Retrieve sessions from the master
 sdNetTask* sdNetSessionManager_Local::FindSessions( idList< sdNetSession* >& sessions, sessionSource_e source ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_FindSessions(sessions, source);
 }
 
 	// Re-queries the already obtained session list to get the most up to date details
 sdNetTask* sdNetSessionManager_Local::RefreshSessions( idList< sdNetSession* >& sessions ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_RefreshSessions(sessions);
 }
 
 	// Re-queries the specified session to get the most up to date details
 sdNetTask* sdNetSessionManager_Local::RefreshSession( sdNetSession& session ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_RefreshSession(session);
 }

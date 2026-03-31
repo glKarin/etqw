@@ -108,6 +108,8 @@ public:
 	// Get a user's profile
 	virtual const idDict*			GetProfileProperties( sdNetClientId userID ) const;
 #endif /* !SD_DEMO_BUILD */
+
+	void AddTask(sdNetTask *task);
 	
 private:
 	bool isInitialized;
@@ -123,6 +125,8 @@ private:
 	sdNetTeamManager_Local teamManager;
 #endif /* !SD_DEMO_BUILD */
 	sdNetErrorCode_e lastError;
+
+	static idList<sdNetTask *> taskPools;
 };
 
 extern sdNetService* networkService;

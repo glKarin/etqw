@@ -36,12 +36,12 @@ bool sdNetStatsManager_Local::ReadCachedDictionary( const sdNetClientId& clientI
 
 	// Flush pending stats to the master
 sdNetTask* sdNetStatsManager_Local::Flush() {
-	return new sdNetTask_Local;
+	return new sdNetTask_Flush;
 }
 
 	// Read a stats dictionary from the master
 sdNetTask* sdNetStatsManager_Local::ReadDictionary( const sdNetClientId& clientId, sdNetStatKeyValList& stats ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_ReadDictionary(clientId, stats);
 }
 
 #endif /* !SD_DEMO_BUILD */

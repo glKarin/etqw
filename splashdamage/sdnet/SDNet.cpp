@@ -34,6 +34,9 @@ void sdNetService_Local::Shutdown() {
 }
 
 void sdNetService_Local::RunFrame() {
+	for (int i = 0; i < taskPools.Num(); ++i) {
+		((sdNetTask_Local *)taskPools[i])->RunFrame();
+	}
 }
 
 sdNetService::serviceState_e sdNetService_Local::GetState() const {
@@ -123,6 +126,7 @@ sdNetTeamManager& sdNetService_Local::GetTeamManager() {
 	// Task management
 	//
 void sdNetService_Local::FreeTask( sdNetTask* task ) {
+	taskPools.Remove(task);
 	delete task;
 }
 
@@ -137,23 +141,23 @@ sdNetErrorCode_e sdNetService_Local::GetLastError() const {
 	// Start online service and connect to auth system
 sdNetTask* sdNetService_Local::Connect() {
 	serviceState = SS_ONLINE;
-	return new sdNetTask_Local;
+	return new sdNetTask_Connect;
 }
 
 	// Authorize a dedicated server
 sdNetTask* sdNetService_Local::SignInDedicated() {
-	return new sdNetTask_Local;
+	return new sdNetTask_SignInDedicated;
 }
 
 	// De-authorize a dedicated server
 sdNetTask* sdNetService_Local::SignOutDedicated() {
-	return new sdNetTask_Local;
+	return new sdNetTask_SignOutDedicated;
 }
 
 #if !defined( SD_DEMO_BUILD )
 	// Get a list of account names for a license code
 sdNetTask* sdNetService_Local::GetAccountsForLicense( idStrList& accountNames, const char* licenseCode ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_GetAccountsForLicense;
 }
 
 	// Get a user's profile
@@ -169,6 +173,12 @@ const idDict* sdNetService_Local::GetProfileProperties( sdNetClientId userID ) c
 	return NULL;
 }
 #endif /* !SD_DEMO_BUILD */
+
+idList<sdNetTask *> sdNetService_Local::taskPools;
+
+void sdNetService_Local::AddTask(sdNetTask *task) {
+	taskPools.Append( task );
+}
 
 sdNetService_Local networkServiceLocal;
 sdNetService* networkService = &networkServiceLocal;

@@ -73,55 +73,55 @@ sdLock&	sdNetFriendsManager_Local::GetLock() {
 
 	// Initialize friends list
 sdNetTask* sdNetFriendsManager_Local::Init() {
-	return new sdNetTask_Local;
+	return new sdNetTask_FriendsManager_Init;
 }
 
 
 	// Invite a user to become a friend
 sdNetTask* sdNetFriendsManager_Local::ProposeFriendship( const char* username, const wchar_t* reason ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_ProposeFriendship(username, reason);
 }
 
 
 	// Withdraw a friendship proposal
 sdNetTask* sdNetFriendsManager_Local::WithdrawProposal( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_WithdrawProposal(username);
 }
 
 
 	// Accept a friendship proposal
 sdNetTask* sdNetFriendsManager_Local::AcceptProposal( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_AcceptProposal(username);
 }
 
 
 	// Reject a friendship proposal
 sdNetTask* sdNetFriendsManager_Local::RejectProposal( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_RejectProposal(username);
 }
 
 
 	// Remove a user from the friends list
 sdNetTask* sdNetFriendsManager_Local::RemoveFriend( const char* username ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_RemoveFriend(username);
 }
 
 
 	// Set the blocked status of a user
 sdNetTask* sdNetFriendsManager_Local::SetBlockedStatus( const char* username, const sdNetFriend::blockState_e blockState ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_SetBlockedStatus(username, blockState);
 }
 
 
 	// Send a messsage to a friend
 sdNetTask* sdNetFriendsManager_Local::SendMessage( const char* username, const wchar_t* text ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_FriendSendMessage(username, text);
 }
 
 
 	// Invite a friend to a session
 sdNetTask* sdNetFriendsManager_Local::Invite( const char* username, const netadr_t& sessionAddress ) {
-	return new sdNetTask_Local;
+	return new sdNetTask_FriendInvite(username, sessionAddress);
 }
 
 

@@ -3527,7 +3527,40 @@ void idDeclManagerLocal::RegisterDeclType( idDeclTypeInterface* type ) {
 	//FinishedRegistering();
 }
 
-void idDeclManagerLocal::UnregisterDeclType( idDeclTypeInterface* type ) {
+void idDeclManagerLocal::UnregisterDeclType( idDeclTypeInterface* declType ) {
+	int type = declType->type;
+
+	if (type >= declTypes.Num() || !declTypes[(int)type]) {
+		common->Warning("idDeclManager::UnregisterDeclType: type '%s' not be registered", declType->typeName.c_str());
+		return;
+	}
+
+	Sys_Printf("UnregisterDeclType(%s, %d, %d)\n", declType->GetName(), declType->GetHandle(), declType->type);
+	int			i = type, j;
+	idDeclLocal *decl;
+
+	// free decls
+	for (j = 0; j < linearLists[i].Num(); j++) {
+		decl = linearLists[i][j];
+
+		if (decl->self != NULL) {
+			decl->self->FreeData();
+			delete decl->self;
+		}
+
+		if (decl->textSource) {
+			Mem_Free(decl->textSource);
+			decl->textSource = NULL;
+		}
+
+		delete decl;
+	}
+
+	linearLists[i].Clear();
+	hashTables[i].Free();
+
+	delete declTypes[type];
+	declTypes[type] = NULL;
 }
 
 void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *extension ) {
@@ -3563,6 +3596,47 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 }
 
 void idDeclManagerLocal::UnregisterDeclFolder( const char *folder, const char *extension ) {
+	Sys_Printf("UnregisterDeclFolder(%s, %s)\n", folder, extension);
+
+	int i, j;
+	idStr fileName;
+	idList<idStr> fileList;
+
+	// check whether this folder / extension combination already exists
+	for (i = 0; i < declFolders.Num(); i++) {
+		if (declFolders[i]->folder.Icmp(folder) == 0 && declFolders[i]->extension.Icmp(extension) == 0) {
+			break;
+		}
+	}
+
+	if (i >= declFolders.Num()) {
+		common->Warning("idDeclManager::UnregisterDeclFolder: folder '%s' and extension '%s' not be registered", folder, extension);
+		return;
+	}
+
+	declFolders.RemoveIndex(i);
+
+	// check whether this file has already been loaded
+	idList<idDeclFile *> rmList;
+	for (j = 0; j < loadedFiles.Num(); j++) {
+		if (loadedFiles[j]->fileName.IcmpPrefixPath(folder)) {
+			continue;
+		}
+		idStr ext;
+		loadedFiles[j]->fileName.ExtractFileExtension(ext);
+		ext.Insert('.', 0);
+		if (ext.Icmp(extension)) {
+			continue;
+		}
+
+		// free decl files
+		rmList.AddUnique(loadedFiles[j]);
+	}
+
+	for (j = 0; j < rmList.Num(); j++) {
+		loadedFiles.Remove(rmList[j]);
+	}
+	rmList.DeleteContents(true);
 }
 
 void idDeclManagerLocal::FinishedRegistering() {
