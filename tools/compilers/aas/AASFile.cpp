@@ -701,7 +701,9 @@ idAASFileLocal::~idAASFileLocal(void)
 	for (i = 0; i < areas.Num(); i++) {
 		for (reach = areas[i].reach; reach; reach = next) {
 			next = reach->next;
+#if !defined(_SPLASHDAMAGE) //karin: in idList
 			delete reach;
+#endif
 		}
 	}
 }
@@ -1397,7 +1399,7 @@ bool idAASFileLocal::Load(const idStr &fileName, unsigned int mapFileCRC)
 	unsigned int c;
 
 #ifdef _SPLASHDAMAGE
-	if (LoadBinary(name, mapFileCRC)) {
+	if (LoadBinary(fileName, mapFileCRC)) {
 		return true;
 	} else {
 		common->Printf("idAASFileLocal::Load: unable to load binary aasb file '%s', try ascii aas file.\n", fileName.c_str());
@@ -1712,6 +1714,8 @@ bool idAASSettings::ReadFromFileBinary(idFile *file)
 {
 	idBounds bounds;
 
+	file->ReadString(fileExtension);
+
 	numBoundingBoxes = 0;
 
 	file->ReadFloat(bounds[0][0]);
@@ -1766,11 +1770,12 @@ bool idAASSettings::ReadFromFileBinary(idFile *file)
 	playerFlood = false;
 	allowSwimReachabilities = false;
 	allowFlyReachabilities = false;
-	idStr fileName(file->GetName());
-	idStr ext;
-	fileName.ExtractFileExtension(ext);
-	ext.StripLeading('.');
-	fileExtension = ext;
+	if (fileExtension.IsEmpty()) {
+		idStr fileName(file->GetName());
+		idStr ext;
+		fileName.ExtractFileExtension(ext);
+		fileExtension = ext;
+	}
 	tt_startCrouching = false;
 
 	return true;
@@ -1799,8 +1804,7 @@ idAASFileLocal::LoadBinary
 */
 bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 {
-	idLexer src(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGESCAPECHARS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWPATHNAMES);
-	idToken token;
+	idStr token;
 	int depth;
 	unsigned int c;
 
@@ -1813,7 +1817,7 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 	common->Printf("[Load AASB]\n");
 	common->Printf("loading %s\n", binName.c_str());
 
-	idFile *file = fileSystem->OpenFileRead(fileName.c_str());
+	idFile *file = fileSystem->OpenFileRead(binName.c_str());
 	if (!file) {
 		return false;
 	}
@@ -1920,7 +1924,7 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 	depth = MaxTreeDepth();
 
 	if (depth > MAX_AAS_TREE_DEPTH) {
-		src.Error("idAASFileLocal::Load: tree depth = %d", depth);
+		common->Error("idAASFileLocal::Load: tree depth = %d", depth);
 	}
 
 	common->Printf("done.\n");
@@ -2053,6 +2057,9 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		area.rev_reach = NULL;
 		area.bounds.Zero();
 		area.center.Zero();
+		// compat for DOOM3
+		area.firstFace = 0;
+		area.numFaces = 0;
 		areas.Append(area);
 	}
 
@@ -2200,6 +2207,8 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 		file->ReadShort(reach.end[1]);
 		file->ReadShort(reach.end[2]);
 		file->ReadUnsignedInt(reach.areaTTOfsAndNumber);
+
+		file->Seek(4 * 2, FS_SEEK_CUR); // 2 32bit pointer
 
 		reach.travelType = reach.travelFlags;
 		reach.edgeNum = 0;

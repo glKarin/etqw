@@ -123,18 +123,13 @@ bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 	area->cluster = clusterNum;
 
 	if (!noFaceFlood) {
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+		// TODO
+		common->Error("Disable idAASCluster::FloodClusterAreas_r(%d, %d)", areaNum, clusterNum);
+#else
 		// use area faces to flood into adjacent areas
-#ifdef _SPLASHDAMAGE
-		for (i = 0; i < area->numEdges; i++)
-#else
-		for (i = 0; i < area->numFaces; i++)
-#endif
-		{
-#ifdef _SPLASHDAMAGE
-			faceNum = abs(file->faceIndex[area->firstEdge + i]);
-#else
+		for (i = 0; i < area->numFaces; i++) {
 			faceNum = abs(file->faceIndex[area->firstFace + i]);
-#endif
 			face = &file->faces[faceNum];
 
 			if (face->areas[0] == areaNum) {
@@ -151,6 +146,7 @@ bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 				}
 			}
 		}
+#endif
 	}
 
 	// use the reachabilities to flood into other areas
@@ -451,17 +447,12 @@ void idAASCluster::RemoveInvalidPortals(void)
 
 		numOpenAreas = 0;
 
-#ifdef _SPLASHDAMAGE
-		for (j = 0; j < file->areas[i].numEdges; j++)
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+		// TODO
+		common->Error("Disable idAASReach::RemoveInvalidPortals()");
 #else
-		for (j = 0; j < file->areas[i].numFaces; j++)
-#endif
-		{
-#ifdef _SPLASHDAMAGE
-			face1Num = file->faceIndex[ file->areas[i].firstEdge + j ];
-#else
+		for (j = 0; j < file->areas[i].numFaces; j++) {
 			face1Num = file->faceIndex[ file->areas[i].firstFace + j ];
-#endif
 			face1 = &file->faces[ abs(face1Num)];
 			otherAreaNum = face1->areas[ face1Num < 0 ];
 
@@ -490,6 +481,7 @@ void idAASCluster::RemoveInvalidPortals(void)
 				numOpenAreas++;
 			}
 		}
+#endif
 
 		if (numOpenAreas <= 1) {
 			file->areas[i].contents &= AREACONTENTS_CLUSTERPORTAL;

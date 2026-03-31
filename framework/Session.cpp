@@ -2908,6 +2908,10 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 		return true;
 	}
 
+#ifdef _SPLASHDAMAGE //karin: send UI event to game
+	(void)game->HandleGuiEvent(event);
+#endif
+
 	return false;
 }
 
@@ -3150,7 +3154,8 @@ void idSessionLocal::Draw()
 			int	start = Sys_Milliseconds();
 #ifdef _SPLASHDAMAGE
 			gameDraw = game->Draw();
-			gameDraw |= game->Draw2D();
+			//if (!gameDraw)
+				gameDraw = game->Draw2D();
 #else
 			gameDraw = game->Draw(GetLocalClientNum());
 #endif

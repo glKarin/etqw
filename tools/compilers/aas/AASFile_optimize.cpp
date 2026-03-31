@@ -75,19 +75,48 @@ void idAASFileLocal::Optimize(void)
 	for (i = 0; i < areas.Num(); i++) {
 		area = &areas[i];
 
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+		common->Error("Disable idAASFileLocal::Optimize()");
+		// store edges
+		faceFirstEdge = newEdgeIndex.Num();
+
+		for (k = 0; k < area->numEdges; k++) {
+			edgeNum = edgeIndex[ area->firstEdge + k ];
+			edge = &edges[ abs(edgeNum)];
+
+			if (!edgeRemap[ abs(edgeNum)]) {
+				if (edgeNum < 0) {
+					edgeRemap[ abs(edgeNum)] = -newEdges.Num();
+				} else {
+					edgeRemap[ abs(edgeNum)] = newEdges.Num();
+				}
+
+				// remap vertices if not yet remapped
+				if (vertexRemap[ edge->vertexNum[0] ] == -1) {
+					vertexRemap[ edge->vertexNum[0] ] = newVertices.Num();
+					newVertices.Append(vertices[ edge->vertexNum[0] ]);
+				}
+
+				if (vertexRemap[ edge->vertexNum[1] ] == -1) {
+					vertexRemap[ edge->vertexNum[1] ] = newVertices.Num();
+					newVertices.Append(vertices[ edge->vertexNum[1] ]);
+				}
+
+				newEdges.Append(*edge);
+				newEdges[ newEdges.Num()-1 ].vertexNum[0] = vertexRemap[ edge->vertexNum[0] ];
+				newEdges[ newEdges.Num()-1 ].vertexNum[1] = vertexRemap[ edge->vertexNum[1] ];
+			}
+
+			newEdgeIndex.Append(edgeRemap[ abs(edgeNum)]);
+		}
+
+		area->firstEdge = faceFirstEdge;
+		area->numEdges = newEdgeIndex.Num() - faceFirstEdge;
+#else
 		areaFirstFace = newFaceIndex.Num();
 
-#ifdef _SPLASHDAMAGE
-		for (j = 0; j < area->numEdges; j++)
-#else
-		for (j = 0; j < area->numFaces; j++)
-#endif
-		{
-#ifdef _SPLASHDAMAGE
-			faceNum = faceIndex[area->firstEdge + j];
-#else
+		for (j = 0; j < area->numFaces; j++) {
 			faceNum = faceIndex[area->firstFace + j];
-#endif
 			face = &faces[ abs(faceNum)];
 
 			// store face
@@ -148,10 +177,6 @@ void idAASFileLocal::Optimize(void)
 			}
 		}
 
-#ifdef _SPLASHDAMAGE
-		area->firstEdge = areaFirstFace;
-		area->numEdges = newFaceIndex.Num() - areaFirstFace;
-#else
 		area->firstFace = areaFirstFace;
 		area->numFaces = newFaceIndex.Num() - areaFirstFace;
 #endif

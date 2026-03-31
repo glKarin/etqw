@@ -356,10 +356,9 @@ typedef struct aasArea_s {
 	int							firstEdge;			// first edge in the edge index
 
 	unsigned int				obstaclePVSOffset;	// offset into obstacle PVS
-#else
+#endif
 	int							numFaces;			// number of faces used for the boundary of the area
 	int							firstFace;			// first face in the face index used for the boundary of the area
-#endif
 	idBounds					bounds;				// bounds of the area
 	idVec3						center;				// center of the area an AI can move towards
 	unsigned short				flags;				// several area flags
@@ -766,8 +765,8 @@ class idAASFile
 		idList<aasCluster_t>		clusters;
 #ifdef _RAVEN
 // jmarshall - AAS 1.08
-	idList<int>					featureIndexes;
-	idList<aasFeature_t>		features;
+		idList<int>					featureIndexes;
+		idList<aasFeature_t>		features;
 // jmarshall end
 #endif
 #ifdef _SPLASHDAMAGE

@@ -47,7 +47,7 @@ idCVar* idCVar::staticVars;
 #include "vehicles/Transport.h"
 #include "vehicles/VehicleWeapon.h"
 #include "vehicles/SoundControl.h"
-#ifdef _ETQW
+#ifdef _ETQW //karin: include
 #include "../framework/DeclManager.h"
 #else
 #include "../framework/declManager.h"

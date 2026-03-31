@@ -105,7 +105,7 @@ bool sdDeclAmbientCubeMap::Parse( const char* text, const int textLength ) {
 		}
 
 		if (!token.Icmp("indoors")) {
-			indoors = src.ParseBool();
+			indoors = true;
 			continue;
 		}
 

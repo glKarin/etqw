@@ -65,6 +65,11 @@ idVec3 idAASFileLocal::FaceCenter(int faceNum) const
 
 	center = vec3_origin;
 
+#ifdef _SPLASHDAMAGE
+	edgeNum = faceNum;
+	edge = &edges[ abs(edgeNum)];
+	center += vertices[ edge->vertexNum[ INTSIGNBITSET(edgeNum)] ];
+#else
 	face = &faces[faceNum];
 
 	if (face->numEdges > 0) {
@@ -76,6 +81,7 @@ idVec3 idAASFileLocal::FaceCenter(int faceNum) const
 
 		center /= face->numEdges;
 	}
+#endif
 
 	return center;
 }
@@ -98,8 +104,8 @@ idVec3 idAASFileLocal::AreaCenter(int areaNum) const
 #ifdef _SPLASHDAMAGE
 	if (area->numEdges > 0) {
 		for (i = 0; i < area->numEdges; i++) {
-			faceNum = faceIndex[area->firstEdge + i];
-			center += FaceCenter(abs(faceNum));
+			int edgeNum = edgeIndex[area->firstEdge + i];
+			center += FaceCenter(abs(edgeNum));
 		}
 
 		center /= area->numEdges;
@@ -139,19 +145,28 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 
 	center = vec3_origin;
 
+#ifdef _SPLASHDAMAGE
+	int _numEdges = 0;
+
+	for (i = 0; i < area->numEdges; i++) {
+		int edgeNum = edgeIndex[area->firstEdge + i];
+
+		if (!(edges[abs(edgeNum)].flags & FACE_FLOOR)) {
+			continue;
+		}
+
+		center += FaceCenter(abs(edgeNum));
+		_numEdges++;
+	}
+
+	if (_numEdges > 0) {
+		center /= _numEdges;
+	}
+#else
 	numFaces = 0;
 
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
-#else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = faceIndex[area->firstFace + i];
-#endif
 
 		if (!(faces[abs(faceNum)].flags & FACE_FLOOR)) {
 			continue;
@@ -164,6 +179,7 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 	if (numFaces > 0) {
 		center /= numFaces;
 	}
+#endif
 
 	center[2] += 1.0f;
 	end = center;
@@ -201,6 +217,13 @@ idBounds idAASFileLocal::FaceBounds(int faceNum) const
 	const aasEdge_t *edge;
 	idBounds bounds;
 
+#ifdef _SPLASHDAMAGE
+	edgeNum = faceNum;
+	bounds.Clear();
+
+	edge = &edges[ abs(edgeNum)];
+	bounds.AddPoint(vertices[ edge->vertexNum[ INTSIGNBITSET(edgeNum)] ]);
+#else
 	face = &faces[faceNum];
 	bounds.Clear();
 
@@ -209,6 +232,7 @@ idBounds idAASFileLocal::FaceBounds(int faceNum) const
 		edge = &edges[ abs(edgeNum)];
 		bounds.AddPoint(vertices[ edge->vertexNum[ INTSIGNBITSET(edgeNum)] ]);
 	}
+#endif
 
 	return bounds;
 }
@@ -228,18 +252,16 @@ idBounds idAASFileLocal::AreaBounds(int areaNum) const
 	bounds.Clear();
 
 #ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
+	for (i = 0; i < area->numEdges; i++) {
+		int edgeNum = edgeIndex[area->firstEdge + i];
+		bounds += FaceBounds(abs(edgeNum));
+	}
 #else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = faceIndex[area->firstFace + i];
-#endif
 		bounds += FaceBounds(abs(faceNum));
 	}
+#endif
 
 	return bounds;
 }
@@ -407,18 +429,13 @@ void idAASFileLocal::PushPointIntoAreaNum(int areaNum, idVec3 &point) const
 
 	area = &areas[areaNum];
 
+#ifdef _SPLASHDAMAGE //karin: removed in ETQW game
+	// TODO
+	common->Error("Disable idAASFileLocal::PushPointIntoAreaNum(%d)", areaNum);
+#else
 	// push the point to the right side of all area face planes
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
-#else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = faceIndex[area->firstFace + i];
-#endif
 		face = &faces[abs(faceNum)];
 
 		const idPlane &plane = planeList[face->planeNum ^ INTSIGNBITSET(faceNum)];
@@ -429,6 +446,7 @@ void idAASFileLocal::PushPointIntoAreaNum(int areaNum, idVec3 &point) const
 			point -= dist * plane.Normal();
 		}
 	}
+#endif
 }
 
 /*

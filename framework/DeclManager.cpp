@@ -1769,6 +1769,10 @@ const idDecl *idDeclManagerLocal::DeclByIndex(declType_t type, int index, bool f
 	}
 
 	if (index < 0 || index >= linearLists[ typeIndex ].Num()) {
+#ifdef _SPLASHDAMAGE //karin: TEMP TODO -1
+		common->Warning("idDeclManager::DeclByIndex: out of range: %d", index);
+		return NULL;
+#endif
 		common->Error("idDeclManager::DeclByIndex: out of range");
 	}
 

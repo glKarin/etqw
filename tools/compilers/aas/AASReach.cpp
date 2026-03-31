@@ -121,17 +121,12 @@ void idAASReach::Reachability_Fly(int areaNum)
 
 	area = &file->areas[areaNum];
 
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+	// TODO
+	common->Error("Disable idAASReach::Reachability_Fly(%d)", areaNum);
 #else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = file->faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = file->faceIndex[area->firstFace + i];
-#endif
 		face = &file->faces[abs(faceNum)];
 
 		otherAreaNum = face->areas[INTSIGNBITNOTSET(faceNum)];
@@ -182,6 +177,7 @@ void idAASReach::Reachability_Fly(int areaNum)
 
 		AddReachabilityToArea(reach, areaNum);
 	}
+#endif
 }
 
 /*
@@ -202,17 +198,12 @@ void idAASReach::Reachability_Swim(int areaNum)
 
 	area = &file->areas[areaNum];
 
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+	// TODO
+	common->Error("Disable idAASReach::Reachability_Swim(%d)", areaNum);
 #else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = file->faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = file->faceIndex[area->firstFace + i];
-#endif
 		face = &file->faces[abs(faceNum)];
 
 		otherAreaNum = face->areas[INTSIGNBITNOTSET(faceNum)];
@@ -267,6 +258,7 @@ void idAASReach::Reachability_Swim(int areaNum)
 
 		AddReachabilityToArea(reach, areaNum);
 	}
+#endif
 }
 
 /*
@@ -287,17 +279,12 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 
 	area = &file->areas[areaNum];
 
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+	// TODO
+	common->Error("Disable idAASReach::Reachability_EqualFloorHeight(%d)", areaNum);
 #else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = file->faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = file->faceIndex[area->firstFace + i];
-#endif
 		face = &file->faces[abs(faceNum)];
 
 		otherAreaNum = face->areas[INTSIGNBITNOTSET(faceNum)];
@@ -308,34 +295,16 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 
 		otherArea = &file->areas[otherAreaNum];
 
-#ifdef _SPLASHDAMAGE
-		for (k = 0; k < area->numEdges; k++)
-#else
-		for (k = 0; k < area->numFaces; k++)
-#endif
-		{
-#ifdef _SPLASHDAMAGE
-			face1Num = file->faceIndex[area->firstEdge + k];
-#else
+		for (k = 0; k < area->numFaces; k++) {
 			face1Num = file->faceIndex[area->firstFace + k];
-#endif
 			face1 = &file->faces[abs(face1Num)];
 
 			if (!(face1->flags & FACE_FLOOR)) {
 				continue;
 			}
 
-#ifdef _SPLASHDAMAGE
-			for (l = 0; l < otherArea->numEdges; l++)
-#else
-			for (l = 0; l < otherArea->numFaces; l++)
-#endif
-			{
-#ifdef _SPLASHDAMAGE
-				face2Num = file->faceIndex[otherArea->firstEdge + l];
-#else
+			for (l = 0; l < otherArea->numFaces; l++) {
 				face2Num = file->faceIndex[otherArea->firstFace + l];
-#endif
 				face2 = &file->faces[abs(face2Num)];
 
 				if (!(face2->flags & FACE_FLOOR)) {
@@ -363,22 +332,12 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 				}
 			}
 
-#ifdef _SPLASHDAMAGE
-			if (l < otherArea->numEdges)
-#else
-			if (l < otherArea->numFaces)
-#endif
-			{
+			if (l < otherArea->numFaces) {
 				break;
 			}
 		}
 
-#ifdef _SPLASHDAMAGE
-		if (k < area->numEdges)
-#else
-		if (k < area->numFaces)
-#endif
-		{
+		if (k < area->numFaces) {
 			// create reachability
 			reach = new idReachability_Walk();
 			reach->travelType = TFL_WALK;
@@ -418,6 +377,7 @@ void idAASReach::Reachability_EqualFloorHeight(int areaNum)
 			AddReachabilityToArea(reach, areaNum);
 		}
 	}
+#endif
 }
 
 /*
@@ -491,17 +451,12 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 	water_bestLength = 0;
 	water_bestArea2FloorEdgeNum = 0;
 
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area1->numEdges; i++)
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+	// TODO
+	common->Error("Disable idAASReach::Reachability_Swim(%d, %d)", area1num, area2num);
 #else
-	for (i = 0; i < area1->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		floorFace1Num = file->faceIndex[area1->firstEdge + i];
-#else
+	for (i = 0; i < area1->numFaces; i++) {
 		floorFace1Num = file->faceIndex[area1->firstFace + i];
-#endif
 		faceSide1 = floorFace1Num < 0;
 		floorFace1 = &file->faces[abs(floorFace1Num)];
 
@@ -546,17 +501,8 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 			dist = normal * v1;
 
 			// check the faces from the second area
-#ifdef _SPLASHDAMAGE
-			for (j = 0; j < area2->numEdges; j++)
-#else
-			for (j = 0; j < area2->numFaces; j++)
-#endif
-			{
-#ifdef _SPLASHDAMAGE
-				floorFace2 = &file->faces[abs(file->faceIndex[area2->firstEdge + j])];
-#else
+			for (j = 0; j < area2->numFaces; j++) {
 				floorFace2 = &file->faces[abs(file->faceIndex[area2->firstFace + j])];
-#endif
 
 				// must be a ground face
 				if (!(floorFace2->flags & FACE_FLOOR)) {
@@ -996,6 +942,7 @@ bool idAASReach::Reachability_Step_Barrier_WaterJump_WalkOffLedge(int area1num, 
 			}
 		}
 	}
+#endif
 
 	return false;
 }
@@ -1022,17 +969,12 @@ void idAASReach::Reachability_WalkOffLedge(int areaNum)
 
 	area = &file->areas[areaNum];
 
-#ifdef _SPLASHDAMAGE
-	for (i = 0; i < area->numEdges; i++)
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+	// TODO
+	common->Error("Disable idAASReach::Reachability_WalkOffLedge(%d)", areaNum);
 #else
-	for (i = 0; i < area->numFaces; i++)
-#endif
-	{
-#ifdef _SPLASHDAMAGE
-		faceNum = file->faceIndex[area->firstEdge + i];
-#else
+	for (i = 0; i < area->numFaces; i++) {
 		faceNum = file->faceIndex[area->firstFace + i];
-#endif
 		face = &file->faces[abs(faceNum)];
 
 		// face must be a floor face
@@ -1116,6 +1058,7 @@ void idAASReach::Reachability_WalkOffLedge(int areaNum)
 			AddReachabilityToArea(reach, areaNum);
 		}
 	}
+#endif
 }
 
 /*

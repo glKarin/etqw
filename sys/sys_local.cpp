@@ -267,9 +267,11 @@ const char *Sys_TimeStampToStr(ID_TIME_T timeStamp)
 }
 
 #ifdef _SPLASHDAMAGE
+#if 0 //karin: make as POD
 sysEvent_s::~sysEvent_s( void ) {
 	//Mem_Free( evPtr ); //karin: as return value or copy, so using FreeData/FreeEvent to manual delete, or declare operator=/constructor
 }
+#endif
 
 void sysEvent_s::FreeData( void ) {
 	if (evPtr) {

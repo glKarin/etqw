@@ -107,6 +107,7 @@ idSessionLocal::SetGUI
 */
 void idSessionLocal::SetGUI(idUserInterface *gui, HandleGuiCommand_t handle)
 {
+#if !defined(_SPLASHDAMAGE) //karin: UI engine move to game in ETQW
 	const char	*cmd;
 
 	guiActive = gui;
@@ -134,6 +135,7 @@ void idSessionLocal::SetGUI(idUserInterface *gui, HandleGuiCommand_t handle)
 
 	cmd = guiActive->HandleEvent(&ev, com_frameTime);
 	guiActive->Activate(true, com_frameTime);
+#endif
 }
 
 /*
@@ -143,7 +145,11 @@ idSessionLocal::ExitMenu
 */
 void idSessionLocal::ExitMenu(void)
 {
+#ifdef _SPLASHDAMAGE
+	game->HideMainMenu();
+#else
 	guiActive = NULL;
+#endif
 
 	// go back to the game sounds
 	soundSystem->SetPlayingSoundWorld(sw);

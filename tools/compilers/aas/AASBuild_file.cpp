@@ -317,18 +317,22 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 	area.cluster = area.clusterAreaNum = 0;
 	area.contents = node->GetContents();
 #ifdef _SPLASHDAMAGE
-	area.firstEdge = file->faceIndex.Num();
+	area.firstEdge = file->edgeIndex.Num();
 	area.numEdges = 0;
-#else
+#endif
+	// compat for DOOM3
 	area.firstFace = file->faceIndex.Num();
 	area.numFaces = 0;
-#endif
 	area.reach = NULL;
 	area.rev_reach = NULL;
     area.bounds.Zero();
     area.center.Zero();
     area.travelFlags = 0;
 
+#ifdef _SPLASHDAMAGE //karin: only used in tools
+	// TODO
+	common->Error("Disable idAASBuild::GetAreaForLeafNode(%d)", node->GetAreaNum());
+#else
 	for (p = node->GetPortals(); p; p = p->Next(s)) {
 		s = (p->GetNode(1) == node);
 
@@ -337,11 +341,7 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 		}
 
 		file->faceIndex.Append(faceNum);
-#ifdef _SPLASHDAMAGE
-		area.numEdges++;
-#else
 		area.numFaces++;
-#endif
 
 		if (faceNum > 0) {
 			file->faces[abs(faceNum)].areas[0] = file->areas.Num();
@@ -350,15 +350,11 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 		}
 	}
 
-#ifdef _SPLASHDAMAGE
-	if (!area.numEdges)
-#else
-	if (!area.numFaces)
-#endif
-	{
+	if (!area.numFaces) {
 		*areaNum = 0;
 		return false;
 	}
+#endif
 
 	*areaNum = -file->areas.Num();
 	node->SetAreaNum(file->areas.Num());

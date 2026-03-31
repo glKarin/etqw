@@ -346,7 +346,9 @@ public:
 									evValue = evValue2 = 0;
 #endif
 								}
+#if 0 //karin: make as POD
 								~sysEvent_s( void );
+#endif
 
 	void						Init( sysEventType_t _type, int _value, int _value2, int _ptrLength, void* _ptr );
 
@@ -921,8 +923,8 @@ class idSys
 		virtual void			DLL_GetFileName(const char *baseName, char *dllName, int maxLength) = 0;
 
 #ifdef _SPLASHDAMAGE
-    virtual const sdSysEvent*	GenerateMouseButtonEvent( int button, bool down ) = 0;
-    virtual const sdSysEvent*	GenerateMouseMoveEvent( int deltax, int deltay ) = 0;
+	    virtual const sdSysEvent*	GenerateMouseButtonEvent( int button, bool down ) = 0;
+	    virtual const sdSysEvent*	GenerateMouseMoveEvent( int deltax, int deltay ) = 0;
 #else
 		virtual sysEvent_t		GenerateMouseButtonEvent(int button, bool down) = 0;
 		virtual sysEvent_t		GenerateMouseMoveEvent(int deltax, int deltay) = 0;
