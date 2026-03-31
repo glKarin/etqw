@@ -531,7 +531,7 @@ void Sys_SyncState(void)
         else
         {
 #ifdef _SPLASHDAMAGE
-            if(game->IsMainMenuActive() && !sessLocal.mapSpawned)
+            if(game->IsMainMenuActive())
                 state |= STATE_MENU;
             else
                 state |= STATE_GAME;

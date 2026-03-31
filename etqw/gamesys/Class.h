@@ -185,10 +185,10 @@ public:
 	void						FindUninitializedMemory( void );
 
 	template< typename T >
-	T*							Cast( void ) { return ID_THIS ? ( IsType( T::Type ) ? static_cast< T* >( this ) : NULL ) : NULL; } //karin: check this NULL
+	T*							Cast( void ) { return this ? ( IsType( T::Type ) ? static_cast< T* >( this ) : NULL ) : NULL; }
 	
 	template< typename T >
-	const T*					Cast( void ) const { return ID_THIS ? ( IsType( T::Type ) ? static_cast< const T* >( this ) : NULL ) : NULL; } //karin: check this NULL
+	const T*					Cast( void ) const { return this ? ( IsType( T::Type ) ? static_cast< const T* >( this ) : NULL ) : NULL; }
 
 	bool						RespondsTo( const idEventDef &ev ) const;
 

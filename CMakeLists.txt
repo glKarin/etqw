@@ -3190,7 +3190,7 @@ if(SPLASHDAMAGE)
 			splashdamage/decllib/DeclSurfaceType.cpp
 			splashdamage/decllib/DeclType.cpp
 			splashdamage/decllib/DeclTemplate.cpp
-			splashdamage/decllib/declSurfaceTypeMap.cpp
+			splashdamage/decllib/DeclSurfaceTypeMap.cpp
 	)
 	set(splashdamage_bse_src
 			raven/bse/BSE_Effect.cpp
@@ -3536,7 +3536,8 @@ if(ETQW)
 	target_link_libraries(etqwgame idlib_splashdamage)
 	target_include_directories(etqwgame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
 	if(NOT MSVC)
-		target_compile_options(etqwgame PRIVATE -Wno-format-security)
+		#target_compile_options(etqwgame PRIVATE -Wno-format-security)
+		target_compile_options(etqwgame PRIVATE -Wno-format-security -fno-delete-null-pointer-checks) # allow check this is NULL
 	endif()
 	#target_compile_options(app3 PRIVATE -U_WLANG)
 

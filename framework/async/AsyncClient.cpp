@@ -827,7 +827,11 @@ void idAsyncClient::ProcessUnreliableServerMessage(const idBitMsg &msg)
 				session->MessageBox(MSG_ABORT, common->GetLanguageDict()->GetString("#str_04317"), common->GetLanguageDict()->GetString("#str_04318"), false, "pure_abort");
 			} else {
 				// load map
+#ifdef _SPLASHDAMAGE
+				game->HideMainMenu();
+#else
 				session->SetGUI(NULL, NULL);
+#endif
 				sessLocal.ExecuteMapChange();
 			}
 
@@ -939,7 +943,11 @@ void idAsyncClient::ProcessReliableMessagePure(const idBitMsg &msg)
 	int			gamePakChecksum;
 	int			serverGameInitId;
 
+#ifdef _SPLASHDAMAGE
+	game->HideMainMenu();
+#else
 	session->SetGUI(NULL, NULL);
+#endif
 
 	serverGameInitId = msg.ReadLong();
 
@@ -1237,7 +1245,11 @@ void idAsyncClient::ProcessConnectResponseMessage(const netadr_t from, const idB
 	InitGame(serverGameInitId, serverGameFrame, serverGameTime, serverSI);
 
 	// load map
+#ifdef _SPLASHDAMAGE
+	game->HideMainMenu();
+#else
 	session->SetGUI(NULL, NULL);
+#endif
 	sessLocal.ExecuteMapChange();
 
 	clientPredictTime = clientPrediction = idMath::ClampInt(0, idAsyncNetwork::clientMaxPrediction.GetInteger(), clientTime - lastConnectTime);

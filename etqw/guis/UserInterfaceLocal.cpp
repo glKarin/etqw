@@ -691,7 +691,7 @@ bool sdUserInterfaceLocal::Load( const char* name ) {
 			gameLocal.Warning( "sdUserInterfaceLocal::Load: could not find 'desktop' in '%s'", name );
 		}
 
-#ifdef _ETQW //karin: tooltip is not defined
+#ifdef _ETQWxxx //karin: tooltip is not defined
 		sdUIObject *tpUIO = GetWindow( "toolTip" );
 		if(tpUIO)
 			toolTipWindow = tpUIO->Cast< sdUIWindow >();

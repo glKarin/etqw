@@ -2179,6 +2179,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			SETUP_STAGE_PROGRAM_PARMS();
 			ss->lighting = SL_DIFFUSE;
+			bool isInteractionProgram = true;
 			continue;
 		}
 		// specularmap for stage shortcut
@@ -2541,7 +2542,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #if !defined(GL_ES_VERSION_2_0)
 	if (newStage.fragmentProgram || newStage.vertexProgram)
 #else
-	if (newStage.fragmentProgram || newStage.vertexProgram || newStage.glslProgram)
+	if (/*newStage.fragmentProgram || newStage.vertexProgram || */newStage.glslProgram)
 #endif
 	{
 		ss->newStage = (newShaderStage_t *)Mem_Alloc(sizeof(newStage));

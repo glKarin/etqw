@@ -1539,6 +1539,9 @@ void idSessionLocal::MoveToNewMap(const char *mapName)
 
 	ExecuteMapChange();
 
+#ifdef _SPLASHDAMAGE
+	game->HideMainMenu();
+#else
 #ifdef _RAVEN //karin: pause when finished loading
     if(!com_skipLevelLoadPause.GetBool())
 		SetGUI(guiLoading, NULL);
@@ -1563,6 +1566,7 @@ void idSessionLocal::MoveToNewMap(const char *mapName)
     SetGUI(NULL, NULL);
 #ifdef _RAVEN
     }
+#endif
 #endif
 }
 
@@ -1964,7 +1968,11 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	if (IsMultiplayer()) {
 		// make sure the mp GUI isn't up, or when players get back in the
 		// map, mpGame's menu and the gui will be out of sync.
+#ifdef _SPLASHDAMAGE
+		game->HideMainMenu();
+#else
 		SetGUI(NULL, NULL);
+#endif
 	}
 
 	// mute sound
@@ -2828,7 +2836,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 {
 	// hitting escape anywhere brings up the menu
 #ifdef _SPLASHDAMAGE //karin: escape on main menu console
-	if (!(game->IsMainMenuActive() && !mapSpawned) && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
+	if (!game->IsMainMenuActive() && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
 #else
 	if (!guiActive && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
 #endif
@@ -2879,7 +2887,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 
 	// menus / etc
 #ifdef _SPLASHDAMAGE //karin: send UI event to game
-	if (game->IsMainMenuActive() && !mapSpawned)
+	if (game->IsMainMenuActive())
 #else
 	if (guiActive)
 #endif
@@ -3142,6 +3150,7 @@ void idSessionLocal::Draw()
 			int	start = Sys_Milliseconds();
 #ifdef _SPLASHDAMAGE
 			gameDraw = game->Draw();
+			gameDraw |= game->Draw2D();
 #else
 			gameDraw = game->Draw(GetLocalClientNum());
 #endif
@@ -3875,7 +3884,7 @@ idSessionLocal::SetPlayingSoundWorld
 void idSessionLocal::SetPlayingSoundWorld()
 {
 #ifdef _SPLASHDAMAGE
-	if (game->IsMainMenuActive() && !mapSpawned) 
+	if (game->IsMainMenuActive()) 
 #else
 	if (guiActive && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) 
 #endif
