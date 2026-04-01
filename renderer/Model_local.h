@@ -265,6 +265,7 @@ class idMD5Mesh
 			MD5MF_VERTEX_COLOR = 1,
 			MD5MF_NO_ANIMATE = 2,
 		};
+		idStr						meshName;
 #endif
 };
 
@@ -297,6 +298,9 @@ class idRenderModelMD5 : public idRenderModelStatic
 #if defined(_RAVEN) || defined(_HUMANHEAD) //k: for GUI view of dynamic model in idRenderWorld::GuiTrace
 	    idRenderModelStatic *       DynamicModelSnapshot(void) { return staticModelInstance; }
 	    void                        ClearDynamicModelSnapshot(void) { staticModelInstance = NULL; }
+#endif
+#ifdef _SPLASHDAMAGE
+		virtual int					FindSurfaceId( const char *surfaceName );
 #endif
 
 	private:

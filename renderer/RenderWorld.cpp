@@ -453,10 +453,11 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 		    rlight->right == light->parms.right && rlight->start == light->parms.start &&
 		    rlight->target == light->parms.target && rlight->up == light->parms.up &&
 #ifdef _SPLASHDAMAGE
-		    rlight->material == light->lightShader && rlight->prelightModel == light->parms.prelightModel)
+		    rlight->material == light->lightShader && rlight->prelightModel == light->parms.prelightModel
 #else
-		    rlight->shader == light->lightShader && rlight->prelightModel == light->parms.prelightModel)
+		    rlight->shader == light->lightShader && rlight->prelightModel == light->parms.prelightModel
 #endif
+		)
 		{
 			justUpdate = true;
 		} else {
@@ -3640,6 +3641,7 @@ void idRenderWorldLocal::DebugArrow( const idVec4 &color, const idVec3 &start, c
 }
 
 void idRenderWorldLocal::DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org, const idMat3& axes, const int lifetime ) {
+	DebugBounds(color, bounds, org, mat3_identity, lifetime);
 }
 
 void idRenderWorldLocal::SetAtmosphere( const sdDeclAtmosphere* atmosphere ) {

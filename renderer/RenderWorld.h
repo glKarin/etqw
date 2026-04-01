@@ -667,7 +667,7 @@ typedef struct {
 	int					blockingBits;	// PS_BLOCK_VIEW, PS_BLOCK_AIR, etc
 	qhandle_t			portalHandle;
 #ifdef _SPLASHDAMAGE
-    //int					portalFlags;
+    int					portalFlags;
 #endif
 } exitPortal_t;
 

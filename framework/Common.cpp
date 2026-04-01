@@ -3773,10 +3773,11 @@ void idCommonLocal::InitGame(void)
 	PrintLoadingMessage(common->GetLanguageDict()->GetString("#str_04349"));
 
 	// initialize the user interfaces
-	uiManager->Init();
 #ifdef _SPLASHDAMAGE
 	deviceContext->Reset();
 	networkService->Init();
+#else
+	uiManager->Init();
 #endif
 
 	// startup the script debugger
@@ -3837,8 +3838,12 @@ void idCommonLocal::ShutdownGame(bool reloading)
 	// shut down the session
 	session->Shutdown();
 
+#ifdef _SPLASHDAMAGE
+	networkService->Shutdown();
+#else
 	// shut down the user interfaces
 	uiManager->Shutdown();
+#endif
 
 	// shut down the sound system
 	soundSystem->Shutdown();

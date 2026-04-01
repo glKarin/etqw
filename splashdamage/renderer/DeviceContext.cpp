@@ -88,7 +88,7 @@ void sdDeviceContextLocal::BeginEmitFullScreen() {
 void sdDeviceContextLocal::End() {
 	tr.guiModel->End();
 	tr.guiModel->SetRegisters(NULL);
-	renderSystem->SetColor4(0.0f, 0.0f, 0.0f, 1.0f);
+	renderSystem->SetColor4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void sdDeviceContextLocal::SetColor( const idVec4& color ) {

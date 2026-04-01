@@ -986,6 +986,8 @@ class idRenderSystemLocal : public idRenderSystem
 		virtual class idRenderModel *InstantiateDynamicModel(class idRenderModel *model, struct renderEntity_s *ent);
 
 		virtual bool IsSMPEnabled(void);
+
+		idList<void *>	registerPtrs;
 #endif
 
 	public:

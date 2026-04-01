@@ -1154,6 +1154,7 @@ void idSessionLocal::StartPlayingRenderDemo(idStr demoName)
 		guiLoading = uiManager->FindGui( "guis/loading/mplevel.gui", true, false, true );
 	else
 		guiLoading = uiManager->FindGui( "guis/loading/generic.gui", true, false, true );
+#elif defined(_SPLASHDAMAGE)
 #else
 	guiLoading = uiManager->FindGui("guis/map/loading.gui", true, false, true);
 #endif
@@ -1695,6 +1696,7 @@ void idSessionLocal::StartPlayingCmdDemo(const char *demoName)
 
 #ifdef _RAVEN // quake4 loading gui
     guiLoading = uiManager->FindGui("guis/loading/generic.gui", true, false, true);
+#elif defined(_SPLASHDAMAGE)
 #else
 	guiLoading = uiManager->FindGui("guis/map/loading.gui", true, false, true);
 #endif
@@ -2358,6 +2360,7 @@ void idSessionLocal::TakeNotes(const char *p, bool extended)
 		return;
 	}
 
+#if !defined(_SPLASHDAMAGE)
 	if (extended) {
 		guiTakeNotes = uiManager->FindGui("guis/takeNotes2.gui", true, false, true);
 
@@ -2394,6 +2397,7 @@ void idSessionLocal::TakeNotes(const char *p, bool extended)
 	guiActive->SetStateString("notefile", p);
 	guiActive->SetStateBool("extended", extended);
 	guiActive->Activate(true, com_frameTime);
+#endif
 }
 
 /*
@@ -3797,6 +3801,7 @@ void idSessionLocal::Init()
 	bse->Init();
 #endif
 
+#if !defined(_SPLASHDAMAGE)
 	// we have a single instance of the main menu
 #ifndef ID_DEMO_BUILD
 	guiMainMenu = uiManager->FindGui("guis/mainmenu.gui", true, false, true);
@@ -3809,6 +3814,7 @@ void idSessionLocal::Init()
 	guiRestartMenu = uiManager->FindGui("guis/restart.gui", true, false, true);
 #if !defined(_HUMANHEAD)
 	guiGameOver = uiManager->FindGui("guis/gameover.gui", true, false, true);
+#endif
 #endif
 #ifdef _HUMANHEAD
 	guiSubtitles = uiManager->FindGui("guis/subtitles.gui", true, false, true);
@@ -3834,9 +3840,11 @@ void idSessionLocal::Init()
 		}
 	}
 #endif
+#if !defined(_SPLASHDAMAGE)
 	guiMsg = uiManager->FindGui("guis/msg.gui", true, false, true);
 	guiTakeNotes = uiManager->FindGui("guis/takeNotes.gui", true, false, true);
 	guiIntro = uiManager->FindGui("guis/intro.gui", true, false, true);
+#endif
 
 	whiteMaterial = declManager->FindMaterial("_white");
 

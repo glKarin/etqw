@@ -104,9 +104,6 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 	idList<int>	numWeightsForVertex;
 	int			maxweight;
 	idList<vertexWeight_t> tempWeights;
-#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 name
-	idStr meshName;
-#endif
 
 	parser.ExpectTokenString("{");
 
@@ -117,6 +114,7 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 		parser.ReadToken(&name);
 #ifdef _SPLASHDAMAGE //karin: md5mesh version 11 name
 		meshName = name.c_str();
+		
 #endif
 	}
 
@@ -1178,6 +1176,22 @@ int idRenderModelMD5::GetSurfaceMask(const char *name) const
 			return SUPPRESS_SURFACE_MASK(i);
 	}
 	return  0;
+}
+#endif
+#ifdef _SPLASHDAMAGE
+int idRenderModelMD5::FindSurfaceId( const char *surfaceName ) {
+	int i;
+	const idMD5Mesh			*mesh;
+
+	if(!name || !name[0] || meshes.Num() == 0)
+		return -1;
+
+	for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
+	{
+		if(!idStr::Icmp(name, mesh->meshName))
+			return i;
+	}
+	return -1;
 }
 #endif
 

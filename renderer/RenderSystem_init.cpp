@@ -2757,14 +2757,27 @@ int idRenderSystemLocal::GetSyncNum(void) {
 }
 
 int idRenderSystemLocal::RegisterPtr(void *ptr) {
-	return 0;
+	if(!ptr)
+		return -1;
+
+	int index = registerPtrs.FindNull();
+	if(index != -1)
+	{
+		registerPtrs[index] = ptr;
+		return index;
+	}
+	return registerPtrs.Append(ptr);
 }
 
 void idRenderSystemLocal::UnregisterPtr(int uid) {
+	if(uid >= 0 && uid < registerPtrs.Num())
+		registerPtrs[uid] = NULL;
 }
 
 void * idRenderSystemLocal::PtrForUID(int uid) {
-	return NULL;
+	if(uid < 0 || uid >= registerPtrs.Num())
+		return NULL;
+	return registerPtrs[uid];
 }
 
 class idRenderModel * idRenderSystemLocal::InstantiateDynamicModel(class idRenderModel *model, struct renderEntity_s *ent) {
