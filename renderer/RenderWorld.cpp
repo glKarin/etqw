@@ -169,6 +169,9 @@ idRenderWorldLocal::idRenderWorldLocal()
 	numAppendPortalAreas = 0;
 #endif
 #endif
+#ifdef _SPLASHDAMAGE
+	atmosphere = NULL;
+#endif
 }
 
 /*
@@ -3585,7 +3588,7 @@ void idRenderWorldLocal::FreeOcclusionTestDef( qhandle_t occtestHandle ) {
 }
 
 int idRenderWorldLocal::CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) {
-	return -1;
+	return 0;
 }
 
 idRenderModel* idRenderWorldLocal::CreateDecalModel() {
@@ -3644,14 +3647,131 @@ void idRenderWorldLocal::DebugBounds( const idVec4 &color, const idBounds &bound
 	DebugBounds(color, bounds, org, mat3_identity, lifetime);
 }
 
-void idRenderWorldLocal::SetAtmosphere( const sdDeclAtmosphere* atmosphere ) {
+void idRenderWorldLocal::SetAtmosphere( const sdDeclAtmosphere* a ) {
+	atmosphere = a;
 }
 
 const sdDeclAtmosphere* idRenderWorldLocal::GetAtmosphere() const {
-	return NULL;
+	return atmosphere;
 }
 
 void idRenderWorldLocal::SetupMatrices( const renderView_t* renderView, float* projectionMatrix, float* modelViewMatrix, const bool allowJitter ) {
+	idVec3	origin;
+	float	viewerMatrix[16];
+	static float	s_flipMatrix[16] = {
+		// convert from our coordinate system (looking down X)
+		// to OpenGL's coordinate system (looking down -Z)
+		0, 0, -1, 0,
+		-1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 0, 1
+	};
+
+	// the model matrix is an identity
+	viewerMatrix[0*4+0] = 1;
+	viewerMatrix[1*4+1] = 1;
+	viewerMatrix[2*4+2] = 1;
+
+	// transform by the camera placement
+	origin = renderView->vieworg;
+
+	viewerMatrix[0] = renderView->viewaxis[0][0];
+	viewerMatrix[4] = renderView->viewaxis[0][1];
+	viewerMatrix[8] = renderView->viewaxis[0][2];
+	viewerMatrix[12] = -origin[0] * viewerMatrix[0] + -origin[1] * viewerMatrix[4] + -origin[2] * viewerMatrix[8];
+
+	viewerMatrix[1] = renderView->viewaxis[1][0];
+	viewerMatrix[5] = renderView->viewaxis[1][1];
+	viewerMatrix[9] = renderView->viewaxis[1][2];
+	viewerMatrix[13] = -origin[0] * viewerMatrix[1] + -origin[1] * viewerMatrix[5] + -origin[2] * viewerMatrix[9];
+
+	viewerMatrix[2] = renderView->viewaxis[2][0];
+	viewerMatrix[6] = renderView->viewaxis[2][1];
+	viewerMatrix[10] = renderView->viewaxis[2][2];
+	viewerMatrix[14] = -origin[0] * viewerMatrix[2] + -origin[1] * viewerMatrix[6] + -origin[2] * viewerMatrix[10];
+
+	viewerMatrix[3] = 0;
+	viewerMatrix[7] = 0;
+	viewerMatrix[11] = 0;
+	viewerMatrix[15] = 1;
+
+	// convert from our coordinate system (looking down X)
+	// to OpenGL's coordinate system (looking down -Z)
+	myGlMultMatrix(viewerMatrix, s_flipMatrix, modelViewMatrix);
+
+
+	float wRatio = (float)renderView->width / SCREEN_WIDTH;
+	float hRatio = (float)renderView->height / SCREEN_HEIGHT;
+	idScreenRect viewport;
+	viewport.x1 = idMath::Ftoi(renderView->x + renderView->x * wRatio);
+	viewport.x2 = idMath::Ftoi(renderView->x + floor((renderView->x + renderView->width) * wRatio + 0.5f) - 1);
+	viewport.y1 = idMath::Ftoi((renderView->y + renderView->height) - floor((renderView->y + renderView->height) * hRatio + 0.5f));
+	viewport.y2 = idMath::Ftoi((renderView->y + renderView->height) - floor(renderView->y * hRatio + 0.5f) - 1);
+
+	float	xmin, xmax, ymin, ymax;
+	float	width, height;
+	float	zNear;
+	// float   zFar;
+	float	jitterx, jittery;
+	static	idRandom random;
+
+	// random jittering is usefull when multiple
+	// frames are going to be blended together
+	// for motion blurred anti-aliasing
+	if (allowJitter) {
+		jitterx = random.RandomFloat();
+		jittery = random.RandomFloat();
+	} else {
+		jitterx = jittery = 0;
+	}
+
+	//
+	// set up projection matrix
+	//
+	zNear = r_znear.GetFloat();
+
+	if (renderView->cramZNear) {
+		zNear *= 0.25;
+	}
+
+	ymax = zNear * tan(renderView->fov_y * idMath::PI / 360.0f);
+	ymin = -ymax;
+
+	xmax = zNear * tan(renderView->fov_x * idMath::PI / 360.0f);
+	xmin = -xmax;
+
+	width = xmax - xmin;
+	height = ymax - ymin;
+
+	jitterx = jitterx * width / (viewport.x2 - viewport.x1 + 1);
+	xmin += jitterx;
+	xmax += jitterx;
+	jittery = jittery * height / (viewport.y2 - viewport.y1 + 1);
+	ymin += jittery;
+	ymax += jittery;
+
+	projectionMatrix[0] = 2 * zNear / width;
+	projectionMatrix[4] = 0;
+	projectionMatrix[8] = (xmax + xmin) / width;	// normally 0
+	projectionMatrix[12] = 0;
+
+	projectionMatrix[1] = 0;
+	projectionMatrix[5] = 2 * zNear / height;
+	projectionMatrix[9] = (ymax + ymin) / height;	// normally 0
+	projectionMatrix[13] = 0;
+
+	// this is the far-plane-at-infinity formulation, and
+	// crunches the Z range slightly so w=0 vertexes do not
+	// rasterize right at the wraparound point
+	projectionMatrix[2] = 0;
+	projectionMatrix[6] = 0;
+	projectionMatrix[10] = -0.999f;
+	projectionMatrix[14] = -2.0f*zNear;
+
+	projectionMatrix[3] = 0;
+	projectionMatrix[7] = 0;
+	projectionMatrix[11] = -1;
+	projectionMatrix[15] = 0;
 }
 
 struct atmosLightProjection_t * idRenderWorldLocal::FindAtmosLightProjection( int lightID ) {

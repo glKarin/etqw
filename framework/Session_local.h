@@ -399,6 +399,9 @@ class idSessionLocal : public idSession
 		bool				authWaitBox;
 
 		idStr				authMsg;
+#ifdef _SPLASHDAMAGE
+		int					gameTime;
+#endif
 };
 
 extern idSessionLocal	sessLocal;

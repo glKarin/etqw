@@ -2130,7 +2130,8 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 #ifdef _RAVEN
 			game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #elif defined(_SPLASHDAMAGE)
-			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), Sys_Milliseconds(), false);
+			gameTime = Sys_Milliseconds();
+			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), gameTime, false);
 #else
 			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
@@ -2140,7 +2141,8 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 #ifdef _RAVEN
 		game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #elif defined(_SPLASHDAMAGE)
-		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), Sys_Milliseconds(), false);
+		gameTime = Sys_Milliseconds();
+		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), gameTime, false);
 #else
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
@@ -3600,7 +3602,9 @@ void idSessionLocal::RunGameTic()
 	// rw->DebugClear(0); // clear debug draw(version 1)
 	gameReturn_t	ret = game->RunFrame(&cmd, 0, true, 0); // jmarshall: serverGameFrame isn't used
 #elif defined(_SPLASHDAMAGE)
-	game->RunFrame(&cmd, 0);
+	int elapsedTime = start - gameTime;
+	gameTime = start;
+	game->RunFrame(&cmd, elapsedTime);
 #else
 	gameReturn_t	ret = game->RunFrame(&cmd);
 #endif

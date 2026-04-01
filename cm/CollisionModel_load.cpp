@@ -5590,7 +5590,12 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 int idCollisionModelManagerLocal::Contacts( contactInfo_t *contacts, const int maxContacts, const idVec3 &start, const idVec3 *dir, const float depth,
 								  const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
 								  idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis ) {
-	return Contacts(contacts, maxContacts, start, idVec6(dir->x, dir->y, dir->z, dir->x, dir->y, dir->z), depth, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
+	idVec6 _dir;
+	if (dir)
+		_dir.Set(dir->x, dir->y, dir->z, dir->x, dir->y, dir->z);
+	else
+		_dir.Zero();
+	return Contacts(contacts, maxContacts, start, _dir, depth, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
 }
 
 
@@ -5599,9 +5604,9 @@ void idCollisionModelManagerLocal::DrawModel( idCollisionModel *model, const idV
 }
 
 void idCollisionModelManagerLocal::GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const {
-	out.Append(mapName);
-	out.Append("/");
-	out.Append(modelName);
+	//out.Append(mapName);
+	//out.Append("/");
+	out = modelName;
 }
 
 void idCollisionModelManagerLocal::DumpCollisionModelStats( void ) {

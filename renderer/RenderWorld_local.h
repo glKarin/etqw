@@ -313,6 +313,9 @@ class idRenderWorldLocal : public idRenderWorld
 
 
 		bool					generateAllInteractionsCalled;
+#ifdef _SPLASHDAMAGE
+		const sdDeclAtmosphere	*atmosphere;
+#endif
 
 		//-----------------------
 		// RenderWorld_load.cpp
