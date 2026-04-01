@@ -1183,12 +1183,12 @@ int idRenderModelMD5::FindSurfaceId( const char *surfaceName ) {
 	int i;
 	const idMD5Mesh			*mesh;
 
-	if(!name || !name[0] || meshes.Num() == 0)
+	if(!surfaceName || !surfaceName[0] || meshes.Num() == 0)
 		return -1;
 
 	for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
 	{
-		if(!idStr::Icmp(name, mesh->meshName))
+		if(!idStr::Icmp(surfaceName, mesh->meshName))
 			return i;
 	}
 	return -1;

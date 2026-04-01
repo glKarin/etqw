@@ -200,6 +200,10 @@ bool idSoundShader::ParseShader(idLexer &src)
 #ifdef _HUMANHEAD
 	parms.subIndex = -1;
 #endif
+#ifdef _SPLASHDAMAGE
+	parms.pitchShift = 0.0f;
+	parms.soundArea = 0;
+#endif
 
 	speakerMask = 0;
 	altSound = NULL;

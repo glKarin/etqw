@@ -110,7 +110,11 @@ typedef enum {
 	SCMD_FADE
 } soundDemoCommand_t;
 
+#ifdef _SPLASHDAMAGE //karin: defined in Game_local.h::gameSoundChannel_t::SND_LAST
+const int SOUND_MAX_CHANNELS		= 508; // SND_LAST
+#else
 const int SOUND_MAX_CHANNELS		= 8;
+#endif
 const int SOUND_DECODER_FREE_DELAY	= 1000 * MIXBUFFER_SAMPLES / USERCMD_MSEC;		// four seconds
 
 const int PRIMARYFREQ				= 44100;			// samples per second

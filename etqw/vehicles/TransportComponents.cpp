@@ -1342,7 +1342,12 @@ void sdVehicleRigidBodyWheel::CommonInit( const sdDeclVehiclePart& part ) {
 	idVec3 verts[ 4 ];
 	float footprint = part.data.GetFloat( "footprint" );
 	if ( footprint < idMath::FLT_EPSILON ) {
+#ifdef _ETQW //karin: TEMP TODO
+		gameLocal.Warning( "sdVehicleRigidBodyWheel::CommonInit \"footprint\" too small: %.6f in vscript: %s", footprint, parent->GetVehicleScript()->GetName() );
+		footprint = idMath::FLT_EPSILON + 1e-1;
+#else
 		gameLocal.Error( "sdVehicleRigidBodyWheel::CommonInit \"footprint\" too small: %.6f in vscript: %s", footprint, parent->GetVehicleScript()->GetName() );
+#endif
 	}
 
 	for ( i = 0; i < 4; i++ ) {
