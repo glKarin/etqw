@@ -2446,6 +2446,9 @@ void idRenderSystemLocal::Clear(void)
 	shuttleView = false;
 	lastRenderSkybox = -1;
 #endif
+#ifdef _SPLASHDAMAGE
+	newGuiModel = NULL;
+#endif
 }
 
 /*
@@ -2479,6 +2482,11 @@ void idRenderSystemLocal::Init(void)
 
 	demoGuiModel = new idGuiModel;
 	demoGuiModel->Clear();
+
+#ifdef _SPLASHDAMAGE
+	newGuiModel = new sdGuiModel;
+	newGuiModel->Clear();
+#endif
 
 	R_InitTriSurfData();
 
@@ -2559,6 +2567,9 @@ void idRenderSystemLocal::Shutdown(void)
 
 	delete guiModel;
 	delete demoGuiModel;
+#ifdef _SPLASHDAMAGE
+	delete newGuiModel;
+#endif
 
 	Clear();
 

@@ -51,7 +51,7 @@ static void R_DC_DebugMaterial(const idMaterial *shader, float x, float y, float
 	if(!shader)
 		return;
 
-	idVec4 c = tr.guiModel->CurrentColor();
+	idVec4 c = tr.newGuiModel->CurrentColor();
 	renderSystem->SetColor(idVec4(1.0f, 0.0f, 0.0f, 0.5f));
 	idWStr str = StrToWStr(shader->GetName());
 	sdBounds2D bb = sdBounds2D(x, y, 640/* - x - w*/, 480/* - y - h*/);
@@ -78,16 +78,16 @@ void sdDeviceContextLocal::Reset() {
 }
 
 void sdDeviceContextLocal::BeginEmitToCurrentView( const float modelMatrix[16], const int allowInViewID, const bool weaponDepthHack ) {
-	tr.guiModel->BeginEmitToCurrentView(modelMatrix, allowInViewID, weaponDepthHack);
+	tr.newGuiModel->BeginEmitToCurrentView(modelMatrix, allowInViewID, weaponDepthHack);
 }
 
 void sdDeviceContextLocal::BeginEmitFullScreen() {
-	tr.guiModel->BeginEmitFullScreen();
+	tr.newGuiModel->BeginEmitFullScreen();
 }
 
 void sdDeviceContextLocal::End() {
-	tr.guiModel->End();
-	tr.guiModel->SetRegisters(NULL);
+	tr.newGuiModel->End();
+	tr.newGuiModel->SetRegisters(NULL);
 	renderSystem->SetColor4(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
@@ -104,11 +104,11 @@ idVec4 sdDeviceContextLocal::SetColorMultiplier( const idVec4& c ) {
 }
 
 void sdDeviceContextLocal::SetRegister( const int index, const float value ) {
-	tr.guiModel->SetRegister(index, value);
+	tr.newGuiModel->SetRegister(index, value);
 }
 
 void sdDeviceContextLocal::SetRegisters( const float* values ) {
-	tr.guiModel->SetRegisters(values);
+	tr.newGuiModel->SetRegisters(values);
 }
 
 void sdDeviceContextLocal::EnableClipping( bool enable ) {
@@ -721,7 +721,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	DrawText(str.c_str(), DC_DEFAULT_FONT_SCALE, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
+	DrawText(str.c_str(), DC_DEFAULT_FONT_SCALE, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
@@ -737,7 +737,7 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	width = DrawText(str.c_str(), fontScale, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+	width = DrawText(str.c_str(), fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
 	height = MaxCharHeight(fontScale);
 
 	if (scale)
@@ -1555,7 +1555,7 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 
 void sdDeviceContextLocal::SetTempColor(const idVec4 &c)
 {
-	tempColor = tr.guiModel->CurrentColor();
+	tempColor = tr.newGuiModel->CurrentColor();
 	renderSystem->SetColor(c);
 	usingTempColor = true;
 }
@@ -1897,7 +1897,7 @@ void sdDeviceContextLocal::DrawText( const char* text, const sdBounds2D& rect, u
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
+	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
@@ -1911,7 +1911,7 @@ void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	width = DrawText(text, fontScale, textAlign, tr.guiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+	width = DrawText(text, fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
 	height = MaxCharHeight(fontScale);
 
 	if (scale)

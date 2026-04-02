@@ -962,32 +962,33 @@ class idRenderSystemLocal : public idRenderSystem
         virtual void			DebugGraph( float cur, float min, float max, const idVec4 &color ) { (void)cur, (void)min; (void)max; (void)color; }
 #endif
 #ifdef _SPLASHDAMAGE
-		virtual bool UploadImage(const char *imageName, const byte *data, int width, int height,
+		virtual bool			UploadImage(const char *imageName, const byte *data, int width, int height,
 		                         bool generateMipMaps, bool copy = true);
 
-		virtual void SyncRenderSystem(void);
+		virtual void			SyncRenderSystem(void);
 
-		virtual int GetNumMSAAModes(void) const;
+		virtual int				GetNumMSAAModes(void) const;
 
-		virtual const char *GetMSAAMode(int idx, int &val) const;
+		virtual const char *	GetMSAAMode(int idx, int &val) const;
 
-		virtual void LockThreads(void);
+		virtual void			LockThreads(void);
 
-		virtual void UnlockThreads(void);
+		virtual void			UnlockThreads(void);
 
-		virtual int GetSyncNum(void);
+		virtual int				GetSyncNum(void);
 
-		virtual int RegisterPtr(void *ptr);
+		virtual int				RegisterPtr(void *ptr);
 
-		virtual void UnregisterPtr(int uid);
+		virtual void			UnregisterPtr(int uid);
 
-		virtual void *PtrForUID(int uid);
+		virtual void *			PtrForUID(int uid);
 
 		virtual class idRenderModel *InstantiateDynamicModel(class idRenderModel *model, struct renderEntity_s *ent);
 
-		virtual bool IsSMPEnabled(void);
+		virtual bool			IsSMPEnabled(void);
 
-		idList<void *>	registerPtrs;
+		idList<void *>			registerPtrs;
+		class sdGuiModel 		*newGuiModel;
 #endif
 
 	public:

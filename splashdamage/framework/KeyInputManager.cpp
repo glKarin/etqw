@@ -1,43 +1,7 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
-
-class sdKeyInputManagerLocal : public sdKeyInputManager
-{
-public:
-	sdKeyInputManagerLocal();
-	virtual ~sdKeyInputManagerLocal();
-
-	virtual void			SetBinding( sdBindContext* context, idKey& key, const char* binding, idKey* modifierKey );
-	virtual const char*		GetBinding( sdBindContext* context, idKey& key, idKey* modifierKey );
-
-	virtual void			UnbindBinding( sdBindContext* context, const char *bind );
-	virtual void			KeysFromBinding( sdBindContext* context, const char* binding, bool useBindStrWhenEmpty, idWStr& keyName );
-
-	// pass NULL for keys to find the number of keys to allocate
-	virtual void			KeysFromBinding( sdBindContext* context, const char* binding, int& numKeys, idKey** keys );
-
-	virtual bool			IsDown( const idKey& key );
-	virtual bool			IsDown( keyNum_e key );
-	virtual idKey*			GetKey( const char* name );
-	virtual idKey*			GetKeyForEvent( const sdSysEvent& evt, bool& down );
-
-	virtual void			ProcessUserCmdEvent( const sdSysEvent& event );
-
-	virtual sdKeyCommand*	GetCommand( sdBindContext* context, const idKey& key );
-
-	virtual sdBindContext*	AllocBindContext( const char* context );
-
-	virtual void			UnbindKey(  sdBindContext* context, idKey& key, idKey* modifier = NULL );
-
-	virtual bool			AnyKeysDown( void );
-
-private:
-	idList<sdBindContext *>	bindContexts;
-	idList<sdKeyCommand>	defaultContexts; //karin: compat for DOOM3
-};
-
-
+#include "KeyInputManager_Local.h"
 
 sdKeyInputManagerLocal::sdKeyInputManagerLocal() {
 	defaultContexts.SetNum(MAX_KEYS);
@@ -192,3 +156,147 @@ bool sdKeyInputManagerLocal::AnyKeysDown( void ) {
 	}
 	return false;
 }
+
+void sdKeyInputManagerLocal::Init(void)
+{
+	for (int i = 0; i < MAX_KEYS; i++) {
+		idKey &key = keys[i];
+		if (key.binding.IsEmpty())
+			continue;
+		usercmdbuttonType_t type = game->SetupBinding(key.binding.c_str(), key.usercmdAction);
+		key.type = type;
+	}
+}
+
+const idKey& sdKeyInputManagerLocal::GetKeyByNum( int keynum ) const {
+	return keys[keynum];
+}
+
+
+
+sdKeyCommand::sdKeyCommand( void )
+	: action(0),
+	type(B_BUTTON)
+{
+}
+
+void sdKeyCommand::Set( const char* _binding ) {
+	binding = _binding;
+}
+
+void sdKeyCommand::FixupBind( void ) {
+}
+
+
+
+
+void sdKeyBind::ClearCommand( int modifier ) {
+	if (modifier >= MAX_MODIFIERS)
+		return;
+	if (modifier < 0)
+		defaultCommand.Set("");
+	else
+		modifierCommands[modifier].second.Set("");
+}
+
+void sdKeyBind::SetCommand( int modifier, const char* command ) {
+	if (modifier >= MAX_MODIFIERS)
+		return;
+	if (modifier < 0)
+		defaultCommand.Set(command);
+	else
+		modifierCommands[modifier].second.Set(command);
+}
+
+sdKeyCommand& sdKeyBind::GetCommand( void ) {
+	return defaultCommand;
+}
+
+sdKeyCommand& sdKeyBind::GetCommand( int modifier ) {
+	if (modifier >= MAX_MODIFIERS || modifier < 0)
+		return defaultCommand;
+	else
+		return modifierCommands[modifier].second;
+}
+
+void sdKeyBind::Write( idFile* f, const char* context, const char* keyName ) {
+}
+
+void sdKeyBind::UnBindBinding( const char* binding ) {
+	if (binding && *binding) {
+		if (!idStr::Icmp(defaultCommand.GetBinding(), binding))
+			defaultCommand.Set("");
+		for (int i = 0; i < MAX_MODIFIERS; i++) {
+			if (idStr::Icmp(modifierCommands[i].second.GetBinding(), binding) == 0) {
+				modifierCommands[i].second.Set("");
+			}
+		}
+	}
+}
+
+void sdKeyBind::SetupBinds( void ) {
+}
+
+
+
+sdKeyBind* sdBindContext::AllocBind( int key ) {
+	int index = keyHash.GetFirst(key);
+	if (index == idHashIndexInt::NULL_INDEX) {
+		index     = keys.Append(pair_t());
+		pair_t &p = keys[index];
+		p.first   = key;
+		p.second  = new sdKeyBind;
+		keyHash.Add(key, index);
+		return p.second;
+	}
+	else
+		return keys[index].second;
+}
+
+sdKeyBind* sdBindContext::GetBind( int key ) {
+	int index = keyHash.GetFirst(key);
+	if (index == idHashIndexInt::NULL_INDEX)
+		return NULL;
+	else
+		return keys[index].second;
+}
+
+sdKeyCommand* sdBindContext::GetCommand( int key ) {
+	sdKeyBind* binding = GetBind(key);
+	return binding ? &binding->GetCommand() : NULL;
+}
+
+void sdBindContext::WriteBindings( idFile* f ) {
+}
+
+void sdBindContext::Bind( int key, int modifierKey, const char* binding ) {
+	sdKeyBind* b = AllocBind(key);
+	b->SetCommand(modifierKey, binding);
+}
+
+void sdBindContext::UnBind( int key, int modifierKey ) {
+	sdKeyBind* binding = GetBind(key);
+	if (!binding)
+		return;
+	binding->ClearCommand(modifierKey);
+}
+
+void sdBindContext::UnBindAll( void ) {
+	keyHash.Clear();
+	for (int i = 0; i < keys.Num(); i++) {
+		delete keys[i].second;
+	}
+}
+
+void sdBindContext::UnBindBinding( const char* binding ) {
+	for (int i = 0; i < keys.Num(); i++) {
+		keys[i].second->UnBindBinding(binding);
+	}
+}
+
+void sdBindContext::SetupBinds( void ) {
+}
+
+sdKeyInputManagerLocal inputManagerLocal;
+
+sdKeyInputManager* keyInputManager = &inputManagerLocal;

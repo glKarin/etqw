@@ -41,12 +41,6 @@ idGuiModel::idGuiModel()
 {
 	indexes.SetGranularity(1000);
 	verts.SetGranularity(1000);
-#ifdef _SPLASHDAMAGE
-	lastViewDef = NULL;
-	emitViewDef = NULL;
-	((idMat4 *)emitModelMatrix)->Identity();
-	emitDepthHack = false;
-#endif
 }
 
 /*
@@ -740,91 +734,49 @@ void idGuiModel::DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVe
 }
 
 #ifdef _SPLASHDAMAGE
-void idGuiModel::BeginEmitToCurrentView(const float modelMatrix[16], int allowInViewID, bool depthHack)
+sdGuiModel::sdGuiModel()
+	: idGuiModel()
 {
-	if(!tr.viewDef)
-		return;
+	((idMat4 *)emitModelMatrix)->Identity();
+	emitDepthHack = false;
+	usingCurrentView = 0;
+}
 
-	lastViewDef = NULL;
-	emitViewDef = NULL;
+void sdGuiModel::BeginEmitToCurrentView(const float modelMatrix[16], int allowInViewID, bool depthHack)
+{
+	End();
+
 	memcpy(&emitModelMatrix[0], &modelMatrix[0], sizeof(float) * 16);
 	emitDepthHack = depthHack;
+
+	usingCurrentView = EMIT_TO_CURRENTVIEW;
 }
 
-void idGuiModel::BeginEmitFullScreen()
+void sdGuiModel::BeginEmitFullScreen()
 {
-	viewDef_t	*viewDef;
+	End();
 
-	viewDef = (viewDef_t *)R_ClearedFrameAlloc(sizeof(*viewDef));
+	usingCurrentView = EMIT_TO_FULLSCREEN;
 
-	// for gui editor
-	if (!tr.viewDef || !tr.viewDef->isEditor) {
-		viewDef->renderView.x = 0;
-		viewDef->renderView.y = 0;
-		viewDef->renderView.width = SCREEN_WIDTH;
-		viewDef->renderView.height = SCREEN_HEIGHT;
+	Clear();
+}
 
-		tr.RenderViewToViewport(&viewDef->renderView, &viewDef->viewport);
-
-		viewDef->scissor.x1 = 0;
-		viewDef->scissor.y1 = 0;
-		viewDef->scissor.x2 = viewDef->viewport.x2 - viewDef->viewport.x1;
-		viewDef->scissor.y2 = viewDef->viewport.y2 - viewDef->viewport.y1;
-	} else {
-		viewDef->renderView.x = tr.viewDef->renderView.x;
-		viewDef->renderView.y = tr.viewDef->renderView.y;
-		viewDef->renderView.width = tr.viewDef->renderView.width;
-		viewDef->renderView.height = tr.viewDef->renderView.height;
-
-		viewDef->viewport.x1 = tr.viewDef->renderView.x;
-		viewDef->viewport.x2 = tr.viewDef->renderView.x + tr.viewDef->renderView.width;
-		viewDef->viewport.y1 = tr.viewDef->renderView.y;
-		viewDef->viewport.y2 = tr.viewDef->renderView.y + tr.viewDef->renderView.height;
-
-		viewDef->scissor.x1 = tr.viewDef->scissor.x1;
-		viewDef->scissor.y1 = tr.viewDef->scissor.y1;
-		viewDef->scissor.x2 = tr.viewDef->scissor.x2;
-		viewDef->scissor.y2 = tr.viewDef->scissor.y2;
+void sdGuiModel::End()
+{
+	if(usingCurrentView == EMIT_TO_NONE) {
+		Clear();
+		return;
 	}
 
-	viewDef->floatTime = tr.frameShaderTime;
+	usingCurrentView = EMIT_TO_NONE;
 
-	// glOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
-	viewDef->projectionMatrix[0] = 2.0f / 640.0f;
-	viewDef->projectionMatrix[5] = -2.0f / 480.0f;
-	viewDef->projectionMatrix[10] = -2.0f / 1.0f;
-	viewDef->projectionMatrix[12] = -1.0f;
-	viewDef->projectionMatrix[13] = 1.0f;
-	viewDef->projectionMatrix[14] = -1.0f;
-	viewDef->projectionMatrix[15] = 1.0f;
-
-	viewDef->worldSpace.modelViewMatrix[0] = 1.0f;
-	viewDef->worldSpace.modelViewMatrix[5] = 1.0f;
-	viewDef->worldSpace.modelViewMatrix[10] = 1.0f;
-	viewDef->worldSpace.modelViewMatrix[15] = 1.0f;
-
-	viewDef->numDrawSurfs = 0;
-
-	lastViewDef = tr.viewDef;
-	tr.viewDef = viewDef;
-
-	emitViewDef = viewDef;
-}
-
-void idGuiModel::End()
-{
-	if(!tr.viewDef)
+	if (surfaces[0].numVerts == 0) {
+		Clear();
 		return;
-
-	viewDef_t *viewDef = tr.viewDef;
-	bool usingCurrentView = NULL == emitViewDef;
-
-	viewDef->maxDrawSurfs = surfaces.Num();
-	viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc(viewDef->maxDrawSurfs * sizeof(viewDef->drawSurfs[0]));
-	viewDef->numDrawSurfs = 0;
+	}
 
 	// add the surfaces to this view
-	if(usingCurrentView)
+	if(usingCurrentView == EMIT_TO_CURRENTVIEW)
 	{
 		float	modelViewMatrix[16];
 
@@ -840,29 +792,20 @@ void idGuiModel::End()
 	}
 	else
 	{
-		for (int i = 0 ; i < surfaces.Num() ; i++) {
-			EmitSurface(&surfaces[i], viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false);
-		}
-
-		tr.viewDef = lastViewDef;
-		lastViewDef = NULL;
-		emitViewDef = NULL;
+		EmitFullScreen();
 	}
-
-	// add the command to draw this view
-	R_AddDrawViewCmd(viewDef);
 
 	Clear();
 }
 
-idVec4 idGuiModel::CurrentColor()
+idVec4 sdGuiModel::CurrentColor()
 {
 	if(!surf)
 		return vec4_one;
 	return *((idVec4 *)&surf->color[0]);
 }
 
-void idGuiModel::SetRegister(int index, float value)
+void sdGuiModel::SetRegister(int index, float value)
 {
 	if (!glConfig.isInitialized) {
 		return;
@@ -883,7 +826,7 @@ void idGuiModel::SetRegister(int index, float value)
 	surf->registerShaderParms = true;
 }
 
-void idGuiModel::SetRegisters(const float *values)
+void sdGuiModel::SetRegisters(const float *values)
 {
 	if (!glConfig.isInitialized) {
 		return;

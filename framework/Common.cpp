@@ -39,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "framework/AdManager.h"
 #include "framework/NotificationSystem.h"
 #include "framework/GraphManager.h"
+#include "framework/KeyInputManager_Local.h"
 #include "renderer/DeviceContext.h"
 #include "sdnet/SDNet.h"
 #endif
@@ -3793,6 +3794,10 @@ void idCommonLocal::InitGame(void)
 	// init the session
 	session->Init();
 
+#ifdef _SPLASHDAMAGE
+	inputManagerLocal.Init();
+#endif
+
 	// have to do this twice.. first one sets the correct r_mode for the renderer init
 	// this time around the backend is all setup correct.. a bit fugly but do not want
 	// to mess with all the gl init at this point.. an old vid card will never qualify for
@@ -3810,6 +3815,8 @@ void idCommonLocal::InitGame(void)
         common->Printf("Bind F10 to command 'idTech4AmmSettings'\n");
         idKeyInput::SetBinding(K_F10, "idTech4AmmSettings");
     }
+	else
+        common->Printf("Command 'idTech4AmmSettings' not be binding\n");
 #endif
 }
 

@@ -676,12 +676,12 @@ void idRenderSystemLocal::SetBackEndRenderer()
 	}
 
 
-			backEndRenderer = BE_GLSL;
+	backEndRenderer = BE_GLSL;
 
 	backEndRendererMaxLight = 1.0;
 
-			common->Printf("using GLSL renderSystem\n");
-			backEndRendererMaxLight = 999;
+	common->Printf("using GLSL renderSystem\n");
+	backEndRendererMaxLight = 999;
 
 	r_renderer.ClearModified();
 }
@@ -698,7 +698,7 @@ void idRenderSystemLocal::BeginFrame(int windowWidth, int windowHeight)
 	if (!glConfig.isInitialized) {
 		return;
 	}
-#ifdef _RAVEN //karin: BSE
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 	bse->UpdateRateTimes();
 #endif
 

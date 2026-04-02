@@ -3388,12 +3388,7 @@ void idFileSystemLocal::Init(void)
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
 	// Dedicated servers can run with no outside files at all
-#ifdef _SPLASHDAMAGE
-	if (ReadFile("public.cfg", NULL, NULL) <= 0) {
-		common->FatalError("Couldn't load default.cfg");
-	}
-	//InitMetaConf();
-#else
+#if !defined(_SPLASHDAMAGE) //karin: multi user profile in ETQW
 	if (ReadFile("default.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
 	}

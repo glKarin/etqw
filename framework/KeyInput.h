@@ -370,8 +370,9 @@ protected:
 	int				repeats;		// if > 1, it is autorepeating
 	idStr			binding;
 	int				usercmdAction;	// for testing by the asyncronous usercmd generation
+    usercmdbuttonType_t		type;
 
-	idKey() : down( false ), id( 0 ), activeCommand( NULL ), repeats(0), usercmdAction(0)
+	idKey() : down( false ), id( 0 ), activeCommand( NULL ), repeats(0), usercmdAction(0), type(B_BUTTON)
 	{}
 #endif
 };

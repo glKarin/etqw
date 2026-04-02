@@ -39,6 +39,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #ifdef _SPLASHDAMAGE 
 #include "sdnet/SDNet.h"
+#include "framework/KeyInputManager_Local.h"
 #endif
 
 #ifdef _RAVEN
@@ -2914,13 +2915,25 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	}
 
 	// in game, exec bindings for all key downs
+#ifdef _SPLASHDAMAGE //karin: send UI event to game
+	if (event->evType == SE_KEY) {
+		if (event->evValue2 == 1) {
+			if (idKeyInput::ExecKeyBinding(event->evValue))
+				return true;
+		}
+		const idKey &key = inputManagerLocal.GetKeyByNum(event->evValue);
+		if (key.type == B_LOCAL_IMPULSE && key.usercmdAction) {
+			game->HandleLocalImpulse(key.usercmdAction, event->evValue2 == 1);
+			return true;
+		}
+	}
+
+	(void)game->HandleGuiEvent(event);
+#else
 	if (event->evType == SE_KEY && event->evValue2 == 1) {
 		idKeyInput::ExecKeyBinding(event->evValue);
 		return true;
 	}
-
-#ifdef _SPLASHDAMAGE //karin: send UI event to game
-	(void)game->HandleGuiEvent(event);
 #endif
 
 	return false;
