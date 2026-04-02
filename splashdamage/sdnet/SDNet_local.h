@@ -117,7 +117,7 @@ private:
 	disconnectReason_e disconnectReason;
 	dedicatedState_e dedicatedState;
 	motdList_t motdList;
-	idList<sdNetUser_Local> userList;
+	idList<sdNetUser_Local *> userList;
 	sdNetSessionManager_Local sessionManager;
 #if !defined( SD_DEMO_BUILD )
 	sdNetStatsManager_Local statsManager;

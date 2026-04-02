@@ -238,7 +238,11 @@ static void Session_DevMap_f(const idCmdArgs &args)
 	// make sure the level exists before trying to change, so that
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
+#ifdef _SPLASHDAMAGE
+	sprintf(string, "maps/%s.entities", map.c_str());
+#else
 	sprintf(string, "maps/%s.map", map.c_str());
+#endif
 	ff = fileSystem->FindFile(string, true);
 
 	switch (ff) {
@@ -2142,6 +2146,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #elif defined(_SPLASHDAMAGE)
 		gameTime = Sys_Milliseconds();
+		Sys_Printf("state: %d|%d\n",idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), gameTime, false);
 #else
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
@@ -2150,7 +2155,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 #ifdef _SPLASHDAMAGE
 	idStr reason;
 	idStr mapName = mapString;
-	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_etqwmap", reason, mapName);
+	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_africa", reason, mapName);
 	Sys_Printf("OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
 #endif
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
@@ -3737,9 +3742,15 @@ void idSessionLocal::Init()
 	cmdSystem->AddCommand("writePrecache", Sess_WritePrecache_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "writes precache commands");
 
 #ifndef	ID_DEDICATED
+#ifdef _SPLASHDAMAGE
+	cmdSystem->AddCommand("map", Session_Map_f, CMD_FL_SYSTEM, "loads a map", idCmdSystem::ArgCompletion_EntitiesName);
+	cmdSystem->AddCommand("devmap", Session_DevMap_f, CMD_FL_SYSTEM, "loads a map in developer mode", idCmdSystem::ArgCompletion_EntitiesName);
+	cmdSystem->AddCommand("testmap", Session_TestMap_f, CMD_FL_SYSTEM, "tests a map", idCmdSystem::ArgCompletion_EntitiesName);
+#else
 	cmdSystem->AddCommand("map", Session_Map_f, CMD_FL_SYSTEM, "loads a map", idCmdSystem::ArgCompletion_MapName);
 	cmdSystem->AddCommand("devmap", Session_DevMap_f, CMD_FL_SYSTEM, "loads a map in developer mode", idCmdSystem::ArgCompletion_MapName);
 	cmdSystem->AddCommand("testmap", Session_TestMap_f, CMD_FL_SYSTEM, "tests a map", idCmdSystem::ArgCompletion_MapName);
+#endif
 
 	cmdSystem->AddCommand("writeCmdDemo", Session_WriteCmdDemo_f, CMD_FL_SYSTEM, "writes a command demo");
 	cmdSystem->AddCommand("playCmdDemo", Session_PlayCmdDemo_f, CMD_FL_SYSTEM, "plays back a command demo");

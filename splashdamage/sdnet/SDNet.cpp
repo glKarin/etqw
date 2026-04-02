@@ -74,6 +74,23 @@ bool sdNetService_Local::IsSteamActive() const {
 	// User management
 	//
 sdNetErrorCode_e sdNetService_Local::CreateUser( sdNetUser** user, const char* username ) {
+	*user = NULL;
+	for(int i = 0; i < userList.Num(); i++)
+	{
+		if(!idStr::Cmp(userList[i]->GetUsername(), username))
+		{
+			*user = userList[i];
+			break;
+		}
+	}
+	if(!*user)
+	{
+		sdNetUser_Local *newUser = new sdNetUser_Local;
+		newUser->username = username;
+		newUser->userState = sdNetUser::US_ONLINE;
+		userList.Append(newUser);
+		*user = newUser;
+	}
 	return SDNET_NO_ERROR;
 }
 
@@ -85,11 +102,13 @@ int sdNetService_Local::NumUsers() const {
 }
 
 sdNetUser* sdNetService_Local::GetUser( const int index ) {
-	return &userList[index];
+	if(index < 0 || index >= userList.Num())
+		return NULL;
+	return userList[index];
 }
 
 sdNetUser* sdNetService_Local::GetActiveUser() {
-	return userList.Num() > 0 ? &userList[0] : NULL;
+	return userList.Num() > 0 ? userList[0] : NULL;
 }
 
 	//
@@ -141,6 +160,8 @@ sdNetErrorCode_e sdNetService_Local::GetLastError() const {
 	// Start online service and connect to auth system
 sdNetTask* sdNetService_Local::Connect() {
 	serviceState = SS_ONLINE;
+	sdNetUser *user;
+	CreateUser(&user, "test");
 	return new sdNetTask_Connect;
 }
 
@@ -162,12 +183,12 @@ sdNetTask* sdNetService_Local::GetAccountsForLicense( idStrList& accountNames, c
 
 	// Get a user's profile
 const idDict* sdNetService_Local::GetProfileProperties( sdNetClientId userID ) const {
-	for (idList<sdNetUser_Local>::ConstIterator itor = userList.Begin(); itor != userList.End(); ++itor) {
+	for (idList<sdNetUser_Local *>::ConstIterator itor = userList.Begin(); itor != userList.End(); ++itor) {
 		sdNetClientId id;
-		sdNetUser &user = (sdNetUser &)*itor;
-		user.GetAccount().GetNetClientId(id);
+		sdNetUser *user = (sdNetUser *)*itor;
+		user->GetAccount().GetNetClientId(id);
 		if (id == userID) {
-			return &user.GetProfile().GetProperties();
+			return &user->GetProfile().GetProperties();
 		}
 	}
 	return NULL;

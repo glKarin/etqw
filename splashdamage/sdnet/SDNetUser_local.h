@@ -47,6 +47,7 @@ private:
 	idStr rawUsername;
 	sdNetProfile_Local profile;
 	sdNetAccount_Local account;
+	friend class sdNetService_Local;
 };
 
 #endif /* !__SDNETUSER_LOCAL_H__ */

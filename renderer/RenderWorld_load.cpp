@@ -1304,7 +1304,7 @@ idRenderModel *idRenderWorldLocal::ParseModel_Binary(idFile *file, const idStrLi
 		R_AllocStaticTriSurfVerts(tri, tri->numVerts);
 
 		idDrawVert *dv = &tri->verts[0];
-		for (j = 0 ; j < tri->numVerts ; j++, dv++) {
+		for (j = 0 ; j < tri->numVerts; j++, dv++) {
 			int numVertexElements = 0;
 			file->ReadInt(numVertexElements);
             idList<float> vec;
@@ -1416,14 +1416,19 @@ void idRenderWorldLocal::ParseInterAreaPortals_Binary(idFile *file) {
 		file->ReadInt(unknown1);
 		file->ReadInt(unknown2);
 
-		numPoints += 1;
+		int numFloats = 0;
+		file->ReadInt(numFloats);
+		idList<float> vec;
+		vec.SetNum(numFloats);
+		for (int m = 0; m < numFloats; m++)
+			file->ReadFloat(vec[m]);
+
 		w = new idWinding(numPoints);
 		w->SetNumPoints(numPoints);
 
 		for (j = 0 ; j < numPoints ; j++) {
-			int numFloats = 0;
+			numFloats = 0;
 			file->ReadInt(numFloats);
-			idList<float> vec;
 			vec.SetNum(numFloats);
 			for (int m = 0; m < numFloats; m++)
 				file->ReadFloat(vec[m]);

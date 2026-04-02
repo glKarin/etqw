@@ -56,6 +56,7 @@ extern idStrList stageParms;
 		} \
 		else if(!idStr::Icmp(p, "forceHighQuality")) td = TD_HIGH_QUALITY; \
 		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO; \
+		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA; \
 		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
 		else if(!idStr::Icmp(p, "partialLoad")); \
 	}
@@ -393,11 +394,11 @@ static infoParm_t	infoParms[] = {
 
 #ifdef _SPLASHDAMAGE //k: quake 4 material flags
 	{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
-	{"explosionsolid",	0,	0,	CONTENTS_EXPLOSIONSOLID },
+	{"explosionclip",	0,	0,	CONTENTS_EXPLOSIONSOLID },
 	{"monster",	0,	0,	CONTENTS_MONSTER },
-	{"forcefield",	0,	0,	CONTENTS_FORCEFIELD },
+	{"forcefieldclip",	0,	0,	CONTENTS_FORCEFIELD },
 	{"shadowcollision",	0,	0,	CONTENTS_SHADOWCOLLISION },
-	{"crosshairsolid",	0,	0,	CONTENTS_CROSSHAIRSOLID },
+	{"crosshairclip",	0,	0,	CONTENTS_CROSSHAIRSOLID },
 	{"flyerhiveclip",	0,	0,	CONTENTS_FLYERHIVECLIP },
 	{"aassolidplayer",	0,	0,	CONTENTS_AAS_SOLID_PLAYER },
 	{"aassolidvehicle",	0,	0,	CONTENTS_AAS_SOLID_VEHICLE },
@@ -2196,6 +2197,16 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
 			continue;
 		}
+		if (!token.Icmp("heightmap")) {
+			str = R_ParsePastImageProgram(src);
+			idStr t;
+			t.Append("heightmap(");
+			t.Append(str);
+			t.Append(")");
+			//if(isInteractionProgram)
+			//extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
+			continue;
+		}
 		if (!token.Icmp("detailMult")) { // detailMult 0,1,2,3
 			ParseExpression(src);
 			MatchToken(src, ",");
@@ -2277,6 +2288,53 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idToken t;
 			src.ExpectAnyToken(&t);
 			(float)src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("environmentcubemap")) { // environmentcubemap cubemap env/sewer/floodway
+			idToken t;
+			src.ReadToken(&t);
+			if(!idStr::Icmp(t, "cubemap"))
+				src.ExpectAnyToken(&t);
+			continue;
+		}
+		if (!token.Icmp("water_tint")) { // water_tint	  1.2, 1.2, 1
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("water_distortion")) { // water_distortion  1, 0.1, 1, 0	
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("water_fresnel")) { // water_fresnel	  8
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("water_glare")) { // water_glare	  0.6
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("water_offset")) { // water_offset 0, 0, 0, 0 
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("water_desat")) { // water_desat 0
+			src.ParseFloat();
 			continue;
 		}
 #endif
@@ -3363,11 +3421,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 			idToken t;
 			src.ExpectAnyToken(&t);
 			continue;
-		} else if (!token.Icmp("explosionclip")) {
-			continue;
 		} else if (!token.Icmp("onlyAtmosphereInteraction")) {
-			continue;
-		} else if (!token.Icmp("forcefieldclip")) {
 			continue;
 		} else if (!token.Icmp("noplant")) {
 			continue;
@@ -3394,6 +3448,10 @@ void idMaterial::ParseMaterial(idLexer &src)
 			idToken t;
 			src.ExpectAnyToken(&t);
 			continue;
+		} else if (!token.Icmp("surfaceColor")) { // surfaceColor ( 0.4 0.3333333 0.2666667 )
+			float v3[3];
+            src.Parse1DMatrix(3, v3);
+            continue;
 #endif
 
 #ifdef _NO_LIGHT

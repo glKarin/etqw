@@ -1526,7 +1526,11 @@ int idFile::ReadAngles( idAngles& angles ) {
 }
 
 int idFile::Read1DFloatArray( float* dst ) {
-	return 0;
+	int num;
+	int res = ReadInt(num);
+	if(res < 4)
+		return res;
+	return 4 + ReadFloatArray(dst, num);
 }
 
 int idFile::ReadFloatArray( float* src, const int num ) {

@@ -396,7 +396,7 @@ void idAsyncServer::ExecuteMapChange(void)
 #ifdef _SPLASHDAMAGE
 	idStr reason;
 	idStr mapName2 = mapName;
-	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_etqwmap", reason, mapName2);
+	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_africa", reason, mapName2);
 	Sys_Printf("Server::OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
 #endif
 	if (idAsyncNetwork::serverDedicated.GetInteger() == 0) {

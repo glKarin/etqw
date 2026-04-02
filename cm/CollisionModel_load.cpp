@@ -5311,7 +5311,7 @@ const idPlane& cm_model_t::GetBrushPlane( int planeNum ) const {
 
 	for(int i = 0; i < numBrushes; i++)
 	{
-		for(int m = 0; m < brushes[i]->numPlanes; i++)
+		for(int m = 0; m < brushes[i]->numPlanes; m++)
 		{
 			if(num == planeNum)
 			{
