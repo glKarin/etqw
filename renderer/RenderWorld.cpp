@@ -3644,7 +3644,7 @@ void idRenderWorldLocal::DebugArrow( const idVec4 &color, const idVec3 &start, c
 }
 
 void idRenderWorldLocal::DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org, const idMat3& axes, const int lifetime ) {
-	DebugBounds(color, bounds, org, mat3_identity, lifetime);
+	DebugBounds(color, bounds, org, lifetime);
 }
 
 void idRenderWorldLocal::SetAtmosphere( const sdDeclAtmosphere* a ) {

@@ -2086,9 +2086,14 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("lightFallOffMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
+			str = R_ParsePastImageProgram(src);
+			if (!lightFalloffImage) {
+			idStr	copy;
+
+			copy = str;	// so other things don't step on it
+			lightFalloffImage = globalImages->ImageFromFile(copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT);
 			//SETUP_STAGE_PROGRAM_PARMS();
+			}
 			continue;
 		}
 		if (!token.Icmp("selfIllumMap")) {
@@ -2787,6 +2792,12 @@ void idMaterial::ParseDeform(idLexer &src)
 #endif
 #ifdef _SPLASHDAMAGE
 	if (!token.Icmp("flarevcol")) {
+		cullType = CT_TWO_SIDED;
+		src.SkipRestOfLine();
+		SetMaterialFlag(MF_NOSHADOWS);
+		return;
+	}
+	if (!token.Icmp("glow")) {
 		cullType = CT_TWO_SIDED;
 		src.SkipRestOfLine();
 		SetMaterialFlag(MF_NOSHADOWS);

@@ -381,8 +381,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 			(void)mapName;
 			return LoadModel(modelName, true);
 		}
-
-		virtual  void	DrawModel(cmHandle_t handle, const idVec3& modelOrigin, const idMat3& modelAxis, const idVec3& viewOrigin, const idMat3& viewAxis, const float radius) { (void)handle; (void)modelOrigin; (void)modelAxis; (void)viewOrigin; (void)viewAxis; (void)radius; }
 #endif
 
 		// get clip handle for model
@@ -423,9 +421,6 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		                cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis);
 		// test collision detection
 		void			DebugOutput(const idVec3 &origin);
-		// draw a model
-		void			DrawModel(cmHandle_t model, const idVec3 &origin, const idMat3 &axis,
-		                                  const idVec3 &viewOrigin, const float radius);
 		// print model information, use -1 handle for accumulated model info
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		virtual void	FreeModel( idCollisionModel *model );
@@ -438,6 +433,9 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		// create trace model from a collision model, returns true if succesfull
 		bool			TrmFromModel(const char* mapName, const char *modelName, idTraceModel &trm ) { (void)mapName; return TrmFromModel(modelName, trm); }; //k DIFF_IMPL
 		void			ModelInfo(int num);
+		// draw a model
+		void			DrawModel(cmHandle_t model, const idVec3 &origin, const idMat3 &axis,
+									  const idVec3 &viewOrigin, const float radius);
 #else
 		void			ModelInfo(cmHandle_t model);
 #endif

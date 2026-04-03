@@ -190,8 +190,6 @@ class idCollisionModelManager
         // sets up a trace model for collision with other trace models
         virtual cmHandle_t      ModelFromTrm(const char* mapName, const char* modelName, const idTraceModel &trm, const idMaterial *material ) = 0;
 
-        virtual  void	        DrawModel(cmHandle_t handle, const idVec3& modelOrigin, const idMat3& modelAxis, const idVec3& viewOrigin, const idMat3& viewAxis, const float radius) = 0;
-
         // Gets the clip handle for a model.
         virtual cmHandle_t      LoadModel(const char* mapName, const char *modelName, const bool precache = false ) = 0;
         virtual cmHandle_t      PreCacheModel(const char* mapName, const char *modelName ) = 0;
@@ -284,6 +282,9 @@ class idCollisionModelManager
         virtual bool			TrmFromModel(const char* mapName, const char *modelName, idTraceModel &trm ) = 0;
         
 		virtual void			ModelInfo(int num) = 0;
+
+		// Draws a model.
+		virtual void				DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis, const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) = 0;
 #else
 		virtual void			ModelInfo(cmHandle_t model) = 0;
 #endif
@@ -292,9 +293,6 @@ class idCollisionModelManager
 		// Writes a collision model file for the given map entity.
 		virtual bool			WriteCollisionModelForMapEntity(const idMapEntity *mapEnt, const char *filename, const bool testTraceModel = true) = 0;
 #ifdef _SPLASHDAMAGE
-	    // Draws a model.
-	    virtual void				DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis,
-	                                           const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) = 0;
 
     	virtual void				GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const = 0;
     	

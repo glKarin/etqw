@@ -5212,6 +5212,11 @@ const char * cm_model_t::GetName( void ) const
 {
 	return name.c_str();
 }
+
+void idCollisionModelManagerLocal::DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis, const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) {
+	(void)viewAxis;
+	DrawModel(model, modelOrigin, modelAxis, viewOrigin, radius);
+}
 #endif
 
 #ifdef _HUMANHEAD
@@ -5596,11 +5601,6 @@ int idCollisionModelManagerLocal::Contacts( contactInfo_t *contacts, const int m
 	else
 		_dir.Zero();
 	return Contacts(contacts, maxContacts, start, _dir, depth, trm, trmAxis, contentMask, model, modelOrigin, modelAxis);
-}
-
-
-void idCollisionModelManagerLocal::DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis,
-									   const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) {
 }
 
 void idCollisionModelManagerLocal::GetFullModelName( idStr& out, const char* mapName, const char* modelName ) const {

@@ -346,6 +346,18 @@ static void R_BlackImage(idImage *image)
 	                     TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT);
 }
 
+#ifdef _SPLASHDAMAGE
+static void R_GrayImage(idImage *image)
+{
+	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
+
+	// solid white texture
+	memset(data, 0x77, sizeof(data));
+	image->GenerateImage((byte *)data, DEFAULT_SIZE, DEFAULT_SIZE,
+	                     TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT);
+}
+#endif
+
 
 // the size determines how far away from the edge the blocks start fading
 static const int BORDER_CLAMP_SIZE = 32;
@@ -2286,6 +2298,9 @@ void idImageManager::Init()
 	normalCubeMapImage = ImageFromFunction("_normalCubeMap", makeNormalizeVectorCubeMap);
 	noFalloffImage = ImageFromFunction("_noFalloff", R_CreateNoFalloffImage);
 	ImageFromFunction("_quadratic", R_QuadraticImage);
+#ifdef _SPLASHDAMAGE
+	grayImage = ImageFromFunction("_gray", R_GrayImage);
+#endif
 
 	// cinematicImage is used for cinematic drawing
 	// scratchImage is used for screen wipes/doublevision etc..

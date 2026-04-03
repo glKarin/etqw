@@ -183,10 +183,22 @@ sdScriptHelper::Push
 ============
 */
 void sdScriptHelper::Push( const idVec3& vec ) {
-	Push( vec[ 0 ] );
-	Push( vec[ 1 ] );
-	Push( vec[ 2 ] );
-	Push( 0 ); //k64
+	// Push( vec[ 0 ] );
+	// Push( vec[ 1 ] );
+	// Push( vec[ 2 ] );
+	for (int i = 0; i < vec.GetDimension(); ++i) {
+		parms_t* arg	= args.Alloc();
+		if ( arg == NULL ) {
+			gameLocal.Error( "sdScriptHelper::Push - args.Alloc() returned NULL - number of arguments overflowed" );
+			return;
+		}
+
+		float value = vec[i];
+		arg->integer		= *reinterpret_cast< int* >( &value );
+		arg->string		= NULL;
+	}
+
+	size += E_EVENT_SIZEOF_VEC; //k64
 }
 
 /*
@@ -195,10 +207,23 @@ sdScriptHelper::Push
 ============
 */
 void sdScriptHelper::Push( const idAngles& angles ) {
-	Push( angles.pitch );
-	Push( angles.yaw );
-	Push( angles.roll );
-	Push( 0 ); //k64
+	// Push( angles.pitch );
+	// Push( angles.yaw );
+	// Push( angles.roll );
+
+	for (int i = 0; i < angles.GetDimension(); ++i) {
+		parms_t* arg	= args.Alloc();
+		if ( arg == NULL ) {
+			gameLocal.Error( "sdScriptHelper::Push - args.Alloc() returned NULL - number of arguments overflowed" );
+			return;
+		}
+
+		float value = angles[i];
+		arg->integer		= *reinterpret_cast< int* >( &value );
+		arg->string		= NULL;
+	}
+
+	size += E_EVENT_SIZEOF_VEC; //k64
 }
 
 

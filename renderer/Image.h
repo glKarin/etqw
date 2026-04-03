@@ -506,6 +506,9 @@ class idImageManager
 		idImage 			*alphaRampImage;				// 0-255 in alpha, 255 in RGB
 		idImage 			*alphaNotchImage;			// 2x1 texture with just 1110 and 1111 with point sampling
 		idImage 			*whiteImage;					// full of 0xff
+#ifdef _SPLASHDAMAGE
+	    idImage			    *grayImage;					// full of 0x77
+#endif
 		idImage 			*blackImage;					// full of 0x00
 		idImage 			*normalCubeMapImage;			// cube map to normalize STR into RGB
 		idImage 			*noFalloffImage;				// all 255, but zero clamped

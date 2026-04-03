@@ -78,6 +78,11 @@ bool sdDeclImposter::Parse( const char *text, const int textLength ) {
 			continue;
 		}
 
+		if (!token.Icmp("screenScale")) {
+			info.screenScale = src.ParseFloat();
+			continue;
+		}
+
 		if (!token.Icmp("numAngles")) {
 			info.numAngles = src.ParseInt();
 			continue;

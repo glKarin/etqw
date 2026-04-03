@@ -102,8 +102,12 @@ void idAsyncNetwork::Init(void)
 	masters[4].var = &master4;
 
 #ifndef	ID_DEMO_BUILD
+#ifdef _SPLASHDAMAGE //karin: map completion, nextMap is defined
+	cmdSystem->AddCommand("spawnServer", SpawnServer_f, CMD_FL_SYSTEM, "spawns a server", idCmdSystem::ArgCompletion_EntitiesName);
+#else
 	cmdSystem->AddCommand("spawnServer", SpawnServer_f, CMD_FL_SYSTEM, "spawns a server", idCmdSystem::ArgCompletion_MapName);
 	cmdSystem->AddCommand("nextMap", NextMap_f, CMD_FL_SYSTEM, "loads the next map on the server");
+#endif
 	cmdSystem->AddCommand("connect", Connect_f, CMD_FL_SYSTEM, "connects to a server");
 	cmdSystem->AddCommand("reconnect", Reconnect_f, CMD_FL_SYSTEM, "reconnect to the last server we tried to connect to");
 	cmdSystem->AddCommand("serverInfo", GetServerInfo_f, CMD_FL_SYSTEM, "shows server info");
