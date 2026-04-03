@@ -485,6 +485,9 @@ void idSessionLocal::Clear()
 #ifdef _RAVEN
 	finishedLoading = false;
 #endif
+#ifdef _SPLASHDAMAGE
+	gameTime = 0;
+#endif
 }
 
 /*
@@ -2879,6 +2882,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 		return true;
 	}
 
+#if !defined(_SPLASHDAMAGE)
 	// if we are testing a GUI, send all events to it
 	if (guiTest) {
 		// hitting escape exits the testgui
@@ -2896,6 +2900,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 
 		return true;
 	}
+#endif
 
 	// menus / etc
 #ifdef _SPLASHDAMAGE //karin: send UI event to game
@@ -2904,6 +2909,11 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	if (guiActive)
 #endif
 	{
+#ifdef _SPLASHDAMAGE //karin: send UI event to game
+		if (event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
+			game->HideMainMenu();
+		else
+#endif
 		MenuEvent(event);
 		return true;
 	}

@@ -397,7 +397,7 @@ void idAsyncServer::ExecuteMapChange(void)
 	idStr reason;
 	idStr mapName2 = mapName;
 	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_africa", reason, mapName2);
-	Sys_Printf("Server::OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
+	Sys_Printf("Server::OnUserStartMap: %d|%s|%s|%d|%d\n", changeResult, reason.c_str(), mapName.c_str(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
 #endif
 	if (idAsyncNetwork::serverDedicated.GetInteger() == 0) {
 		InitLocalClient(0);
@@ -2772,7 +2772,10 @@ void idAsyncServer::RunFrame(void)
 		// session->rw->DebugClear(0); // clear debug draw(version 1)
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], 0, true, gameFrame);
 #elif defined(_SPLASHDAMAGE)
-		game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], 0);
+		int start = Sys_Milliseconds();
+		int elapsedTime = start - sessLocal.gameTime;
+		sessLocal.gameTime = start;
+		game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], elapsedTime);
 #else
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)]);
 #endif

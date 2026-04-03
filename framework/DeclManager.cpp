@@ -1311,6 +1311,9 @@ void idDeclManagerLocal::Init(void)
     RegisterDeclType(	"beam",			DECL_BEAM,		idDeclAllocator<hhDeclBeam>);
 #endif
 
+#ifdef _SPLASHDAMAGE
+	RegisterDeclFolder("templates",		".template",				DECL_TEMPLATE);
+#endif
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
 	RegisterDeclFolder("skins",			".skin",			DECL_SKIN);
 #ifdef _SPLASHDAMAGE

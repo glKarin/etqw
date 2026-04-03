@@ -68,8 +68,11 @@ bool sdDeclDecal::Parse( const char *text, const int textLength ) {
 		if( !token.Icmp( "image" )) {
 			sdBounds2D item;
 			item[0][0] = src.ParseFloat();
+			src.ExpectTokenString(",");
 			item[0][1] = src.ParseFloat();
+			src.ExpectTokenString(",");
 			item[1][0] = src.ParseFloat();
+			src.ExpectTokenString(",");
 			item[1][1] = src.ParseFloat();
 			images.Append(item);
 			continue;

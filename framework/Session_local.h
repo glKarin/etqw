@@ -298,6 +298,9 @@ class idSessionLocal : public idSession
 			return loadingSaveGame;
 		}
 #endif
+#ifdef _SPLASHDAMAGE
+		int					gameTime;
+#endif
 
 #if ID_CONSOLE_LOCK
 		int					emptyDrawCount;				// watchdog to force the main menu to restart
@@ -399,9 +402,6 @@ class idSessionLocal : public idSession
 		bool				authWaitBox;
 
 		idStr				authMsg;
-#ifdef _SPLASHDAMAGE
-		int					gameTime;
-#endif
 };
 
 extern idSessionLocal	sessLocal;
