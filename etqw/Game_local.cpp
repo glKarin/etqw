@@ -9189,10 +9189,19 @@ idGameLocal::AddEntityOcclusionQuery
 */
 qhandle_t idGameLocal::AddEntityOcclusionQuery( idEntity *ent ) {
 	if ( ent != NULL ) {
+#ifdef _ETQW //karin: append entity if AddOcclusionTestDef return not -1; else not call add_compile_options(-fno-inline) if call idEntity::~idEntity and handle == -1
+		if ( occlusionQueryList.FindIndex( ent ) < 0 ) {
+			qhandle_t queryId = gameRenderWorld->AddOcclusionTestDef( &ent->GetOcclusionQueryInfo() );
+			if(queryId >= 0)
+				occlusionQueryList.Append( ent );
+			return queryId;
+		}
+#else
 		if ( occlusionQueryList.FindIndex( ent ) < 0 ) {
 			occlusionQueryList.Append( ent );
 			return gameRenderWorld->AddOcclusionTestDef( &ent->GetOcclusionQueryInfo() );
 		}
+#endif
 	}
 	return -1;
 }

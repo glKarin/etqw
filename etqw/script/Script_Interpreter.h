@@ -107,6 +107,7 @@ public:
 
 	void				PushParm( int value );
 	void				PushParm( const char* string );
+	void				PushParm( const idVec3 &vec ); //k64
 
 	static int			s_stackHigh;
 };
@@ -193,6 +194,15 @@ idInterpreter::PushParm
 */
 ID_INLINE void idInterpreter::PushParm( const char* string ) {
 	PushString( string );
+}
+
+/*
+====================
+idInterpreter::PushParm
+====================
+*/
+ID_INLINE void idInterpreter::PushParm( const idVec3 &value ) {
+	PushVector( value );
 }
 
 /*

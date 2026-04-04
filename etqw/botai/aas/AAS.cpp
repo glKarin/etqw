@@ -5,7 +5,7 @@
 #pragma hdrstop
 
 #include "AAS_local.h"
-#ifdef _ETQW
+#ifdef _ETQW //karin: include
 #include "libs/AASLib/AASFile.h"
 #else
 #include "../../../libs/AASLib/AASFile.h"

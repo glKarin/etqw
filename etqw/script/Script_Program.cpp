@@ -2369,6 +2369,8 @@ sdProgramThread* idProgram::CreateThread( const sdScriptHelper& h ) {
 	for ( int i = 0; i < args.Num(); i++ ) {
 		if ( args[ i ].string ) {
 			thread->GetInterpreter().PushParm( args[ i ].string );
+		} else if ( args[i].type == 1 ) { //k64 
+			thread->GetInterpreter().PushParm( args[ i ].vector );
 		} else {
 			thread->GetInterpreter().PushParm( args[ i ].integer );
 		}

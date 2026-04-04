@@ -157,6 +157,8 @@ void idMaterial::CommonInit()
 #endif
 #ifdef _SPLASHDAMAGE
 	surfaceTypeDecl = NULL;
+	surfaceTypeMapDecl = NULL;
+	surfaceColor.Zero();
 #endif
 #ifdef _NO_LIGHT
 	noLight = false;
@@ -3460,8 +3462,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 			src.ExpectAnyToken(&t);
 			continue;
 		} else if (!token.Icmp("surfaceColor")) { // surfaceColor ( 0.4 0.3333333 0.2666667 )
-			float v3[3];
-            src.Parse1DMatrix(3, v3);
+            src.Parse1DMatrix(3, surfaceColor.ToFloatPtr());
             continue;
 #endif
 

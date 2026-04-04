@@ -24,7 +24,7 @@
 #include "../idlib/Lib.h"
 #include "../idlib/LibImpl.h"
 
-#ifdef _ETQW
+#ifdef _ETQW //karin: include
 #include "../framework/DeclManager.h"
 #else
 #include "../framework/declManager.h"

@@ -332,6 +332,15 @@ void idCollisionModelManagerLocal::TranslateTrmEdgeThroughPolygon(cm_traceWork_t
 			if(poly->material)
 				tw->trace.c.materialType = poly->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+			if(poly->material)
+			{
+				tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+				tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+			}
+			tw->trace.c.separation = 0.0f;
+			tw->trace.c.selfId = 0;
+#endif
 			tw->trace.c.type = CONTACT_EDGE;
 			tw->trace.c.modelFeature = edgeNum;
 			tw->trace.c.trmFeature = trmEdge - tw->edges;
@@ -476,6 +485,15 @@ void idCollisionModelManagerLocal::TranslateTrmVertexThroughPolygon(cm_traceWork
 		if(poly->material)
 			tw->trace.c.materialType = poly->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+		if(poly->material)
+		{
+			tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+			tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+		}
+		tw->trace.c.separation = 0.0f;
+		tw->trace.c.selfId = 0;
+#endif
 		tw->trace.c.type = CONTACT_TRMVERTEX;
 		tw->trace.c.modelFeature = *reinterpret_cast<int *>(&poly);
 		tw->trace.c.trmFeature = v - tw->vertices;
@@ -540,6 +558,15 @@ void idCollisionModelManagerLocal::TranslatePointThroughPolygon(cm_traceWork_t *
 		if(poly->material)
 			tw->trace.c.materialType = poly->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+		if(poly->material)
+		{
+			tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+			tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+		}
+		tw->trace.c.separation = 0.0f;
+		tw->trace.c.selfId = 0;
+#endif
 		tw->trace.c.type = CONTACT_TRMVERTEX;
 		tw->trace.c.modelFeature = *reinterpret_cast<int *>(&poly);
 		tw->trace.c.trmFeature = v - tw->vertices;
@@ -593,6 +620,15 @@ void idCollisionModelManagerLocal::TranslateVertexThroughTrmPolygon(cm_traceWork
 #ifdef _RAVEN
 		if(poly->material)
 			tw->trace.c.materialType = poly->material->GetMaterialType();
+#endif
+#ifdef _SPLASHDAMAGE
+		if(poly->material)
+		{
+			tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+			tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+		}
+		tw->trace.c.separation = 0.0f;
+		tw->trace.c.selfId = 0;
 #endif
 		tw->trace.c.type = CONTACT_MODELVERTEX;
 		tw->trace.c.modelFeature = v - tw->model->vertices;
@@ -950,6 +986,14 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 #ifdef _HUMANHEAD
 	tw.trace.c.id = 0;		// HUMANHEAD pdm: initialize so we don't get bogus values back
 #endif
+#ifdef _SPLASHDAMAGE // etqw trace
+	tw.trace.c.id = 0; // fix so we don't get garbage values.
+	tw.trace.c.material = NULL; //kc
+	tw.trace.c.surfaceType = NULL;
+	tw.trace.c.surfaceColor.Zero();
+	tw.trace.c.separation = 0.0f;
+	tw.trace.c.selfId = 0;
+#endif
 	tw.contents = contentMask;
 	tw.isConvex = true;
 	tw.rotation = false;
@@ -1041,6 +1085,18 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 		}
 // jmarshall end
 #endif
+#ifdef _SPLASHDAMAGE // etqw trace
+		if (results->c.material)
+		{
+			results->c.surfaceType = results->c.material->GetSurfaceType();
+			results->c.surfaceColor = results->c.material->GetSurfaceColor();
+		}
+		else
+		{
+			results->c.surfaceType = NULL;
+			results->c.surfaceColor.Zero();
+		}
+#endif
 
 		idCollisionModelManagerLocal::numContacts = tw.numContacts;
 		return;
@@ -1063,6 +1119,10 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 // jmarshall - quaake 4
 		results->c.materialType = NULL;
 // jmarshall end
+#endif
+#ifdef _SPLASHDAMAGE // etqw trace
+		results->c.surfaceType = NULL;
+		results->c.surfaceColor.Zero();
 #endif
 
 		common->Printf("idCollisionModelManagerLocal::Translation: huge translation\n");
@@ -1292,6 +1352,18 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 		results->c.materialType = NULL;
 	}
 // jmarshall end
+#endif
+#ifdef _SPLASHDAMAGE // etqw trace
+	if (results->c.material)
+	{
+		results->c.surfaceType = results->c.material->GetSurfaceType();
+		results->c.surfaceColor = results->c.material->GetSurfaceColor();
+	}
+	else
+	{
+		results->c.surfaceType = NULL;
+		results->c.surfaceColor.Zero();
+	}
 #endif
 
 #ifdef _DEBUG

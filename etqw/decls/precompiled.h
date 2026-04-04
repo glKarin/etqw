@@ -16,7 +16,7 @@
 #include "../../sys/sys_public.h"
 #include "../../idlib/Lib.h"
 
-#ifdef _ETQW
+#ifdef _ETQW //karin: include
 #include "../../framework/DeclManager.h"
 #else
 #include "../../framework/declManager.h"

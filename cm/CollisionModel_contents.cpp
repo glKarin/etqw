@@ -112,6 +112,15 @@ bool idCollisionModelManagerLocal::TestTrmVertsInBrush(cm_traceWork_t *tw, cm_br
 			if(b->material)
 				tw->trace.c.materialType = b->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+			if(b->material)
+			{
+				tw->trace.c.surfaceType = b->material->GetSurfaceType();
+				tw->trace.c.surfaceColor = b->material->GetSurfaceColor();
+			}
+			tw->trace.c.separation = 0.0f;
+			tw->trace.c.selfId = 0;
+#endif
 			tw->trace.c.point = *p;
 			tw->trace.c.modelFeature = 0;
 			tw->trace.c.trmFeature = j;
@@ -251,6 +260,15 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon(cm_traceWork_t *tw, cm_polyg
 					if(p->material)
 						tw->trace.c.materialType = p->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+					if(p->material)
+					{
+						tw->trace.c.surfaceType = p->material->GetSurfaceType();
+						tw->trace.c.surfaceColor = p->material->GetSurfaceColor();
+					}
+					tw->trace.c.separation = 0.0f;
+					tw->trace.c.selfId = 0;
+#endif
 					tw->trace.c.point = v->p;
 					tw->trace.c.modelFeature = edge->vertexNum[j];
 					tw->trace.c.trmFeature = 0;
@@ -339,6 +357,15 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon(cm_traceWork_t *tw, cm_polyg
 #ifdef _RAVEN
 			if(p->material)
 				tw->trace.c.materialType = p->material->GetMaterialType();
+#endif
+#ifdef _SPLASHDAMAGE
+			if(p->material)
+			{
+				tw->trace.c.surfaceType = p->material->GetSurfaceType();
+				tw->trace.c.surfaceColor = p->material->GetSurfaceColor();
+			}
+			tw->trace.c.separation = 0.0f;
+			tw->trace.c.selfId = 0;
 #endif
 			tw->trace.c.point = tw->vertices[tw->edges[i].vertexNum[ !flip ]].p;
 			tw->trace.c.modelFeature = *reinterpret_cast<int *>(&p);
@@ -434,6 +461,15 @@ bool idCollisionModelManagerLocal::TestTrmInPolygon(cm_traceWork_t *tw, cm_polyg
 #ifdef _RAVEN
 				if(p->material)
 					tw->trace.c.materialType = p->material->GetMaterialType();
+#endif
+#ifdef _SPLASHDAMAGE
+				if(p->material)
+				{
+					tw->trace.c.surfaceType = p->material->GetSurfaceType();
+					tw->trace.c.surfaceColor = p->material->GetSurfaceColor();
+				}
+				tw->trace.c.separation = 0.0f;
+				tw->trace.c.selfId = 0;
 #endif
 				tw->trace.c.point = tw->model->vertices[edge->vertexNum[ !flip ]].p;
 				tw->trace.c.modelFeature = edgeNum;

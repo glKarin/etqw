@@ -4,7 +4,7 @@
 #ifndef __DECLDEPLOYABLEOBJECT_H__
 #define __DECLDEPLOYABLEOBJECT_H__
 
-#ifdef _ETQW
+#ifdef _ETQW //karin: include
 #include "../../framework/DeclManager.h"
 #else
 #include "../../framework/declManager.h"

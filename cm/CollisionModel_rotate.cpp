@@ -633,6 +633,15 @@ void idCollisionModelManagerLocal::RotateTrmEdgeThroughPolygon(cm_traceWork_t *t
 		if(poly->material)
 			tw->trace.c.materialType = poly->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+		if(poly->material)
+		{
+			tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+			tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+		}
+		tw->trace.c.separation = 0.0f;
+		tw->trace.c.selfId = 0;
+#endif
 		tw->trace.c.type = CONTACT_EDGE;
 		tw->trace.c.modelFeature = edgeNum;
 		tw->trace.c.trmFeature = trmEdge - tw->edges;
@@ -1025,6 +1034,15 @@ void idCollisionModelManagerLocal::RotateTrmVertexThroughPolygon(cm_traceWork_t 
 		if(poly->material)
 			tw->trace.c.materialType = poly->material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE
+		if(poly->material)
+		{
+			tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+			tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+		}
+		tw->trace.c.separation = 0.0f;
+		tw->trace.c.selfId = 0;
+#endif
 		tw->trace.c.type = CONTACT_TRMVERTEX;
 		tw->trace.c.modelFeature = *reinterpret_cast<int *>(&poly);
 		tw->trace.c.trmFeature = v - tw->vertices;
@@ -1100,6 +1118,15 @@ void idCollisionModelManagerLocal::RotateVertexThroughTrmPolygon(cm_traceWork_t 
 #ifdef _RAVEN
 		if(poly->material)
 			tw->trace.c.materialType = poly->material->GetMaterialType();
+#endif
+#ifdef _SPLASHDAMAGE
+		if(poly->material)
+		{
+			tw->trace.c.surfaceType = poly->material->GetSurfaceType();
+			tw->trace.c.surfaceColor = poly->material->GetSurfaceColor();
+		}
+		tw->trace.c.separation = 0.0f;
+		tw->trace.c.selfId = 0;
 #endif
 		tw->trace.c.type = CONTACT_MODELVERTEX;
 		tw->trace.c.modelFeature = v - tw->model->vertices;

@@ -919,9 +919,16 @@ class idMaterial : public idDecl
 		}
 
 		// gets name for surface type (stone, metal, flesh, etc.)
+#ifdef _SPLASHDAMAGE
+		const class sdDeclSurfaceType*		GetSurfaceType( void ) const { return surfaceTypeDecl; }
+		const class sdDeclSurfaceTypeMap*	GetSurfaceTypeMapDecl( void ) const { return surfaceTypeMapDecl; }
+		//const class sdSurfaceTypeMap*		GetSurfaceTypeMap( void ) const { return surfaceTypeMap; }
+		const idVec3&		GetSurfaceColor( void ) const { return surfaceColor; }
+#else
 		const surfTypes_t	GetSurfaceType(void) const {
 			return static_cast<surfTypes_t>(surfaceFlags & SURF_TYPE_MASK);
 		}
+#endif
 
 		// get material description
 		const char 		*GetDescription(void) const {
@@ -1224,6 +1231,8 @@ class idMaterial : public idDecl
 #ifdef _SPLASHDAMAGE
 		const sdDeclSurfaceType*	surfaceTypeDecl;
 		const sdDeclSurfaceTypeMap*	surfaceTypeMapDecl;
+		//const sdSurfaceTypeMap*		surfaceTypeMap;
+		idVec3				surfaceColor;
 #endif
 #ifdef _NO_LIGHT
 		bool 				noLight;

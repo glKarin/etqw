@@ -2889,6 +2889,10 @@ void idDeclLocal::ParseLocal(void)
 	}
 	//Sys_Printf("OOO|%s|\n----------------\nPPP|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
 	self->Parse(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length());
+
+	const idDeclType *dt = (const idDeclType *)declManagerLocal.GetDeclType((int)type);
+	if (dt->ref)
+		dt->ref->PostParse(self);
 #else
 	self->Parse(declText, GetTextLength());
 #endif

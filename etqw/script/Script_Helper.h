@@ -12,6 +12,8 @@ public:
 	typedef struct parms_s {
 		const char*		string;
 		int				integer;
+		idVec3			vector; //k64
+		int				type; //k64
 	} parms_t;
 
 	typedef idStaticList< parms_t, 12 > parmsList_t;
