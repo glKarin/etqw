@@ -737,8 +737,17 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	width = DrawText(str.c_str(), fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
-	height = MaxCharHeight(fontScale);
+	if(lineBreaks)
+	{
+		width = DrawText(str.c_str(), fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+		height = MaxCharHeight(fontScale) * lineBreaks->Num() + 5 * (lineBreaks->Num() - 1);
+	}
+	else
+	{
+		idList<int> lbs;
+		width = DrawText(str.c_str(), fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
+		height = MaxCharHeight(fontScale) * lbs.Num() + 5 * (lbs.Num() - 1);
+	}
 
 	if (scale)
 		*scale = fontScale;
@@ -1911,8 +1920,17 @@ void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	width = DrawText(text, fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
-	height = MaxCharHeight(fontScale);
+	if(lineBreaks)
+	{
+		width = DrawText(text, fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+		height = MaxCharHeight(fontScale) * lineBreaks->Num() + 5 * (lineBreaks->Num() - 1);
+	}
+	else
+	{
+		idList<int> lbs;
+		width = DrawText(text, fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
+		height = MaxCharHeight(fontScale) * lbs.Num() + 5 * (lbs.Num() - 1);
+	}
 
 	if (scale)
 		*scale = fontScale;
