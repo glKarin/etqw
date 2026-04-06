@@ -38,7 +38,7 @@ sdHardcodedParticleSystem::sdHardcodedParticleSystem( void ) {
 	renderEntity.callback = sdHardcodedParticleSystem::ModelCallback;
 #pragma warning( push )
 #pragma warning( disable: 4312 )
-	renderEntity.callbackData = (void*)Uid;
+	renderEntity.callbackData = (void*)(uintptr_t/*//k64 */)Uid;
 #pragma warning( pop )
 
 }
@@ -63,7 +63,7 @@ sdHardcodedParticleSystem::ModelCallback
 bool sdHardcodedParticleSystem::ModelCallback( renderEntity_t *renderEntity, const renderView_t *renderView, int& lastGameModifiedTime ) {
 #pragma warning( push )
 #pragma warning( disable: 4311 )
-	sdHardcodedParticleSystem* me = (sdHardcodedParticleSystem*)renderSystem->PtrForUID( (intptr_t/*//k 64 int*/)renderEntity->callbackData );
+	sdHardcodedParticleSystem* me = (sdHardcodedParticleSystem*)renderSystem->PtrForUID( (uintptr_t/*//k 64 int*/)renderEntity->callbackData );
 #pragma warning( pop )
 
 	if ( !me ) {

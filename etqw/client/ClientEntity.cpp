@@ -1343,7 +1343,7 @@ bool sdClientAnimated::ModelCallback( renderEntity_t* renderEntity, const render
 	rvClientEntityPtr<rvClientEntity> safeEnt;
 #pragma warning( push )
 #pragma warning( disable: 4311 )
-	safeEnt.SetSpawnId( (intptr_t/*//k 64 int*/)renderEntity->callbackData );
+	safeEnt.SetSpawnId( (uintptr_t/*//k 64 int*/)renderEntity->callbackData );
 #pragma warning( pop )
 	rvClientEntity* ent = safeEnt.GetEntity();//gameLocal.clientEntities[ *(int *)renderEntity->callbackData ];
 	if ( !ent ) {
@@ -1459,7 +1459,7 @@ void sdClientAnimated::Create( const idDict* _spawnArgs, const sdProgram::sdType
 	safeEnt.SetEntity( this );
 #pragma warning( push )
 #pragma warning( disable: 4312 )
-	renderEntity.callbackData = (void*)safeEnt.GetSpawnId();
+	renderEntity.callbackData = (void*)(uintptr_t/*//k64 */)safeEnt.GetSpawnId();
 #pragma warning( pop )
 
 	const char* modelName = spawnArgs.GetString( "model" );
