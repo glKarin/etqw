@@ -29,6 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclParseHelper.h"
+#endif
+
 
 /*
 =================
@@ -61,11 +65,21 @@ bool idDeclEntityDef::Parse(const char *text, const int textLength, bool noCachi
 bool idDeclEntityDef::Parse(const char *text, const int textLength)
 #endif
 {
+#ifdef _SPLASHDAMAGE
+	idParser src;
+#else
 	idLexer src;
+#endif
 	idToken	token, token2;
 
+#ifdef _SPLASHDAMAGE
+	src.SetFlags(DECL_LEXER_FLAGS);
+	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
+	sdDeclParseHelper declHelper( this, text, textLength, src );
+#else
 	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
 	src.SetFlags(DECL_LEXER_FLAGS);
+#endif
 	src.SkipUntilString("{");
 
 	while (1) {

@@ -899,10 +899,21 @@ void idCmdSystemLocal::ArgCompletion_Models( const idCmdArgs &args, void(*callba
 
 #ifdef _SPLASHDAMAGE
 void idCmdSystemLocal::PushFrameCommand( const char* command ) {
-
+	cmdSystemLocal.BufferCommandText(CMD_EXEC_APPEND, command);
 }
 
-void idCmdSystemLocal::ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName ) {
+void idCmdSystemLocal::ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t callback, const char* typeName ) {
+	int i, num;
 
+	if (declManager == NULL) {
+		return;
+	}
+
+
+	declType_t type = declManager->GetDeclTypeFromName(typeName);
+	if(type == DECL_MAX_TYPES)
+		return;
+
+	ArgCompletion_DeclName(args, callback, type);
 }
 #endif

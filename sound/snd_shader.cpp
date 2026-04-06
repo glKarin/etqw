@@ -31,6 +31,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "snd_local.h"
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclParseHelper.h"
+#endif
 
 /*
 ===============
@@ -159,10 +162,18 @@ bool idSoundShader::Parse(const char *text, const int textLength, bool noCaching
 bool idSoundShader::Parse(const char *text, const int textLength)
 #endif
 {
+#ifdef _SPLASHDAMAGE
+	idParser src;
+
+	src.SetFlags(DECL_LEXER_FLAGS);
+	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
+	sdDeclParseHelper declHelper( this, text, textLength, src );
+#else
 	idLexer	src;
 
 	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
 	src.SetFlags(DECL_LEXER_FLAGS);
+#endif
 	src.SkipUntilString("{");
 
 	// deeper functions can set this, which will cause MakeDefault() to be called at the end
@@ -181,7 +192,11 @@ bool idSoundShader::Parse(const char *text, const int textLength)
 idSoundShader::ParseShader
 ===============
 */
+#ifdef _SPLASHDAMAGE
+bool idSoundShader::ParseShader(idParser &src)
+#else
 bool idSoundShader::ParseShader(idLexer &src)
+#endif
 {
 	int			i;
 	idToken		token;

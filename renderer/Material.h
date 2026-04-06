@@ -644,7 +644,6 @@ typedef enum {
     SURF_NOAREAS				= BIT(11),	// don't create AAS areas on this surface
 
     SURF_SHADOWCOLLISION		= BIT(12),	// shadow collision surface, used only when CONTENTS_SHADOWCOLLISION is specified
-	SURF_TYPE_MASK				= (1 << NUM_SURFACE_BITS) - 1,
 #else
 	SURF_TYPE_BIT0				= BIT(0),	// encodes the material type (metal, flesh, concrete, etc.)
 	SURF_TYPE_BIT1				= BIT(1),	// "

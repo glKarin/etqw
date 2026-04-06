@@ -40,6 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE
 #include "decllib/DeclSurfaceType.h"
 #include "decllib/DeclSurfaceTypeMap.h"
+#include "framework/DeclParseHelper.h"
 
 extern idStrList stageParms;
 #define SETUP_STAGE_PROGRAM_PARMS() \
@@ -310,7 +311,7 @@ static infoParm_t	infoParms[] = {
 	// game relevant attributes
 	{"solid",		0,	0,	CONTENTS_SOLID },		// may need to override a clearSolid
 	{"water",		1,	0,	CONTENTS_WATER },		// used for water
-{"playerclip",	0,	0,	CONTENTS_PLAYERCLIP },	// solid to players
+	{"playerclip",	0,	0,	CONTENTS_PLAYERCLIP },	// solid to players
 #ifdef _SPLASHDAMAGE
 	{"walkerclip",	0,	0,	CONTENTS_WALKERCLIP },
 #else
@@ -328,10 +329,12 @@ static infoParm_t	infoParms[] = {
 	{"aassolid",	0,	0,	CONTENTS_AAS_SOLID },	// solid for AAS
 #endif
 	{"aasobstacle",	0,	0,	CONTENTS_AAS_OBSTACLE },// used to compile an obstacle into AAS that can be enabled/disabled
-#if !defined(_SPLASHDAMAGE)
+#ifdef _SPLASHDAMAGE
+	{"nonsolid",	1,	SURF_NONSOLID,	0 },					// clears the solid flag
+#else
 	{"flashlight_trigger",	0,	0,	CONTENTS_FLASHLIGHT_TRIGGER }, // used for triggers that are activated by the flashlight
-#endif
 	{"nonsolid",	1,	0,	0 },					// clears the solid flag
+#endif
 	{"nullNormal",	0,	SURF_NULLNORMAL,0 },		// renderbump will draw as 0x80 0x80 0x80
 
 	// utility relevant attributes
@@ -397,15 +400,19 @@ static infoParm_t	infoParms[] = {
 #ifdef _SPLASHDAMAGE //k: quake 4 material flags
 	{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
 	{"explosionclip",	0,	0,	CONTENTS_EXPLOSIONSOLID },
+	{"rendermodelclip",	0,	0,	CONTENTS_RENDERMODEL },
+	{"projectileclip",	0,	0,	CONTENTS_PROJECTILE },
 	{"monster",	0,	0,	CONTENTS_MONSTER },
 	{"forcefieldclip",	0,	0,	CONTENTS_FORCEFIELD },
-	{"shadowcollision",	0,	0,	CONTENTS_SHADOWCOLLISION },
+	{"shadowcollision",	0,	SURF_SHADOWCOLLISION,	CONTENTS_SHADOWCOLLISION },
 	{"crosshairclip",	0,	0,	CONTENTS_CROSSHAIRSOLID },
 	{"flyerhiveclip",	0,	0,	CONTENTS_FLYERHIVECLIP },
 	{"aassolidplayer",	0,	0,	CONTENTS_AAS_SOLID_PLAYER },
 	{"aassolidvehicle",	0,	0,	CONTENTS_AAS_SOLID_VEHICLE },
 	{"aasclusterportal",	0,	0,	CONTENTS_AAS_CLUSTER_PORTAL },
 	{"occluder",	0,	0,	CONTENTS_OCCLUDER },
+	{"noareas",	0,	SURF_NOAREAS,	0 },
+	{"noplant",	0,	SURF_NOPLANT,	0 },
 #endif
 };
 
@@ -424,10 +431,12 @@ bool idMaterial::CheckSurfaceParm(idToken *token)
 
 	for (int i = 0 ; i < numInfoParms ; i++) {
 		if (!token->Icmp(infoParms[i].name)) {
+#if !defined(_SPLASHDAMAGE)
 			if (infoParms[i].surfaceFlags & SURF_TYPE_MASK) {
 				// ensure we only have one surface type set
 				surfaceFlags &= ~SURF_TYPE_MASK;
 			}
+#endif
 
 			surfaceFlags |= infoParms[i].surfaceFlags;
 			contentFlags |= infoParms[i].contents;
@@ -3410,6 +3419,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 
 #ifdef _SPLASHDAMAGE //karin: material parms
 		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
+			SetMaterialFlag(MF_NOATMOSPHERE);
 			continue;
 		} else if (!token.Icmp("surfaceTypeMap")) { // surfaceTypeMap "name"
 			src.ReadToken(&token);
@@ -3424,9 +3434,11 @@ void idMaterial::ParseMaterial(idLexer &src)
                 common->Warning("UNKNOWN: surfaceType '%s' in '%s'", token.c_str(), GetName());
             continue;
 		} else if (!token.Icmp("occlusionQuery")) {
+			SetMaterialFlag(MF_OCCLUSION_QUERY);
 			continue;
 		} else if (!token.Icmp("massive")) {
 			SetMaterialFlag(MF_ADVERT);
+			surfaceFlags |= SURF_DISCRETE;
 			continue;
 		} else if (!token.Icmp("vertexPositionOnly")) {
 			continue;
@@ -3435,14 +3447,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 			src.ExpectAnyToken(&t);
 			continue;
 		} else if (!token.Icmp("onlyAtmosphereInteraction")) {
-			continue;
-		} else if (!token.Icmp("noplant")) {
-			continue;
-		} else if (!token.Icmp("rendermodelclip")) {
-			continue;
-		} else if (!token.Icmp("noareas")) {
-			continue;
-		} else if (!token.Icmp("projectileclip")) {
+			SetMaterialFlag(MF_ONLYATMOSPHEREINTERACTION);
 			continue;
 		} else if (!token.Icmp("allcontent")) {
 			continue;
@@ -3454,8 +3459,10 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("lowrangeuvs")) {
 			continue;
 		} else if (!token.Icmp("shadowMapped")) {
+			SetMaterialFlag(MF_SHADOWMAPPED);
 			continue;
 		} else if (!token.Icmp("forceAtmosphere")) {
+			SetMaterialFlag(MF_FORCEATMOSPHERE);
 			continue;
 		} else if (!token.Icmp("backSide")) { // backSide water/underwater
 			idToken t;
@@ -3554,8 +3561,14 @@ bool idMaterial::Parse(const char *text, const int textLength)
 	idToken	token;
 	mtrParsingData_t parsingData;
 
+#ifdef _SPLASHDAMAGE
+	src.SetFlags(DECL_LEXER_FLAGS);
+	//src.LoadMemory( text, textLength, GetFileName(), GetLineNum() );
+	sdDeclParseHelper declHelper( this, text, textLength, src );
+#else
 	src.LoadMemory(text, textLength, GetFileName(), GetLineNum());
 	src.SetFlags(DECL_LEXER_FLAGS);
+#endif
 	src.SkipUntilString("{");
 #ifdef _SPLASHDAMAGExxx
 	src.AddIncludes(GetIncludeDependencies());

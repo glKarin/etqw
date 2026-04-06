@@ -241,6 +241,7 @@ class idDeclLocal : public idDeclBase
 		idDeclLocal 				*nextInFile;				// next decl in the decl file
 #ifdef _SPLASHDAMAGE
 		idStrList					includeDependencies;
+		idList<byte>				binarySource;
 #endif
 };
 
@@ -269,6 +270,10 @@ class idDeclFile
 	    idStr						PreprocessGuides(const char* buffer, int length);
 	    idStr						PreprocessInlineGuides(const char* buffer, int length);
 // jmarshall end
+#endif
+#ifdef _SPLASHDAMAGE
+		void						MakeBinaryFilename(idStr &filename);
+		int							LoadAndParseBinary(void);
 #endif
 };
 
@@ -312,7 +317,7 @@ class idDeclManagerLocal : public idDeclManager
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 // jmarshall
 	    void						RegisterDeclSubFolder(const char* folder, const char* extension, idList<idStr>& fileList, bool norecurse = false);
-		virtual void			RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique = false, bool norecurse = false );
+		void						RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique = false, bool norecurse = false );
 // jmarshall end
 #endif
 #ifdef _RAVEN
@@ -332,35 +337,33 @@ class idDeclManagerLocal : public idDeclManager
 
 // RAVEN BEGIN
 // jscott: precache any guide (template) files
-    virtual void				ParseGuides(void);
-    virtual	void				ShutdownGuides(void) { }
-    virtual bool				EvaluateGuide(idStr& name, idLexer* src, idStr& definition)
-    {
-        return false;
-    }
-    virtual bool				EvaluateInlineGuide(idStr& name, idStr& definition)
-    {
-        return false;
-    }
+		virtual void				ParseGuides(void);
+		virtual	void				ShutdownGuides(void) { }
+		virtual bool				EvaluateGuide(idStr& name, idLexer* src, idStr& definition) {
+			return false;
+		}
+		virtual bool				EvaluateInlineGuide(idStr& name, idStr& definition) {
+			return false;
+		}
 // RAVEN END
 
-	virtual bool					GetPlaybackData( const rvDeclPlayback *playback, int control, int now, int last, class rvDeclPlaybackData *pbd ) { (void)playback; (void)control; (void)now; (void)last; (void) pbd; return false; }
-	virtual bool					SetPlaybackData(rvDeclPlayback* playback, int now, int control, class rvDeclPlaybackData* pbd) { (void)playback; (void)control; (void)now; (void) pbd; return false; }
-	virtual void					StartPlaybackRecord(rvDeclPlayback* playback) { (void)playback; }
-	virtual bool					FinishPlayback( rvDeclPlayback *playback ) { (void)playback; return false; }
+		virtual bool					GetPlaybackData( const rvDeclPlayback *playback, int control, int now, int last, class rvDeclPlaybackData *pbd ) { (void)playback; (void)control; (void)now; (void)last; (void) pbd; return false; }
+		virtual bool					SetPlaybackData(rvDeclPlayback* playback, int now, int control, class rvDeclPlaybackData* pbd) { (void)playback; (void)control; (void)now; (void) pbd; return false; }
+		virtual void					StartPlaybackRecord(rvDeclPlayback* playback) { (void)playback; }
+		virtual bool					FinishPlayback( rvDeclPlayback *playback ) { (void)playback; return false; }
 
-	virtual const idDecl *	FindType( declType_t type, const char *name, bool makeDefault, bool noCaching ) { (void)noCaching; return FindType(type, name, makeDefault); }
+		virtual const idDecl *	FindType( declType_t type, const char *name, bool makeDefault, bool noCaching ) { (void)noCaching; return FindType(type, name, makeDefault); }
 
-	//k: find map def
-	virtual const idDeclEntityDef * FindMapDef(const char *mapName, const char *entityFilter = 0) const {
-		return GetMapDef(mapName, entityFilter);
-	}
-	virtual idDeclEntityDef * FindMapDef(const char *mapName, const char *entityFilter = 0) {
-		return const_cast<idDeclEntityDef *>(GetMapDef(mapName, entityFilter));
-	}
+		//k: find map def
+		virtual const idDeclEntityDef * FindMapDef(const char *mapName, const char *entityFilter = 0) const {
+			return GetMapDef(mapName, entityFilter);
+		}
+		virtual idDeclEntityDef * FindMapDef(const char *mapName, const char *entityFilter = 0) {
+			return const_cast<idDeclEntityDef *>(GetMapDef(mapName, entityFilter));
+		}
 
 	private:
-	const idDeclEntityDef * GetMapDef(const char *mapName, const char *entityFilter) const;
+		const idDeclEntityDef * GetMapDef(const char *mapName, const char *entityFilter) const;
 
 	public:
 		// jmarshall - Quake 4 guide(template) support
@@ -409,8 +412,7 @@ class idDeclManagerLocal : public idDeclManager
 		virtual void					AddDependencies( const idDecl* decl, const idParser& parser );
 
 		bool							LoadGlobalTokenCache(void);
-		bool							LoadDeclBinary(const char *filename);
-		void							MakeBinaryFilename(idStr &filename, const char *type, const char *name);
+		void							RegisterDeclFolderWrapperBinary( idDeclFolder *declFolder, bool unique = false, bool norecurse = false );
 #endif
 
 		virtual const idMaterial 		*MaterialByIndex(int index, bool forceParse = true);
@@ -884,8 +886,15 @@ int idDeclFile::LoadAndParse()
 	length = fileSystem->ReadFile(fileName, (void **)&buffer, &timestamp);
 
 	if (length == -1) {
+#ifdef _SPLASHDAMAGE
+		if(!LoadAndParseBinary())
+		{
+#endif
 		common->FatalError("couldn't load %s", fileName.c_str());
 		return 0;
+#ifdef _SPLASHDAMAGE
+		}
+#endif
 	}
 
 #ifdef _RAVEN // quake4 guide
@@ -913,9 +922,19 @@ int idDeclFile::LoadAndParse()
 	if (!src.LoadMemory(buffer, length, fileName))
 #endif
 	{
-		common->Error("Couldn't parse %s", fileName.c_str());
+#ifdef _SPLASHDAMAGE
 		Mem_Free(buffer);
+		if(!LoadAndParseBinary())
+		{
+#endif
+		common->Error("Couldn't parse %s", fileName.c_str());
+#if !defined(_SPLASHDAMAGE)
+		Mem_Free(buffer);
+#endif
 		return 0;
+#ifdef _SPLASHDAMAGE
+		}
+#endif
 	}
 
 	// mark all the defs that were from the last reload of this file
@@ -935,7 +954,6 @@ int idDeclFile::LoadAndParse()
 
 	// scan through, identifying each individual declaration
 #ifdef _SPLASHDAMAGE
-	//declManagerLocal.LoadDeclBinary(fileName); // test
 	src.PushDependencies();
 	bool isFirst = true; // if is first decl in this file
 #endif
@@ -1084,13 +1102,13 @@ int idDeclFile::LoadAndParse()
 #ifdef _SPLASHDAMAGE
 		if(addIncludes)
 		{
-		cd = src.GetCurrentDependency();
-		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd)) {
-			newDecl->AddIncludeDependency(d);
-		}
-		for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor) {
-			newDecl->AddIncludeDependency(*itor);
-		}
+			cd = src.GetCurrentDependency();
+			for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd)) {
+				newDecl->AddIncludeDependency(d);
+			}
+			for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor) {
+				newDecl->AddIncludeDependency(*itor);
+			}
 		}
 #endif
 		// if it is currently in use, reparse it immedaitely
@@ -1128,6 +1146,220 @@ int idDeclFile::LoadAndParse()
 
 	return checksum;
 }
+
+#ifdef _SPLASHDAMAGE
+static void Com_MakeBinaryFilename(idStr &filename, const char *type, const char *name) {
+	filename = GENERATED_PREFIX "/" GENERATED_DECLB;
+	if (type && type[0]) {
+		filename.AppendPath(type);
+	}
+	if(name && name[0])
+	{
+		filename.AppendPath(name);
+		filename.Append("b");
+	}
+}
+
+// huffman compression
+static int DecompressDeclb(binaryDeclEntry_t &entry, idList<byte> &out) {
+	//Sys_Printf("EEE %s|%s|%d|%d|%d\n", entry.type.c_str(), entry.name.c_str(), entry.uncompressedLength, entry.compressedLength,strlen((char *)entry.data.Ptr()));
+
+	idCompressor *compressor = idCompressor::AllocHuffman();
+	idFile_Memory f("declb", (const char *)entry.data.Ptr(), entry.compressedLength); // FS_READ mode
+	compressor->Init(&f, false, 16);
+	out.SetNum(entry.uncompressedLength * 2 + 2);
+	int uncompressedLength = compressor->Read(out.Ptr(), out.Num());
+
+	delete compressor;
+	return uncompressedLength;
+}
+
+void idDeclFile::MakeBinaryFilename(idStr &filename) {
+	Com_MakeBinaryFilename(filename, NULL, fileName.c_str());
+}
+
+static int LoadBinaryDeclHeader(binaryDecl_t &header, idFile *file) {
+	int magic;
+
+	file->ReadInt(magic);
+	if(magic != DCLB_MAGIC)
+	{
+		common->Warning("decl binary : encountered unknown fileid");
+		return -1;
+	}
+
+	file->ReadInt(header.version); // version == 3
+	if(header.version != DCLB_VERSION)
+	{
+		common->Warning("decl binary : wrong version (%i should be %i)", header.version, DCLB_VERSION);
+		return -1;
+	}
+
+	file->ReadInt(header.checksum);
+	file->ReadInt(header.num);
+
+	if (header.num > 0) {
+		header.entries.SetNum(header.num);
+		for (int i = 0; i < header.num; ++i) {
+			binaryDeclEntry_t &entry = header.entries[i];
+			file->ReadString(entry.type);
+			file->ReadString(entry.name);
+			byte whitespace;
+			file->ReadUnsignedChar(whitespace);
+			file->ReadUnsignedInt(entry.offset);
+			if(entry.offset >= file->Length())
+			{
+				common->Warning("Decl binary entry %s %s invalid offset: %d", entry.type.c_str(), entry.name.c_str(), entry.offset);
+				return false;
+			}
+		}
+	}
+
+	return header.checksum;
+}
+
+int idDeclFile::LoadAndParseBinary(void)
+{
+	int			i, numTypes;
+	idDeclLocal *newDecl;
+	bool		reparse;
+	idFile *file;
+	idStr path;
+	MakeBinaryFilename(path);
+
+	common->DPrintf("Load decl binary '%s'...\n", path.c_str());
+
+	file = fileSystem->OpenFileRead(path);
+
+	if(!file)
+	{
+		common->Warning("Decl binary file not exists: %s", path.c_str());
+		return 0;
+	}
+
+	binaryDecl_t header;
+	if (LoadBinaryDeclHeader(header, file) == -1) {
+		common->Warning("Decl binary read 0 entries: %s", path.c_str());
+		fileSystem->CloseFile(file);
+		return 0;
+	}
+
+	// mark all the defs that were from the last reload of this file
+	for (idDeclLocal *decl = decls; decl; decl = decl->nextInFile) {
+		decl->redefinedInReload = false;
+	}
+
+	fileSize = file->Length();
+
+	for (int m = 0; m < header.num; ++m) {
+		binaryDeclEntry_t &entry = header.entries[m];
+
+		declType_t identifiedType = DECL_MAX_TYPES;
+
+		// get the decl type from the type name
+		numTypes = declManagerLocal.GetNumDeclTypes();
+
+		for (i = 0; i < numTypes; i++) {
+			idDeclTypeInterface *typeInfo = declManagerLocal.GetDeclType(i);
+
+			if (typeInfo && typeInfo->typeName.Icmp(entry.type) == 0) {
+				identifiedType = (declType_t) typeInfo->type;
+				break;
+			}
+		}
+
+		if (i >= numTypes) {
+			if (defaultType == DECL_MAX_TYPES) {
+				common->Warning("No btype");
+				continue;
+			}
+			// use the default type
+			identifiedType = defaultType;
+		}
+
+		const idStr &name = entry.name;
+
+		// look it up, possibly getting a newly created default decl
+		reparse = false;
+		newDecl = declManagerLocal.FindTypeWithoutParsing(identifiedType, name, false);
+
+		if (newDecl) {
+			// update the existing copy
+			if (newDecl->sourceFile != this || newDecl->redefinedInReload) {
+				common->Warning("%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType(identifiedType),
+				            name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine);
+				continue;
+			}
+
+			if (newDecl->declState != DS_UNPARSED) {
+				reparse = true;
+			}
+		} else {
+			// allow it to be created as a default, then add it to the per-file list
+			newDecl = declManagerLocal.FindTypeWithoutParsing(identifiedType, name, true);
+			newDecl->nextInFile = this->decls;
+			this->decls = newDecl;
+		}
+
+		newDecl->redefinedInReload = true;
+
+		if (newDecl->textSource) {
+			Mem_Free(newDecl->textSource);
+			newDecl->textSource = NULL;
+		}
+		newDecl->SetBinarySource(NULL, 0);
+
+		//int pos = file->Tell();
+		file->Seek(entry.offset, FS_SEEK_SET);
+		file->ReadUnsignedInt(entry.uncompressedLength);
+		file->ReadUnsignedInt(entry.compressedLength);
+		entry.data.SetNum(entry.compressedLength);
+		file->Read(entry.data.Ptr(), entry.compressedLength);
+		//file->Seek(pos, FS_SEEK_SET);
+		idList<byte> out;
+		DecompressDeclb(entry, out);
+
+		if(out[0] == 6 && !idStr::Cmpn((const char *)&out[4], LEXB_VERSION, 6)) // is binary lex: like idFile::ReadString() num:int32 chars[num]
+		{
+			newDecl->SetBinarySource(&out[0], entry.uncompressedLength);
+			newDecl->sourceTextLength = 0;
+			printf("is bin|%s\n", fileName.c_str());
+		}
+		else
+		{
+			newDecl->SetTextLocal((const char *)out.Ptr(), entry.uncompressedLength - 1);
+			newDecl->sourceTextLength = entry.uncompressedLength - 1;
+			printf("is text|%s\n", fileName.c_str());
+		}
+
+		newDecl->sourceFile = this;
+		newDecl->sourceTextOffset = 0;
+		newDecl->sourceLine = 1;
+		newDecl->declState = DS_UNPARSED;
+
+		// if it is currently in use, reparse it immedaitely
+		if (reparse) {
+			newDecl->ParseLocal();
+		}
+	}
+
+	numLines = 1;
+
+	fileSystem->CloseFile(file);
+
+	// any defs that weren't redefinedInReload should now be defaulted
+	for (idDeclLocal *decl = decls ; decl ; decl = decl->nextInFile) {
+		if (decl->redefinedInReload == false) {
+			decl->MakeDefault();
+			decl->sourceTextOffset = decl->sourceFile->fileSize;
+			decl->sourceTextLength = 0;
+			decl->sourceLine = decl->sourceFile->numLines;
+		}
+	}
+
+	return header.checksum;
+}
+#endif
 
 /*
 ====================================================================================
@@ -3419,10 +3651,7 @@ void idDeclManagerLocal::RegisterDeclSubFolder(const char* folder, const char* e
 
 void idDeclManagerLocal::RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique, bool norecurse )
 {
-	(void)unique;
-
 	int i, j;
-	idStr fileName;
 	idDeclFolder *declFolder;
     idList<idStr> fileList;
 	idDeclFile *df;
@@ -3452,7 +3681,7 @@ void idDeclManagerLocal::RegisterDeclFolderWrapper( const char *folder, const ch
 	// load and parse decl files
     for ( i = 0; i < fileList.Num(); i++ )
 	{
-        fileName = fileList[i];
+        const idStr &fileName = fileList[i];
 
 		// check whether this file has already been loaded
 		for (j = 0; j < loadedFiles.Num(); j++) {
@@ -3470,6 +3699,9 @@ void idDeclManagerLocal::RegisterDeclFolderWrapper( const char *folder, const ch
 
 		df->LoadAndParse();
 	}
+#ifdef _SPLASHDAMAGE
+	RegisterDeclFolderWrapperBinary(declFolder, unique, norecurse);
+#endif
 }
 
 // jmarshall end
@@ -3489,19 +3721,35 @@ const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse 
 
 #ifdef _SPLASHDAMAGE
 void idDeclLocal::SetBinarySource( const byte* source, int length ) {
-
+	if(length > 0)
+	{
+		binarySource.SetNum(length);
+		memcpy(binarySource.Ptr(), source, length);
+	}
+	else
+		binarySource.Clear();
 }
 
 void idDeclLocal::GetBinarySource( byte*& source, int& length ) const {
-
+	if(binarySource.Num())
+	{
+		source = (byte *)Mem_Alloc(binarySource.Num());
+		memcpy(source, binarySource.Ptr(), binarySource.Num());
+		length = binarySource.Num();
+	}
+	else
+	{
+		source = NULL;
+		length = 0;
+	}
 }
 
 void idDeclLocal::FreeSourceBuffer( byte* buffer ) const {
-
+	Mem_Free(buffer);
 }
 
 bool idDeclLocal::HasBinaryBuffer() const {
-	return false;
+	return binarySource.Num() > 0;
 }
 
 const idStrList& idDeclLocal::GetIncludeDependencies() const
@@ -3519,6 +3767,50 @@ void idDeclLocal::AddIncludeDependency(const char *file)
 }
 
 
+
+void idDeclManagerLocal::RegisterDeclFolderWrapperBinary( idDeclFolder *declFolder, bool unique, bool norecurse )
+{
+	(void)unique;
+
+	int i, j;
+	idStr fileName;
+    idList<idStr> fileList;
+	idDeclFile *df;
+
+	idStr binExt = declFolder->extension;
+	binExt.Append("b");
+	idStr binFolder;
+	Com_MakeBinaryFilename(binFolder, declFolder->folder, NULL);
+
+	// scan for decl files
+    RegisterDeclSubFolder(binFolder.c_str(), binExt.c_str(), fileList, norecurse);
+	idStr binDir;
+	Com_MakeBinaryFilename(binDir, NULL, NULL);
+
+	// load and parse decl files
+    for ( i = 0; i < fileList.Num(); i++ )
+	{
+        fileName = fileList[i].Right(fileList[i].Length() - binDir.Length() - 1);
+		fileName.StripTrailingOnce("b");
+
+		// check whether this file has already been loaded
+		for (j = 0; j < loadedFiles.Num(); j++) {
+			if (fileName.Icmp(loadedFiles[j]->fileName) == 0) {
+				break;
+			}
+		}
+
+		if (j < loadedFiles.Num()) {
+			//df = loadedFiles[j];
+			continue;
+		} else {
+			df = new idDeclFile(fileName, declFolder->defaultType);
+			loadedFiles.Append(df);
+		}
+
+		df->LoadAndParseBinary();
+	}
+}
 
 // Returns the system token cache
 idTokenCache& idDeclManagerLocal::GetGlobalTokenCache() {
@@ -3726,15 +4018,6 @@ void idDeclManagerLocal::AddDependency( const idDecl* decl, const char* fileName
 void idDeclManagerLocal::AddDependencies( const idDecl* decl, const idParser& parser ) {
 }
 
-void idDeclManagerLocal::MakeBinaryFilename(idStr &filename, const char *type, const char *name) {
-	filename = GENERATED_PREFIX "/" GENERATED_DECLB;
-	if (type && type[0]) {
-		filename.AppendPath(type);
-	}
-	filename.AppendPath(name);
-	filename.Append("b");
-}
-
 static int ReadTokenCacheData(binaryTokenCache_t &header, idFile *file) {
 	header.compressedData.SetNum(header.compressedLength);
 	return file->Read(header.compressedData.Ptr(), header.compressedLength);
@@ -3747,7 +4030,7 @@ static int DecompressTokenCache(binaryTokenCache_t &header, idList<byte> &out) {
 	compressor = idCompressor::AllocHuffman();
 	idFile_Memory f("globaltokens.cacheb", (const char *)header.compressedData.Ptr(), header.compressedLength); // FS_READ mode
 	compressor->Init(&f, false, 8);
-	out.SetNum(header.uncompressedLength * 2); // +2
+	out.SetNum(header.uncompressedLength * 2 + 2); // +2
 	header.uncompressedLength = compressor->Read(out.Ptr(), out.Num());
 	delete compressor;
 	return header.uncompressedLength;
@@ -3758,7 +4041,7 @@ bool idDeclManagerLocal::LoadGlobalTokenCache(void)
 	int magic;
 	idFile *file;
 	idStr path;
-	MakeBinaryFilename(path, NULL, GLOBALTOKENS_CACHEB);
+	Com_MakeBinaryFilename(path, NULL, GLOBALTOKENS_CACHEB);
 
 	common->Printf("Decompressing the global token cache '%s'...\n", path.c_str());
 	globalTokencache.Clear();
@@ -3835,116 +4118,14 @@ bool idDeclManagerLocal::LoadGlobalTokenCache(void)
 	globalTokencache.ReadBuffer(&out[0], uncompressedLength);
 
 	common->Printf("%ziKb\n", globalTokencache.Allocated());
+#if 0
+	for(int i = 0; i < globalTokencache.Num(); i++)
+	{
+		printf("%5d: %s\n", i,globalTokencache[i].c_str());
+	}
+#endif
 
 	return true;
 }
-
-static int LoadBinaryDeclHeader(binaryDecl_t &header, idFile *file) {
-	int magic;
-
-	file->ReadInt(magic);
-	if(magic != DCLB_MAGIC)
-	{
-		common->Warning("decl binary : encountered unknown fileid");
-		return -1;
-	}
-
-	file->ReadInt(header.version); // version == 3
-	if(header.version != DCLB_VERSION)
-	{
-		common->Warning("decl binary : wrong version (%i should be %i)", header.version, DCLB_VERSION);
-		return -1;
-	}
-
-	file->ReadInt(header.checksum);
-	file->ReadInt(header.num);
-
-	if (header.num > 0) {
-		header.entries.SetNum(header.num);
-		for (int i = 0; i < header.num; ++i) {
-			binaryDeclEntry_t &entry = header.entries[i];
-			file->ReadString(entry.type);
-			file->ReadString(entry.name);
-			byte whitespace;
-			file->ReadUnsignedChar(whitespace);
-			file->ReadUnsignedInt(entry.offset);
-			if(entry.offset >= file->Length())
-			{
-				common->Warning("Decl binary entry %s %s invalid offset: %d", entry.type.c_str(), entry.name.c_str(), entry.offset);
-				return false;
-			}
-		}
-	}
-
-	return header.checksum;
-}
-
-bool idDeclManagerLocal::LoadDeclBinary(const char *filename)
-{
-	idFile *file;
-	idStr path;
-	MakeBinaryFilename(path, NULL, filename);
-
-	common->Printf("Load decl binary '%s'...\n", path.c_str());
-
-	file = fileSystem->OpenFileRead(path);
-
-	if(!file)
-	{
-		common->Warning("Decl binary file not exists: %s", path.c_str());
-		return false;
-	}
-
-	binaryDecl_t header;
-	if (LoadBinaryDeclHeader(header, file) == -1) {
-		common->Warning("Decl binary read 0 entries: %s", path.c_str());
-		fileSystem->CloseFile(file);
-		return false;
-	}
-
-	for (int i = 0; i < header.num; ++i) {
-		binaryDeclEntry_t &entry = header.entries[i];
-
-		//int pos = file->Tell();
-		file->Seek(entry.offset, FS_SEEK_SET);
-		file->ReadUnsignedInt(entry.uncompressedLength);
-		file->ReadUnsignedInt(entry.compressedLength);
-		byte a;
-		//file->ReadUnsignedChar(a);
-		entry.data.SetNum(entry.compressedLength);
-		file->Read(entry.data.Ptr(), entry.compressedLength);
-		//file->Seek(pos, FS_SEEK_SET);
-
-		// Sys_Printf("EEE %s|%s|%d|%d|%d\n", entry.type.c_str(), entry.name.c_str(), entry.uncompressedLength, entry.compressedLength,a);
-
-		/*static bool w;
-		if (!w) {
-			fileSystem->WriteFile("file", entry.data.Ptr(), entry.compressedLength);
-			w = true;
-		}*/
-
-		/*idList<char> out;
-		out.SetNum(entry.uncompressedLength*2);
-		int rrr=HuffmanDecompressText(out.Ptr(), entry.uncompressedLength, entry.data.Ptr(), entry.compressedLength);
-		for (int i = 0; i < rrr; ++i) {
-Sys_Printf("%02d ", out[i]);
-		}
-Sys_Printf("\nxxx  %d\n", rrr);*/
-
-		/*idList<byte> out;
-		idCompressor *compressor = idCompressor::AllocHuffman();
-		idFile_Memory f("globaltokens.cacheb2", (const char *)entry.data.Ptr(), entry.compressedLength); // FS_READ mode
-		compressor->Init(&f, false, 8);
-		out.SetNum(entry.uncompressedLength*2);
-		int uncompressedLength = compressor->Read(out.Ptr(), out.Num());
-		delete compressor;*/
-
-	}
-
-	fileSystem->CloseFile(file);
-
-	return true;
-}
-
 
 #endif

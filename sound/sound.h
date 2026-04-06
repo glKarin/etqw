@@ -366,7 +366,11 @@ class idSoundShader : public idDecl
 
 	private:
 		void					Init(void);
+#ifdef _SPLASHDAMAGE
+		bool					ParseShader(idParser &src);
+#else
 		bool					ParseShader(idLexer &src);
+#endif
 };
 
 /*

@@ -72,7 +72,11 @@ class idAFVector
 	public:
 		idAFVector(void);
 
+#ifdef _SPLASHDAMAGE
+		bool					Parse(idParser &src);
+#else
 		bool					Parse(idLexer &src);
+#endif
 		bool					Finish(const char *fileName, const getJointTransform_t GetJointTransform, const idJointMat *frame, void *model) const;
 		bool					Write(idFile *f) const;
 		const char 			*ToString(idStr &str, const int precision = 8);
@@ -212,6 +216,17 @@ class idDeclAF : public idDecl
 #endif
 
 	private:
+#ifdef _SPLASHDAMAGE
+		bool					ParseContents(idParser &src, int &c) const;
+		bool					ParseBody(idParser &src);
+		bool					ParseFixed(idParser &src);
+		bool					ParseBallAndSocketJoint(idParser &src);
+		bool					ParseUniversalJoint(idParser &src);
+		bool					ParseHinge(idParser &src);
+		bool					ParseSlider(idParser &src);
+		bool					ParseSpring(idParser &src);
+		bool					ParseSettings(idParser &src);
+#else
 		bool					ParseContents(idLexer &src, int &c) const;
 		bool					ParseBody(idLexer &src);
 		bool					ParseFixed(idLexer &src);
@@ -221,6 +236,7 @@ class idDeclAF : public idDecl
 		bool					ParseSlider(idLexer &src);
 		bool					ParseSpring(idLexer &src);
 		bool					ParseSettings(idLexer &src);
+#endif
 
 		bool					WriteBody(idFile *f, const idDeclAF_Body &body) const;
 		bool					WriteFixed(idFile *f, const idDeclAF_Constraint &c) const;
