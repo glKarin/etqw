@@ -126,7 +126,7 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 		{
 			src.UnreadToken(&token);
 			newDecl.Replace(parm.name.c_str(), parm.defaultValue.c_str());
-			break;
+			continue;
 		}
 
 #if 0
