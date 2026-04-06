@@ -159,7 +159,11 @@ typedef idCollisionModel* cmHandle_t; // NULL is invalid; [0] is worldMap
 typedef int cmHandle_t; // -1 is invalid; 0 is worldMap
 #endif
 
+#ifdef _SPLASHDAMAGE
+#define CM_CLIP_EPSILON		0.5f			// always stay this distance away from any model
+#else
 #define CM_CLIP_EPSILON		0.25f			// always stay this distance away from any model
+#endif
 #define CM_BOX_EPSILON		1.0f			// should always be larger than clip epsilon
 #define CM_MAX_TRACE_DIST	4096.0f			// maximum distance a trace model may be traced, point traces are unlimited
 

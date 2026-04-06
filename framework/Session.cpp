@@ -3457,6 +3457,13 @@ void idSessionLocal::Frame()
 	}
 #ifdef _SPLASHDAMAGE
 	networkService->RunFrame();
+	if(game->GetUpdateResponse() != UPDATE_GUI_NONE)
+	{
+		game->SetUpdateProgress(1.0f);
+		game->SetUpdateFromServer(false);
+		game->SetUpdateAvailability(UPDATE_AVAIL_NONE);
+		game->SetUpdateState(UPDATE_PROCESS_UPDATE);
+	}
 	game->RunFrame();
 #endif
 
@@ -3894,7 +3901,7 @@ void idSessionLocal::Init()
 
 	ReadCDKey();
 
-#ifdef _SPLASHDAMAGExxx
+#ifdef _SPLASHDAMAGE
 	idAsyncNetwork::client.SendVersionCheck();
 #endif
 

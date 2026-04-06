@@ -49,9 +49,9 @@ Visualisation code
 */
 
 const char *cm_contentsNameByIndex[] = {
+	"none",							// 0
 #ifdef _HUMANHEAD
 // HUMANHEAD: Redid these as they were out of sync
-	"none",							//
 	"solid",						// bit 0
 	"opaque",						// 1
 	"water",						// 2
@@ -84,8 +84,35 @@ const char *cm_contentsNameByIndex[] = {
 	"hunterclip",					// 27
 
 	// END HUMANHEAD
+#elif defined(_SPLASHDAMAGE)
+	"solid",						// 1
+	"opaque",						// 2
+	"water",						// 3
+	"playerclip",					// 4
+	"walkerclip",					// 5
+	"moveableclip",					// 6
+	"ikclip",						// 7
+	"slidemover",					// 8
+	"body",							// 9
+	"projectile",					// 10
+	"corpse",						// 11
+	"rendermodel",					// 12
+	"trigger",						// 13
+	"vehicleclip",					// 14
+	"explosion",					// 15
+	"monster",						// 16
+	"forcefield",					// 17
+	"shadowcollision",				// 18
+	"crosshair",					// 19
+	"flyerhive",					// 20
+	"aassolidplayer",				// 21
+	"aassolidvehicle",				// 22
+	"aasclusterportal",				// 23
+	"aasobstacle",					// 24
+	"areaportal",					// 25
+	"nocsg",						// 26
+	"occluder",						// 27
 #else
-	"none",							// 0
 	"solid",						// 1
 	"opaque",						// 2
 	"water",						// 3
@@ -93,27 +120,21 @@ const char *cm_contentsNameByIndex[] = {
 	"monsterclip",					// 5
 	"moveableclip",					// 6
 	"ikclip",						// 7
-#if !defined(_SPLASHDAMAGE)
 	"blood",						// 8
-#endif
 	"body",							// 9
 	"corpse",						// 10
 	"trigger",						// 11
-#if !defined(_SPLASHDAMAGE)
 	"aas_solid",					// 12
-#endif
 	"aas_obstacle",					// 13
-#if !defined(_SPLASHDAMAGE)
 	"flashlight_trigger",			// 14
-#endif
 #endif
 	NULL
 };
 
 int cm_contentsFlagByIndex[] = {
+	-1,								// -1
 #ifdef _HUMANHEAD
 // HUMANHEAD: Redid these as they were out of sync
-	-1,								// -1
 	CONTENTS_SOLID,					// bit 0
 	CONTENTS_OPAQUE,				// 1
 	CONTENTS_WATER,					// 2
@@ -145,8 +166,37 @@ int cm_contentsFlagByIndex[] = {
 	CONTENTS_SHOOTABLEBYARROW,		// 26
 	CONTENTS_HUNTERCLIP,			// 27
 	// END HUMANHEAD
+#elif defined(_SPLASHDAMAGE)
+	CONTENTS_SOLID,					// 0
+	CONTENTS_OPAQUE,				// 1
+	CONTENTS_WATER,					// 2
+	CONTENTS_PLAYERCLIP,			// 3
+	CONTENTS_WALKERCLIP,			// 4
+	CONTENTS_MOVEABLECLIP,			// 5
+	CONTENTS_IKCLIP,				// 6
+	CONTENTS_SLIDEMOVER,			// 7
+	CONTENTS_BODY,					// 8
+	CONTENTS_PROJECTILE,			// 9
+	CONTENTS_CORPSE,				// 10
+	CONTENTS_RENDERMODEL,			// 11
+	CONTENTS_TRIGGER,				// 12
+	CONTENTS_VEHICLECLIP,			// 13
+	CONTENTS_EXPLOSIONSOLID,		// 14
+	CONTENTS_MONSTER,				// 15
+	CONTENTS_FORCEFIELD,			// 16
+	CONTENTS_SHADOWCOLLISION,		// 17
+	CONTENTS_CROSSHAIRSOLID,		// 18
+	CONTENTS_FLYERHIVECLIP,			// 19
+
+	CONTENTS_AAS_SOLID_PLAYER,		// 20
+	CONTENTS_AAS_SOLID_VEHICLE,		// 21
+	CONTENTS_AAS_CLUSTER_PORTAL,	// 22
+	CONTENTS_AAS_OBSTACLE,			// 23
+
+	CONTENTS_AREAPORTAL,			// 24
+	CONTENTS_NOCSG,					// 25
+	CONTENTS_OCCLUDER,				// 26
 #else
-	-1,								// 0
 	CONTENTS_SOLID,					// 1
 	CONTENTS_OPAQUE,				// 2
 	CONTENTS_WATER,					// 3
@@ -154,19 +204,13 @@ int cm_contentsFlagByIndex[] = {
 	CONTENTS_MONSTERCLIP,			// 5
 	CONTENTS_MOVEABLECLIP,			// 6
 	CONTENTS_IKCLIP,				// 7
-#if !defined(_SPLASHDAMAGE)
 	CONTENTS_BLOOD,					// 8
-#endif
 	CONTENTS_BODY,					// 9
 	CONTENTS_CORPSE,				// 10
 	CONTENTS_TRIGGER,				// 11
-#if !defined(_SPLASHDAMAGE)
 	CONTENTS_AAS_SOLID,				// 12
-#endif
 	CONTENTS_AAS_OBSTACLE,			// 13
-#if !defined(_SPLASHDAMAGE)
 	CONTENTS_FLASHLIGHT_TRIGGER,	// 14
-#endif
 #endif
 	0
 };

@@ -376,14 +376,10 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 #endif
 
 #ifdef _RAVEN
-#ifdef _RAVEN_FX
+#if defined(_RAVEN_FX) || defined(_RAVEN_BSE)
 	} else if (extension.Icmp("bse") == 0) {
 		model = new rvRenderModelBSE;
 		model->InitFromFile(modelName);
-#elif defined(_RAVEN_BSE) || defined(_SPLASHDAMAGE)
-    } else if (extension.Icmp("bse") == 0) {
-        model = new rvRenderModelBSE;
-        model->InitFromFile(modelName);
 #endif
 #endif
 #ifdef _HUMANHEAD //k: beam model
@@ -395,6 +391,9 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 	} else if (extension.Icmp("modelb") == 0) {
 		model = new idRenderModelStatic;
 		model->InitFromFile(modelName);
+    } else if (extension.Icmp("bse") == 0) {
+        model = new rvRenderModelBSE;
+        model->InitFromFile(modelName);
 #endif
 	} else {
 

@@ -1240,6 +1240,11 @@ bool idRenderWorldLocal::ModelTrace(modelTrace_t &trace, qhandle_t entityHandle,
 	trace.materialType = NULL;
 	trace.material = NULL;
 #endif
+#ifdef _SPLASHDAMAGE // etqw trace
+	trace.material = NULL;
+	trace.surfaceType = NULL;
+	trace.surfaceColor.Zero();
+#endif
 
 	if (entityHandle < 0 || entityHandle >= entityDefs.Num()) {
 //		common->Error( "idRenderWorld::ModelTrace: index = %i", entityHandle );
@@ -1329,6 +1334,10 @@ bool idRenderWorldLocal::ModelTrace(modelTrace_t &trace, qhandle_t entityHandle,
 #ifdef _RAVEN // quake4 trace
 			trace.materialType = trace.material->GetMaterialType();
 #endif
+#ifdef _SPLASHDAMAGE // etqw trace
+			trace.surfaceType = trace.material->GetSurfaceType();
+			trace.surfaceColor = trace.material->GetSurfaceColor();
+#endif
 			trace.jointNumber = refEnt->hModel->NearestJoint(i, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2]);
 		}
 	}
@@ -1372,6 +1381,11 @@ bool idRenderWorldLocal::Trace(modelTrace_t &trace, const idVec3 &start, const i
 #ifdef _RAVEN // quake4 trace
 	trace.materialType = NULL;
 	trace.material = NULL;
+#endif
+#ifdef _SPLASHDAMAGE // etqw trace
+	trace.material = NULL;
+	trace.surfaceType = NULL;
+	trace.surfaceColor.Zero();
 #endif
 	trace.point = end;
 
@@ -1507,6 +1521,10 @@ bool idRenderWorldLocal::Trace(modelTrace_t &trace, const idVec3 &start, const i
 					trace.material = shader;
 #ifdef _RAVEN
 					trace.materialType = trace.material->GetMaterialType();
+#endif
+#ifdef _SPLASHDAMAGE // etqw trace
+					trace.surfaceType = trace.material->GetSurfaceType();
+					trace.surfaceColor = trace.material->GetSurfaceColor();
 #endif
 					trace.entity = &def->parms;
 					trace.jointNumber = model->NearestJoint(j, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2]);

@@ -792,9 +792,12 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile(const char *name, unsi
 #ifdef _SPLASHDAMAGE
 	if (LoadCollisionModelFile_Binary(name, mapFileCRC)) {
 		return true;
-	} else {
+	}
+	/*
+	else {
 		common->Printf("LoadCollisionModelFile: unable to load binary cm file '%s', try ascii cm file.\n", fileName.c_str());
 	}
+	*/
 #endif
 	src = new idLexer(fileName);
 	src->SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NODOLLARPRECOMPILE);
@@ -986,7 +989,7 @@ void idCollisionModelManagerLocal::ParsePolygons_Binary(idFile *file, cm_model_t
 			p->material = declManager->FindMaterial(materials[index]);
 		else
 			p->material = NULL;
-		p->contents = p->material->GetContentFlags();
+		p->contents = p->material ? p->material->GetContentFlags() : 0;
 		p->checkcount = 0;
 		// filter polygon into tree
 		R_FilterPolygonIntoTree(model, model->node, NULL, p);
