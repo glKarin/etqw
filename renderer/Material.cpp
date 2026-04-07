@@ -413,6 +413,7 @@ static infoParm_t	infoParms[] = {
 	{"occluder",	0,	0,	CONTENTS_OCCLUDER },
 	{"noareas",	0,	SURF_NOAREAS,	0 },
 	{"noplant",	0,	SURF_NOPLANT,	0 },
+	{"allcontent",	0,	0,	0x7FFFFFFF },
 #endif
 };
 
@@ -3448,8 +3449,6 @@ void idMaterial::ParseMaterial(idLexer &src)
 			continue;
 		} else if (!token.Icmp("onlyAtmosphereInteraction")) {
 			SetMaterialFlag(MF_ONLYATMOSPHEREINTERACTION);
-			continue;
-		} else if (!token.Icmp("allcontent")) {
 			continue;
 		} else if (!token.Icmp("staticOccluder")) {
 			continue;

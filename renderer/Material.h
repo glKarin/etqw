@@ -498,38 +498,23 @@ typedef enum {
 
 // contents flags, NOTE: make sure to keep the defines in doom_defs.script up to date with these!
 typedef enum {
+#ifdef _RAVEN //karin: must sync with script/defs.script | cm/CollisionModel_debug.cpp
 	CONTENTS_SOLID				= BIT(0),	// an eye is never valid in a solid
 	CONTENTS_OPAQUE				= BIT(1),	// blocks visibility (for ai)
 	CONTENTS_WATER				= BIT(2),	// used for water
 	CONTENTS_PLAYERCLIP			= BIT(3),	// solid to players
-#ifdef _SPLASHDAMAGE
-    CONTENTS_WALKERCLIP			= BIT(4),	// solid to walkers
-#else
 	CONTENTS_MONSTERCLIP		= BIT(4),	// solid to monsters
-#endif
 	CONTENTS_MOVEABLECLIP		= BIT(5),	// solid to moveable entities
 	CONTENTS_IKCLIP				= BIT(6),	// solid to IK
-#ifdef _SPLASHDAMAGE
-    CONTENTS_SLIDEMOVER			= BIT(7),	// contains players & vehicles that move like players (with a SlideMove)
-#else
 	CONTENTS_BLOOD				= BIT(7),	// used to detect blood decals
-#endif
 	CONTENTS_BODY				= BIT(8),	// used for actors
 	CONTENTS_PROJECTILE			= BIT(9),	// used for projectiles
 	CONTENTS_CORPSE				= BIT(10),	// used for dead bodies
 	CONTENTS_RENDERMODEL		= BIT(11),	// used for render models for collision detection
 	CONTENTS_TRIGGER			= BIT(12),	// used for triggers
-#if !defined(_SPLASHDAMAGE)
 	CONTENTS_AAS_SOLID			= BIT(13),	// solid for AAS
 	CONTENTS_AAS_OBSTACLE		= BIT(14),	// used to compile an obstacle into AAS that can be enabled/disabled
 	CONTENTS_FLASHLIGHT_TRIGGER	= BIT(15),	// used for triggers that are activated by the flashlight
-
-	// contents used by utils
-	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
-	CONTENTS_NOCSG				= BIT(21),	// don't cut this brush with CSG operations in the editor
-#endif
-
-#ifdef _RAVEN
 // RAVEN BEGIN
 // bdube: new clip that blocks monster visibility
 	CONTENTS_SIGHTCLIP			= BIT(16),	// used for blocking sight for actors and cameras
@@ -538,56 +523,111 @@ typedef enum {
 	CONTENTS_NOTACTICALFEATURES	= BIT(18),	// don't place tactical features here
 	CONTENTS_VEHICLECLIP		= BIT(19),	// solid to vehicles
 
+	// contents used by utils
+	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
+	CONTENTS_NOCSG				= BIT(21),	// don't cut this brush with CSG operations in the editor
 	CONTENTS_FLYCLIP			= BIT(22),	// solid to vehicles
 
 // mekberg: added
 	CONTENTS_ITEMCLIP			= BIT(23),	// so items can collide
 	CONTENTS_PROJECTILECLIP		= BIT(24),  // unlike contents_projectile, projectiles only NOT hitscans
 // RAVEN END
-/* // jmarshall23's botAI, not q4 sdk
-	CONTENTS_FOG				= BIT(25),
-	CONTENTS_LAVA				= BIT(26),
-	CONTENTS_SLIME				= BIT(27),*/
-#endif
-	
-#ifdef _HUMANHEAD
-	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
-	CONTENTS_FORCEFIELD         = BIT(16),	// forcefield matter, only passable in spirit mode
-	CONTENTS_SPIRITBRIDGE       = BIT(17),	// cjr - Collidable only by spiritwalking players
-	// END HUMANHEAD
+	/* // jmarshall23's botAI, not q4 sdk
+		CONTENTS_FOG				= BIT(25),
+		CONTENTS_LAVA				= BIT(26),
+		CONTENTS_SLIME				= BIT(27),*/
+#elif defined(_HUMANHEAD) //karin: must sync with script/defs.script | cm/CollisionModel_debug.cpp
+	CONTENTS_SOLID				= BIT(0),	// an eye is never valid in a solid
+	CONTENTS_OPAQUE				= BIT(1),	// blocks visibility (for ai)
+	CONTENTS_WATER				= BIT(2),	// used for water
+	CONTENTS_PLAYERCLIP			= BIT(3),	// solid to players
+	CONTENTS_MONSTERCLIP		= BIT(4),	// solid to monsters
+	CONTENTS_MOVEABLECLIP		= BIT(5),	// solid to moveable entities
+	CONTENTS_IKCLIP				= BIT(6),	// solid to IK
+	CONTENTS_BLOOD				= BIT(7),	// used to detect blood decals
+	CONTENTS_BODY				= BIT(8),	// used for actors
+	CONTENTS_PROJECTILE			= BIT(9),	// used for projectiles
+	CONTENTS_CORPSE				= BIT(10),	// used for dead bodies
+	CONTENTS_RENDERMODEL		= BIT(11),	// used for render models for collision detection
+	CONTENTS_TRIGGER			= BIT(12),	// used for triggers
+	CONTENTS_AAS_SOLID			= BIT(13),	// solid for AAS
+	CONTENTS_AAS_OBSTACLE		= BIT(14),	// used to compile an obstacle into AAS that can be enabled/disabled
+	CONTENTS_FLASHLIGHT_TRIGGER	= BIT(15),	// used for triggers that are activated by the flashlight
 
 	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
-	CONTENTS_BLOCK_RADIUSDAMAGE = BIT(18/*20*/),	// aob - used by objects like forcefields and chaff
-	CONTENTS_SHOOTABLE          = BIT(19/*21*/),	// pdm - bullets collide with but not player or monsters
-	CONTENTS_DEATHVOLUME        = BIT(22),	// AOB: used by death zones so the player can do a simple contents check
+	CONTENTS_FORCEFIELD			= BIT(16),	// forcefield matter, only passable in spirit mode
+	CONTENTS_SPIRITBRIDGE		= BIT(17),	// cjr - Collidable only by spiritwalking players
+	// END HUMANHEAD
+
+	// contents used by utils
+	CONTENTS_AREAPORTAL			= BIT(18),	// portal separating renderer areas
+	CONTENTS_NOCSG				= BIT(19),	// don't cut this brush with CSG operations in the editor
+
+	// HUMANHEAD CJR: Content flags.  Note that for simplicity of merging, id's areaportal and nocsg flags were left as is
+	CONTENTS_BLOCK_RADIUSDAMAGE = BIT(20),	// aob - used by objects like forcefields and chaff
+	CONTENTS_SHOOTABLE			= BIT(21),	// pdm - bullets collide with but not player or monsters
+	CONTENTS_DEATHVOLUME		= BIT(22),	// AOB: used by death zones so the player can do a simple contents check
 	CONTENTS_VEHICLECLIP		= BIT(23),	// PDM: used to clip off vehicle movement
 	CONTENTS_OWNER_TO_OWNER		= BIT(24),	// bjk: used to disable owner to owner rejection for collision
 	CONTENTS_GAME_PORTAL		= BIT(25),  // cjr: used for clipping against game portals (glow portals, etc)
 	CONTENTS_SHOOTABLEBYARROW	= BIT(26),	// pdm: solid to spirit arrows specifically as opposed to other projectiles
 	CONTENTS_HUNTERCLIP			= BIT(27),	// pdm: solid to hunters, but not hunters in vehicles
-#endif
+	// HUMANHEAD END
+#elif defined(_SPLASHDAMAGE) //karin: must sync with script/defs.script | cm/CollisionModel_debug.cpp
+	CONTENTS_SOLID				= BIT(0),	// an eye is never valid in a solid
+	CONTENTS_OPAQUE				= BIT(1),	// blocks visibility (for ai)
+	CONTENTS_WATER				= BIT(2),	// used for water
+	CONTENTS_PLAYERCLIP			= BIT(3),	// solid to players
+	CONTENTS_WALKERCLIP			= BIT(4),	// solid to walkers
+	CONTENTS_MOVEABLECLIP		= BIT(5),	// solid to moveable entities
+	CONTENTS_IKCLIP				= BIT(6),	// solid to IK
+	CONTENTS_SLIDEMOVER			= BIT(7),	// contains players & vehicles that move like players (with a SlideMove)
+	CONTENTS_BODY				= BIT(8),	// used for actors
+	CONTENTS_PROJECTILE			= BIT(9),	// used for projectiles
+	CONTENTS_CORPSE				= BIT(10),	// used for dead bodies
+	CONTENTS_RENDERMODEL		= BIT(11),	// used for render models for collision detection
+	CONTENTS_TRIGGER			= BIT(12),	// used for triggers
+	CONTENTS_VEHICLECLIP		= BIT(13),	// solid to vehicles
+	CONTENTS_EXPLOSIONSOLID		= BIT(14),	// used for selection traces
+	CONTENTS_MONSTER			= BIT(15),	// monster physics
+	CONTENTS_FORCEFIELD			= BIT(16),	// these can be hit by projectiles but other things can move through them
+	CONTENTS_SHADOWCOLLISION	= BIT(17),
+	CONTENTS_CROSSHAIRSOLID		= BIT(18),
+	CONTENTS_FLYERHIVECLIP		= BIT(19),	// flyer hive only
 
-#ifdef _SPLASHDAMAGE
-    CONTENTS_VEHICLECLIP		= BIT(13),	// solid to vehicles
-    CONTENTS_EXPLOSIONSOLID		= BIT(14),	// used for selection traces
-    CONTENTS_MONSTER			= BIT(15),	// monster physics
-    CONTENTS_FORCEFIELD			= BIT(16),	// these can be hit by projectiles but other things can move through them
-    CONTENTS_SHADOWCOLLISION	= BIT(17),
-    CONTENTS_CROSSHAIRSOLID		= BIT(18),
-    CONTENTS_FLYERHIVECLIP		= BIT(19),	// flyer hive only
+	// AAS
+	CONTENTS_AAS_SOLID_PLAYER	= BIT(24),	//
+	CONTENTS_AAS_SOLID_VEHICLE	= BIT(25),	//
+	CONTENTS_AAS_CLUSTER_PORTAL	= BIT(26),	//
+	CONTENTS_AAS_OBSTACLE		= BIT(27),	//
 
-    // AAS
-    CONTENTS_AAS_SOLID_PLAYER	= BIT(24),	//
-    CONTENTS_AAS_SOLID_VEHICLE	= BIT(25),	//
-    CONTENTS_AAS_CLUSTER_PORTAL	= BIT(26),	//
-    CONTENTS_AAS_OBSTACLE		= BIT(27),	//
-
-    // contents used by utils
-    CONTENTS_AREAPORTAL			= BIT(28),	// portal separating renderer areas
-    CONTENTS_NOCSG				= BIT(29),	// don't cut this brush with CSG operations in the editor
-    CONTENTS_OCCLUDER			= BIT(30),	// occluder brushes for outdoor occlusion
+	// contents used by utils
+	CONTENTS_AREAPORTAL			= BIT(28),	// portal separating renderer areas
+	CONTENTS_NOCSG				= BIT(29),	// don't cut this brush with CSG operations in the editor
+	CONTENTS_OCCLUDER			= BIT(30),	// occluder brushes for outdoor occlusion
 #define CONTENTS_MONSTERCLIP CONTENTS_MONSTER
 #define CONTENTS_AAS_SOLID (CONTENTS_AAS_SOLID_PLAYER|CONTENTS_AAS_SOLID_VEHICLE)
+#else
+	CONTENTS_SOLID				= BIT(0),	// an eye is never valid in a solid
+	CONTENTS_OPAQUE				= BIT(1),	// blocks visibility (for ai)
+	CONTENTS_WATER				= BIT(2),	// used for water
+	CONTENTS_PLAYERCLIP			= BIT(3),	// solid to players
+	CONTENTS_MONSTERCLIP		= BIT(4),	// solid to monsters
+	CONTENTS_MOVEABLECLIP		= BIT(5),	// solid to moveable entities
+	CONTENTS_IKCLIP				= BIT(6),	// solid to IK
+	CONTENTS_BLOOD				= BIT(7),	// used to detect blood decals
+	CONTENTS_BODY				= BIT(8),	// used for actors
+	CONTENTS_PROJECTILE			= BIT(9),	// used for projectiles
+	CONTENTS_CORPSE				= BIT(10),	// used for dead bodies
+	CONTENTS_RENDERMODEL		= BIT(11),	// used for render models for collision detection
+	CONTENTS_TRIGGER			= BIT(12),	// used for triggers
+	CONTENTS_AAS_SOLID			= BIT(13),	// solid for AAS
+	CONTENTS_AAS_OBSTACLE		= BIT(14),	// used to compile an obstacle into AAS that can be enabled/disabled
+	CONTENTS_FLASHLIGHT_TRIGGER	= BIT(15),	// used for triggers that are activated by the flashlight
+
+	// contents used by utils
+	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
+	CONTENTS_NOCSG				= BIT(21),	// don't cut this brush with CSG operations in the editor
 #endif
 	CONTENTS_REMOVE_UTIL		= ~(CONTENTS_AREAPORTAL|CONTENTS_NOCSG)
 } contentsFlags_t;
@@ -628,7 +668,7 @@ typedef enum {
 
 // surface flags
 typedef enum {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: must sync with script/defs.script
     SURF_NODAMAGE				= BIT(0),	// never give falling damage
     SURF_SLICK					= BIT(1),	// affects game physics
     SURF_COLLISION				= BIT(2),	// collision surface
@@ -660,12 +700,15 @@ typedef enum {
 	SURF_DISCRETE				= BIT(10),	// not clipped or merged by utilities
 	SURF_NOFRAGMENT				= BIT(11),	// dmap won't cut surface at each bsp boundary
 	SURF_NULLNORMAL				= BIT(12)	// renderbump will draw this surface as 0x80 0x80 0x80, which
-#ifdef _RAVEN
-		, SURF_BOUNCE = BIT(13),  // projectiles should bounce off this surface
+#ifdef _RAVEN //karin: must sync with script/defs.script
+	// RAVEN BEGIN
+// bdube: added bounce
+	, SURF_BOUNCE				= BIT(13),  // projectiles should bounce off this surface
 
 // dluetscher: added no T fix
 	SURF_NO_T_FIX				= BIT(14),	// merge surfaces (like decals), but does not try to T-fix them
 
+// RAVEN END
 #endif
 	// won't collect light from any angle
 #endif

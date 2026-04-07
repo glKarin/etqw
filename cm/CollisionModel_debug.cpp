@@ -49,9 +49,32 @@ Visualisation code
 */
 
 const char *cm_contentsNameByIndex[] = {
+#ifdef _RAVEN //karin: must sync with renderer/Material.h
 	"none",							// 0
-#ifdef _HUMANHEAD
+	"solid",						// 1
+	"opaque",						// 2
+	"water",						// 3
+	"playerclip",					// 4
+	"monsterclip",					// 5
+	"moveableclip",					// 6
+	"ikclip",						// 7
+	"blood",						// 8
+	"body",							// 9
+	"corpse",						// 10
+	"trigger",						// 11
+	"aas_solid",					// 12
+	"aas_obstacle",					// 13
+	"flashlight_trigger",			// 14
+	"sightClip",					// 15
+	"largeShotClip",				// 16
+	"notacticalfeatures",			// 17
+	"vehicleclip",					// 18
+	"flyclip",						// 19
+	"itemclip",						// 20
+	"projectileclip",				// 21
+#elif defined(_HUMANHEAD) //karin: must sync with renderer/Material.h
 // HUMANHEAD: Redid these as they were out of sync
+	"none",							//
 	"solid",						// bit 0
 	"opaque",						// 1
 	"water",						// 2
@@ -84,7 +107,8 @@ const char *cm_contentsNameByIndex[] = {
 	"hunterclip",					// 27
 
 	// END HUMANHEAD
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: must sync with renderer/Material.h
+	"none",							// 0
 	"solid",						// 1
 	"opaque",						// 2
 	"water",						// 3
@@ -113,6 +137,7 @@ const char *cm_contentsNameByIndex[] = {
 	"nocsg",						// 26
 	"occluder",						// 27
 #else
+	"none",							// 0
 	"solid",						// 1
 	"opaque",						// 2
 	"water",						// 3
@@ -132,9 +157,32 @@ const char *cm_contentsNameByIndex[] = {
 };
 
 int cm_contentsFlagByIndex[] = {
-	-1,								// -1
-#ifdef _HUMANHEAD
+#ifdef _RAVEN //karin: must sync with renderer/Material.h
+	-1,								// 0
+	CONTENTS_SOLID,					// 1
+	CONTENTS_OPAQUE,				// 2
+	CONTENTS_WATER,					// 3
+	CONTENTS_PLAYERCLIP,			// 4
+	CONTENTS_MONSTERCLIP,			// 5
+	CONTENTS_MOVEABLECLIP,			// 6
+	CONTENTS_IKCLIP,				// 7
+	CONTENTS_BLOOD,					// 8
+	CONTENTS_BODY,					// 9
+	CONTENTS_CORPSE,				// 10
+	CONTENTS_TRIGGER,				// 11
+	CONTENTS_AAS_SOLID,				// 12
+	CONTENTS_AAS_OBSTACLE,			// 13
+	CONTENTS_FLASHLIGHT_TRIGGER,	// 14
+	CONTENTS_SIGHTCLIP,				// 15
+	CONTENTS_LARGESHOTCLIP,			// 16
+	CONTENTS_NOTACTICALFEATURES,	// 17
+	CONTENTS_VEHICLECLIP,			// 18
+	CONTENTS_FLYCLIP,				// 19
+	CONTENTS_ITEMCLIP,				// 20
+	CONTENTS_PROJECTILECLIP,		// 21
+#elif defined(_HUMANHEAD) //karin: must sync with renderer/Material.h
 // HUMANHEAD: Redid these as they were out of sync
+	-1,								// -1
 	CONTENTS_SOLID,					// bit 0
 	CONTENTS_OPAQUE,				// 1
 	CONTENTS_WATER,					// 2
@@ -167,36 +215,38 @@ int cm_contentsFlagByIndex[] = {
 	CONTENTS_HUNTERCLIP,			// 27
 	// END HUMANHEAD
 #elif defined(_SPLASHDAMAGE)
-	CONTENTS_SOLID,					// 0
-	CONTENTS_OPAQUE,				// 1
-	CONTENTS_WATER,					// 2
-	CONTENTS_PLAYERCLIP,			// 3
-	CONTENTS_WALKERCLIP,			// 4
-	CONTENTS_MOVEABLECLIP,			// 5
-	CONTENTS_IKCLIP,				// 6
-	CONTENTS_SLIDEMOVER,			// 7
-	CONTENTS_BODY,					// 8
-	CONTENTS_PROJECTILE,			// 9
-	CONTENTS_CORPSE,				// 10
-	CONTENTS_RENDERMODEL,			// 11
-	CONTENTS_TRIGGER,				// 12
-	CONTENTS_VEHICLECLIP,			// 13
-	CONTENTS_EXPLOSIONSOLID,		// 14
-	CONTENTS_MONSTER,				// 15
-	CONTENTS_FORCEFIELD,			// 16
-	CONTENTS_SHADOWCOLLISION,		// 17
-	CONTENTS_CROSSHAIRSOLID,		// 18
-	CONTENTS_FLYERHIVECLIP,			// 19
+	-1,								// 0
+	CONTENTS_SOLID,					// 1
+	CONTENTS_OPAQUE,				// 2
+	CONTENTS_WATER,					// 3
+	CONTENTS_PLAYERCLIP,			// 4
+	CONTENTS_WALKERCLIP,			// 5
+	CONTENTS_MOVEABLECLIP,			// 6
+	CONTENTS_IKCLIP,				// 7
+	CONTENTS_SLIDEMOVER,			// 8
+	CONTENTS_BODY,					// 9
+	CONTENTS_PROJECTILE,			// 10
+	CONTENTS_CORPSE,				// 11
+	CONTENTS_RENDERMODEL,			// 12
+	CONTENTS_TRIGGER,				// 13
+	CONTENTS_VEHICLECLIP,			// 14
+	CONTENTS_EXPLOSIONSOLID,		// 15
+	CONTENTS_MONSTER,				// 16
+	CONTENTS_FORCEFIELD,			// 17
+	CONTENTS_SHADOWCOLLISION,		// 18
+	CONTENTS_CROSSHAIRSOLID,		// 19
+	CONTENTS_FLYERHIVECLIP,			// 20
 
-	CONTENTS_AAS_SOLID_PLAYER,		// 20
-	CONTENTS_AAS_SOLID_VEHICLE,		// 21
-	CONTENTS_AAS_CLUSTER_PORTAL,	// 22
-	CONTENTS_AAS_OBSTACLE,			// 23
+	CONTENTS_AAS_SOLID_PLAYER,		// 21
+	CONTENTS_AAS_SOLID_VEHICLE,		// 22
+	CONTENTS_AAS_CLUSTER_PORTAL,	// 23
+	CONTENTS_AAS_OBSTACLE,			// 24
 
-	CONTENTS_AREAPORTAL,			// 24
-	CONTENTS_NOCSG,					// 25
-	CONTENTS_OCCLUDER,				// 26
+	CONTENTS_AREAPORTAL,			// 25
+	CONTENTS_NOCSG,					// 26
+	CONTENTS_OCCLUDER,				// 27
 #else
+	-1,								// 0
 	CONTENTS_SOLID,					// 1
 	CONTENTS_OPAQUE,				// 2
 	CONTENTS_WATER,					// 3

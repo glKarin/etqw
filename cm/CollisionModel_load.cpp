@@ -5116,6 +5116,11 @@ void idCollisionModelManagerLocal::ClearModel(cm_model_t *model)
 	model->isTraceModel = false;
 	memset(model->_trmPolygons, 0, sizeof(cm_polygonRef_t *) * MAX_TRACEMODEL_POLYS);
 	model->_trmBrushes[0] = 0;
+#ifdef _SPLASHDAMAGE
+	model->isWorld = false;
+	model->polygons.Clear();
+	model->brushes.Clear();
+#endif
 }
 #endif
 
@@ -5552,9 +5557,7 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 	}
 	// polygons
 	model->numPolygons = trm.numPolys;
-#ifdef _SPLASHDAMAGE
 	model->polygons.SetNum(model->numPolygons);
-#endif
 	trmPoly = trm.polys;
 	for ( i = 0; i < trm.numPolys; i++, trmPoly++ ) {
 		poly = model->_trmPolygons[i]->p;
@@ -5569,13 +5572,11 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 		// link polygon at node
 		model->_trmPolygons[i]->next = model->node->polygons;
 		model->node->polygons = model->_trmPolygons[i];
-#ifdef _SPLASHDAMAGE
 		model->polygons[i] = poly;
-#endif
 	}
 	// if the trace model is convex
 	model->_trmBrushes[0]->b->material = 0; //k
-	if ( trm.isConvex ) {
+	if ( trm.isConvex && includeBrushes ) {
 		// setup brush for position test
 		model->_trmBrushes[0]->b->numPlanes = trm.numPolys;
 		for ( i = 0; i < trm.numPolys; i++ ) {
@@ -5586,6 +5587,8 @@ idCollisionModel * idCollisionModelManagerLocal::ModelFromTrm( const char *mapNa
 		model->_trmBrushes[0]->next = model->node->brushes;
 		model->node->brushes = model->_trmBrushes[0];
 		model->_trmBrushes[0]->b->material = material;
+		model->brushes.SetNum(1);
+		model->brushes[0] = model->_trmBrushes[0]->b;
 	}
 	// model bounds
 	model->bounds = trm.bounds;

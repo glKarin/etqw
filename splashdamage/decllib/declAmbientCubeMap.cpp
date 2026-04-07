@@ -253,3 +253,8 @@ void sdDeclAmbientCubeMap::GradientMapImage( idImage* image ) {
 	this->gradientMap = image;
 }
 
+void sdDeclAmbientCubeMap::SetSunParameters( const idVec3& sunDirection, const idVec3& sunColor ) {
+	this->sunDirection = sunDirection;
+	this->sunColor = sunColor;
+}
+
