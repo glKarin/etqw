@@ -408,7 +408,11 @@ void R_DeriveLightData(idRenderLightLocal *light)
 #endif
         else if( !light->lightShader )
         {
+#ifdef _SPLASHDAMAGE
+            if( light->parms.flags.pointLight )
+#else
             if( light->parms.pointLight )
+#endif
             {
                 light->lightShader = declManager->FindMaterial( "lights/defaultPointLight" );
             }
@@ -426,7 +430,11 @@ void R_DeriveLightData(idRenderLightLocal *light)
             // use the falloff from the default shader of the correct type
             const idMaterial* defaultShader;
 
+#ifdef _SPLASHDAMAGE
+            if( light->parms.flags.pointLight )
+#else
             if( light->parms.pointLight )
+#endif
             {
                 defaultShader = declManager->FindMaterial( "lights/defaultPointLight" );
                 light->falloffImage = defaultShader->LightFalloffImage();
@@ -444,12 +452,20 @@ void R_DeriveLightData(idRenderLightLocal *light)
         // ------------------------------------
 
         idRenderMatrix localProject;
-        float zScale = 1.0f;
+    	float zScale = 1.0f;
+#ifdef _SPLASHDAMAGE
+        if( light->parms.flags.parallel )
+#else
         if( light->parms.parallel )
+#endif
         {
             zScale = R_ComputeParallelLightProjectionMatrix( light, localProject );
         }
+#ifdef _SPLASHDAMAGE
+        else if( light->parms.flags.pointLight )
+#else
         else if( light->parms.pointLight )
+#endif
         {
             zScale = R_ComputePointLightProjectionMatrix( light, localProject );
         }
@@ -498,8 +514,12 @@ void R_DeriveLightData(idRenderLightLocal *light)
         }
 
         // adjust global light origin for off center projections and parallel projections
-        // we are just faking parallel by making it a very far off center for now
+    	// we are just faking parallel by making it a very far off center for now
+#ifdef _SPLASHDAMAGE
+        if( light->parms.flags.parallel )
+#else
         if( light->parms.parallel )
+#endif
         {
             idVec3 dir = light->parms.lightCenter;
             if( dir.Normalize() == 0.0f )
@@ -568,8 +588,13 @@ void R_DeriveLightData(idRenderLightLocal *light)
 	}
 #endif
 
-	if (!light->lightShader) {
-		if (light->parms.pointLight) {
+    	if (!light->lightShader) {
+#ifdef _SPLASHDAMAGE
+		if (light->parms.flags.pointLight)
+#else
+		if (light->parms.pointLight)
+#endif
+		{
 			light->lightShader = declManager->FindMaterial("lights/defaultPointLight");
 		} else {
 			light->lightShader = declManager->FindMaterial("lights/defaultProjectedLight");
@@ -583,7 +608,12 @@ void R_DeriveLightData(idRenderLightLocal *light)
 		// use the falloff from the default shader of the correct type
 		const idMaterial	*defaultShader;
 
-		if (light->parms.pointLight) {
+#ifdef _SPLASHDAMAGE
+		if (light->parms.flags.pointLight)
+#else
+		if (light->parms.pointLight)
+#endif
+		{
 			defaultShader = declManager->FindMaterial("lights/defaultPointLight");
 			light->falloffImage = defaultShader->LightFalloffImage();
 		} else {
@@ -593,8 +623,13 @@ void R_DeriveLightData(idRenderLightLocal *light)
 		}
 	}
 
-	// set the projection
-	if (!light->parms.pointLight) {
+    	// set the projection
+#ifdef _SPLASHDAMAGE
+	if (!light->parms.flags.pointLight)
+#else
+	if (!light->parms.pointLight)
+#endif
+	{
 		// projected light
 
 		R_SetLightProject(light->lightProject, vec3_origin /* light->parms.origin */, light->parms.target,
@@ -630,8 +665,13 @@ void R_DeriveLightData(idRenderLightLocal *light)
 	}
 
 	// adjust global light origin for off center projections and parallel projections
-	// we are just faking parallel by making it a very far off center for now
-	if (light->parms.parallel) {
+    	// we are just faking parallel by making it a very far off center for now
+#ifdef _SPLASHDAMAGE
+	if (light->parms.flags.parallel)
+#else
+	if (light->parms.parallel)
+#endif
+	{
 		idVec3	dir;
 
 		dir = light->parms.lightCenter;

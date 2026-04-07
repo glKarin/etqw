@@ -811,7 +811,11 @@ idInteraction::HasShadows
 */
 ID_INLINE bool idInteraction::HasShadows(void) const
 {
+#ifdef _SPLASHDAMAGE
+	return (!lightDef->parms.flags.noShadows && !entityDef->parms.noShadow && lightDef->lightShader->LightCastsShadows());
+#else
 	return (!lightDef->parms.noShadows && !entityDef->parms.noShadow && lightDef->lightShader->LightCastsShadows());
+#endif
 }
 
 /*
@@ -897,7 +901,12 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle(const idFrustum &vie
 	}
 
 	// calculate bounds of the interaction frustum projected into the view frustum
-	if (lightDef->parms.pointLight) {
+#ifdef _SPLASHDAMAGE
+	if (lightDef->parms.flags.pointLight)
+#else
+	if (lightDef->parms.pointLight)
+#endif
+	{
 		viewFrustum.ClippedProjectionBounds(frustum, idBox(lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis), projectionBounds);
 	} else {
 		viewFrustum.ClippedProjectionBounds(frustum, idBox(lightDef->frustumTris->bounds), projectionBounds);
@@ -945,7 +954,12 @@ bool idInteraction::CullInteractionByViewFrustum(const idFrustum &viewFrustum)
 			return false;
 		}
 
-		if (lightDef->parms.pointLight) {
+#ifdef _SPLASHDAMAGE
+		if (lightDef->parms.flags.pointLight)
+#else
+		if (lightDef->parms.pointLight)
+#endif
+		{
 			frustum.ConstrainToBox(idBox(lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis));
 		} else {
 			frustum.ConstrainToBox(idBox(lightDef->frustumTris->bounds));
@@ -1448,7 +1462,13 @@ void idInteraction::AddActiveInteraction(void)
 					if (sint->shader->Coverage() == MC_TRANSLUCENT) {
 						R_LinkLightSurf(&vLight->translucentInteractions, lightTris,
 						                vEntity, lightDef, shader, lightScissor, false);
-					} else if (!lightDef->parms.noShadows && sint->shader->TestMaterialFlag(MF_NOSELFSHADOW)) {
+					} else if (
+#ifdef _SPLASHDAMAGE
+						!lightDef->parms.flags.noShadows
+#else
+						!lightDef->parms.noShadows
+#endif
+						&& sint->shader->TestMaterialFlag(MF_NOSELFSHADOW)) {
 						R_LinkLightSurf(&vLight->localInteractions, lightTris,
 						                vEntity, lightDef, shader, lightScissor, false);
 					} else {

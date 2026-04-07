@@ -451,7 +451,7 @@ typedef struct renderLight_s {
         bool				insideLight		: 1;
     };
     renderLightFlags_t		flags;
-#endif
+#else
 
 	// I am sticking the four bools together so there are no unused gaps in
 	// the padded structure, which could confuse the memcmp that checks for redundant
@@ -459,12 +459,13 @@ typedef struct renderLight_s {
 	bool					noShadows;			// (should we replace this with material parameters on the shader?)
 	bool					noSpecular;			// (should we replace this with material parameters on the shader?)
 
+	bool					pointLight;			// otherwise a projection light (should probably invert the sense of this, because points are way more common)
+	bool					parallel;			// lightCenter gives the direction to the light at infinity
+#endif
+
 #ifdef _HUMANHEAD
 	bool					lowSkippable;		// HUMANHEAD bjk: True if skippable in low quality
 #endif
-
-	bool					pointLight;			// otherwise a projection light (should probably invert the sense of this, because points are way more common)
-	bool					parallel;			// lightCenter gives the direction to the light at infinity
 	idVec3					lightRadius;		// xyz radius for point lights
 	idVec3					lightCenter;		// offset the lighting direction for shading and
 	// shadows, relative to origin

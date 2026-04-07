@@ -462,10 +462,17 @@ void	idRenderWorldLocal::WriteRenderLight(qhandle_t handle, const renderLight_t 
 	session->writeDemo->WriteVec3(light->origin);
 	session->writeDemo->WriteInt(light->suppressLightInViewID);
 	session->writeDemo->WriteInt(light->allowLightInViewID);
+#ifdef _SPLASHDAMAGE
+	session->writeDemo->WriteBool(light->flags.noShadows);
+	session->writeDemo->WriteBool(light->flags.noSpecular);
+	session->writeDemo->WriteBool(light->flags.pointLight);
+	session->writeDemo->WriteBool(light->flags.parallel);
+#else
 	session->writeDemo->WriteBool(light->noShadows);
 	session->writeDemo->WriteBool(light->noSpecular);
 	session->writeDemo->WriteBool(light->pointLight);
 	session->writeDemo->WriteBool(light->parallel);
+#endif
 	session->writeDemo->WriteVec3(light->lightRadius);
 	session->writeDemo->WriteVec3(light->lightCenter);
 	session->writeDemo->WriteVec3(light->target);
@@ -542,10 +549,18 @@ void	idRenderWorldLocal::ReadRenderLight()
 	session->readDemo->ReadVec3(light.origin);
 	session->readDemo->ReadInt(light.suppressLightInViewID);
 	session->readDemo->ReadInt(light.allowLightInViewID);
+#ifdef _SPLASHDAMAGE
+	bool b;
+	session->readDemo->ReadBool(b); light.flags.noShadows = b;
+	session->readDemo->ReadBool(b); light.flags.noSpecular = b;
+	session->readDemo->ReadBool(b); light.flags.pointLight = b;
+	session->readDemo->ReadBool(b); light.flags.parallel = b;
+#else
 	session->readDemo->ReadBool(light.noShadows);
 	session->readDemo->ReadBool(light.noSpecular);
 	session->readDemo->ReadBool(light.pointLight);
 	session->readDemo->ReadBool(light.parallel);
+#endif
 	session->readDemo->ReadVec3(light.lightRadius);
 	session->readDemo->ReadVec3(light.lightCenter);
 	session->readDemo->ReadVec3(light.target);

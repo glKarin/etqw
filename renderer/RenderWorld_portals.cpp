@@ -1020,8 +1020,12 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 
             // check for being closed off behind a door
             // stgatilov #5172: there are many conditions when this should not be done, we just set areaNum = -1 in bad cases
-            if (r_useLightAreaCulling.GetInteger() &&
+        	if (r_useLightAreaCulling.GetInteger() &&
+#ifdef _SPLASHDAMAGE
+                !light->parms.flags.noShadows && light->lightShader->LightCastsShadows() &&
+#else
                 !light->parms.noShadows && light->lightShader->LightCastsShadows() &&
+#endif
                 light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]
                     ) {
                 // a light that doesn't cast shadows will still light even if it is behind a door
@@ -1043,8 +1047,12 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 #endif
         // check for being closed off behind a door
         // a light that doesn't cast shadows will still light even if it is behind a door
-        if (r_useLightCulling.GetInteger() >= 3 &&
+        	if (r_useLightCulling.GetInteger() >= 3 &&
+#ifdef _SPLASHDAMAGE
+            !light->parms.flags.noShadows && light->lightShader->LightCastsShadows()
+#else
             !light->parms.noShadows && light->lightShader->LightCastsShadows()
+#endif
             && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]) {
             continue;
         }

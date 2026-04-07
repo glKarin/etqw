@@ -432,8 +432,13 @@ viewLight_t *R_SetLightDefViewLight(idRenderLightLocal *light)
 #ifdef _SHADOW_MAPPING
     ID_RENDER_MATRIX_ASSIGN(vLight->baseLightProject, light->baseLightProject);
 	ID_RENDER_MATRIX_ASSIGN(vLight->inverseBaseLightProject, light->inverseBaseLightProject);
-    vLight->pointLight = light->parms.pointLight;
-    vLight->parallel = light->parms.parallel;
+#ifdef _SPLASHDAMAGE
+	vLight->pointLight = light->parms.flags.pointLight;
+	vLight->parallel = light->parms.flags.parallel;
+#else
+	vLight->pointLight = light->parms.pointLight;
+	vLight->parallel = light->parms.parallel;
+#endif
     vLight->lightCenter = light->parms.lightCenter;
 	vLight->lightRadius = light->parms.lightRadius;
 	vLight->shadowLOD = 0;
@@ -752,7 +757,12 @@ idScreenRect	R_CalcLightScissorRectangle(viewLight_t *vLight)
 	idPlane			eye, clip;
 	idVec3			ndc;
 
-	if (vLight->lightDef->parms.pointLight) {
+#ifdef _SPLASHDAMAGE
+	if (vLight->lightDef->parms.flags.pointLight)
+#else
+	if (vLight->lightDef->parms.pointLight)
+#endif
+	{
 		idBounds bounds;
 		idRenderLightLocal *lightDef = vLight->lightDef;
 		tr.viewDef->viewFrustum.ProjectionBounds(idBox(lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis), bounds);

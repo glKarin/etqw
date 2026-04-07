@@ -450,9 +450,14 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 		// if the shape of the light stays the same, we don't need to dump
 		// any of our derived data, because shader parms are calculated every frame
 		if (rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
-		    rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
+			rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
+#ifdef _SPLASHDAMAGE
+			rlight->flags.noShadows == light->parms.flags.noShadows && rlight->origin == light->parms.origin &&
+			rlight->flags.parallel == light->parms.flags.parallel && rlight->flags.pointLight == light->parms.flags.pointLight &&
+#else
 		    rlight->noShadows == light->parms.noShadows && rlight->origin == light->parms.origin &&
 		    rlight->parallel == light->parms.parallel && rlight->pointLight == light->parms.pointLight &&
+#endif
 		    rlight->right == light->parms.right && rlight->start == light->parms.start &&
 		    rlight->target == light->parms.target && rlight->up == light->parms.up &&
 #ifdef _SPLASHDAMAGE
