@@ -137,8 +137,14 @@ bool		idRenderWorldLocal::ProcessDemoCommand(idDemoFile *readDemo, renderView_t 
 			readDemo->ReadFloat(renderView->fov_y);
 			readDemo->ReadVec3(renderView->vieworg);
 			readDemo->ReadMat3(renderView->viewaxis);
+#ifdef _SPLASHDAMAGE
+			bool b;
+			readDemo->ReadBool(b); renderView->flags.cramZNear = b;
+			readDemo->ReadBool(b); renderView->flags.forceUpdate = b;
+#else
 			readDemo->ReadBool(renderView->cramZNear);
 			readDemo->ReadBool(renderView->forceUpdate);
+#endif
 			// binary compatibility with win32 padded structures
 			char tmp;
 			readDemo->ReadChar(tmp);
@@ -377,8 +383,13 @@ void	idRenderWorldLocal::WriteRenderView(const renderView_t *renderView)
 	session->writeDemo->WriteFloat(renderView->fov_y);
 	session->writeDemo->WriteVec3(renderView->vieworg);
 	session->writeDemo->WriteMat3(renderView->viewaxis);
+#ifdef _SPLASHDAMAGE
+	session->writeDemo->WriteBool(renderView->flags.cramZNear);
+	session->writeDemo->WriteBool(renderView->flags.forceUpdate);
+#else
 	session->writeDemo->WriteBool(renderView->cramZNear);
 	session->writeDemo->WriteBool(renderView->forceUpdate);
+#endif
 	// binary compatibility with old win32 version writing padded structures directly to disk
 	session->writeDemo->WriteUnsignedChar(0);
 	session->writeDemo->WriteUnsignedChar(0);

@@ -766,7 +766,7 @@ void idSaveGame::WriteRenderView( const renderView_t &view ) {
 	WriteVec3( view.vieworg );
 	WriteMat3( view.viewaxis );
 
-	WriteBool( view.cramZNear );
+	WriteBool( view.flags.cramZNear );
 
 	WriteInt( view.time );
 
@@ -1752,7 +1752,8 @@ void idRestoreGame::ReadRenderView( renderView_t &view ) {
 	ReadVec3( view.vieworg );
 	ReadMat3( view.viewaxis );
 
-	ReadBool( view.cramZNear );
+	bool b;
+	ReadBool( b ); view.flags.cramZNear = b;
 
 	ReadInt( view.time );
 

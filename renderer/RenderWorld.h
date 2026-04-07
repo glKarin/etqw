@@ -622,8 +622,10 @@ typedef struct renderView_s {
     idVec3					lastViewOrg;
 #endif
 
+#if !defined(_SPLASHDAMAGE)
 	bool					cramZNear;			// for cinematics, we want to set ZNear much lower
 	bool					forceUpdate;		// for an update
+#endif
 
 #ifdef _HUMANHEAD
 	bool			        viewSpiritEntities; // HUMANHEAD cjr: this renderView can see all onlyVisibleInSpirit entities

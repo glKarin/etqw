@@ -1212,7 +1212,12 @@ static bool R_PotentiallyInsideInfiniteShadow(const srfTriangles_t *occluder,
 	// chops a volume edge, the zpass rendering would fail.
 	float	znear = r_znear.GetFloat();
 
-	if (tr.viewDef->renderView.cramZNear) {
+#ifdef _SPLASHDAMAGE
+	if (tr.viewDef->renderView.flags.cramZNear)
+#else
+	if (tr.viewDef->renderView.cramZNear)
+#endif
+	{
 		znear *= 0.25f;
 	}
 

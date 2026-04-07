@@ -792,7 +792,11 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 	parms->renderView = *renderView;
 
 	if (tr.takingScreenshot) {
+#ifdef _SPLASHDAMAGE
+		parms->renderView.flags.forceUpdate = true;
+#else
 		parms->renderView.forceUpdate = true;
+#endif
 	}
 
 	// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
@@ -3753,7 +3757,12 @@ void idRenderWorldLocal::SetupMatrices( const renderView_t* renderView, float* p
 	//
 	zNear = r_znear.GetFloat();
 
-	if (renderView->cramZNear) {
+#ifdef _SPLASHDAMAGE
+	if (renderView->flags.cramZNear)
+#else
+	if (renderView->cramZNear)
+#endif
+	{
 		zNear *= 0.25;
 	}
 

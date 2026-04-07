@@ -1047,7 +1047,12 @@ void R_SetupProjection(void)
 	//
 	zNear = r_znear.GetFloat();
 
-	if (tr.viewDef->renderView.cramZNear) {
+#ifdef _SPLASHDAMAGE
+	if (tr.viewDef->renderView.flags.cramZNear)
+#else
+	if (tr.viewDef->renderView.cramZNear)
+#endif
+	{
 		zNear *= 0.25;
 	}
 
@@ -1138,7 +1143,12 @@ static void R_SetupViewFrustum(void)
 
 	dNear = r_znear.GetFloat();
 
-	if (tr.viewDef->renderView.cramZNear) {
+#ifdef _SPLASHDAMAGE
+	if (tr.viewDef->renderView.flags.cramZNear)
+#else
+	if (tr.viewDef->renderView.cramZNear)
+#endif
+	{
 		dNear *= 0.25f;
 	}
 
