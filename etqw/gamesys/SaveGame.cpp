@@ -623,12 +623,21 @@ void idSaveGame::WriteRenderEntity( const renderEntity_t &renderEntity ) {
 	WriteFloat( renderEntity.modelDepthHack );
 	WriteFloat( renderEntity.groundRadiosity );
 
+#ifdef _SPLASHDAMAGE
+	WriteBool( renderEntity.flags.noSelfShadow );
+	WriteBool( renderEntity.flags.noShadow );
+	WriteBool( renderEntity.flags.noDynamicInteractions );
+	WriteBool( renderEntity.flags.weaponDepthHack );
+
+	WriteInt( renderEntity.flags.forceUpdate );
+#else
 	WriteBool( renderEntity.noSelfShadow );
 	WriteBool( renderEntity.noShadow );
 	WriteBool( renderEntity.noDynamicInteractions );
 	WriteBool( renderEntity.weaponDepthHack );
 
 	WriteInt( renderEntity.forceUpdate );
+#endif
 	WriteInt( renderEntity.forceOutside );
 
 	WriteInt( renderEntity.maxVisDist );
@@ -1608,12 +1617,22 @@ void idRestoreGame::ReadRenderEntity( renderEntity_t &renderEntity ) {
 	ReadFloat( renderEntity.modelDepthHack );
 	ReadFloat( renderEntity.groundRadiosity );
 
+#ifdef _SPLASHDAMAGE
+	bool b;
+	ReadBool( b ); renderEntity.flags.noSelfShadow = b;
+	ReadBool( b ); renderEntity.flags.noShadow = b;
+	ReadBool( b ); renderEntity.flags.noDynamicInteractions = b;
+	ReadBool( b ); renderEntity.flags.weaponDepthHack = b;
+	int n;
+	ReadInt( n ); renderEntity.flags.forceUpdate = n;
+#else
 	ReadBool( renderEntity.noSelfShadow );
 	ReadBool( renderEntity.noShadow );
 	ReadBool( renderEntity.noDynamicInteractions );
 	ReadBool( renderEntity.weaponDepthHack );
 
 	ReadInt( renderEntity.forceUpdate );
+#endif
 	ReadInt( renderEntity.forceOutside );
 
 	ReadInt( renderEntity.maxVisDist );

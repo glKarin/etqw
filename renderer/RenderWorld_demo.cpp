@@ -681,11 +681,19 @@ void	idRenderWorldLocal::WriteRenderEntity(qhandle_t handle, const renderEntity_
 	session->writeDemo->WriteInt(ent->numJoints);
 	session->writeDemo->WriteInt(0);	/* ent->joints */
 	session->writeDemo->WriteFloat(ent->modelDepthHack);
+#ifdef _SPLASHDAMAGE
+	session->writeDemo->WriteBool(ent->flags.noSelfShadow);
+	session->writeDemo->WriteBool(ent->flags.noShadow);
+	session->writeDemo->WriteBool(ent->flags.noDynamicInteractions);
+	session->writeDemo->WriteBool(ent->flags.weaponDepthHack);
+	session->writeDemo->WriteInt(ent->flags.forceUpdate);
+#else
 	session->writeDemo->WriteBool(ent->noSelfShadow);
 	session->writeDemo->WriteBool(ent->noShadow);
 	session->writeDemo->WriteBool(ent->noDynamicInteractions);
 	session->writeDemo->WriteBool(ent->weaponDepthHack);
 	session->writeDemo->WriteInt(ent->forceUpdate);
+#endif
 
 	if (ent->customShader) {
 		session->writeDemo->WriteHashString(ent->customShader->GetName());
@@ -812,11 +820,21 @@ void	idRenderWorldLocal::ReadRenderEntity()
 	session->readDemo->ReadInt(ent.numJoints);
 	session->readDemo->ReadInt(tmp);	/* ent.joints */
 	session->readDemo->ReadFloat(ent.modelDepthHack);
+#ifdef _SPLASHDAMAGE
+	bool b;
+	session->readDemo->ReadBool(b); ent.flags.noSelfShadow = b;
+	session->readDemo->ReadBool(b); ent.flags.noShadow = b;
+	session->readDemo->ReadBool(b); ent.flags.noDynamicInteractions = b;
+	session->readDemo->ReadBool(b); ent.flags.weaponDepthHack = b;
+	int n;
+	session->readDemo->ReadInt(n); ent.flags.forceUpdate = n;
+#else
 	session->readDemo->ReadBool(ent.noSelfShadow);
 	session->readDemo->ReadBool(ent.noShadow);
 	session->readDemo->ReadBool(ent.noDynamicInteractions);
 	session->readDemo->ReadBool(ent.weaponDepthHack);
 	session->readDemo->ReadInt(ent.forceUpdate);
+#endif
 	ent.callback = NULL;
 
 	ent.customShader = NULL;

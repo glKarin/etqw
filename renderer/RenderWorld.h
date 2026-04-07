@@ -382,7 +382,7 @@ typedef struct renderEntity_s {
 
     const sdDeclImposter*			imposter;				// Imposter to use for entity (screen space based unless forceImposter is on)
     const sdDeclAmbientCubeMap*		ambientCubeMap;			// Override the ambient cubemap for this model (instead of the one specified by the area)
-#endif
+#else
 	// options to override surface shader flags (replace with material parameters?)
 	bool					noSelfShadow;			// cast shadows onto other objects,but not self
 	bool					noShadow;				// no shadow at all
@@ -395,6 +395,7 @@ typedef struct renderEntity_s {
 	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
 	// this automatically implies noShadow
 	int						forceUpdate;			// force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
+#endif
 #ifdef _HUMANHEAD
 	const hhDeclBeam*		declBeam;			// HUMANHEAD beam information
 	hhBeamNodes_t*			beamNodes;			// HUMANHEAD beam node array (sized to the number of beams in the system)

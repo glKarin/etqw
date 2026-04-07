@@ -290,7 +290,11 @@ viewEntity_t *R_SetEntityDefViewEntity(idRenderEntityLocal *def)
 	// copy the model and weapon depth hack for back-end use
 	vModel->modelDepthHack = def->parms.modelDepthHack;
 
+#ifdef _SPLASHDAMAGE
+	vModel->weaponDepthHack = def->parms.flags.weaponDepthHack;
+#else
 	vModel->weaponDepthHack = def->parms.weaponDepthHack;
+#endif
 
 	R_AxisToModelMatrix(def->parms.axis, def->parms.origin, vModel->modelMatrix);
 
@@ -519,7 +523,13 @@ void idRenderWorldLocal::CreateLightDefInteractions(idRenderLightLocal *ldef)
 
 			// some big outdoor meshes are flagged to not create any dynamic interactions
 			// when the level designer knows that nearby moving lights shouldn't actually hit them
-			if (edef->parms.noDynamicInteractions && edef->world->generateAllInteractionsCalled) {
+			if (
+#ifdef _SPLASHDAMAGE
+				edef->parms.flags.noDynamicInteractions
+#else
+				edef->parms.noDynamicInteractions
+#endif
+				 && edef->world->generateAllInteractionsCalled) {
 				continue;
 			}
 
@@ -1900,8 +1910,12 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEffect_s *space, const r
     espace->entityDef->parms.referenceSoundHandle = space->effectDef->parms.referenceSoundHandle;
     espace->entityDef->parms.weaponDepthHackInViewID = space->effectDef->parms.weaponDepthHackInViewID;
 #endif
-    espace->entityDef->parms.modelDepthHack = space->effectDef->parms.modelDepthHack;
+	espace->entityDef->parms.modelDepthHack = space->effectDef->parms.modelDepthHack;
+#ifdef _SPLASHDAMAGE
+    espace->entityDef->parms.flags.weaponDepthHack = space->effectDef->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
+#else
     espace->entityDef->parms.weaponDepthHack = space->effectDef->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
+#endif
     memcpy(espace->entityDef->parms.shaderParms, space->effectDef->parms.shaderParms, sizeof(espace->entityDef->parms.shaderParms));
 #endif
     drawSurf->space = (viewEntity_s *)espace;

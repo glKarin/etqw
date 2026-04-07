@@ -262,7 +262,12 @@ void idRenderWorldLocal::UpdateEntityDef(qhandle_t entityHandle, const renderEnt
 
 	if (def) {
 
-		if (!re->forceUpdate) {
+#ifdef _SPLASHDAMAGE
+		if (!re->flags.forceUpdate)
+#else
+		if (!re->forceUpdate)
+#endif
+		{
 
 			// check for exact match (OPTIMIZE: check through pointers more)
 			if (!re->joints && !re->callbackData && !def->dynamicModel && !memcmp(re, &def->parms, sizeof(*re))) {
