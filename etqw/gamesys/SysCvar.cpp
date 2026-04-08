@@ -354,7 +354,11 @@ idCVar g_hitBeep(					"g_hitBeep",				"1",			CVAR_GAME | CVAR_PROFILE | CVAR_ARC
 idCVar fs_debug(					"fs_debug",					"0",			CVAR_SYSTEM | CVAR_INTEGER, "", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2> );
 
 #if !defined( _XENON ) && !defined( MONOLITHIC )
+#ifdef _ETQW //karin: auto aspect ratio if = -2
+idCVar r_aspectRatio( 				"r_aspectRatio",			"-2",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio. 0 is 4:3, 1 is 16:9, 2 is 16:10, 3 is 5:4. -1 uses r_customAspectRatioH and r_customAspectRatioV. -2 auto (guess from resolution)", -2, 3 );
+#else
 idCVar r_aspectRatio( 				"r_aspectRatio",			"0",			CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "aspect ratio. 0 is 4:3, 1 is 16:9, 2 is 16:10, 3 is 5:4. -1 uses r_customAspectRatioH and r_customAspectRatioV" );
+#endif
 idCVar r_customAspectRatioH( 		"r_customAspectRatioH",		"16",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "horizontal custom aspect ratio" );
 idCVar r_customAspectRatioV( 		"r_customAspectRatioV",		"10",			CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "vertical custom aspect ratio" );
 #endif

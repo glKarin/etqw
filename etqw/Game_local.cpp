@@ -4773,6 +4773,20 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y, const int
 
 	switch( r_aspectRatio.GetInteger() ) {
 	default:
+#ifdef _ETQW //karin: auto aspect ratio if = -2
+	case -2:
+		// auto mode => use aspect ratio from resolution, assuming screen's pixels are squares
+		ratio_x = renderSystem->GetScreenWidth();
+		ratio_y = renderSystem->GetScreenHeight();
+		if(ratio_x <= 0.0f || ratio_y <= 0.0f)
+		{
+			// for some reason (maybe this is a dedicated server?) GetScreenWidth()/Height()
+			// returned 0. Assume default 4:3 to avoid assert()/Error() below.
+			fov_x = base_fov;
+			return;
+		}
+		break;
+#endif
 	case 0:
 		// 4:3
 		fov_x = base_fov;
