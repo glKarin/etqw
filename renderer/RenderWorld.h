@@ -486,9 +486,8 @@ typedef struct renderLight_s {
 #ifdef _SPLASHDAMAGE
     int						numPrelightModels;
     idRenderModel *			prelightModels[ MAX_PRELIGHTS ];
-#else
-	idRenderModel 			*prelightModel;
 #endif
+	idRenderModel 			*prelightModel;
 
 	// muzzle flash lights will not cast shadows from player and weapon world models
 	int						lightId;
@@ -523,8 +522,7 @@ typedef struct renderLight_s {
 	int						areas[ MAX_LIGHT_AREAS ];
 	
     struct atmosLightProjection_t *atmosLightProjection;
-    
-	idRenderModel 			*prelightModel;
+
 	dword					minSpecShadowColor;
 #endif
 } renderLight_t;
@@ -906,6 +904,8 @@ class idRenderWorld
 		virtual exitPortal_t	GetPortal(int areaNum, int portalNum) = 0;
 
 #ifdef _SPLASHDAMAGE
+		// set portal flags on areas directly; primarely for editor reasons
+		virtual void			SetAreaPortalFlags( int areaNum, int flags ) = 0;
     	virtual int				GetAreaPortalFlags( int areaNum ) const = 0;
     	
 	    // set the ambient lighting & atmosphere to use for this area

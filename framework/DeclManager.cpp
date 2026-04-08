@@ -884,7 +884,7 @@ int idDeclFile::LoadAndParse()
 	length = fileSystem->ReadFile(fileName, (void **)&buffer, &timestamp);
 
 	if (length == -1) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: try parse binary declb file if ascii file load failed
 		if(!LoadAndParseBinary())
 		{
 #endif
@@ -920,7 +920,7 @@ int idDeclFile::LoadAndParse()
 	if (!src.LoadMemory(buffer, length, fileName))
 #endif
 	{
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: try parse binary declb file if ascii file load failed
 		Mem_Free(buffer);
 		if(!LoadAndParseBinary())
 		{
@@ -951,7 +951,7 @@ int idDeclFile::LoadAndParse()
 	fileSize = length;
 
 	// scan through, identifying each individual declaration
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: don't need to add include files if first decl
 	src.PushDependencies();
 	bool isFirst = true; // if is first decl in this file
 #endif
@@ -1097,7 +1097,7 @@ int idDeclFile::LoadAndParse()
 		newDecl->sourceLine = sourceLine;
 		newDecl->declState = DS_UNPARSED;
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: add include files to decl text source
 		if(addIncludes)
 		{
 			cd = src.GetCurrentDependency();
@@ -1145,7 +1145,7 @@ int idDeclFile::LoadAndParse()
 	return checksum;
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary declb file/global binary token cache
 static void Com_MakeBinaryFilename(idStr &filename, const char *type, const char *name) {
 	filename = GENERATED_PREFIX "/" GENERATED_DECLB;
 	if (type && type[0]) {
@@ -1733,7 +1733,7 @@ void idDeclManagerLocal::RegisterDeclType(const char *typeName, declType_t type,
 	declType->typeName = typeName;
 	declType->type = type;
 	declType->allocator = allocator;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: callback when decl type registered
 	declType->OnRegister(type);
 #endif
 
@@ -3097,7 +3097,7 @@ void idDeclLocal::ParseLocal(void)
 	// parse
 	char *declText = (char *) _alloca((GetTextLength() + 1) * sizeof(char));
 	GetText(declText);
-#ifdef _SPLASHDAMAGE //karin: make final decl source text
+#ifdef _SPLASHDAMAGE //karin: make final decl source text(applied templates)
 	idStr finalPreprocessedBuffer;
 	//Sys_Printf("rrr|%s|%s|\n\n", GetFileName(), GetName()/*,idStr(declText,0,GetTextLength()).c_str()*/ );
 	//karin: 1. expand template if has useTemplate keyword
@@ -3697,7 +3697,7 @@ void idDeclManagerLocal::RegisterDeclFolderWrapper( const char *folder, const ch
 
 		df->LoadAndParse();
 	}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary declb files finally
 	RegisterDeclFolderWrapperBinary(declFolder, unique, norecurse);
 #endif
 }
@@ -3717,7 +3717,7 @@ const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse 
 }
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary declb file and binary global token cache file
 void idDeclLocal::SetBinarySource( const byte* source, int length ) {
 	if(length > 0)
 	{

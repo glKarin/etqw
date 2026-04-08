@@ -76,6 +76,9 @@ typedef struct portalArea_s {
     areaReference_t	effectRefs;		// head/tail of doubly linked list, may change
 #endif
 #endif
+#ifdef _SPLASHDAMAGE
+	int				portalFlags;
+#endif
 } portalArea_t;
 
 
@@ -245,6 +248,8 @@ class idRenderWorldLocal : public idRenderWorld
 		virtual	bool			AreasAreConnected( int areaNum1, int areaNum2, portalFlags_t flag );
 		virtual	bool			AreasAreConnected( int areaNum1, int areaNum2 );
 
+		// set portal flags on areas directly; primarely for editor reasons
+		virtual void			SetAreaPortalFlags( int areaNum, int flags );
 		virtual int				GetAreaPortalFlags( int areaNum ) const;
 
 		// set the ambient lighting & atmosphere to use for this area

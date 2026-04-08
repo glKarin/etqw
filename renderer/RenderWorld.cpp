@@ -954,6 +954,10 @@ exitPortal_t idRenderWorldLocal::GetPortal(int areaNum, int portalNum)
 			ret.w = portal->w;
 			ret.blockingBits = portal->doublePortal->blockingBits;
 			ret.portalHandle = portal->doublePortal - doublePortals + 1;
+#ifdef _SPLASHDAMAGE //karin: add portal plane
+			ret.plane = portal->plane;
+			ret.portalFlags = area->portalFlags;
+#endif
 			return ret;
 		}
 
@@ -3657,8 +3661,17 @@ bool idRenderWorldLocal::AreasAreConnected( int areaNum1, int areaNum2 ) {
 	return AreasAreConnected(areaNum1, areaNum2, PS_BLOCK_LOCATION);
 }
 
+void idRenderWorldLocal::SetAreaPortalFlags( int areaNum, int flags ) {
+	if (areaNum < 0 || areaNum >= numPortalAreas)
+		return;
+	portalAreas[areaNum].portalFlags = flags;
+}
+
 int idRenderWorldLocal::GetAreaPortalFlags( int areaNum ) const {
-	return 0;
+	if (areaNum >= 0 && areaNum < numPortalAreas)
+		return portalAreas[areaNum].portalFlags;
+	else
+		return 0;
 }
 
 void idRenderWorldLocal::SetAreaAmbientCubeMap( int areaNum, const sdDeclAmbientCubeMap *cubeMapDecl ) {

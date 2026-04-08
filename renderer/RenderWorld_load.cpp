@@ -1464,6 +1464,10 @@ void idRenderWorldLocal::ParseInterAreaPortals_Binary(idFile *file) {
 		portalAreas[a2].portals = p;
 
 		doublePortals[i].portals[1] = p;
+
+		doublePortals[i].blockingBits = unknown1; //karin: range is 1-7
+		SetAreaPortalFlags(a1, 1 << PORTAL_OUTSIDE);
+		SetAreaPortalFlags(a2, 1 << PORTAL_OUTSIDE);
 	}
 }
 
