@@ -939,7 +939,7 @@ void idFile_Memory::Clear(bool freeMemory)
 	}
 }
 
-#if !defined(_SPLASHDAMAGE) //karin: call in idlib
+#if !defined(_SPLASHDAMAGE) //karin: call in idlib, make it inline to .h
 /*
 =================
 idFile_Memory::SetData
@@ -1570,8 +1570,7 @@ int idFile::WriteFloatArray( const float* src, const int num ) {
 
 
 
-#ifdef _SPLASHDAMAGE
-// Fake implement, NON-buffered
+#ifdef _SPLASHDAMAGE //karin: idFile_Buffered fake implemention, NON-buffered
 idFile_Buffered::idFile_Buffered( const int granularity )
 : source(NULL),
 	granularity(granularity),

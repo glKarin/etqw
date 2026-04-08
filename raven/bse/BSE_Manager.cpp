@@ -233,7 +233,7 @@ void rvBSEManagerLocal::StartFrame()
 //──────────────────────────────────────────────────────────────────────────────
 void rvBSEManagerLocal::EndFrame()
 {
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 	if ( DebugHudActive() )
 	{
 		game->DebugSetInt("fx_num_active", mPerfCounters[PERF_NUM_BSE]);

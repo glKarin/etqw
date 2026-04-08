@@ -528,7 +528,7 @@ void idAsyncNetwork::ExecuteSessionCommand(const char *sessCmd)
 {
 	if (sessCmd[ 0 ]) {
 		if (!idStr::Icmp(sessCmd, "game_startmenu")) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: show main menu
 			game->ShowMainMenu();
 #else
 			session->SetGUI(game->StartMenu(), NULL);

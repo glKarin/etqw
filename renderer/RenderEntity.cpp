@@ -56,7 +56,7 @@ idRenderEntityLocal::idRenderEntityLocal()
 #ifdef _D3BFG_CULLING
     globalReferenceBounds	= bounds_zero;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 	lastModifiedGameTime	= -1;
 #endif
 }

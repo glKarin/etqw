@@ -566,6 +566,7 @@ template<class T> ID_INLINE T	Min(T x, T y)
 #include "Properties.h"
 #include "TextUtilities.h"
 
+//karin: wide-character string and multibytes character string convert
 idStr WStrToStr( const wchar_t *wstr );
 idWStr StrToWStr( const char *str );
 idStr WStrToStr( const idWStr &wstr );

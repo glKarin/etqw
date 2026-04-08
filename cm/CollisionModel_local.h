@@ -163,7 +163,7 @@ typedef struct cm_nodeBlock_s {
 	struct cm_nodeBlock_s *next;				// next block with nodes
 } cm_nodeBlock_t;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 struct cm_model_t : public idCollisionModel
 #else
 typedef struct cm_model_s 
@@ -201,14 +201,14 @@ typedef struct cm_model_s
 	int						numMergedPolys;
 	int						usedMemory;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 trm
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: quake4/ETQW trm
 	bool					isTrmModel;
 	bool                    markRemove; //k: if ture, marked can replace
 	bool                    isTraceModel; //k: if true, returned by ModelFromTrm
 	cm_polygonRef_t         *_trmPolygons[MAX_TRACEMODEL_POLYS];
 	cm_brushRef_t           *_trmBrushes[1];
 	int                     refCount;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: for GetXXX methods
 	idList<cm_polygon_t *>	polygons;
 	idList<cm_brush_t *>	brushes;
 	bool					isWorld;
@@ -245,7 +245,7 @@ typedef struct cm_model_s
 	virtual void				SetWorld( bool tf );
 #endif
 }
-#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
  cm_model_t
 #endif
  ;
@@ -634,7 +634,7 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		void			ParseBrushes(idLexer *src, cm_model_t *model);
 		bool			ParseCollisionModel(idLexer *src);
 		bool			LoadCollisionModelFile(const char *name, unsigned int mapFileCRC);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary cmb file
 		cm_node_t 		*ParseNodes_Binary(idFile *file, cm_model_t *model, cm_node_t *parent);
 		void			ParseVertices_Binary(idFile *file, cm_model_t *model);
 		void			ParseEdges_Binary(idFile *file, cm_model_t *model);

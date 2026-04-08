@@ -43,7 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 #define PROC_FILE_ID					"PROC"
 #define PROC_FILEVERSION				"4" // jmarshall: changed to string. 
 #define	PROC_FILE_DOOM3_ID				"mapProcFile003"
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: proc file on ETQW
 #include "Material.h"
 #define	PROC_FILE_ID			"mapProcFile010"
 #else

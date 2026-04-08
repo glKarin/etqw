@@ -1070,7 +1070,7 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 	tr.pc.c_entityDefCallbacks++;
 
 	if (tr.viewDef) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: don't update if last call renderEntity_t::callback game time not modified: cause call R_FreeStaticTriSurfVertexCaches after ambientCache has allocated in idMd5Mesh::UpdateSurface on same frame
 		int lastModifiedGameTime = 0;
 		update = def->parms.callback(&def->parms, &tr.viewDef->renderView, lastModifiedGameTime);
 		if(update && lastModifiedGameTime == def->lastModifiedGameTime)
@@ -1080,7 +1080,7 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 		update = def->parms.callback(&def->parms, &tr.viewDef->renderView);
 #endif
 	} else {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: don't update if last call renderEntity_t::callback game time not modified: cause call R_FreeStaticTriSurfVertexCaches after ambientCache has allocated in idMd5Mesh::UpdateSurface on same frame
 		int lastModifiedGameTime = 0;
 		update = def->parms.callback(&def->parms, NULL, lastModifiedGameTime);
 		if(update && lastModifiedGameTime == def->lastModifiedGameTime)

@@ -119,7 +119,7 @@ int idWaveFile::Open(const char *strFileName, waveformatex_t *pwfx)
 
 	if (!mhmmio) {
 		mdwSize = 0;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: find ogg file on generated/ogg if wav not available
 		idStr oggName = S_SoundFileNameToOgg(name.c_str());
 		if (fileSystem->ReadFile(oggName, NULL, NULL) != -1) {
 			return OpenOGG(oggName, pwfx);
@@ -130,7 +130,7 @@ int idWaveFile::Open(const char *strFileName, waveformatex_t *pwfx)
 
 	if (mhmmio->Length() <= 0) {
 		mhmmio = NULL;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: find ogg file on generated/ogg if wav not available
 		idStr oggName = S_SoundFileNameToOgg(name.c_str());
 		if (fileSystem->ReadFile(oggName, NULL, NULL) != -1) {
 			return OpenOGG(oggName, pwfx);
@@ -142,7 +142,7 @@ int idWaveFile::Open(const char *strFileName, waveformatex_t *pwfx)
 	if (ReadMMIO() != 0) {
 		// ReadMMIO will fail if its an not a wave file
 		Close();
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: find ogg file on generated/ogg if wav not available
 		idStr oggName = S_SoundFileNameToOgg(name.c_str());
 		if (fileSystem->ReadFile(oggName, NULL, NULL) != -1) {
 			return OpenOGG(oggName, pwfx);
@@ -155,7 +155,7 @@ int idWaveFile::Open(const char *strFileName, waveformatex_t *pwfx)
 
 	if (ResetFile() != 0) {
 		Close();
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: find ogg file on generated/ogg if wav not available
 		idStr oggName = S_SoundFileNameToOgg(name.c_str());
 		if (fileSystem->ReadFile(oggName, NULL, NULL) != -1) {
 			return OpenOGG(oggName, pwfx);
@@ -176,7 +176,7 @@ int idWaveFile::Open(const char *strFileName, waveformatex_t *pwfx)
 		return 0;
 	}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: find ogg file on generated/ogg if wav not available
 	idStr oggName = S_SoundFileNameToOgg(name.c_str());
 	if (fileSystem->ReadFile(oggName, NULL, NULL) != -1) {
 		return OpenOGG(oggName, pwfx);

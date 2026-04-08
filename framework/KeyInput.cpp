@@ -182,7 +182,7 @@ keyname_t keynames[] = {
 
 static const int	MAX_KEYS = 256;
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: move to .h
 class idKey
 {
 	public:
@@ -398,7 +398,7 @@ const char *idKeyInput::KeyNumToString(int keynum, bool localized)
 				}
 
 #else
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: TODO wchar
 				return (const char *)common->GetLanguageDict()->GetString(kn->strId);
 #else
 				return common->GetLanguageDict()->GetString(kn->strId);
@@ -866,6 +866,6 @@ const char * IN_FirstKeyFromBinding(const char *binding, int *keycode = NULL)
 }
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: for assess some variables on KeyInput.cpp
 #include "framework/KeyInputManager.cpp"
 #endif

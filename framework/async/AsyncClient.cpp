@@ -827,7 +827,7 @@ void idAsyncClient::ProcessUnreliableServerMessage(const idBitMsg &msg)
 				session->MessageBox(MSG_ABORT, common->GetLanguageDict()->GetString("#str_04317"), common->GetLanguageDict()->GetString("#str_04318"), false, "pure_abort");
 			} else {
 				// load map
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: hide main menu
 				game->HideMainMenu();
 #else
 				session->SetGUI(NULL, NULL);
@@ -943,7 +943,7 @@ void idAsyncClient::ProcessReliableMessagePure(const idBitMsg &msg)
 	int			gamePakChecksum;
 	int			serverGameInitId;
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: hide main menu
 	game->HideMainMenu();
 #else
 	session->SetGUI(NULL, NULL);
@@ -998,7 +998,7 @@ void idAsyncClient::ReadLocalizedServerString(const idBitMsg &msg, char *out, in
 {
 	msg.ReadString(out, maxLen);
 	// look up localized string. if the message is not an #str_ format, we'll just get it back unchanged
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 	idStr::snPrintf(out, maxLen - 1, "%ls", common->GetLanguageDict()->GetString(out));
 #else
 	idStr::snPrintf(out, maxLen - 1, "%s", common->GetLanguageDict()->GetString(out));
@@ -1245,7 +1245,7 @@ void idAsyncClient::ProcessConnectResponseMessage(const netadr_t from, const idB
 	InitGame(serverGameInitId, serverGameFrame, serverGameTime, serverSI);
 
 	// load map
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: hide main menu
 	game->HideMainMenu();
 #else
 	session->SetGUI(NULL, NULL);
@@ -1577,7 +1577,7 @@ bool idAsyncClient::ValidatePureServerChecksums(const netadr_t from, const idBit
 
 			if (idAsyncNetwork::clientDownload.GetInteger() == 0) {
 				// never any downloads
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 				idStr message;
 				message = va(common->GetLanguageDict()->GetString("#str_07210"), Sys_NetAdrToString(from));
 #else
@@ -1636,12 +1636,11 @@ bool idAsyncClient::ValidatePureServerChecksums(const netadr_t from, const idBit
 			return false;
 		}
 		case PURE_NODLL:
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 		{
 			wchar_t tmp[1024] = {0};
 			idWStr::snPrintf(tmp, 1024, common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
-			idStr tmp2 = WStrToStr(tmp);
-			common->Printf("%s", tmp2.c_str());
+			common->Printf("%ls", tmp);
 		}
 #else
 			common->Printf(common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
@@ -2116,7 +2115,7 @@ idAsyncClient::SendVersionCheck
 */
 void idAsyncClient::SendVersionCheck(bool fromMenu)
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: fake check update
 	common->Printf("Check updates(fake)......");
 	game->SetUpdateMessage(L"No availability update: not supported");
 	game->SetUpdateProgress(1.0f);
@@ -2291,7 +2290,7 @@ void idAsyncClient::HandleDownloads(void)
 				fileSystem->BackgroundDownload(&backgroundDownload);
 				idStr dltitle;
 				// "Downloading %s"
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 				wchar_t tmp[1024] = {0};
 				idWStr::snPrintf(tmp, 1024, common->GetLanguageDict()->GetString("#str_07213"), dlList[ 0 ].filename.c_str());
 				dltitle = WStrToStr(tmp);

@@ -1293,7 +1293,7 @@ class idSoundCache
 		idList<idSoundSample *>	listCache;
 };
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: convert sound file name to generated ogg file name
 idStr S_SoundFileNameToOgg(const char *raw);
 #endif
 #endif /* !__SND_LOCAL_H__ */

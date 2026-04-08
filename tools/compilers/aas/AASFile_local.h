@@ -66,7 +66,7 @@ class idAASFileLocal : public idAASFile
 		bool						Load(const idStr &fileName, unsigned int mapFileCRC);
 		bool						Write(const idStr &fileName, unsigned int mapFileCRC);
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary aasb file
 		bool						LoadBinary(const idStr &fileName, unsigned int mapFileCRC);
 		bool						ParseIndexBinary(idFile *file, idList<aasIndex_t> &indexes);
 		bool						ParsePlanesBinary(idFile *file);

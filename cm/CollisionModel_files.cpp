@@ -41,12 +41,12 @@ If you have questions concerning this license or the applicable additional terms
 
 #define CM_FILE_EXT			"cm"
 #define CM_FILEID			"CM"
-#ifdef _RAVEN // Quake4 cm file version
+#ifdef _RAVEN //karin: Quake4 cm file version
 #define CM_FILEVERSION		"3"
 #define CM_DOOM3_FILEVERSION		"1.00"
 #define CM_IS_QUAKE4_VERSION() (cmVersion == CM_FILEVERSION)
 #define CM_WRITE_IS_QUAKE4_VERSION() (cmVersion == CM_FILEVERSION)
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW cm file version
 #define CM_FILEVERSION		"2.70"
 #else
 #define CM_FILEVERSION		"1.00"
@@ -151,7 +151,7 @@ void idCollisionModelManagerLocal::WritePolygons(idFile *fp, cm_node_t *node)
         }
         else
 		fp->WriteFloatString(" \"%s\"\n", p->material->GetName());
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW cm file
         fp->WriteFloatString(" \"%s\"", p->material->GetName());
         fp->WriteFloatString(" %f %f %f %f %f %f", 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
         fp->WriteFloatString(" %d %d\n", 0, 0);
@@ -232,7 +232,7 @@ void idCollisionModelManagerLocal::WriteBrushes(idFile *fp, cm_node_t *node)
         }
         else
 		fp->WriteFloatString(" ( %f %f %f ) \"%s\"\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents));
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW cm file
         fp->WriteFloatString(" ( %f %f %f ) \"%s\" %d\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents), 0);
 #else
 		fp->WriteFloatString(" ( %f %f %f ) \"%s\"\n", b->bounds[1][0], b->bounds[1][1], b->bounds[1][2], StringFromContents(b->contents));
@@ -259,7 +259,7 @@ void idCollisionModelManagerLocal::WriteCollisionModel(idFile *fp, cm_model_t *m
     fp->WriteFloatString("collisionModel \"%s\" %d {\n", model->name.c_str(), 0); // TODO: export cm v3 file
     else
 	fp->WriteFloatString("collisionModel \"%s\" {\n", model->name.c_str());
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW cm file
     fp->WriteFloatString("collisionModel \"%s\" %d {\n", model->name.c_str(), 0);
 #else
 	fp->WriteFloatString("collisionModel \"%s\" {\n", model->name.c_str());
@@ -292,7 +292,7 @@ void idCollisionModelManagerLocal::WriteCollisionModel(idFile *fp, cm_model_t *m
     fp->WriteFloatString("\tpolygons /* numPolygons = */ %d /* numPolygonEdges = */ %d {\n", polygonMemory, 0); // TODO: export cm v3 file
     else
 	fp->WriteFloatString("\tpolygons /* polygonMemory = */ %d {\n", polygonMemory);
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW cm file
     fp->WriteFloatString("\tpolygons /* numPolygons = */ %d /* numPolygonEdges = */ %d {\n", polygonMemory, 0);
 #else
 	fp->WriteFloatString("\tpolygons /* polygonMemory = */ %d {\n", polygonMemory);
@@ -308,7 +308,7 @@ void idCollisionModelManagerLocal::WriteCollisionModel(idFile *fp, cm_model_t *m
     fp->WriteFloatString("\tbrushes /* numBrushes = */ %d /* numBrushPlanes = */ %d {\n", brushMemory, 0); // TODO: export cm v3 file
     else
 	fp->WriteFloatString("\tbrushes /* brushMemory = */ %d {\n", brushMemory);
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW cm file
     fp->WriteFloatString("\tbrushes /* numBrushes = */ %d /* numBrushPlanes = */ %d {\n", brushMemory, 0);
 #else
 	fp->WriteFloatString("\tbrushes /* brushMemory = */ %d {\n", brushMemory);
@@ -525,7 +525,7 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
         common->Warning("%s: Expect integer number of numPolygonEdges, but read %s", __FUNCTION__, token.c_str());
     }
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: ETQW cm file
 	if (!src->CheckTokenType(TT_NUMBER, 0, &token)) {
 		common->Warning("%s: Expect integer number of numPolygonEdges, but read %s", __FUNCTION__, token.c_str());
 	}
@@ -569,7 +569,7 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
         src->ParseInt();
         }
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: ETQW cm file
 		// 0 0 0.0000305196 -0 0 -0.0000305157 32768 32768
 		src->ParseFloat();
 		src->ParseFloat();
@@ -608,7 +608,7 @@ void idCollisionModelManagerLocal::ParseBrushes(idLexer *src, cm_model_t *model)
         common->Warning("%s: Expect integer number of numBrushPlanes, but read %s", __FUNCTION__, token.c_str());
     }
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: ETQW cm file
 	if (!src->CheckTokenType(TT_NUMBER, 0, &token)) {
 		common->Warning("%s: Expect integer number of numBrushPlanes, but read %s", __FUNCTION__, token.c_str());
 	}
@@ -652,7 +652,7 @@ void idCollisionModelManagerLocal::ParseBrushes(idLexer *src, cm_model_t *model)
         src->ParseInt();
         }
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: ETQW cm file
         src->ParseInt();
 #endif
 	}
@@ -705,7 +705,7 @@ bool idCollisionModelManagerLocal::ParseCollisionModel(idLexer *src)
 #endif
 	//HUMANHEAD END
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: ETQW cm file
 	if (!src->ExpectTokenType(TT_NUMBER, TT_INTEGER, &token))
 	{
 		common->Warning("%s: Expect integer number, but read %s", __FUNCTION__, token.c_str());
@@ -749,7 +749,7 @@ bool idCollisionModelManagerLocal::ParseCollisionModel(idLexer *src)
 		src->Error("ParseCollisionModel: bad token \"%s\"", token.c_str());
 	}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: mark as worldMap model
 	model->SetWorld(!idStr::Icmpn(model->name, WORLD_MODEL_NAME, idStr::Length(WORLD_MODEL_NAME)));
 #endif
 	// calculate edge normals
@@ -789,7 +789,7 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile(const char *name, unsi
 	// load it
 	fileName = name;
 	fileName.SetFileExtension(CM_FILE_EXT);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse ETQW binary cmb file
 	if (LoadCollisionModelFile_Binary(name, mapFileCRC)) {
 		return true;
 	}
@@ -840,7 +840,7 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile(const char *name, unsi
 
 	crc = token.GetUnsignedLongValue();
 
-#if !defined(_SPLASHDAMAGE) //karin: 0
+#if !defined(_SPLASHDAMAGE) //karin: cm CRC is 0
 	if (mapFileCRC && crc != mapFileCRC) {
 		common->Printf("%s is out of date\n", fileName.c_str());
 		delete src;
@@ -871,7 +871,7 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile(const char *name, unsi
 	return true;
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse ETQW binary cmb file
 cm_node_t * idCollisionModelManagerLocal::ParseNodes_Binary(idFile *file, cm_model_t *model, cm_node_t *parent) {
 	cm_node_t *node;
 

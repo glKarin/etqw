@@ -1168,7 +1168,7 @@ class idMaterial : public idDecl
 #if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) //karin: fragment shader parms
 		void				ParseFragmentParm(idLexer &src, newShaderStage_t *newStage);
 #endif
-#ifdef _SPLASHDAMAGE //karin: fragment shader parms
+#ifdef _SPLASHDAMAGE
 		void				ParseFragmentParm(idParser &src, newShaderStage_t *newStage);
 #endif
 #ifdef _GLSL_PROGRAM

@@ -183,7 +183,7 @@ static void Session_Map_f(const idCmdArgs &args)
 	// make sure the level exists before trying to change, so that
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: no .map file
 	sprintf(string, "maps/%s.entities", map.c_str());
 #else
 	sprintf(string, "maps/%s.map", map.c_str());
@@ -239,7 +239,7 @@ static void Session_DevMap_f(const idCmdArgs &args)
 	// make sure the level exists before trying to change, so that
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: no .map file
 	sprintf(string, "maps/%s.entities", map.c_str());
 #else
 	sprintf(string, "maps/%s.map", map.c_str());
@@ -367,7 +367,7 @@ static void Session_PromptKey_f(const idCmdArgs &args)
 		}
 
 		// the auth server may have replied and set an error message, otherwise use a default
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 		idStr prompt_msg = sessLocal.GetAuthMsg();
 #else
 		const char *prompt_msg = sessLocal.GetAuthMsg();
@@ -485,7 +485,7 @@ void idSessionLocal::Clear()
 #ifdef _RAVEN
 	finishedLoading = false;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: for calc elapsed time
 	gameTime = 0;
 #endif
 }
@@ -677,7 +677,7 @@ void idSessionLocal::ShowLoadingGui()
 
 	console->Close();
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: level loading UI
 	game->ShowLevelLoadScreen(mapSpawnData.serverInfo.GetString("si_map"));
 #endif
 	// introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
@@ -1162,11 +1162,11 @@ void idSessionLocal::StartPlayingRenderDemo(idStr demoName)
 		guiLoading = uiManager->FindGui( "guis/loading/mplevel.gui", true, false, true );
 	else
 		guiLoading = uiManager->FindGui( "guis/loading/generic.gui", true, false, true );
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 #else
 	guiLoading = uiManager->FindGui("guis/map/loading.gui", true, false, true);
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: level loading UI
 	game->UpdateLevelLoadScreen(common->GetLanguageDict()->GetString("#str_02087"));
 #else
 	guiLoading->SetStateString("demo", common->GetLanguageDict()->GetString("#str_02087"));
@@ -3900,10 +3900,6 @@ void idSessionLocal::Init()
 	guiHandle = NULL;
 
 	ReadCDKey();
-
-#ifdef _SPLASHDAMAGE
-	idAsyncNetwork::client.SendVersionCheck();
-#endif
 
 	if(harm_g_skipHitEffect.GetBool())
 		G_SkipHitEffect(true); // cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "skipHitEffect;");

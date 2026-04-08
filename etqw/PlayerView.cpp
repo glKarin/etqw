@@ -360,7 +360,7 @@ idPlayerView::SingleView2D
 */
 void idPlayerView::SingleView2D( idPlayer* viewPlayer ) {
 	sdPostProcess* postProcess = gameLocal.localPlayerProperties.GetPostProcess();
-	postProcess->DrawPost();		
+	postProcess->DrawPost();
 
 	if ( sdDemoManager::GetInstance().g_showDemoHud.GetBool() && sdDemoManager::GetInstance().InPlayBack() ) {
 		sdUserInterfaceLocal* ui = gameLocal.GetUserInterface( sdDemoManager::GetInstance().GetHudHandle() );

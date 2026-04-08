@@ -530,7 +530,7 @@ void Sys_SyncState(void)
             state |= STATE_LOADING;
         else
         {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: check GUI is actived
             if(game->IsMainMenuActive())
                 state |= STATE_MENU;
             else

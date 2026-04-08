@@ -199,7 +199,7 @@ void idGuiModel::EmitSurface(guiModelSurface_t *surf, float modelMatrix[16], flo
 
 	renderEntity_t renderEntity;
 	memset(&renderEntity, 0, sizeof(renderEntity));
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: register shaderParms from GUI
 	if(surf->registerShaderParms)
 		memcpy(renderEntity.shaderParms, surf->registers, sizeof(surf->registers));
 #endif
@@ -339,7 +339,7 @@ void idGuiModel::AdvanceSurf()
 	s.firstIndex = indexes.Num();
 	s.numVerts = 0;
 	s.firstVert = verts.Num();
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: register shaderParms from GUI
 	memset(&s.registers[0], 0, sizeof(s.registers));
 	s.registerShaderParms = false;
 #endif
@@ -733,7 +733,7 @@ void idGuiModel::DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVe
 	memcpy(&verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
 sdGuiModel::sdGuiModel()
 	: idGuiModel()
 {

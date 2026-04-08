@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 guide
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 #ifdef _RAVEN_BSE
 #include "../raven/bse/BSE.h"
 #else
@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: binary data info
 
 #define GENERATED_PREFIX "generated"
 #define GENERATED_DECLB "declb"
@@ -134,7 +134,7 @@ missing reload over a previously explicit definition
 //#define GET_HUFFMAN_FREQUENCIES
 //#endif
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: move to .h
 class idDeclType
 {
 	public:
@@ -239,7 +239,7 @@ class idDeclLocal : public idDeclBase
 		bool						redefinedInReload;		// used during file reloading to make sure a decl that has
 		// its source removed will be defaulted
 		idDeclLocal 				*nextInFile;				// next decl in the decl file
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: binary decls
 		idStrList					includeDependencies;
 		idList<byte>				binarySource;
 #endif
@@ -271,7 +271,7 @@ class idDeclFile
 	    idStr						PreprocessInlineGuides(const char* buffer, int length);
 // jmarshall end
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: binary decls
 		void						MakeBinaryFilename(idStr &filename);
 		int							LoadAndParseBinary(void);
 #endif
@@ -314,11 +314,9 @@ class idDeclManagerLocal : public idDeclManager
 		virtual const idMaterial 		*FindMaterial(const char *name, bool makeDefault = true);
 		virtual const idDeclSkin 		*FindSkin(const char *name, bool makeDefault = true);
 		virtual const idSoundShader 	*FindSound(const char *name, bool makeDefault = true);
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-// jmarshall
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: recurse subfolders
 	    void						RegisterDeclSubFolder(const char* folder, const char* extension, idList<idStr>& fileList, bool norecurse = false);
 		void						RegisterDeclFolderWrapper( const char *folder, const char *extension, declType_t defaultType, bool unique = false, bool norecurse = false );
-// jmarshall end
 #endif
 #ifdef _RAVEN
 		virtual const idDeclTable *		FindTable( const char *name, bool makeDefault = true );

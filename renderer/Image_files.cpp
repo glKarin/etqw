@@ -1300,7 +1300,7 @@ bool R_LoadCubeImages(const char *imgName, cubeFiles_t extensions, byte *pics[6]
 	return true;
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: export to idFileSystem
 void R_LoadTGA(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp) {
 	LoadTGA(name, pic, width, height, timestamp);
 }

@@ -214,7 +214,7 @@ int cm_contentsFlagByIndex[] = {
 	CONTENTS_SHOOTABLEBYARROW,		// 26
 	CONTENTS_HUNTERCLIP,			// 27
 	// END HUMANHEAD
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: must sync with renderer/Material.h
 	-1,								// 0
 	CONTENTS_SOLID,					// 1
 	CONTENTS_OPAQUE,				// 2
@@ -525,7 +525,7 @@ void idCollisionModelManagerLocal::DrawModel(cmHandle_t handle, const idVec3 &mo
 	cm_model_t *model;
 	idVec3 viewPos;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	if(!handle)
 #else
 	if (handle < 0 && handle >= numModels)
@@ -539,7 +539,7 @@ void idCollisionModelManagerLocal::DrawModel(cmHandle_t handle, const idVec3 &mo
 		cm_drawColor.ClearModified();
 	}
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	model = static_cast<cm_model_t *>(handle);
 #else
 	model = models[ handle ];
@@ -648,7 +648,7 @@ void idCollisionModelManagerLocal::DebugOutput(const idVec3 &origin)
 	timer.Start();
 
 	for (i = 0; i < cm_testTimes.GetInteger(); i++) {
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 		int index = cm_testModel.GetInteger();
 		if (index >= 0 && index <= MAX_SUBMODELS && index <= maxModels && models[index])
 		Translation(&trace, start, testend[i], &itm, boxAxis, CONTENTS_SOLID|CONTENTS_PLAYERCLIP, models[index], vec3_origin, modelAxis);
@@ -704,7 +704,7 @@ void idCollisionModelManagerLocal::DebugOutput(const idVec3 &origin)
 
 		for (i = 0; i < cm_testTimes.GetInteger(); i++) {
 			rotation.SetOrigin(testend[i]);
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 			int index = cm_testModel.GetInteger();
 			if (index >= 0 && index <= MAX_SUBMODELS && index <= maxModels && models[index])
 				Rotation(&trace, start, rotation, &itm, boxAxis, CONTENTS_SOLID|CONTENTS_PLAYERCLIP, models[index], vec3_origin, modelAxis);

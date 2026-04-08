@@ -387,7 +387,7 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 		model = new hhRenderModelBeam;
 		model->InitFromFile(modelName);
 #endif
-#ifdef _SPLASHDAMAGE //karin: modelb
+#ifdef _SPLASHDAMAGE //karin: binary modelb/BSE model
 	} else if (extension.Icmp("modelb") == 0) {
 		model = new idRenderModelStatic;
 		model->InitFromFile(modelName);

@@ -205,7 +205,7 @@ class idSessionLocal : public idSession
 
 		int					timeHitch;
 
-	bool				menuActive;
+		bool				menuActive;
 #if !defined(_RAVEN) && !defined(_SPLASHDAMAGE) //karin: move to idSession
 		idSoundWorld 		*menuSoundWorld;			// so the game soundWorld can be muted
 #endif
@@ -298,7 +298,7 @@ class idSessionLocal : public idSession
 			return loadingSaveGame;
 		}
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: for calc elapsed time
 		int					gameTime;
 #endif
 

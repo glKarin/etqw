@@ -44,7 +44,7 @@ void usercmd_t::ByteSwap(void)
 	sequence = LittleLong(sequence);
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
 bool operator==(const userButtons_t &a, const userButtons_t &b) {
 	return a.activate == b.activate
 	&& a.altAttack == b.altAttack

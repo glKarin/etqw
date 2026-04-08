@@ -330,7 +330,7 @@ void idRenderModelStatic::InitFromFile(const char *fileName)
 	} else if (extension.Icmp("ma") == 0) {
 		loaded		= LoadMA(name);
 		reloadable	= true;
-#ifdef _SPLASHDAMAGE //karin: modelb
+#ifdef _SPLASHDAMAGE //karin: binary modelb
 	} else if (extension.Icmp("modelb") == 0) {
 		loaded		= LoadModelBinary(name);
 		reloadable	= true;
@@ -379,7 +379,7 @@ void idRenderModelStatic::InitFromFile(const char *fileName)
 		common->Warning("idRenderModelStatic::InitFromFile: unknown type for model: \'%s\'", name.c_str());
 		loaded		= false;
 	}
-#ifdef _SPLASHDAMAGE //karin: modelb
+#ifdef _SPLASHDAMAGE //karin: binary modelb
 	if (!loaded && extension.Icmp("modelb")) {
 		idStr modelbName = ModelBinaryName(name);
 		loaded		= LoadModelBinary(modelbName.c_str());

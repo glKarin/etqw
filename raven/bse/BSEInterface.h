@@ -1,7 +1,7 @@
 #ifndef _BSE_INTERFACE_H_INC_
 #define _BSE_INTERFACE_H_INC_
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: effect file extension
 const char* const BSE_EFFECT_EXTENSION = "effect";
 #else
 #define	BSE_EFFECT_EXTENSION		"fx"

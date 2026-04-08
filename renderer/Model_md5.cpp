@@ -64,7 +64,7 @@ idMD5Mesh::idMD5Mesh()
 	numTris			= 0;
 	deformInfo		= NULL;
 	surfaceNum		= 0;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11: flags
 	flags			= 0;
 #endif
 }
@@ -112,7 +112,7 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 	//
 	if (parser.CheckTokenString("name")) {
 		parser.ReadToken(&name);
-#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 name
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 mesh name
 		meshName = name.c_str();
 		
 #endif
@@ -128,7 +128,7 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 
 	shader = declManager->FindMaterial(shaderName);
 
-#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 flags
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 mesh flags
 	parser.ReadToken(&token);
 	if(!idStr::Icmp(token, "flags"))
 	{
@@ -1178,7 +1178,7 @@ int idRenderModelMD5::GetSurfaceMask(const char *name) const
 	return  0;
 }
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using mesh name on md5mesh version 11
 int idRenderModelMD5::FindSurfaceId( const char *surfaceName ) {
 	int i;
 	const idMD5Mesh			*mesh;

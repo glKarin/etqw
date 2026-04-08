@@ -34,7 +34,7 @@ typedef struct {
 	int					numVerts;
 	int					firstIndex;
 	int					numIndexes;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: register shaderParms from GUI
 	float				registers[MAX_ENTITY_SHADER_PARMS];
 	bool				registerShaderParms;
 #endif
@@ -71,12 +71,12 @@ class idGuiModel
 		idList<guiModelSurface_t>	surfaces;
 		idList<glIndex_t>		indexes;
 		idList<idDrawVert>	verts;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
 		friend class sdGuiModel;
 #endif
 };
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
 class sdGuiModel : public idGuiModel
 {
 public:

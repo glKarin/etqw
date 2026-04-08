@@ -929,7 +929,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 
 	memset(results, 0, sizeof(*results));
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	if (!model) {
 		common->Printf("idCollisionModelManagerLocal::Translation: invalid model\n");
 		return;
@@ -1003,7 +1003,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 	tw.contacts = idCollisionModelManagerLocal::contacts;
 	tw.maxContacts = idCollisionModelManagerLocal::maxContacts;
 	tw.numContacts = 0;
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	tw.model = static_cast<cm_model_t *>(model);
 #else
 	tw.model = idCollisionModelManagerLocal::models[model];
@@ -1073,7 +1073,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 			results->c.dist += modelOrigin * results->c.normal;
 		}
 
-#ifdef _RAVEN // quake4 trace
+#ifdef _RAVEN
 // jmarshall - quake 4
 		if (results->c.material)
 		{
@@ -1085,7 +1085,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 		}
 // jmarshall end
 #endif
-#ifdef _SPLASHDAMAGE // etqw trace
+#ifdef _SPLASHDAMAGE
 		if (results->c.material)
 		{
 			results->c.surfaceType = results->c.material->GetSurfaceType();
@@ -1341,7 +1341,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 		}
 	}
 
-#ifdef _RAVEN // quake4 trace
+#ifdef _RAVEN
 // jmarshall - quake 4
 	if (results->c.material)
 	{
@@ -1353,7 +1353,7 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
 	}
 // jmarshall end
 #endif
-#ifdef _SPLASHDAMAGE // etqw trace
+#ifdef _SPLASHDAMAGE
 	if (results->c.material)
 	{
 		results->c.surfaceType = results->c.material->GetSurfaceType();

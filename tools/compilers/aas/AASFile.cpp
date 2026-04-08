@@ -701,7 +701,7 @@ idAASFileLocal::~idAASFileLocal(void)
 	for (i = 0; i < areas.Num(); i++) {
 		for (reach = areas[i].reach; reach; reach = next) {
 			next = reach->next;
-#if !defined(_SPLASHDAMAGE) //karin: in idList
+#if !defined(_SPLASHDAMAGE) //karin: allocated in idList
 			delete reach;
 #endif
 		}
@@ -1398,7 +1398,7 @@ bool idAASFileLocal::Load(const idStr &fileName, unsigned int mapFileCRC)
 	int depth;
 	unsigned int c;
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary aasb file
 	if (LoadBinary(fileName, mapFileCRC)) {
 		return true;
 	} else {
@@ -1703,11 +1703,10 @@ void idAASFileLocal::DeleteClusters(void)
 	clusters.Append(cluster);
 }
 
-#ifdef _SPLASHDAMAGE
-
+#ifdef _SPLASHDAMAGE //karin: parse binary aasb file
 /*
 ============
-idAASSettings::FromFile
+idAASSettings::ReadFromFileBinary
 ============
 */
 bool idAASSettings::ReadFromFileBinary(idFile *file)

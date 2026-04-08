@@ -359,7 +359,7 @@ static void R_ImageAdd(byte *data1, int width1, int height1, byte *data2, int wi
 
 // we build a canonical token form of the image program here
 static char parseBuffer[MAX_IMAGE_NAME];
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save image program stage parms
 idStrList stageParms;
 #endif
 
@@ -419,7 +419,7 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 	ID_TIME_T		timestamp;
 
 	src.ReadToken(&token);
-#ifdef _SPLASHDAMAGE //karin: image program: stage parms
+#ifdef _SPLASHDAMAGE //karin: image program stage parms
 	if (!token.Icmp("linear")) {
 		stageParms.Append(token);
 		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
@@ -759,7 +759,7 @@ R_LoadImageProgram
 */
 void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamps, textureDepth_t *depth)
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: image program stage parms
 	stageParms.Clear();
 #endif
 #ifdef _SPLASHDAMAGE

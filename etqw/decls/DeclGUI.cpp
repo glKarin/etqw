@@ -586,7 +586,7 @@ sdDeclGUIWindow* sdDeclGUI::ParseWindow( idLexer& src ) {
 sdDeclGUI::Parse
 ================
 */
-bool sdDeclGUI::Parse( const char *text, const int textLength ) {		
+bool sdDeclGUI::Parse( const char *text, const int textLength ) {
 	idToken token;
 	idParser src;
 	src.SetFlags( LEXER_FLAGS ); 	

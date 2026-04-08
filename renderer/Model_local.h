@@ -254,7 +254,7 @@ class idMD5Mesh
 
 		void						TransformVerts(idDrawVert *verts, const idJointMat *joints);
 		void						TransformScaledVerts(idDrawVert *verts, const idJointMat *joints, float scale);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11: color/flags
 		struct vertColor_t {
 			byte r, g, b, a;
 			vertColor_t() : r(0), g(0), b(0), a(0) {}
@@ -299,7 +299,7 @@ class idRenderModelMD5 : public idRenderModelStatic
 	    idRenderModelStatic *       DynamicModelSnapshot(void) { return staticModelInstance; }
 	    void                        ClearDynamicModelSnapshot(void) { staticModelInstance = NULL; }
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: has mesh name on md5mesh version 11
 		virtual int					FindSurfaceId( const char *surfaceName );
 #endif
 
@@ -550,7 +550,7 @@ class idRenderModelSprite : public idRenderModelStatic
 		virtual	idBounds		Bounds(const struct renderEntity_s *ent) const;
 };
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // bse model
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE model
 #ifdef _RAVEN_BSE
 #include "../raven/renderer/Model_bse.h"
 #else

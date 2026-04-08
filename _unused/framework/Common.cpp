@@ -216,7 +216,7 @@ class idCommonLocal : public idCommon
 #ifdef _RAVEN
 		virtual const char* GetLocalizedString(const char* key, int langIndex) { return GetLanguageDict()->GetString(key); }
 		virtual const char* GetLocalizedString(const char* key) { return GetLanguageDict()->GetString(key); }
-		virtual int GetUserCmdMSec(void) { return 16; } 
+		virtual int GetUserCmdMSec(void) { return 16; }
 		virtual int GetUserCmdHz(void) { return 60; }
 
 	virtual void				ModViewThink ( void ) { }

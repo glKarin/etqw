@@ -247,7 +247,7 @@ typedef struct areaReference_s {
 	idRenderEntityLocal 	*entity;					// only one of entity / light will be non-NULL
 	idRenderLightLocal 	*light;					// only one of entity / light will be non-NULL
 	struct portalArea_s		*area;					// so owners can find all the areas they are in
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 #ifdef _RAVEN_BSE
     rvRenderEffectLocal	*effect;		// head/tail of doubly linked list, may change
 #endif
@@ -415,7 +415,7 @@ class idRenderEntityLocal : public idRenderEntity
         idBounds		globalReferenceBounds;
         RenderMatrix			inverseBaseModelProject;	// transforms the unit cube to exactly cover the model in world space
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 		int						lastModifiedGameTime;
 #endif
 };
@@ -572,7 +572,7 @@ typedef struct viewDef_s {
 	// crossing a closed door.  This is used to avoid drawing interactions
 	// when the light is behind a closed door.
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
     struct viewEffect_s	*viewEffects;			// chain of all viewEffects effecting view
 #endif
 

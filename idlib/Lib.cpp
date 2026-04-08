@@ -787,7 +787,7 @@ void AssertFailed(const char *file, int line, const char *expression)
 #endif
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wide-character string and multibytes character string convert
 idStr WStrToStr( const wchar_t *wstr ) {
 	if (!wstr || !wstr[0]) {
 		return idStr();

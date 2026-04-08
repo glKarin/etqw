@@ -566,7 +566,7 @@ void idCollisionModelManagerLocal::FreePolygon(cm_model_t *model, cm_polygon_t *
 	if (model->polygonBlock == NULL) {
 		Mem_Free(poly);
 	}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save polygon to list
 	model->polygons.Remove(poly);
 #endif
 }
@@ -584,7 +584,7 @@ void idCollisionModelManagerLocal::FreeBrush(cm_model_t *model, cm_brush_t *brus
 	if (model->brushBlock == NULL) {
 		Mem_Free(brush);
 	}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save brush to list
 	model->brushes.Remove(brush);
 #endif
 }
@@ -645,7 +645,7 @@ void idCollisionModelManagerLocal::FreeTree_r(cm_model_t *model, cm_node_t *head
 idCollisionModelManagerLocal::FreeModel
 ================
 */
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: free model memory actually
 void idCollisionModelManagerLocal::FreeModel_memory(cm_model_t *model)
 #else
 void idCollisionModelManagerLocal::FreeModel(idCollisionModel *_model)
@@ -654,12 +654,10 @@ void idCollisionModelManagerLocal::FreeModel(idCollisionModel *_model)
 	cm_polygonRefBlock_t *polygonRefBlock, *nextPolygonRefBlock;
 	cm_brushRefBlock_t *brushRefBlock, *nextBrushRefBlock;
 	cm_nodeBlock_t *nodeBlock, *nextNodeBlock;
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-// jmarshall - quake 4 crash fix - trm models are shared.
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: quake 4 crash fix - trm models are shared. we using isTraceModel flag for mark standalone trmModel
 	if (model->isTrmModel) {
 		return;
 	}
-// jmarshall end
 
 	if(model->isTraceModel)
 	{
@@ -885,7 +883,7 @@ cm_model_t *idCollisionModelManagerLocal::AllocModel(void)
 	                                                                             model->numSharpEdges = model->numRemovedPolys =
 	                                                                                             model->numMergedPolys = model->usedMemory = 0;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 trm
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: quake4/ETQW standalone trm model
 	model->isTrmModel = false;
 	model->markRemove = false;
 	model->isTraceModel = false;
@@ -893,7 +891,7 @@ cm_model_t *idCollisionModelManagerLocal::AllocModel(void)
 	model->_trmBrushes[0] = 0;
 	model->refCount = 1;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save to linear index list
 	model->polygons.Clear();
 	model->brushes.Clear();
 #endif
@@ -1019,7 +1017,7 @@ cm_polygon_t *idCollisionModelManagerLocal::AllocPolygon(cm_model_t *model, int 
 	} else {
 		poly = (cm_polygon_t *) Mem_Alloc(size);
 	}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save polygon to list
 	model->polygons.Append(poly);
 #endif
 
@@ -1050,7 +1048,7 @@ cm_brush_t *idCollisionModelManagerLocal::AllocBrush(cm_model_t *model, int numP
 #ifdef _RAVEN
 	brush->material = NULL;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save brush to list
 	model->brushes.Append(brush);
 #endif
 
@@ -1143,7 +1141,7 @@ void idCollisionModelManagerLocal::SetupTrmModelStructure(void)
 	trmBrushes[0]->b->checkcount = 0;
 	trmBrushes[0]->b->contents = -1;		// all contents
 	trmBrushes[0]->b->numPlanes = 0;
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // quake4 trm
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: mark isTrmModel for DOOM3 trmModel
 // jmarshall
 	model->isTrmModel = true;
 // jmarshall end
@@ -1184,7 +1182,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 
 	// if not a valid trace model
 	if (trm.type == TRM_INVALID || !trm.numPolys) {
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: DOOM3 shared trmModel
 		return models[TRACE_MODEL_HANDLE];
 #else
 		return TRACE_MODEL_HANDLE;
@@ -1217,7 +1215,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 	// polygons
 	model->numPolygons = trm.numPolys;
 	trmPoly = trm.polys;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save polygon to list
 	model->polygons.SetNum(model->numPolygons);
 #endif
 
@@ -1236,7 +1234,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 		// link polygon at node
 		trmPolygons[i]->next = model->node->polygons;
 		model->node->polygons = trmPolygons[i];
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: save polygon to list
 		model->polygons[i] = poly;
 #endif
 	}
@@ -1254,6 +1252,10 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 		// link brush at node
 		trmBrushes[0]->next = model->node->brushes;
 		model->node->brushes = trmBrushes[0];
+#ifdef _SPLASHDAMAGE //karin: save brush to list
+		model->brushes.SetNum(1);
+		model->brushes[0] = model->_trmBrushes[0]->b;
+#endif
 	}
 
 	// model bounds
@@ -1261,7 +1263,7 @@ cmHandle_t idCollisionModelManagerLocal::SetupTrmModel(const idTraceModel &trm, 
 	// convex
 	model->isConvex = trm.isConvex;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: DOOM3 shared trmModel
 	return models[TRACE_MODEL_HANDLE];
 #else
 	return TRACE_MODEL_HANDLE;
@@ -3633,7 +3635,7 @@ cm_model_t *idCollisionModelManagerLocal::LoadRenderModel(const char *fileName)
 
 	if ((extension.Icmp("ase") != 0) && (extension.Icmp("lwo") != 0) && (extension.Icmp("ma") != 0)
         && (extension.Icmp(MD5_STATIC_MESH_EXT) != 0)
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: modelb binary model file directly
 		&& (extension.Icmp("modelb") != 0)
 #endif
 #ifdef _MODEL_OBJ
@@ -3902,26 +3904,21 @@ cmHandle_t idCollisionModelManagerLocal::FindModel(const char *name)
 
 	// check if this model is already loaded
 	for (i = 0; i < numModels; i++) {
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-		if (!static_cast<cm_model_t *>(models[i])->name.Icmp(name))
-#else
-		if (!models[i]->name.Icmp(name))
-#endif
-		{
+		if (!models[i]->name.Icmp(name)) {
 			break;
 		}
 	}
 
 	// if the model is already loaded
 	if (i < numModels) {
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 		return models[i];
 #else
 		return i;
 #endif
 	}
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	return NULL;
 #else
 	return -1;
@@ -3958,7 +3955,7 @@ void idCollisionModelManagerLocal::AccumulateModelInfo(cm_model_t *model)
 {
 	int i;
 
-#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE)
+#if !defined(_RAVEN) && !defined(_SPLASHDAMAGE) //karin: cm_model_t is Non-POD
 	memset(model, 0, sizeof(*model));
 #endif
 
@@ -3986,7 +3983,7 @@ void idCollisionModelManagerLocal::AccumulateModelInfo(cm_model_t *model)
 idCollisionModelManagerLocal::ModelInfo
 ================
 */
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 void idCollisionModelManagerLocal::ModelInfo(int model)
 #else
 void idCollisionModelManagerLocal::ModelInfo(cmHandle_t model)
@@ -4234,7 +4231,7 @@ idCollisionModelManagerLocal::GetModelName
 const char *idCollisionModelManagerLocal::GetModelName(cmHandle_t model) const
 {
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-	return model ? static_cast<cm_model_t *>(model)->GetName() : "";
+	return model ? static_cast<cm_model_t *>(model)->name.c_str() : "";
 #else
 	if (model < 0 || model > MAX_SUBMODELS || model >= numModels || !models[model]) {
 		common->Printf("idCollisionModelManagerLocal::GetModelName: invalid model handle\n");
@@ -4414,7 +4411,7 @@ idCollisionModelManagerLocal::LoadModel
 */
 cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const bool precache)
 {
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	cmHandle_t handle;
 #else
 	int handle;
@@ -4422,7 +4419,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 
 	handle = FindModel(modelName);
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
 	if (handle)
 #else
 	if (handle >= 0)
@@ -4433,7 +4430,7 @@ cmHandle_t idCollisionModelManagerLocal::LoadModel(const char *modelName, const 
 
 	if (numModels >= MAX_SUBMODELS) {
 		common->Error("idCollisionModelManagerLocal::LoadModel: no free slots\n");
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler //Quake4: if no collision model !!! index 0 is worldMap model in DOOM 3 !!!
 //#if _RETURN_WORLDMAP_MODEL_IF_FINDMODEL_IS_NULL
 //        return models[0]; //karin: 2025-12-12: return index 0 model(worldMap)
 //#else

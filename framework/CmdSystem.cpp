@@ -903,8 +903,6 @@ void idCmdSystemLocal::PushFrameCommand( const char* command ) {
 }
 
 void idCmdSystemLocal::ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t callback, const char* typeName ) {
-	int i, num;
-
 	if (declManager == NULL) {
 		return;
 	}

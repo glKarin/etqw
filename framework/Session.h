@@ -176,7 +176,7 @@ class idSession
 		idDemoFile 	*writeDemo;
 		int				renderdemoVersion;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: move from idSessionLocal
 	    idSoundWorld*	menuSoundWorld;			// so the game soundWorld can be muted
 #endif
 #ifdef _HUMANHEAD
@@ -186,11 +186,10 @@ class idSession
 #ifdef _MULTITHREAD
 		virtual void UpdateScreen(byte *data, bool outOfSequence) = 0;
 #endif
-#ifdef _SPLASHDAMAGE
-	//karin: compat for DOOM3
-	virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
-	virtual const char *MessageBox(msgBoxType_t type, const char *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
-	virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
+#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+		virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
+		virtual const char *MessageBox(msgBoxType_t type, const char *message, const wchar_t *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
+		virtual const char *MessageBox(msgBoxType_t type, const wchar_t *message, const char *title = NULL, bool wait = false, const char *fire_yes = NULL, const char *fire_no = NULL, bool network = false) = 0;
 #endif
 };
 

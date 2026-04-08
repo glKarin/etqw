@@ -58,7 +58,7 @@ idCVar harm_g_normalizeMovementDirection("harm_g_normalizeMovementDirection", "0
 extern bool smooth_joystick;
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: engine to game interface
 static idStrPool *globalKeyPool;
 static idStrPool *globalValuePool;
 
@@ -152,7 +152,7 @@ idGame 		*game = NULL;
 idGameEdit 	*gameEdit = NULL;
 #endif
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 bool com_debugHudActive = false;
 #endif
 
@@ -3342,10 +3342,10 @@ void idCommonLocal::LoadGameDLL(void)
 	gameImport.declManager				= ::declManager;
 	gameImport.AASFileManager			= ::AASFileManager;
 	gameImport.collisionModelManager	= ::collisionModelManager;
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // bse
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 	gameImport.bse						= ::bse;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: engine to game interface
 	gameImport.deviceContext			= ::deviceContext;
 #ifndef _XENON
 	gameImport.networkService			= ::networkService;
@@ -3602,7 +3602,11 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 		}
 #endif
 
-        //Com_CheckVersion();
+		//Com_CheckVersion();
+
+#ifdef _SPLASHDAMAGE //karin: check update for GUI
+		cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "checkNewVersion");
+#endif
 
 		com_fullyInitialized = true;
 	}

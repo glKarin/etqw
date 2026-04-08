@@ -70,7 +70,7 @@ void idRenderWorldLocal::FreeWorld()
 		if (area->entityRefs.areaNext != &area->entityRefs) {
 			common->Error("FreeWorld: unexpected remaining entityRefs");
 		}
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 #ifdef _RAVEN_BSE
         if (area->effectRefs.areaNext != &area->effectRefs) {
             common->Error("FreeWorld: unexpected remaining effectRefs");
@@ -367,7 +367,7 @@ void idRenderWorldLocal::SetupAreaRefs()
 		portalAreas[i].entityRefs.areaNext =
 		        portalAreas[i].entityRefs.areaPrev =
 		                &portalAreas[i].entityRefs;
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 #ifdef _RAVEN_BSE
         portalAreas[i].effectRefs.areaNext =
                 portalAreas[i].effectRefs.areaPrev =
@@ -630,7 +630,7 @@ void idRenderWorldLocal::FreeDefs()
 		}
 	}
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 #ifdef _RAVEN_BSE
     // free all effectDefs
     for ( i = 0; i < effectDefs.Num(); ++i )
@@ -677,7 +677,7 @@ bool idRenderWorldLocal::InitFromMap(const char *name)
 	// load it
 	filename = name;
 	filename.SetFileExtension(PROC_FILE_EXT);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary procb file
 	if (InitFromMap_Binary(name)) {
 		return true;
 	} else {
@@ -1143,7 +1143,7 @@ bool idRenderWorldLocal::HasSkybox(int areaNum)
 }
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: parse binary procb file
 idRenderModel *idRenderWorldLocal::ParseShadowModel_Binary(idFile *file) {
 	idRenderModel	*model;
 	idStr			token;

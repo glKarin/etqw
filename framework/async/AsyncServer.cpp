@@ -328,7 +328,7 @@ void idAsyncServer::ExecuteMapChange(void)
 	cmdSystem->BufferCommandText(CMD_EXEC_NOW, "rescanSI");
 
 	sprintf(mapName, "maps/%s", sessLocal.mapSpawnData.serverInfo.GetString("si_map"));
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: no .map file
 	mapName.SetFileExtension(".entities");
 #else
 	mapName.SetFileExtension(".map");
@@ -393,7 +393,7 @@ void idAsyncServer::ExecuteMapChange(void)
 	gameTimeResidual = 0;
 	memset(userCmds, 0, sizeof(userCmds));
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: TODO call OnUserStartMap before client initialization
 	idStr reason;
 	idStr mapName2 = mapName;
 	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_africa", reason, mapName2);
@@ -917,8 +917,10 @@ void idAsyncServer::DropClient(int clientNum, const char *reason)
 		}
 	}
 
-#ifdef _SPLASHDAMAGE
-	reason = (const char *)common->GetLanguageDict()->GetString(reason);
+#ifdef _SPLASHDAMAGE //karin: wchar
+	idWStr tmp = common->GetLanguageDict()->GetString(reason);
+	idStr reasonStr = WStrToStr(tmp);
+	reason = reasonStr.c_str();
 #else
 	reason = common->GetLanguageDict()->GetString(reason);
 #endif
@@ -1108,8 +1110,11 @@ we then need to get the info from the game, and broadcast to clients
 */
 void idAsyncServer::UpdateUI(int clientNum)
 {
-#if !defined(_SPLASHDAMAGE)
+#ifdef _SPLASHDAMAGE //karin: TODO no GetUserInfo in SDK
+	const idDict	*info = &networkSystem->GetUserInfo(clientNum);
+#else
 	const idDict	*info = game->GetUserInfo(clientNum);
+#endif
 
 	if (!info) {
 		common->Warning("idAsyncServer::UpdateUI: no info from game\n");
@@ -1117,7 +1122,6 @@ void idAsyncServer::UpdateUI(int clientNum)
 	}
 
 	SendUserInfoBroadcast(clientNum, *info, true);
-#endif
 }
 
 /*
@@ -1470,7 +1474,7 @@ void idAsyncServer::ProcessUnreliableClientMessage(int clientNum, const idBitMsg
 		SendEnterGameToClient(clientNum);
 
 		// get the client running in the game
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: TODO isBot
 		game->ServerClientBegin(clientNum, false);
 #else
 		game->ServerClientBegin(clientNum);
@@ -1680,7 +1684,7 @@ void idAsyncServer::ProcessAuthMessage(const idBitMsg &msg)
 		}
 
 		// maybe localize it
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 		idStr tmp = WStrToStr(common->GetLanguageDict()->GetString(msg));
 		const char *l_msg = tmp.c_str();
 #else
@@ -1966,12 +1970,11 @@ void idAsyncServer::ProcessConnectMessage(const netadr_t from, const idBitMsg &m
 				msg = challenges[ ichallenge ].authReplyPrint.c_str();
 			}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 		{
-			idStr tmp = WStrToStr(common->GetLanguageDict()->GetString(msg));
-			l_msg = tmp.c_str();
+			idWStr tmp = common->GetLanguageDict()->GetString(msg);
 
-			common->DPrintf("%s: %s\n", Sys_NetAdrToString(from), l_msg);
+			common->DPrintf("%s: %ls\n", Sys_NetAdrToString(from), tmp.c_str());
 		}
 #else
 			l_msg = common->GetLanguageDict()->GetString(msg);
@@ -2032,7 +2035,7 @@ void idAsyncServer::ProcessConnectMessage(const netadr_t from, const idBitMsg &m
 	char reason[MAX_STRING_CHARS];
 #ifdef _RAVEN
 	allowReply_t reply = game->ServerAllowClient(clientId, numClients, Sys_NetAdrToString(from), guid, password, password, reason);
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: TODO numBots
 	clientNetworkAddress_t address;
 	sdNetClientId netClientId;
 	allowFailureReason_t reasonValue;
@@ -2771,7 +2774,7 @@ void idAsyncServer::RunFrame(void)
 #ifdef _RAVEN
 		// session->rw->DebugClear(0); // clear debug draw(version 1)
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], 0, true, gameFrame);
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: elapsed time on gmae->RunFrame
 		int start = Sys_Milliseconds();
 		int elapsedTime = start - sessLocal.gameTime;
 		sessLocal.gameTime = start;

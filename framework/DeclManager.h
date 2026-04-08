@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #define DECL_PROGRAM_GENERATED_DIRECTORY "_program_generated"
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 class rvDeclEffect;
 #endif
 #ifdef _RAVEN // quake4 new decl
@@ -135,7 +135,7 @@ typedef enum {
 #ifdef _HUMANHEAD
     DECL_BEAM, // HUMANHEAD CJR
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: increment num decl types
 	DECL_MAX_TYPES			= 96
 #else
 	DECL_MAX_TYPES			= 32

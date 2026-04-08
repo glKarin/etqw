@@ -41,7 +41,7 @@ const int ASYNC_PROTOCOL_MINOR		= 41;
 const int ASYNC_PROTOCOL_VERSION	= (ASYNC_PROTOCOL_MAJOR << 16) + ASYNC_PROTOCOL_MINOR;
 #define MAJOR_VERSION(v) ( v >> 16 )
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: defined on SDK
 const int MAX_ASYNC_CLIENTS			= 32;
 #endif
 

@@ -366,7 +366,7 @@ private:
 #endif
 
 
-#ifdef _SPLASHDAMAGE //karin: call in idlib
+#ifdef _SPLASHDAMAGE //karin: call in idlib, make it inline to .h
 /*
 =================
 idFile_Memory::SetData

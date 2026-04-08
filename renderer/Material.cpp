@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 #define NS_DEBUG(x)
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: image program stage parms
 #include "decllib/DeclSurfaceType.h"
 #include "decllib/DeclSurfaceTypeMap.h"
 #include "framework/DeclParseHelper.h"
@@ -397,7 +397,7 @@ static infoParm_t	infoParms[] = {
 	{"sightClip",	0,	0,	CONTENTS_SIGHTCLIP },
 #endif
 
-#ifdef _SPLASHDAMAGE //k: quake 4 material flags
+#ifdef _SPLASHDAMAGE //k: ETQW material flags
 	{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
 	{"explosionclip",	0,	0,	CONTENTS_EXPLOSIONSOLID },
 	{"rendermodelclip",	0,	0,	CONTENTS_RENDERMODEL },
@@ -432,7 +432,7 @@ bool idMaterial::CheckSurfaceParm(idToken *token)
 
 	for (int i = 0 ; i < numInfoParms ; i++) {
 		if (!token->Icmp(infoParms[i].name)) {
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: using sdDeclSurfaceType on ETQW
 			if (infoParms[i].surfaceFlags & SURF_TYPE_MASK) {
 				// ensure we only have one surface type set
 				surfaceFlags &= ~SURF_TYPE_MASK;
@@ -517,7 +517,7 @@ void idMaterial::ParseSort(idLexer &src)
 	} else if (!token.Icmp("gui")) {
 		sort = SS_GUI;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: ETQW material sort
 	} else if (!token.Icmp("opaqueNearer")) {
 		sort = SS_OPAQUENEARER;
 	} else if (!token.Icmp("opaqueNearest")) {
@@ -886,7 +886,7 @@ int idMaterial::ParseTerm(idLexer &src)
 	}
 #endif
 
-#ifdef _SPLASHDAMAGE //karin: cinematicY _cinematicY
+#ifdef _SPLASHDAMAGE //karin: ETQW material term
 	if (!token.Icmp("_cinematicY")) {
 		return GetExpressionConstant(0.0f);
 	}
@@ -1236,8 +1236,8 @@ void idMaterial::ParseBlend(idLexer &src, shaderStage_t *stage)
 		return;
 	}
 
-#ifdef _SPLASHDAMAGE //karin: blend screen
-	if (!token.Icmp("screen")) {
+#ifdef _SPLASHDAMAGE //karin: ETQW material blend
+	if (!token.Icmp("screen")) { // blend screen
 		return;
 	}
 #endif
@@ -1595,7 +1595,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("map")) {
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: setup image program stage parms
 			SETUP_STAGE_PROGRAM_PARMS();
 #endif
 			continue;
