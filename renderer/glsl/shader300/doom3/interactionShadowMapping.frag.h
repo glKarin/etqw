@@ -179,7 +179,7 @@ _ES3_PBR_GENERAL_FUNCTION
 "#endif\n"
 "#endif\n"
 "\n"
-ES3_STENCIL_SHADOW_SAMPLE_POISSON_DISK
+ES3_SHADOW_MAPPING_SAMPLE_POISSON_DISK
 "    highp float shadow = 0.0;\n"
 "#ifdef _POINT_LIGHT\n"
 "    int shadowIndex = 0;\n"

@@ -56,6 +56,9 @@ idRenderEntityLocal::idRenderEntityLocal()
 #ifdef _D3BFG_CULLING
     globalReferenceBounds	= bounds_zero;
 #endif
+#ifdef _SPLASHDAMAGE
+	lastModifiedGameTime	= -1;
+#endif
 }
 
 void idRenderEntityLocal::FreeRenderEntity()

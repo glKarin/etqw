@@ -110,7 +110,7 @@ endif()
 option(DEDICATED							"Build the dedicated server" 												OFF)
 option(ONATIVE								"Optimize for the host CPU" 												OFF)
 option(REPRODUCIBLE_BUILD 					"Replace __DATE__ and __TIME__ by hardcoded values for reproducible builds" OFF)
-option(CONSOLE								"Run on console" 															OFF)
+option(CONSOLE								"Run on console" 															ON)
 if(LINUX AND NOT ANDROID)
 	option(USE_X11							"Use X11"																	OFF) # else SDL2
 	option(USE_LOCAL_SDL					"Use local SDL library"														OFF) # else system
@@ -137,7 +137,7 @@ option(SUPPORT_DAE							"Support dae model" 														ON)
 option(SHADOW_MAPPING						"Shadow mapping support" 													ON)
 option(NO_LIGHT								"r_noLight support" 														ON)
 option(STENCIL_SHADOW_IMPROVE				"Improve stencil shadow(translucent, soft(Only OpenGLES3.1+))" 				ON)
-option(EXTRAS_TOOLS							"Add extras commands" 														OFF)
+option(EXTRAS_TOOLS							"Add extras commands" 														ON)
 option(USE_MINIZ							"use miniz and minizip" 													ON)
 option(USE_STB_OGG							"use stb_vorbis" 															OFF) #! some ogg file can not be load
 option(D3BFG_OCCLUSION_CULLING				"DOOM3-BFG occlusion culling support" 										ON)

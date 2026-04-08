@@ -415,6 +415,9 @@ class idRenderEntityLocal : public idRenderEntity
         idBounds		globalReferenceBounds;
         RenderMatrix			inverseBaseModelProject;	// transforms the unit cube to exactly cover the model in world space
 #endif
+#ifdef _SPLASHDAMAGE
+		int						lastModifiedGameTime;
+#endif
 };
 
 

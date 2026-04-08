@@ -1073,6 +1073,9 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 #ifdef _SPLASHDAMAGE
 		int lastModifiedGameTime = 0;
 		update = def->parms.callback(&def->parms, &tr.viewDef->renderView, lastModifiedGameTime);
+		if(update && lastModifiedGameTime == def->lastModifiedGameTime)
+			update = false;
+		def->lastModifiedGameTime = lastModifiedGameTime;
 #else
 		update = def->parms.callback(&def->parms, &tr.viewDef->renderView);
 #endif
@@ -1080,6 +1083,9 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 #ifdef _SPLASHDAMAGE
 		int lastModifiedGameTime = 0;
 		update = def->parms.callback(&def->parms, NULL, lastModifiedGameTime);
+		if(update && lastModifiedGameTime == def->lastModifiedGameTime)
+			update = false;
+		def->lastModifiedGameTime = lastModifiedGameTime;
 #else
 		update = def->parms.callback(&def->parms, NULL);
 #endif
@@ -2172,3 +2178,4 @@ void R_AddEffectSurfaces(void) {
 }
 #endif
 #endif
+

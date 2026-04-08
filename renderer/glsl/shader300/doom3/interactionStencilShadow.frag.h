@@ -148,7 +148,7 @@ _ES3_PBR_GENERAL_FUNCTION
 "#endif\n"
 "\n"
 "#ifdef _SOFT\n"
-ES3_SHADOW_MAPPING_SAMPLE_POISSON_DISK
+ES3_STENCIL_SHADOW_SAMPLE_POISSON_DISK
 "\n"
 "    vec2 screenTexCoord = gl_FragCoord.xy * u_windowCoords.xy;\n"
 "    screenTexCoord = screenTexCoord * u_nonPowerOfTwo.xy;\n"
