@@ -37,7 +37,11 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+#ifdef _SPLASHDAMAGExxx //karin: cmd hz
+const int USERCMD_HZ			= 30;			// 30 frames per second
+#else
 const int USERCMD_HZ			= 60;			// 60 frames per second
+#endif
 const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
 #ifdef _HUMANHEAD
 const float	USERCMD_ONE_OVER_HZ = (1.0f / USERCMD_HZ); // HUMANHEAD JRM
@@ -46,7 +50,9 @@ const float	USERCMD_ONE_OVER_HZ = (1.0f / USERCMD_HZ); // HUMANHEAD JRM
 // usercmd_t->button bits
 const int BUTTON_ATTACK			= BIT(0);
 const int BUTTON_RUN			= BIT(1);
+#if !defined(_SPLASHDAMAGE) //karin: sync with userButtons_t
 const int BUTTON_ZOOM			= BIT(2);
+#endif
 #ifdef _RAVEN // quake4 user cmd
 const int BUTTON_SCORES			= BIT(3);
 const int BUTTON_MLOOK			= BIT(4);
@@ -78,6 +84,17 @@ const int BUTTON_SCORES			= BIT(4);
 const int BUTTON_MLOOK			= BIT(5);
 const int BUTTON_6				= BIT(6);
 const int BUTTON_7				= BIT(7);
+#elif defined(_SPLASHDAMAGE) //karin: sync with userButtons_t
+const int BUTTON_MODE_SWITCH	= BIT(2);
+const int BUTTON_LOOKOFF		= BIT(3);
+const int BUTTON_SPRINT			= BIT(4);
+const int BUTTON_ACTIVATE		= BIT(5);
+const int BUTTON_ALTATTACK		= BIT(6);
+const int BUTTON_LEANLEFT		= BIT(7);
+const int BUTTON_LEAN_RIGHT		= BIT(8);
+const int BUTTON_TOP_HAT		= BIT(9);
+#define BUTTON_MLOOK BUTTON_LOOKOFF
+#define BUTTON_ZOOM BUTTON_MODE_SWITCH
 #else
 const int BUTTON_SCORES			= BIT(3);
 const int BUTTON_MLOOK			= BIT(4);
@@ -214,8 +231,6 @@ enum usercmdbuttonType_t {
 };
 
 enum usercmdButton_t {
-	UB_NONE,
-
 	UB_UP,
 	UB_DOWN,
 	UB_LEFT,
@@ -228,104 +243,24 @@ enum usercmdButton_t {
 	UB_MOVELEFT,
 	UB_MOVERIGHT,
 
-	UB_BUTTON0,
-	UB_BUTTON1,
-	UB_BUTTON2,
-	UB_BUTTON3,
-	UB_BUTTON4,
-	UB_BUTTON5,
-	UB_BUTTON6,
-	UB_BUTTON7,
-
 	UB_ATTACK,
 	UB_SPEED,
-#ifdef _SPLASHDAMAGE
-    UB_MODESWITCH,
-    UB_SPRINT,
-    UB_ACTIVATE,
-    UB_SHOWSCORES,
-    UB_VOICE,
-    UB_TEAMVOICE,
-    UB_FIRETEAMVOICE,
-    UB_MLOOK,
-    UB_ALTATTACK,
-    UB_TOPHAT,
-    UB_LEANLEFT,
-    UB_LEANRIGHT,
-#endif
-	UB_ZOOM,
-#if !defined(_SPLASHDAMAGE)
+	UB_MODESWITCH,
+	UB_SPRINT,
+	UB_ACTIVATE,
 	UB_SHOWSCORES,
+	UB_VOICE,
+	UB_TEAMVOICE,
+	UB_FIRETEAMVOICE,
 	UB_MLOOK,
-#endif
+	UB_ALTATTACK,
+	UB_TOPHAT,
+	UB_LEANLEFT,
+	UB_LEANRIGHT,
 
-	UB_IMPULSE0,
-	UB_IMPULSE1,
-	UB_IMPULSE2,
-	UB_IMPULSE3,
-	UB_IMPULSE4,
-	UB_IMPULSE5,
-	UB_IMPULSE6,
-	UB_IMPULSE7,
-	UB_IMPULSE8,
-	UB_IMPULSE9,
-	UB_IMPULSE10,
-	UB_IMPULSE11,
-	UB_IMPULSE12,
-	UB_IMPULSE13,
-	UB_IMPULSE14,
-	UB_IMPULSE15,
-	UB_IMPULSE16,
-	UB_IMPULSE17,
-	UB_IMPULSE18,
-	UB_IMPULSE19,
-	UB_IMPULSE20,
-	UB_IMPULSE21,
-	UB_IMPULSE22,
-	UB_IMPULSE23,
-	UB_IMPULSE24,
-	UB_IMPULSE25,
-	UB_IMPULSE26,
-	UB_IMPULSE27,
-	UB_IMPULSE28,
-	UB_IMPULSE29,
-	UB_IMPULSE30,
-	UB_IMPULSE31,
-	UB_IMPULSE32,
-	UB_IMPULSE33,
-	UB_IMPULSE34,
-	UB_IMPULSE35,
-	UB_IMPULSE36,
-	UB_IMPULSE37,
-	UB_IMPULSE38,
-	UB_IMPULSE39,
-	UB_IMPULSE40,
-	UB_IMPULSE41,
-	UB_IMPULSE42,
-	UB_IMPULSE43,
-	UB_IMPULSE44,
-	UB_IMPULSE45,
-	UB_IMPULSE46,
-	UB_IMPULSE47,
-	UB_IMPULSE48,
-	UB_IMPULSE49,
-	UB_IMPULSE50,
-	UB_IMPULSE51,
-	UB_IMPULSE52,
-	UB_IMPULSE53,
-	UB_IMPULSE54,
-	UB_IMPULSE55,
-	UB_IMPULSE56,
-	UB_IMPULSE57,
-	UB_IMPULSE58,
-	UB_IMPULSE59,
-	UB_IMPULSE60,
-	UB_IMPULSE61,
-	UB_IMPULSE62,
-	UB_IMPULSE63,
-
-    UB_MAX_BUTTONS
+	UB_MAX_BUTTONS
 };
+#define UB_NONE UB_MAX_BUTTONS
 #endif
 
 

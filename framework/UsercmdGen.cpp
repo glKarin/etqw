@@ -45,6 +45,8 @@ void usercmd_t::ByteSwap(void)
 }
 
 #ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+#include "splashdamage/framework/KeyInputManager_Local.h"
+
 bool operator==(const userButtons_t &a, const userButtons_t &b) {
 	return a.activate == b.activate
 	&& a.altAttack == b.altAttack
@@ -219,10 +221,26 @@ userCmdString_t	userCmdStrings[] = {
 
 	{ "_attack",		UB_ATTACK },
 	{ "_speed",			UB_SPEED },
+#if !defined(_SPLASHDAMAGE) //karin: sync with usercmdButton_t and Game_local.cpp::userCmdStrings
 	{ "_zoom",			UB_ZOOM },
+#endif
 	{ "_showScores",	UB_SHOWSCORES },
 	{ "_mlook",			UB_MLOOK },
 
+#ifdef _SPLASHDAMAGE //karin: sync with usercmdButton_t and Game_local.cpp::userCmdStrings
+	{ "_modeswitch",	UB_MODESWITCH },
+	{ "_sprint",		UB_SPRINT },
+	{ "_activate",		UB_ACTIVATE },
+	{ "_showScores",	UB_SHOWSCORES },
+	{ "_voice",			UB_VOICE },
+	{ "_teamVoice",		UB_TEAMVOICE },
+	{ "_fireteamVoice",	UB_FIRETEAMVOICE },
+	{ "_mlook",			UB_MLOOK },
+	{ "_altattack",		UB_ALTATTACK },
+	{ "_tophat",		UB_TOPHAT },
+	{ "_leanLeft",		UB_LEANLEFT },
+	{ "_leanRight",		UB_LEANRIGHT },
+#else
 	{ "_button0",		UB_BUTTON0 },
 	{ "_button1",		UB_BUTTON1 },
 	{ "_button2",		UB_BUTTON2 },
@@ -301,6 +319,7 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_attackalt",		UB_ATTACK_ALT },
 #endif
 
+#endif
 	{ NULL,				UB_NONE },
 };
 
@@ -800,12 +819,30 @@ void idUsercmdGenLocal::CmdButtons(void)
 
 	cmd.buttons = 0;
 
+#ifdef _SPLASHDAMAGE //karin: cmd buttons
+	if (ButtonState(UB_MODESWITCH)) {
+		cmd.buttons |= BUTTON_MODE_SWITCH;
+	}
+	if (ButtonState(UB_SPRINT)) {
+		cmd.buttons |= BUTTON_SPRINT;
+	}
+	if (ButtonState(UB_ACTIVATE)) {
+		cmd.buttons |= BUTTON_ACTIVATE;
+	}
+	if (ButtonState(UB_ALTATTACK)) {
+		cmd.buttons |= BUTTON_ALTATTACK;
+	}
+	if (ButtonState(UB_TOPHAT)) {
+		cmd.buttons |= BUTTON_TOP_HAT;
+	}
+#else //karin: no impulse buttons
 	// figure button bits
 	for (i = 0 ; i <= 7 ; i++) {
 		if (ButtonState((usercmdButton_t)(UB_BUTTON0 + i))) {
 			cmd.buttons |= 1 << i;
 		}
 	}
+#endif
 
 	// check the attack button
 	if (ButtonState(UB_ATTACK)) {
@@ -813,7 +850,7 @@ void idUsercmdGenLocal::CmdButtons(void)
 	}
 
 	// check the run button
-#ifdef _RAVEN //karin: in_alwaysRun default on, and not only in MP game.
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: in_alwaysRun default on, and not only in MP game.
 	if (toggled_run.on ^(in_alwaysRun.GetBool())) 
 #else
 	if (toggled_run.on ^(in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())) 
@@ -827,11 +864,13 @@ void idUsercmdGenLocal::CmdButtons(void)
 		cmd.buttons |= BUTTON_ZOOM;
 	}
 
+#if !defined(_SPLASHDAMAGE) //karin: tab show scores
 	// check the scoreboard button
 	if (ButtonState(UB_SHOWSCORES) || ButtonState(UB_IMPULSE19)) {
 		// the button is toggled in SP mode as well but without effect
 		cmd.buttons |= BUTTON_SCORES;
 	}
+#endif
 
 	// check the mouse look button
 	if (ButtonState(UB_MLOOK) ^ in_freeLook.GetInteger()) {
@@ -884,7 +923,11 @@ void idUsercmdGenLocal::MakeCurrent(void)
 		// update toggled key states
 		toggled_crouch.SetKeyState(ButtonState(UB_DOWN), in_toggleCrouch.GetBool());
 		toggled_run.SetKeyState(ButtonState(UB_SPEED), in_toggleRun.GetBool() && idAsyncNetwork::IsActive());
+#ifdef _SPLASHDAMAGE //karin: mode switch by zoom
+		toggled_zoom.SetKeyState(ButtonState(UB_MODESWITCH), in_toggleZoom.GetBool());
+#else
 		toggled_zoom.SetKeyState(ButtonState(UB_ZOOM), in_toggleZoom.GetBool());
+#endif
 
 		// keyboard angle adjustment
 		AdjustAngles();
@@ -1060,16 +1103,30 @@ void idUsercmdGenLocal::Key(int keyNum, bool down)
 
 	int action = idKeyInput::GetUsercmdAction(keyNum);
 
+#ifdef _SPLASHDAMAGE //karin: check button action
+	if (action < 0)
+		return;
+#endif
 	if (down) {
 
 		buttonState[ action ]++;
 
+#ifdef _SPLASHDAMAGE //karin: impulse buttons
+		if (!Inhibited()) {
+			const idKey &key = inputManagerLocal.GetKeyByNum(keyNum);
+			if (key.type == B_IMPULSE) {
+				cmd.impulse = action;
+				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
+			}
+		}
+#else
 		if (!Inhibited()) {
 			if (action >= UB_IMPULSE0 && action <= UB_IMPULSE61) {
 				cmd.impulse = action - UB_IMPULSE0;
 				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
 			}
 		}
+#endif
 	} else {
 		buttonState[ action ]--;
 

@@ -324,13 +324,37 @@ void idAsyncServer::ExecuteMapChange(void)
 	cvarSystem->SetCVarString("si_gametype", bestGameType);
 #endif
 
+#ifdef _SPLASHDAMAGE //karin: call OnUserStartMap before spawn server map
+	const char *map = sessLocal.mapSpawnData.serverInfo.GetString("si_map");
+	idStr reason;
+	idStr gameMapName = map;
+	const char *gameRule = cvarSystem->GetCVarString("si_rules");
+	idStr text;
+	if (!idStr::Icmp(gameRule, "sdGameRulesCampaign")) // si_map is campaign type, not map name
+		text = map;
+	else // si_map is real map name
+		text = mapName;
+	common->Printf("idAsyncServer::OnUserStartMap '%s': isServer=%d, isClient=%d......\n", text.c_str(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
+	userMapChangeResult_e changeResult = game->OnUserStartMap(text, reason, gameMapName);
+	common->Printf("idAsyncServer::OnUserStartMap '%s': %d\n", text.c_str(), changeResult);
+	if (changeResult == UMCR_ERROR) {
+		common->Warning("Can not start server map %s: %s", text.c_str(), reason.c_str());
+		sessLocal.MessageBox(MSG_ABORT, reason.c_str(), "Start server map error");
+		cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "disconnect\n");
+		return;
+	}
+	common->Printf("Start server map '%s': %d\n", gameMapName.c_str(), changeResult);
+	// strip 'maps/' prefix
+	if (!idStr::Icmpn(gameMapName, "maps/", 5))
+		gameMapName.StripLeadingOnce("maps/");
+	mapName = gameMapName.c_str(); // return map name if campaign mode, else is normalized map file path
+#endif
 	// initialize map settings
 	cmdSystem->BufferCommandText(CMD_EXEC_NOW, "rescanSI");
 
+
+#if !defined(_SPLASHDAMAGE)
 	sprintf(mapName, "maps/%s", sessLocal.mapSpawnData.serverInfo.GetString("si_map"));
-#ifdef _SPLASHDAMAGE //karin: no .map file
-	mapName.SetFileExtension(".entities");
-#else
 	mapName.SetFileExtension(".map");
 #endif
 	ff = fileSystem->FindFile(mapName, !serverReloadingEngine);
@@ -393,12 +417,6 @@ void idAsyncServer::ExecuteMapChange(void)
 	gameTimeResidual = 0;
 	memset(userCmds, 0, sizeof(userCmds));
 
-#ifdef _SPLASHDAMAGE //karin: TODO call OnUserStartMap before client initialization
-	idStr reason;
-	idStr mapName2 = mapName;
-	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_africa", reason, mapName2);
-	Sys_Printf("Server::OnUserStartMap: %d|%s|%s|%d|%d\n", changeResult, reason.c_str(), mapName.c_str(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
-#endif
 	if (idAsyncNetwork::serverDedicated.GetInteger() == 0) {
 		InitLocalClient(0);
 	} else {

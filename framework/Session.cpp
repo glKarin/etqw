@@ -184,7 +184,9 @@ static void Session_Map_f(const idCmdArgs &args)
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
 #ifdef _SPLASHDAMAGE //karin: no .map file
-	sprintf(string, "maps/%s.entities", map.c_str());
+    if(!idStr::Icmpn(map, "maps/", 5)) //karin: strip 'maps/' prefix
+	    map.StripLeadingOnce("maps/");
+    sprintf(string, "maps/%s.entities", map.c_str());
 #else
 	sprintf(string, "maps/%s.map", map.c_str());
 #endif
@@ -204,7 +206,7 @@ static void Session_Map_f(const idCmdArgs &args)
 			break;
 	}
 
-#ifdef _RAVEN //k: Quake4 some map in different levels, e.g. `process1`. The next argument is entnty filter, put it to cvar `si_entityFilter`, e.g, `process1 first`, `process1 second`, it will move to serverInfo.
+#ifdef _RAVEN //k: Quake4 some map in different levels, e.g. `process1`. The next argument is entity filter, put it to cvar `si_entityFilter`, e.g, `process1 first`, `process1 second`, it will move to serverInfo.
 	if(args.Argc() > 2)
 		cvarSystem->SetCVarString("si_entityFilter", args.Argv(2));
 	else
@@ -240,7 +242,9 @@ static void Session_DevMap_f(const idCmdArgs &args)
 	// a typo at the server console won't end the game
 	// handle addon packs through reloadEngine
 #ifdef _SPLASHDAMAGE //karin: no .map file
-	sprintf(string, "maps/%s.entities", map.c_str());
+    if(!idStr::Icmpn(map, "maps/", 5)) //karin: strip 'maps/' prefix
+	    map.StripLeadingOnce("maps/");
+    sprintf(string, "maps/%s.entities", map.c_str());
 #else
 	sprintf(string, "maps/%s.map", map.c_str());
 #endif
@@ -1484,6 +1488,38 @@ void idSessionLocal::StartNewGame(const char *mapName, bool devmap)
 	mapSpawnData.syncedCVars.Clear();
 	mapSpawnData.syncedCVars = *cvarSystem->MoveCVarsToDict(CVAR_NETWORKSYNC);
 
+#ifdef _SPLASHDAMAGE //karin: call OnUserStartMap before change map
+	idStr reason;
+	idStr gameMapName = mapName;
+	const char *gameRule = cvarSystem->GetCVarString("si_rules");
+	idStr text;
+	if (!idStr::Icmp(gameRule, "sdGameRulesCampaign"))
+		cvarSystem->SetCVarString("si_rules", "sdGameRulesObjective");
+	text = mapName;
+	/*
+	 * sdGameRulesCampaign
+	 * sdGameRulesObjective
+	 * sdGameRulesStopWatch
+	 */
+	/*
+	 * campaign_africa
+	 * campaign_northamerica
+	 * campaign_northeurope
+	 * campaign_pacific
+	 */
+	common->Printf("idSession::OnUserStartMap '%s': isServer=%d, isClient=%d......\n", text.c_str(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
+	userMapChangeResult_e changeResult = game->OnUserStartMap(text, reason, gameMapName);
+	if (changeResult == UMCR_ERROR) {
+		common->Warning("Can not start local map %s: %s", text.c_str(), reason.c_str());
+		MessageBox(MSG_ABORT, reason.c_str(), "Start local map error");
+		return;
+	}
+	common->Printf("Start local map '%s': %d\n", gameMapName.c_str(), changeResult);
+	// strip 'maps/' prefix
+	if (!idStr::Icmpn(gameMapName, "maps/", 5))
+		gameMapName.StripLeadingOnce("maps/");
+	mapName = gameMapName.c_str(); // return map name if campaign mode, else is normalized map file path
+#endif
 	MoveToNewMap(mapName);
 #endif
 #ifdef _HUMANHEAD //k: for sound in new game by lvonasek
@@ -2156,12 +2192,6 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
 	}
-#ifdef _SPLASHDAMAGE
-	idStr reason;
-	idStr mapName = mapString;
-	userMapChangeResult_e changeResult = game->OnUserStartMap("campaign_africa", reason, mapName);
-	Sys_Printf("OnUserStartMap: %d|%s|%s\n", changeResult, reason.c_str(), mapName.c_str());
-#endif
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
 #ifdef _SPLASHDAMAGE
 		game->SetClientNum(GetLocalClientNum(), idAsyncNetwork::server.IsActive());
