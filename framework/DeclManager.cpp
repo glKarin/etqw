@@ -1321,13 +1321,13 @@ int idDeclFile::LoadAndParseBinary(void)
 		{
 			newDecl->SetBinarySource(&out[0], entry.uncompressedLength);
 			newDecl->sourceTextLength = 0;
-			printf("is bin|%s\n", fileName.c_str());
+			//printf("is bin|%s\n", fileName.c_str());
 		}
 		else
 		{
 			newDecl->SetTextLocal((const char *)out.Ptr(), entry.uncompressedLength - 1);
 			newDecl->sourceTextLength = entry.uncompressedLength - 1;
-			printf("is text|%s\n", fileName.c_str());
+			//printf("is text|%s\n", fileName.c_str());
 		}
 
 		newDecl->sourceFile = this;
@@ -2003,7 +2003,7 @@ const idDecl *idDeclManagerLocal::DeclByIndex(declType_t type, int index, bool f
 
 	if (index < 0 || index >= linearLists[ typeIndex ].Num()) {
 #ifdef _SPLASHDAMAGE //karin: TEMP TODO -1
-		common->Warning("idDeclManager::DeclByIndex: out of range: %d", index);
+		common->Warning("idDeclManager::DeclByIndex: out of range: %s %d", declTypes[typeIndex]->GetName(), index);
 		return NULL;
 #endif
 		common->Error("idDeclManager::DeclByIndex: out of range");

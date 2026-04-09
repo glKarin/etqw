@@ -2909,7 +2909,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	if (guiActive)
 #endif
 	{
-#ifdef _SPLASHDAMAGE //karin: send UI event to game
+#ifdef _SPLASHDAMAGExxx //karin: send UI event to game
 		if (event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
 			game->HideMainMenu();
 		else
@@ -3469,6 +3469,9 @@ void idSessionLocal::Frame()
 
 	// send frame and mouse events to active guis
 	GuiFrameEvents();
+#ifdef _SPLASHDAMAGE //karin: update GUI
+	game->GuiFrameEvents(false);
+#endif
 
 	// advance demos
 	if (readDemo) {

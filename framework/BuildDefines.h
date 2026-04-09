@@ -183,7 +183,7 @@ If you have questions concerning this license or the applicable additional terms
 
 
 #if !defined( SD_DEMO_BUILD ) && !defined( SD_PUBLIC_TOOLS )
-	#define SD_SUPPORT_REPEATER
+	//#define SD_SUPPORT_REPEATER
 #endif
 #endif
 

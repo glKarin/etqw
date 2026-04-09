@@ -393,7 +393,7 @@ public:
 
 	bool						IsKeyRepeat( void ) const { return ( evValue2 & 0x2 ) != 0; }
 
-	mouseButton_e				GetMouseButton() const { return static_cast< mouseButton_e >( evValue ); }
+	mouseButton_e				GetMouseButton() const { return (evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) ? static_cast< mouseButton_e >( evValue - K_MOUSE1 + 1 ) : M_INVALID; }
 
 	int							GetGuiAction( void ) const { return evValue; }
 
