@@ -2142,7 +2142,7 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 		if (pic == NULL) {
 			char filename[MAX_IMAGE_NAME];
 			ImageProgramStringToCompressedFileName(imgName, filename);
-			LoadDDS(filename, &pic, &width, &height, &timestamp);
+			LoadDXT(filename, &pic, &width, &height, &timestamp);
 			/*
 			Sys_Printf("CDDS:%s|%s|%p\n", imgName.c_str(), filename, pic);
 			R_StaticFree(pic);

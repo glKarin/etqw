@@ -2255,6 +2255,7 @@ typedef enum screenshotFormat_e {
 void LoadJPG_stb(const char *filename, unsigned char **pic, int *width, int *height, ID_TIME_T *timestamp);
 void LoadPNG(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
 void LoadDDS(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
+void LoadDXT(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
 void LoadBimage(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
 void LoadEXR(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
 void LoadHDR(const char *filename, byte **pic, int *width, int *height, ID_TIME_T *timestamp);
