@@ -176,7 +176,7 @@ const idKey& sdKeyInputManagerLocal::GetKeyByNum( int keynum ) const {
 
 sdKeyCommand::sdKeyCommand( void )
 	: action(0),
-	type(B_BUTTON)
+	type(B_COMMAND)
 {
 }
 

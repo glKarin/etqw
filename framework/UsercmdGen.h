@@ -93,7 +93,6 @@ const int BUTTON_ALTATTACK		= BIT(6);
 const int BUTTON_LEANLEFT		= BIT(7);
 const int BUTTON_LEAN_RIGHT		= BIT(8);
 const int BUTTON_TOP_HAT		= BIT(9);
-#define BUTTON_MLOOK BUTTON_LOOKOFF
 #define BUTTON_ZOOM BUTTON_MODE_SWITCH
 #else
 const int BUTTON_SCORES			= BIT(3);
@@ -259,8 +258,9 @@ enum usercmdButton_t {
 	UB_LEANRIGHT,
 
 	UB_MAX_BUTTONS
+
+	, UB_NONE = -1,
 };
-#define UB_NONE UB_MAX_BUTTONS
 #endif
 
 

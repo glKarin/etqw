@@ -3604,7 +3604,7 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 
 		//Com_CheckVersion();
 
-#ifdef _SPLASHDAMAGE //karin: check update for GUI
+#ifdef _SPLASHDAMAGExxx //karin: check update for GUI
 		cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "checkNewVersion");
 #endif
 

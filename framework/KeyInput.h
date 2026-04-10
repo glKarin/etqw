@@ -318,7 +318,7 @@ public:
         }
 #ifdef _SPLASHDAMAGE //karin: compat for DOOM3
     	repeats = 0;
-    	usercmdAction = 0;
+    	usercmdAction = UB_NONE;
 #endif
     }
 
@@ -372,7 +372,7 @@ protected:
 	int				usercmdAction;	// for testing by the asyncronous usercmd generation
     usercmdbuttonType_t		type;
 
-	idKey() : down( false ), id( 0 ), activeCommand( NULL ), repeats(0), usercmdAction(0), type(B_BUTTON)
+	idKey() : down( false ), id( 0 ), activeCommand( NULL ), repeats(0), usercmdAction(UB_NONE), type(B_COMMAND)
 	{}
 #endif
 };

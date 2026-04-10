@@ -682,7 +682,10 @@ void idSessionLocal::ShowLoadingGui()
 	console->Close();
 
 #ifdef _SPLASHDAMAGE //karin: level loading UI
-	game->ShowLevelLoadScreen(mapSpawnData.serverInfo.GetString("si_map"));
+	idStr mapsName = mapSpawnData.serverInfo.GetString("si_map");
+	if(idStr::Icmpn(mapsName, "maps/", 5))
+		mapsName.Insert("maps/", 0);
+	game->ShowLevelLoadScreen(mapsName.c_str());
 #endif
 	// introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
 #if 1
@@ -1507,7 +1510,7 @@ void idSessionLocal::StartNewGame(const char *mapName, bool devmap)
 	 * campaign_northeurope
 	 * campaign_pacific
 	 */
-	common->Printf("idSession::OnUserStartMap '%s': isServer=%d, isClient=%d......\n", text.c_str(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
+	common->Printf("idSession::OnUserStartMap '%s': isServer=%d, isClient=%d......\n", text.c_str(), idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
 	userMapChangeResult_e changeResult = game->OnUserStartMap(text, reason, gameMapName);
 	if (changeResult == UMCR_ERROR) {
 		common->Warning("Can not start local map %s: %s", text.c_str(), reason.c_str());
@@ -2962,7 +2965,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 				return true;
 		}
 		const idKey &key = inputManagerLocal.GetKeyByNum(event->evValue);
-		if (key.type == B_LOCAL_IMPULSE && key.usercmdAction) {
+		if (key.type == B_LOCAL_IMPULSE && key.usercmdAction != UB_NONE) {
 			game->HandleLocalImpulse(key.usercmdAction, event->evValue2 == 1);
 			return true;
 		}

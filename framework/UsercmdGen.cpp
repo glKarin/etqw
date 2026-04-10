@@ -468,7 +468,7 @@ idCVar idUsercmdGenLocal::in_yawSpeed("in_yawspeed", "140", CVAR_SYSTEM | CVAR_A
 idCVar idUsercmdGenLocal::in_pitchSpeed("in_pitchspeed", "140", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "pitch change speed when holding down look _lookUp or _lookDown button");
 idCVar idUsercmdGenLocal::in_angleSpeedKey("in_anglespeedkey", "1.5", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_FLOAT, "angle change scale when holding down _speed button");
 idCVar idUsercmdGenLocal::in_freeLook("in_freeLook", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "look around with mouse (reverse _mlook button)");
-#ifdef _RAVEN //karin: in_alwaysRun default on, and not only in MP game.
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: in_alwaysRun default on, and not only in MP game.
 idCVar idUsercmdGenLocal::in_alwaysRun("in_alwaysRun", "1", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button)");
 #else
 idCVar idUsercmdGenLocal::in_alwaysRun("in_alwaysRun", "0", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_BOOL, "always run (reverse _speed button) - only in MP");
@@ -607,7 +607,7 @@ void idUsercmdGenLocal::AdjustAngles(void)
 {
 	float	speed;
 
-#ifdef _RAVEN //karin: in_alwaysRun default on, and not only in MP game.
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: in_alwaysRun default on, and not only in MP game.
 	if (toggled_run.on ^(in_alwaysRun.GetBool())) 
 #else
 	if (toggled_run.on ^(in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())) 
@@ -751,7 +751,12 @@ void idUsercmdGenLocal::MouseMove(void)
 		return;
 	}
 
-	if (ButtonState(UB_STRAFE) || !(cmd.buttons & BUTTON_MLOOK)) {
+#ifdef _SPLASHDAMAGE //karin: mouse look vs. look off
+	if (ButtonState(UB_STRAFE) || (cmd.buttons & BUTTON_LOOKOFF) != 0) 
+#else
+	if (ButtonState(UB_STRAFE) || !(cmd.buttons & BUTTON_MLOOK)) 
+#endif
+	{
 		// add mouse X/Y movement to cmd
 		strafeMx *= m_strafeScale.GetFloat();
 		strafeMy *= m_strafeScale.GetFloat();
@@ -770,7 +775,12 @@ void idUsercmdGenLocal::MouseMove(void)
 		cmd.rightmove = idMath::ClampChar((int)(cmd.rightmove + strafeMx));
 	}
 
-	if (!ButtonState(UB_STRAFE) && (cmd.buttons & BUTTON_MLOOK)) {
+#ifdef _SPLASHDAMAGE //karin: mouse look vs. look off
+	if (!ButtonState(UB_STRAFE) && !(cmd.buttons & BUTTON_LOOKOFF)) 
+#else
+	if (!ButtonState(UB_STRAFE) && (cmd.buttons & BUTTON_MLOOK)) 
+#endif
+	{
 		viewangles[PITCH] += m_pitch.GetFloat() * my;
 	} else {
 		cmd.forwardmove = idMath::ClampChar((int)(cmd.forwardmove - strafeMy));
@@ -786,7 +796,7 @@ void idUsercmdGenLocal::JoystickMove(void)
 {
 	float	anglespeed;
 
-#ifdef _RAVEN //karin: in_alwaysRun default on, and not only in MP game.
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: in_alwaysRun default on, and not only in MP game.
 	if (toggled_run.on ^(in_alwaysRun.GetBool())) 
 #else
 	if (toggled_run.on ^(in_alwaysRun.GetBool() && idAsyncNetwork::IsActive())) 
@@ -873,9 +883,15 @@ void idUsercmdGenLocal::CmdButtons(void)
 #endif
 
 	// check the mouse look button
+#ifdef _SPLASHDAMAGE //karin: mouse look vs. look off
+	if (!(ButtonState(UB_MLOOK)) ^ in_freeLook.GetInteger()) {
+		cmd.buttons |= BUTTON_LOOKOFF;
+	}
+#else
 	if (ButtonState(UB_MLOOK) ^ in_freeLook.GetInteger()) {
 		cmd.buttons |= BUTTON_MLOOK;
 	}
+#endif
 
 #ifdef _HUMANHEAD
 	// check the alt attack button
@@ -897,12 +913,16 @@ void idUsercmdGenLocal::InitCurrent(void)
 	memset(&cmd, 0, sizeof(cmd));
 	cmd.flags = flags;
 	cmd.impulse = impulse;
-#ifdef _RAVEN //karin: in_alwaysRun default on, and not only in MP game.
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: in_alwaysRun default on, and not only in MP game.
 	cmd.buttons |= (in_alwaysRun.GetBool()) ? BUTTON_RUN : 0;
 #else
 	cmd.buttons |= (in_alwaysRun.GetBool() && idAsyncNetwork::IsActive()) ? BUTTON_RUN : 0;
 #endif
+#ifdef _SPLASHDAMAGE //karin: mouse look vs. look off
+	cmd.buttons |= in_freeLook.GetBool() ? 0 : BUTTON_LOOKOFF;
+#else
 	cmd.buttons |= in_freeLook.GetBool() ? BUTTON_MLOOK : 0;
+#endif
 }
 
 /*

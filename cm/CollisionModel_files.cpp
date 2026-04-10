@@ -153,7 +153,8 @@ void idCollisionModelManagerLocal::WritePolygons(idFile *fp, cm_node_t *node)
 		fp->WriteFloatString(" \"%s\"\n", p->material->GetName());
 #elif defined(_SPLASHDAMAGE) //karin: ETQW cm file
         fp->WriteFloatString(" \"%s\"", p->material->GetName());
-        fp->WriteFloatString(" %f %f %f %f %f %f", 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        fp->WriteFloatString(" %d %d", 0, 0);
+        fp->WriteFloatString(" %f %f %f %f", 0.0f, 0.0f, 0.0f, 0.0f);
         fp->WriteFloatString(" %d %d\n", 0, 0);
 #else
 		fp->WriteFloatString(" \"%s\"\n", p->material->GetName());
@@ -555,9 +556,6 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
 		p->material = declManager->FindMaterial(token);
 		p->contents = p->material->GetContentFlags();
 		p->checkcount = 0;
-		// filter polygon into tree
-		R_FilterPolygonIntoTree(model, model->node, NULL, p);
-
 #ifdef _RAVEN // Quake4 cm file
         if(CM_IS_QUAKE4_VERSION())
         {
@@ -570,9 +568,13 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
         }
 #endif
 #ifdef _SPLASHDAMAGE //karin: ETQW cm file
-		// 0 0 0.0000305196 -0 0 -0.0000305157 32768 32768
-		src->ParseFloat();
-		src->ParseFloat();
+		// 0 0 0.0000305196 -0 0 -0.0000305157 32768 32768 // int int float float float float int int
+		int v43 = src->ParseInt();
+		int v11 = src->ParseInt();
+		p->contents = ~v11 & (v43 | p->contents);
+		//p->contents |= v43;
+		//p->contents &= ~v11;
+		
 		src->ParseFloat();
 		src->ParseFloat();
 		src->ParseFloat();
@@ -580,6 +582,9 @@ void idCollisionModelManagerLocal::ParsePolygons(idLexer *src, cm_model_t *model
 		src->ParseInt();
 		src->ParseInt();
 #endif
+
+		// filter polygon into tree
+		R_FilterPolygonIntoTree(model, model->node, NULL, p);
 	}
 }
 
@@ -991,18 +996,23 @@ void idCollisionModelManagerLocal::ParsePolygons_Binary(idFile *file, cm_model_t
 			p->material = NULL;
 		p->contents = p->material ? p->material->GetContentFlags() : 0;
 		p->checkcount = 0;
+		// 0 0 0.0000305196 -0 0 -0.0000305157 32768 32768 // int int float float float float ushort ushort
+		int v18, v19;
+		file->ReadInt(v18);
+		file->ReadInt(v19);
+		p->contents |= v18;
+		p->contents &= ~v19;
+
+		file->ReadFloat(f);
+		file->ReadFloat(f);
+		file->ReadFloat(f);
+		file->ReadFloat(f);
+		file->ReadUnsignedShort(uh);
+		file->ReadUnsignedShort(uh);
+		
 		// filter polygon into tree
 		R_FilterPolygonIntoTree(model, model->node, NULL, p);
 
-		// 0 0 0.0000305196 -0 0 -0.0000305157 32768 32768
-		file->ReadFloat(f);
-		file->ReadFloat(f);
-		file->ReadFloat(f);
-		file->ReadFloat(f);
-		file->ReadFloat(f);
-		file->ReadFloat(f);
-		file->ReadUnsignedShort(uh);
-		file->ReadUnsignedShort(uh);
 	}
 
 	// end of polygons
@@ -1162,6 +1172,10 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile_Binary(const char *nam
 
 	common->Printf("LoadCollisionModelFile_Binary: binary cm file '%s' loaded\n", fileName.c_str());
 
+#if 0 //karin: output ascii cm file
+	fileName.SetFileExtension(".cm_ascii");
+	WriteCollisionModelsToFile(fileName, 0, numModels, mapFileCRC);
+#endif
 	fileSystem->CloseFile(file);
 	return true;
 }

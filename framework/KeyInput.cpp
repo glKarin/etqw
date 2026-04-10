@@ -451,6 +451,16 @@ void idKeyInput::SetBinding(int keynum, const char *binding)
 	// consider this like modifying an archived cvar, so the
 	// file write will be triggered at the next oportunity
 	cvarSystem->SetModifiedFlags(CVAR_ARCHIVE);
+#ifdef _SPLASHDAMAGE //karin: get game key config
+	idKey &key = keys[keynum];
+	if(game && !key.binding.IsEmpty())
+	{
+		usercmdbuttonType_t type = game->SetupBinding(key.binding.c_str(), key.usercmdAction);
+		key.type = type;
+	}
+	else
+		key.type = B_COMMAND;
+#endif
 }
 
 
@@ -785,7 +795,12 @@ bool idKeyInput::ExecKeyBinding(int keynum)
 {
 	// commands that are used by the async thread
 	// don't add text
-	if (keys[keynum].usercmdAction) {
+#ifdef _SPLASHDAMAGE //karin: 0 is a valid action, -1 is invalid
+	if (keys[keynum].usercmdAction == UB_NONE || keys[keynum].type != B_COMMAND) 
+#else
+	if (keys[keynum].usercmdAction) 
+#endif
+	{
 		return false;
 	}
 
