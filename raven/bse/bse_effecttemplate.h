@@ -25,7 +25,7 @@ enum {
     ETFLAG_HAS_PHYSICS				= BITT< 7 >::VALUE,
 };
 
-class rvDeclEffect final : public idDecl {
+class rvDeclEffect : public idDecl {
 public:
     // --------------------------------------------------------------------- //
     //  Life-cycle
@@ -61,6 +61,9 @@ public:
     // duration helpers
     void            SetMinDuration(float duration);
     void            SetMaxDuration(float duration);
+#ifdef _SPLASHDAMAGE
+    static void		CacheFromDict( const idDict& dict );
+#endif
 
 public:
     // internal comparison used by the editor diff logic

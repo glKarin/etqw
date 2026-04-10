@@ -320,6 +320,11 @@ void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float 
 		v1 = v1 * scaleY;
 	}
 
+	u0 += offsetX;
+	u1 += offsetX;
+	v0 += offsetY;
+	v1 += offsetY;
+
 	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
 		return;
 	}
@@ -343,16 +348,60 @@ void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, con
 		return;
 	}
 
-	float nw = w * scaleX;
-	float nh = h * scaleY;
+	float u0 = 0.0f;
+	float v0 = 0.0f;
+	float u1 = 1.0f;
+	float v1 = 1.0f;
 
-	float cx = x - (nw - w) * 0.5f;
-	float cy = y - (nh - h) * 0.5f;
+	//
+	//  handle negative scales as well
+	if (scaleX < 0) {
+		w *= -1;
+		scaleX *= -1;
+	}
 
-	cx += offsetX;
-	cy += offsetY;
+	if (scaleY < 0) {
+		h *= -1;
+		scaleY *= -1;
+	}
 
-	DrawRotatedMaterial( angle, idVec2(cx, cy), idVec2(nw, nh), material, color );
+	//
+	if (w < 0) {	// flip about vertical
+		w  = -w;
+		idSwap(u0, u1);
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	} else {
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	}
+
+	if (h < 0) {	// flip about horizontal
+		h  = -h;
+		idSwap(v0, v1);
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	} else {
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	}
+
+	u0 += offsetX;
+	u1 += offsetX;
+	v0 += offsetY;
+	v1 += offsetY;
+
+	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
+		return;
+	}
+
+	SetTempColor(color);
+
+	AdjustCoords(&x, &y, &w, &h);
+
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawMaterial( const idVec4& rect, const idMaterial *material, const idVec4 &color, const idVec2& scale, const idVec2& offset, float angle ) {
@@ -524,18 +573,151 @@ void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, f
 	DrawBox(x, y, w, h, size, color);
 }
 
-void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float rotation ) {
+void sdDeviceContextLocal::DrawCircleMaterial( const float _x, const float _y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle ) {
 	DC_PLACEHOLDER("DC:DrawCircleMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
 		return;
+
+	if (color.w == 0.0f) {
+		return;
+	}
+
+	float x = _x - radius.x;
+	float y = _y - radius.y;
+	float w = _x + radius.x;
+	float h = _y + radius.y;
+
+	float u0 = tcInfo[0];
+	float v0 = tcInfo[1];
+	float u1 = 1.0f;
+	float v1 = 1.0f;
+
+	float offsetX = tcInfo[0];
+	float offsetY = tcInfo[1];
+	float scaleX = tcInfo[2];
+	float scaleY = tcInfo[3];
+
+	//
+	//  handle negative scales as well
+	if (scaleX < 0) {
+		w *= -1;
+		scaleX *= -1;
+	}
+
+	if (scaleY < 0) {
+		h *= -1;
+		scaleY *= -1;
+	}
+
+	//
+	if (w < 0) {	// flip about vertical
+		w  = -w;
+		idSwap(u0, u1);
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	} else {
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	}
+
+	if (h < 0) {	// flip about horizontal
+		h  = -h;
+		idSwap(v0, v1);
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	} else {
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	}
+
+	u0 += offsetX;
+	u1 += offsetX;
+	v0 += offsetY;
+	v1 += offsetY;
+
+	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
+		return;
+	}
+
+	SetTempColor(color);
+
+	AdjustCoords(&x, &y, &w, &h);
+
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
+
+	UnsetTempColor();
 }
 
-void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float rotation, float s11, float t11, float s12, float t12 ) {
+void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float _y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle, float u0, float v0, float u1, float v1 ) {
 	DC_PLACEHOLDER("DC:DrawCircleMaterialMasked|%s\n", material?material->GetName():NULL);
 
 	if(!material)
 		return;
+
+	if (color.w == 0.0f) {
+		return;
+	}
+
+	float x = _x - radius.x;
+	float y = _y - radius.y;
+	float w = _x + radius.x;
+	float h = _y + radius.y;
+
+	float offsetX = tcInfo[0];
+	float offsetY = tcInfo[1];
+	float scaleX = tcInfo[2];
+	float scaleY = tcInfo[3];
+
+	//
+	//  handle negative scales as well
+	if (scaleX < 0) {
+		w *= -1;
+		scaleX *= -1;
+	}
+
+	if (scaleY < 0) {
+		h *= -1;
+		scaleY *= -1;
+	}
+
+	//
+	if (w < 0) {	// flip about vertical
+		w  = -w;
+		idSwap(u0, u1);
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	} else {
+		u0 = u0 * scaleX;
+		u1 = u1 * scaleX;
+	}
+
+	if (h < 0) {	// flip about horizontal
+		h  = -h;
+		idSwap(v0, v1);
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	} else {
+		v0 = v0 * scaleY;
+		v1 = v1 * scaleY;
+	}
+
+	u0 += offsetX;
+	u1 += offsetX;
+	v0 += offsetY;
+	v1 += offsetY;
+
+	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
+		return;
+	}
+
+	SetTempColor(color);
+
+	AdjustCoords(&x, &y, &w, &h);
+
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
+
+	UnsetTempColor();
 }
 
 void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec2& radius, const float width, const int numSides, const idVec4& color ) {

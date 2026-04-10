@@ -1115,7 +1115,7 @@ class idMaterial : public idDecl
 		bool IsNoLight(void) const { return noLight; }
 #endif
 #ifdef _SPLASHDAMAGE
-    	static void				CacheFromDict( const idDict& dict );
+    	static void			CacheFromDict( const idDict& dict );
 #endif
 
 	private:

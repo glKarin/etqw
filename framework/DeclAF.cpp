@@ -1944,6 +1944,12 @@ idDeclAF::~idDeclAF(void)
 
 #ifdef _SPLASHDAMAGE
 void idDeclAF::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
 
+	while( kv = dict.MatchPrefix( "skin", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declAFType[ kv->GetValue() ];
+		}
+	}
 }
 #endif

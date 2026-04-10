@@ -131,6 +131,10 @@ typedef struct soundSubtitleList_s {
 } soundSubtitleList_t;
 //HUMANHEAD END
 #endif
+#ifdef _SPLASHDAMAGE
+static const int	SSF_RANDOMIZE =				BIT(10);	// randomly cycle the looped sample
+static const int	SSF_OCCLUDE_ONCE =			BIT(11);	// only occlude once in its lifetime
+#endif
 
 // these options can be overriden from sound shader defaults on a per-emitter and per-channel basis
 typedef struct {
@@ -160,6 +164,7 @@ typedef struct {
 #ifdef _SPLASHDAMAGE
     float					pitchShift;
     int						soundArea;
+	float					farDistance;
 #endif
 } soundShaderParms_t;
 
@@ -282,6 +287,7 @@ class idSoundShader : public idDecl
 	        *out = parms;
 	    }
    	    virtual bool			IsOGGCompressed( void ) const;
+    	static void				CacheFromDict( const idDict& dict );
 #endif
 		// returns NULL if an AltSound isn't defined in the shader.
 		// we use this for pairing a specific broken light sound with a normal light sound

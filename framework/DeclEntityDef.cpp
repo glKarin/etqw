@@ -185,6 +185,12 @@ void idDeclEntityDef::Print(void) const
 
 #ifdef _SPLASHDAMAGE
 void idDeclEntityDef::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
 
+	while( kv = dict.MatchPrefix( "def", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declEntityDefType[ kv->GetValue() ];
+		}
+	}
 }
 #endif

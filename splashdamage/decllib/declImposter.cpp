@@ -155,7 +155,13 @@ void sdDeclImposter::FreeData( void ) {
 }
 
 void sdDeclImposter::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
 
+	while( kv = dict.MatchPrefix( "imposter", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declImposterType[ kv->GetValue() ];
+		}
+	}
 }
 
 bool sdDeclImposter::Save( void ) {

@@ -350,3 +350,15 @@ bool rvDeclEffect::Parse(const char* text, int textLength, bool noCaching) {
     Finish();                                           // second pass
     return true;
 }
+
+#ifdef _SPLASHDAMAGE
+void rvDeclEffect::CacheFromDict( const idDict& dict ) {
+    const idKeyValue* kv = NULL;
+
+    while( kv = dict.MatchPrefix( "fx", kv ) ) {
+        if ( kv->GetValue().Length() ) {
+            declAFType[ kv->GetValue() ];
+        }
+    }
+}
+#endif

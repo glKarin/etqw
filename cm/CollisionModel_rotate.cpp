@@ -1389,6 +1389,21 @@ void idCollisionModelManagerLocal::Rotation180(trace_t *results, const idVec3 &r
 	tw.trace.fraction = 1.0f;
 	tw.trace.c.contents = 0;
 	tw.trace.c.type = CONTACT_NONE;
+#ifdef _RAVEN // quake4 trace
+	tw.trace.c.id = 0; // jmarshall: fix so we don't get garbage values.
+	// jmarshall - quake 4
+	tw.trace.c.materialType = NULL;
+	// jmarshall end
+	tw.trace.c.material = NULL; //kc
+#endif
+#ifdef _SPLASHDAMAGE // etqw trace
+	tw.trace.c.id = 0; // fix so we don't get garbage values.
+	tw.trace.c.material = NULL; //kc
+	tw.trace.c.surfaceType = NULL;
+	tw.trace.c.surfaceColor.Zero();
+	tw.trace.c.separation = 0.0f;
+	tw.trace.c.selfId = 0;
+#endif
 	tw.contents = contentMask;
 	tw.isConvex = true;
 	tw.rotation = true;
@@ -1521,6 +1536,28 @@ void idCollisionModelManagerLocal::Rotation180(trace_t *results, const idVec3 &r
 			results->c.dist += modelOrigin * results->c.normal;
 		}
 
+#ifdef _RAVEN
+		if (results->c.material)
+		{
+			results->c.materialType = results->c.material->GetMaterialType();
+		}
+		else
+		{
+			results->c.materialType = NULL;
+		}
+#endif
+#ifdef _SPLASHDAMAGE
+		if (results->c.material)
+		{
+			results->c.surfaceType = results->c.material->GetSurfaceType();
+			results->c.surfaceColor = results->c.material->GetSurfaceColor();
+		}
+		else
+		{
+			results->c.surfaceType = NULL;
+			results->c.surfaceColor.Zero();
+		}
+#endif
 		return;
 	}
 
@@ -1757,6 +1794,28 @@ void idCollisionModelManagerLocal::Rotation180(trace_t *results, const idVec3 &r
 		results->c.point += modelOrigin;
 		results->c.dist += modelOrigin * results->c.normal;
 	}
+#ifdef _RAVEN
+	if (results->c.material)
+	{
+		results->c.materialType = results->c.material->GetMaterialType();
+	}
+	else
+	{
+		results->c.materialType = NULL;
+	}
+#endif
+#ifdef _SPLASHDAMAGE
+	if (results->c.material)
+	{
+		results->c.surfaceType = results->c.material->GetSurfaceType();
+		results->c.surfaceColor = results->c.material->GetSurfaceColor();
+	}
+	else
+	{
+		results->c.surfaceType = NULL;
+		results->c.surfaceColor.Zero();
+	}
+#endif
 }
 
 /*

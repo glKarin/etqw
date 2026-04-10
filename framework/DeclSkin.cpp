@@ -214,6 +214,12 @@ const idMaterial *idDeclSkin::RemapShaderBySkin(const idMaterial *shader) const
 
 #ifdef _SPLASHDAMAGE
 void idDeclSkin::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
 
+	while( kv = dict.MatchPrefix( "ragdoll", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declSkinType[ kv->GetValue() ];
+		}
+	}
 }
 #endif

@@ -135,7 +135,13 @@ void sdDeclAmbientCubeMap::FreeData() {
 }
 
 void sdDeclAmbientCubeMap::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
 
+	while( kv = dict.MatchPrefix( "ambientCubeMap", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declAmbientCubeMapType[ kv->GetValue() ];
+		}
+	}
 }
 	
 bool sdDeclAmbientCubeMap::Save() {

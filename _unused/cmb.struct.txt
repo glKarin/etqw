@@ -65,7 +65,9 @@ cmb {
                     bounds.max.y: int16
                     bounds.max.z: int16
                     materialIndex: int32
-                    unknownFloats: [6]float32
+                    addContentMask: int32 # idMaterial::contentFlags | addContentMask
+                    removeContentMask: int32 # idMaterial::contentFlags & ~removeContentMask
+                    unknownFloats: [4]float32
                     unknownUshorts: [2]uint16
                 }
             endOfPolygons: uint16 = 0xFFFF / int16 = -1

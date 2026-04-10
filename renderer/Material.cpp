@@ -3430,9 +3430,10 @@ void idMaterial::ParseMaterial(idLexer &src)
 			continue;
 		} else if (!token.Icmp("surfaceType")) { // surfaceType "metal"
             src.ReadToken(&token);
-            surfaceTypeDecl = static_cast<const sdDeclSurfaceType *>(declManager->FindType(DECL_SURFACETYPE, token, false));
-            if ( !surfaceTypeDecl || surfaceTypeDecl->IsImplicit() )
-                common->Warning("UNKNOWN: surfaceType '%s' in '%s'", token.c_str(), GetName());
+			const idDecl *decl = declManager->FindType(DECL_SURFACETYPE, token, false);
+			if (!decl || decl->IsImplicit())
+					common->Warning("UNKNOWN: surfaceType '%s' in '%s'", token.c_str(), GetName());
+			surfaceTypeDecl = static_cast<const sdDeclSurfaceType *>(decl);
             continue;
 		} else if (!token.Icmp("occlusionQuery")) {
 			SetMaterialFlag(MF_OCCLUSION_QUERY);
@@ -4561,7 +4562,7 @@ void idMaterial::CacheFromDict( const idDict& dict ) {
 
 	while( kv = dict.MatchPrefix( "mtr", kv ) ) {
 		if ( kv->GetValue().Length() ) {
-			declMapDefType[ kv->GetValue() ];
+			declMaterialType[ kv->GetValue() ];
 		}
 	}
 }

@@ -1017,6 +1017,9 @@ cm_polygon_t *idCollisionModelManagerLocal::AllocPolygon(cm_model_t *model, int 
 	} else {
 		poly = (cm_polygon_t *) Mem_Alloc(size);
 	}
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: initial set polygon material is NULL
+	poly->material = NULL;
+#endif
 #ifdef _SPLASHDAMAGE //karin: save polygon to list
 	model->polygons.Append(poly);
 #endif
@@ -1045,7 +1048,7 @@ cm_brush_t *idCollisionModelManagerLocal::AllocBrush(cm_model_t *model, int numP
 	} else {
 		brush = (cm_brush_t *) Mem_Alloc(size);
 	}
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: initial set brush material is NULL
 	brush->material = NULL;
 #endif
 #ifdef _SPLASHDAMAGE //karin: save brush to list

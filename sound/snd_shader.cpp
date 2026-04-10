@@ -62,6 +62,7 @@ void idSoundShader::Init(void)
 #ifdef _SPLASHDAMAGE
 	parms.pitchShift = 0.0f;
 	parms.soundArea = 0;
+	parms.farDistance = 0;
 #endif
 }
 
@@ -222,6 +223,7 @@ bool idSoundShader::ParseShader(idLexer &src)
 #ifdef _SPLASHDAMAGE
 	parms.pitchShift = 0.0f;
 	parms.soundArea = 0;
+	parms.farDistance = 0;
 #endif
 
 	speakerMask = 0;
@@ -311,12 +313,17 @@ bool idSoundShader::ParseShader(idLexer &src)
 		}
 #endif
 #ifdef _SPLASHDAMAGE //karin: sound shader parsing
-		else if (!token.Icmp("compression")) // compression wav
-		{
+		else if (!token.Icmp("compression")) { // compression wav
 			src.ExpectAnyToken(&token);
 		}
-		else if (!token.Icmp("occlude_once"))
-		{
+		else if (!token.Icmp("occlude_once")) {
+			parms.soundShaderFlags |= SSF_OCCLUDE_ONCE;
+		}
+		else if (!token.Icmp("farDistance")) { // farDistance 100
+			parms.farDistance = src.ParseFloat();
+		}
+		else if (!token.Icmp("randomize")) {
+			parms.soundShaderFlags |= SSF_RANDOMIZE;
 		}
 #endif
 		// shakes screen
@@ -954,5 +961,15 @@ int idSoundShader::GetTimeLength( void ) const {
 
 bool idSoundShader::IsOGGCompressed( void ) const {
 	return false;
+}
+
+void idSoundShader::CacheFromDict( const idDict& dict ) {
+	const idKeyValue* kv = NULL;
+
+	while( kv = dict.MatchPrefix( "snd", kv ) ) {
+		if ( kv->GetValue().Length() ) {
+			declSoundType[ kv->GetValue() ];
+		}
+	}
 }
 #endif
