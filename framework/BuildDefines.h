@@ -198,3 +198,19 @@ If you have questions concerning this license or the applicable additional terms
 #if !defined(_IDTECH4AMM_BUILD)
 #define _IDTECH4AMM_BUILD ""
 #endif
+
+#define ID_DEBUG_ENV "idtech4amm_dbg"
+#ifdef _MSC_VER
+#ifdef _ETQW
+#define ID_BEGIN_DBG() gameLocal.Printf("     BBBBBegin\n"), _putenv(ID_DEBUG_ENV "=1")
+#define ID_END_DBG() gameLocal.Printf("     EEEEEnd\n"), _putenv(ID_DEBUG_ENV "=")
+#else
+#define ID_BEGIN_DBG() Sys_Printf("     BBBBBegin\n"), _putenv(ID_DEBUG_ENV "=1")
+#define ID_END_DBG() Sys_Printf("     EEEEEnd\n"), _putenv(ID_DEBUG_ENV "=")
+#endif
+#else
+#define ID_BEGIN_DBG() printf("     BBBBBegin\n"), setenv(ID_DEBUG_ENV, "1", 1)
+#define ID_END_DBG() printf("     EEEEEnd\n"), unsetenv(ID_DEBUG_ENV)
+#endif
+#define ID_IS_DBG() (getenv(ID_DEBUG_ENV) && getenv(ID_DEBUG_ENV)[0])
+#define ID_IF_DBG() if(ID_IS_DBG())

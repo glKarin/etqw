@@ -2202,7 +2202,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		// spawn players
 		for (i = 0; i < numClients; i++) {
 #ifdef _SPLASHDAMAGE
-			game->SpawnPlayer(i, false);
+			game->SpawnPlayer(i, idAsyncNetwork::server.ClientIsBot(i));
 #else
 			game->SpawnPlayer(i);
 #endif

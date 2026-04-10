@@ -334,15 +334,16 @@ void idNetworkSystem::ServerKickClient( int clientNum, const char* reason, bool 
 }
 
 int idNetworkSystem::AllocateClientSlotForBot( int maxPlayersOnServer ) {
-	return 0;
+	return idAsyncNetwork::server.AllocOpenClientSlotForAI(maxPlayersOnServer);
 }
 
 int idNetworkSystem::ServerSetBotUserCommand( int clientNum, int frameNum, const usercmd_t& cmd ) {
-	return 0;
+	return idAsyncNetwork::server.ServerSetBotUserCommand(clientNum, frameNum, cmd);
 }
 
 int idNetworkSystem::ServerSetBotUserName( int clientNum, const char* playerName ) {
-	return 0;
+	sessLocal.mapSpawnData.userInfo[clientNum].Set("ui_name", playerName);
+	return clientNum;
 }
 
 void idNetworkSystem::WriteClientUserCmds( int clientNum, idBitMsg& msg ) {

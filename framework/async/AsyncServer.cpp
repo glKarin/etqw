@@ -420,6 +420,12 @@ void idAsyncServer::ExecuteMapChange(void)
 	// re-initialize all connected clients for the new map
 	for (i = 0; i < MAX_ASYNC_CLIENTS; i++) {
 		if (clients[i].clientState >= SCS_PUREWAIT && i != localClientNum) {
+#ifdef _SPLASHDAMAGE //karin: bot fake client
+			if (ClientIsBot(i))
+				InitBotClient(i);
+			else
+			{
+#endif
 			InitClient(i, clients[i].clientId, clients[i].clientRate);
 
 			SendGameInitToClient(i);
@@ -427,6 +433,9 @@ void idAsyncServer::ExecuteMapChange(void)
 			if (sessLocal.mapSpawnData.serverInfo.GetBool("si_pure")) {
 				clients[ i ].clientState = SCS_PUREWAIT;
 			}
+#ifdef _SPLASHDAMAGE //karin: bot fake client
+			}
+#endif
 		}
 	}
 
@@ -955,6 +964,10 @@ void idAsyncServer::SendReliableMessage(int clientNum, const idBitMsg &msg)
 	if (clientNum == localClientNum) {
 		return;
 	}
+#ifdef _SPLASHDAMAGE //karin: jmarshall's Quake4 bot
+	if (ClientIsBot(clientNum))
+		return;
+#endif
 
 	if (!clients[ clientNum ].channel.SendReliableMessage(msg)) {
 		clients[ clientNum ].channel.ClearReliableMessages();
@@ -980,6 +993,10 @@ void idAsyncServer::CheckClientTimeouts(void)
 		if (i == localClientNum) {
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: jmarshall's Quake4 bot
+		if (ClientIsBot(client))
+			return;
+#endif
 
 		if (client.lastPacketTime > serverTime) {
 			client.lastPacketTime = serverTime;
@@ -1486,8 +1503,8 @@ void idAsyncServer::ProcessUnreliableClientMessage(int clientNum, const idBitMsg
 		SendEnterGameToClient(clientNum);
 
 		// get the client running in the game
-#ifdef _SPLASHDAMAGE //karin: TODO isBot
-		game->ServerClientBegin(clientNum, false);
+#ifdef _SPLASHDAMAGE
+		game->ServerClientBegin(clientNum, ClientIsBot(clientNum));
 #else
 		game->ServerClientBegin(clientNum);
 #endif
@@ -2051,7 +2068,7 @@ void idAsyncServer::ProcessConnectMessage(const netadr_t from, const idBitMsg &m
 	clientNetworkAddress_t address;
 	sdNetClientId netClientId;
 	allowFailureReason_t reasonValue;
-	allowReply_t reply = game->ServerAllowClient(numClients, 0, address, netClientId, guid, password, reasonValue);
+	allowReply_t reply = game->ServerAllowClient(numClients, NumBotClients(), address, netClientId, guid, password, reasonValue);
 #else
 	allowReply_t reply = game->ServerAllowClient(numClients, Sys_NetAdrToString(from), guid, password, reason);
 #endif
@@ -2815,6 +2832,10 @@ void idAsyncServer::RunFrame(void)
 		if (client.clientState == SCS_FREE || i == localClientNum) {
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: jmarshall's Quake4 bot - Don't send update packets to bots.
+		if (ClientIsBot(client))
+			continue;
+#endif
 
 		// modify maximum rate if necesary
 		if (idAsyncNetwork::serverMaxClientRate.IsModified()) {
@@ -3185,3 +3206,134 @@ void idAsyncServer::ProcessDownloadRequestMessage(const netadr_t from, const idB
 	}
 }
 
+#ifdef _SPLASHDAMAGE //karin: jmarshall's Quake4 bot
+/*
+===============
+idAsyncServer::ServerSetBotUserCommand
+===============
+*/
+int idAsyncServer::ServerSetBotUserCommand(int clientNum, int frameNum, const usercmd_t& cmd) {
+	usercmd_t realcmd;
+
+	// Ensure this client is a bot.
+	if (!ClientIsBot(clientNum))
+		return -1;
+
+	realcmd = cmd;
+	realcmd.gameTime = gameFrame;
+	realcmd.duplicateCount = gameTime;
+
+	int index = gameFrame & (MAX_USERCMD_BACKUP - 1);
+	userCmds[index][clientNum] = realcmd;
+
+	return 1;
+}
+
+/*
+===============
+idAsyncServer::AllocOpenClientSlotForAI
+===============
+*/
+int idAsyncServer::AllocOpenClientSlotForAI(int maxPlayersOnServer) {
+	int numActivePlayers = 0;
+	int botClientId = -1;
+	idDict spawnArgs;
+
+	// Check to see how many active players we have.
+	for (int i = 0; i < MAX_ASYNC_CLIENTS; i++)
+	{
+		if (clients[i].clientState >= SCS_PUREWAIT)
+		{
+			numActivePlayers++;
+		}
+	}
+
+	if (numActivePlayers >= maxPlayersOnServer) {
+		common->Warning("idAsyncServer::AllocateClientSlotForBot: No open slots for bot\n");
+		return -1;
+	}
+
+	// Find a free slot for the bot.
+	for (int i = 0; i < MAX_ASYNC_CLIENTS; i++)
+	{
+		if (clients[i].clientState == SCS_FREE)
+		{
+			botClientId = i;
+			break;
+		}
+	}
+
+	if (botClientId == -1)
+	{
+		common->Warning("idAsyncServer::AllocateClientSlotForBot: Invalid client number\n");
+		return -1;
+	}
+
+	idStr botName;
+	game->GetRandomBotName(botClientId, botName);
+
+	{
+		netadr_t badAddress;
+		InitClient( botClientId, 0, 0 );
+		memset( &badAddress, 0, sizeof( badAddress ) );
+		//badAddress.type = NA_BOT;
+		clients[botClientId].channel.Init( badAddress, serverId );
+		ClientSetBot(botClientId);
+		clients[botClientId].clientState = SCS_INGAME;
+		sessLocal.mapSpawnData.userInfo[botClientId] = *cvarSystem->MoveCVarsToDict( CVAR_USERINFO );
+	}
+
+	// Set all the spawn args for the new bot.
+	spawnArgs.Set("ui_name", botName);
+
+	// Init the new client, and broadcast it to the rest of the players.
+	game->ServerClientBegin(botClientId, true);
+	idAsyncServer::SendUserInfoBroadcast(botClientId, spawnArgs, true);
+
+	return botClientId;
+}
+
+void idAsyncServer::InitBotClient(int clientNum) {
+	assert(ClientIsBot(clientNum))
+
+	// clear the user info
+	sessLocal.mapSpawnData.userInfo[ clientNum ].Clear();	// always start with a clean base
+
+	// clear the server client
+	serverClient_t &client = clients[clientNum];
+	client.clientState = SCS_FREE;
+	client.clientPrediction = 0;
+	client.clientAheadTime = 0;
+	client.gameInitSequence = -1;
+	client.gameFrame = 0;
+	client.gameTime = 0;
+	client.channel.ResetRate();
+	int clientRate = client.clientRate;
+	client.clientRate = clientRate ? clientRate : idAsyncNetwork::serverMaxClientRate.GetInteger();
+	client.channel.SetMaxOutgoingRate(Min(idAsyncNetwork::serverMaxClientRate.GetInteger(), client.clientRate));
+	client.clientPing = 0;
+	client.lastConnectTime = serverTime;
+	client.lastEmptyTime = serverTime;
+	client.lastPingTime = serverTime;
+	client.lastSnapshotTime = serverTime;
+	client.lastPacketTime = serverTime;
+	client.lastInputTime = serverTime;
+	client.acknowledgeSnapshotSequence = 0;
+	client.numDuplicatedUsercmds = 0;
+
+	// clear the user commands
+	for (int m = 0; m < MAX_USERCMD_BACKUP; m++) {
+		memset(&userCmds[m][clientNum], 0, sizeof(userCmds[m][clientNum]));
+	}
+}
+
+int idAsyncServer::NumBotClients(void) const {
+	int num = 0;
+	for (int i = 0; i < MAX_ASYNC_CLIENTS; i++) {
+		if (clients[i].clientState != SCS_FREE && ClientIsBot(i)) {
+			num++;
+		}
+	}
+	return 0;
+}
+#endif
