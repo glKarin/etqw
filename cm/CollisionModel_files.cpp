@@ -944,7 +944,6 @@ void idCollisionModelManagerLocal::ParsePolygons_Binary(idFile *file, cm_model_t
 	cm_polygon_t *p;
 	int i, j;
 	unsigned short numEdges;
-	idVec3 normal;
 	int numPolygons, numPolygonEdges;
 	short sh;
 	float f;
@@ -970,12 +969,10 @@ void idCollisionModelManagerLocal::ParsePolygons_Binary(idFile *file, cm_model_t
 			p->edges[j] = sh;
 		}
 
-		file->ReadFloat(normal[0]);
-		file->ReadFloat(normal[1]);
-		file->ReadFloat(normal[2]);
-		p->plane.SetNormal(normal);
-		file->ReadFloat(f);
-		p->plane.SetDist(f);
+		file->ReadFloat(p->plane[0]);
+		file->ReadFloat(p->plane[1]);
+		file->ReadFloat(p->plane[2]);
+		file->ReadFloat(p->plane[3]); // distance has reversed, don't call idPlane::SetDist
 		file->ReadShort(bv[0]);
 		file->ReadShort(bv[1]);
 		file->ReadShort(bv[2]);
@@ -1023,7 +1020,6 @@ void idCollisionModelManagerLocal::ParsePolygons_Binary(idFile *file, cm_model_t
 void idCollisionModelManagerLocal::ParseBrushes_Binary(idFile *file, cm_model_t *model) {
 	cm_brush_t *b;
 	int i, numPlanes, j;
-	idVec3 normal;
 	int numBrushes, numBrushComponents;
 	float f;
 	short bv[6];
@@ -1043,12 +1039,10 @@ void idCollisionModelManagerLocal::ParseBrushes_Binary(idFile *file, cm_model_t 
 		b->numPlanes = numPlanes;
 
 		for (j = 0; j < b->numPlanes; j++) {
-			file->ReadFloat(normal[0]);
-			file->ReadFloat(normal[1]);
-			file->ReadFloat(normal[2]);
-			b->planes[j].SetNormal(normal);
-			file->ReadFloat(f);
-			b->planes[j].SetDist(f);
+			file->ReadFloat(b->planes[j][0]);
+			file->ReadFloat(b->planes[j][1]);
+			file->ReadFloat(b->planes[j][2]);
+			file->ReadFloat(b->planes[j][3]); // distance has reversed, don't call idPlane::SetDist
 		}
 
 		file->ReadShort(bv[0]);
