@@ -89,15 +89,15 @@ public:
 
 private:
 	bool					ClippedCoords(float *x, float *y, float *w, float *h, float *s1, float *t1, float *s2, float *t2);
-	void					DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader);
+	void					DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, const idVec4 *color = NULL);
 	void					SetSize(float width, float height);
 	void 					AdjustCoords(float *x, float *y, float *w, float *h);
-	void 					DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle);
+	void 					DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle, const idVec4 *color = NULL);
 	void					SetupFonts();
 	void					SetFontByScale(float scale);
 	int						DrawText(float x, float y, float scale, idVec4 color, const char *text, float adjust, int limit, int style, int cursor = -1);
-	void					PaintChar(float x,float y,float width,float height,float scale,float	s,float	t,float	s2,float t2,const idMaterial *hShader);
-	void					DrawEditCursor(float x, float y, float scale);
+	void					PaintChar(float x,float y,float width,float height,float scale,float	s,float	t,float	s2,float t2,const idMaterial *hShader, const idVec4 *color = NULL);
+	void					DrawEditCursor(float x, float y, float scale, const idVec4 *color = NULL);
 	int						DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, idList<int> *breaks = NULL, int limit = 0);
 	int						MaxCharHeight(float scale);
 	int						MaxCharWidth(float scale);

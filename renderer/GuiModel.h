@@ -80,14 +80,20 @@ class idGuiModel
 class sdGuiModel : public idGuiModel
 {
 public:
-	sdGuiModel();
+	sdGuiModel(void);
 
 	void	BeginEmitToCurrentView(const float modelMatrix[16], int allowInViewID, bool depthHack);
-	void	BeginEmitFullScreen();
-	void	End();
-	idVec4	CurrentColor();
+	void	BeginEmitFullScreen(void);
+	void	End(void);
+	idVec4	CurrentColor(void);
 	void	SetRegister(int index, float value);
 	void	SetRegisters(const float *values);
+	void	Flush(void);
+	// idDrawVert must setup color
+	void	DrawStretchPic(const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *hShader,
+			bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f);
+	void	DrawStretchPicWithColor(const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *hShader,
+			bool clip = true, const idVec4 *color = NULL, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f);
 
 	//---------------------------
 private:

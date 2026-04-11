@@ -991,7 +991,7 @@ class idRenderSystemLocal : public idRenderSystem
 		virtual bool			IsSMPEnabled(void);
 
 		idList<void *>			registerPtrs;
-		class sdGuiModel 		*newGuiModel;
+		class sdGuiModel 		*gameGuiModel;
 #endif
 
 	public:

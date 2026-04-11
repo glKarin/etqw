@@ -786,6 +786,9 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 	}
 
 	// close any gui drawing
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	tr.gameGuiModel->Flush();
+#endif
 	tr.guiModel->EmitFullScreen();
 	tr.guiModel->Clear();
 

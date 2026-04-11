@@ -2447,7 +2447,7 @@ void idRenderSystemLocal::Clear(void)
 	lastRenderSkybox = -1;
 #endif
 #ifdef _SPLASHDAMAGE
-	newGuiModel = NULL;
+	gameGuiModel = NULL;
 #endif
 }
 
@@ -2484,8 +2484,8 @@ void idRenderSystemLocal::Init(void)
 	demoGuiModel->Clear();
 
 #ifdef _SPLASHDAMAGE
-	newGuiModel = new sdGuiModel;
-	newGuiModel->Clear();
+	gameGuiModel = new sdGuiModel;
+	gameGuiModel->Clear();
 #endif
 
 	R_InitTriSurfData();
@@ -2568,7 +2568,7 @@ void idRenderSystemLocal::Shutdown(void)
 	delete guiModel;
 	delete demoGuiModel;
 #ifdef _SPLASHDAMAGE
-	delete newGuiModel;
+	delete gameGuiModel;
 #endif
 
 	Clear();

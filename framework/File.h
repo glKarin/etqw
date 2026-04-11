@@ -173,6 +173,9 @@ class idFile_Memory : public idFile
 		// clear the file
 		virtual void			Clear(bool freeMemory = true);
 		// set data for reading
+#ifdef _SPLASHDAMAGE //karin: call in idlib, make it virtual
+		virtual 
+#endif
 		void					SetData(const char *data, int length);
 		// returns const pointer to the memory buffer
 		const char 			*GetDataPtr(void) const {
@@ -363,26 +366,6 @@ private:
 	const byte *			filePtr;		// buffer holding the file data
 	const byte *			curPtr;			// current read pointer
 };
-#endif
-
-
-#ifdef _SPLASHDAMAGE //karin: call in idlib, make it inline to .h
-/*
-=================
-idFile_Memory::SetData
-=================
-*/
-ID_INLINE void idFile_Memory::SetData(const char *data, int length)
-{
-	maxSize = 0;
-	fileSize = length;
-	allocated = 0;
-	granularity = 16384;
-
-	mode = (1 << 0/*FS_READ*/);
-	filePtr = const_cast<char *>(data);
-	curPtr = const_cast<char *>(data);
-}
 #endif
 
 #endif /* !__FILE_H__ */

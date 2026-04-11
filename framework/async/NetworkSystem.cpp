@@ -322,15 +322,20 @@ void idNetworkSystem::RemoveFriend(int clientNum) { (void)clientNum; }
 
 #ifdef _SPLASHDAMAGE
 #include "../Session_local.h"
+#include "splashdamage/sdnet/SDNet.h"
 void idNetworkSystem::ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info ) {
+	const netadr_t &addr = idAsyncNetwork::server.clients[clientNum].channel.GetRemoteAddress();
+	memcpy(&info.ip[0], &addr.ip[0], sizeof(info.ip));
+	info.port = addr.port;
 }
 
 void idNetworkSystem::ServerGetClientNetId( int clientNum, sdNetClientId& netClientId ) {
-
+	netClientId.id[0] = clientNum;
+	netClientId.id[1] = clientNum;
 }
 
 void idNetworkSystem::ServerKickClient( int clientNum, const char* reason, bool localizedReason ) {
-
+	idAsyncNetwork::server.DropClient(clientNum, reason);
 }
 
 int idNetworkSystem::AllocateClientSlotForBot( int maxPlayersOnServer ) {

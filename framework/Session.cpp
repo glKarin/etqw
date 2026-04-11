@@ -2189,7 +2189,6 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #elif defined(_SPLASHDAMAGE)
 		gameTime = Sys_Milliseconds();
-		Sys_Printf("state: %d|%d\n",idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds(), gameTime, false);
 #else
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());

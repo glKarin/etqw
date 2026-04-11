@@ -939,7 +939,6 @@ void idFile_Memory::Clear(bool freeMemory)
 	}
 }
 
-#if !defined(_SPLASHDAMAGE) //karin: call in idlib, make it inline to .h
 /*
 =================
 idFile_Memory::SetData
@@ -956,8 +955,6 @@ void idFile_Memory::SetData(const char *data, int length)
 	filePtr = const_cast<char *>(data);
 	curPtr = const_cast<char *>(data);
 }
-#endif
-
 
 /*
 =================================================================================

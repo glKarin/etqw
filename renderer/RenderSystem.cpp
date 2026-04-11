@@ -787,6 +787,9 @@ void idRenderSystemLocal::EndFrame(int *frontEndMsec, int *backEndMsec)
 	}
 
 	// close any gui drawing
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	gameGuiModel->Flush();
+#endif
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
@@ -903,6 +906,9 @@ void	idRenderSystemLocal::CropRenderSize(int width, int height, bool makePowerOf
 	}
 
 	// close any gui drawing before changing the size
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	gameGuiModel->Flush();
+#endif
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
@@ -989,6 +995,9 @@ void idRenderSystemLocal::UnCrop()
 	}
 
 	// close any gui drawing
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	gameGuiModel->Flush();
+#endif
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
@@ -1015,6 +1024,9 @@ void idRenderSystemLocal::CaptureRenderToImage(const char *imageName)
 		return;
 	}
 
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	gameGuiModel->Flush();
+#endif
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
@@ -1059,6 +1071,9 @@ void idRenderSystemLocal::CaptureRenderToFile(const char *fileName, bool fixAlph
 
 	renderCrop_t *rc = &renderCrops[currentRenderCrop];
 
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	gameGuiModel->Flush();
+#endif
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 #ifdef _MULTITHREAD
@@ -1183,6 +1198,9 @@ void idRenderSystemLocal::EndFrame(byte *data, int *frontEndMsec, int *backEndMs
 	}
 
 	// close any gui drawing
+#ifdef _SPLASHDAMAGE //karin: emit gui surfs to draw commands
+	gameGuiModel->Flush();
+#endif
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 

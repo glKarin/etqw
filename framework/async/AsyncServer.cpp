@@ -2804,9 +2804,8 @@ void idAsyncServer::RunFrame(void)
 		// session->rw->DebugClear(0); // clear debug draw(version 1)
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], 0, true, gameFrame);
 #elif defined(_SPLASHDAMAGE) //karin: elapsed time on gmae->RunFrame
-		int start = Sys_Milliseconds();
-		int elapsedTime = start - sessLocal.gameTime;
-		sessLocal.gameTime = start;
+		int elapsedTime = USERCMD_MSEC;
+		sessLocal.gameTime += elapsedTime;
 		game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)], elapsedTime);
 #else
 		gameReturn_t ret = game->RunFrame(userCmds[gameFrame & (MAX_USERCMD_BACKUP - 1)]);
@@ -3334,6 +3333,6 @@ int idAsyncServer::NumBotClients(void) const {
 			num++;
 		}
 	}
-	return 0;
+	return num;
 }
 #endif

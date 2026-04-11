@@ -31,6 +31,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
+#ifdef _SPLASHDAMAGE //karin: idDrawVert::color converter
+#define COLOR_FTOUB(x) ((byte)((x) * 255.0f))
+#endif
 
 /*
 ================
@@ -473,10 +476,10 @@ void idGuiModel::DrawStretchPic(const idDrawVert *dverts, const glIndex_t *dinde
 #ifdef _SPLASHDAMAGE //karin: sync vertex color when has vertexColor flag of stage in GUI
 				if(usingVertexColor)
 				{
-					dv->color[0] = (byte)(surf->color[0] * 255.0f);
-					dv->color[1] = (byte)(surf->color[1] * 255.0f);
-					dv->color[2] = (byte)(surf->color[2] * 255.0f);
-					dv->color[3] = (byte)(surf->color[3] * 255.0f);
+					dv->color[0] = COLOR_FTOUB(surf->color[0]);
+					dv->color[1] = COLOR_FTOUB(surf->color[1]);
+					dv->color[2] = COLOR_FTOUB(surf->color[2]);
+					dv->color[3] = COLOR_FTOUB(surf->color[3]);
 				}
 #endif
 			}
@@ -513,10 +516,10 @@ void idGuiModel::DrawStretchPic(const idDrawVert *dverts, const glIndex_t *dinde
 			for(int m = 0; m < vertCount; m++)
 			{
 				idDrawVert *dv = &verts[numVerts + m];
-				dv->color[0] = (byte)(surf->color[0] * 255.0f);
-				dv->color[1] = (byte)(surf->color[1] * 255.0f);
-				dv->color[2] = (byte)(surf->color[2] * 255.0f);
-				dv->color[3] = (byte)(surf->color[3] * 255.0f);
+				dv->color[0] = COLOR_FTOUB(surf->color[0]);
+				dv->color[1] = COLOR_FTOUB(surf->color[1]);
+				dv->color[2] = COLOR_FTOUB(surf->color[2]);
+				dv->color[3] = COLOR_FTOUB(surf->color[3]);
 			}
 		}
 #endif
@@ -734,7 +737,8 @@ void idGuiModel::DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVe
 }
 
 #ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
-sdGuiModel::sdGuiModel()
+
+sdGuiModel::sdGuiModel(void)
 	: idGuiModel()
 {
 	((idMat4 *)emitModelMatrix)->Identity();
@@ -752,7 +756,7 @@ void sdGuiModel::BeginEmitToCurrentView(const float modelMatrix[16], int allowIn
 	usingCurrentView = EMIT_TO_CURRENTVIEW;
 }
 
-void sdGuiModel::BeginEmitFullScreen()
+void sdGuiModel::BeginEmitFullScreen(void)
 {
 	End();
 
@@ -761,7 +765,7 @@ void sdGuiModel::BeginEmitFullScreen()
 	Clear();
 }
 
-void sdGuiModel::End()
+void sdGuiModel::End(void)
 {
 	if(usingCurrentView == EMIT_TO_NONE) {
 		Clear();
@@ -798,7 +802,7 @@ void sdGuiModel::End()
 	Clear();
 }
 
-idVec4 sdGuiModel::CurrentColor()
+idVec4 sdGuiModel::CurrentColor(void)
 {
 	if(!surf)
 		return vec4_one;
@@ -852,6 +856,274 @@ void sdGuiModel::SetRegisters(const float *values)
 	surf->registerShaderParms = enable;
 	if(enable)
 		memcpy(&surf->registers[0], values, sizeof(surf->registers));
+}
+
+void sdGuiModel::Flush(void)
+{
+	EmitFullScreen();
+	Clear();
+}
+
+/*
+=============
+DrawStretchPic
+karin: idDrawVert must setup color
+=============
+*/
+void sdGuiModel::DrawStretchPic(const idDrawVert *dverts, const glIndex_t *dindexes, int vertCount, int indexCount, const idMaterial *hShader, 
+                                bool clip, float min_x, float min_y, float max_x, float max_y)
+{
+	if (!glConfig.isInitialized) {
+		return;
+	}
+
+	if (!(dverts && dindexes && vertCount && indexCount && hShader)) {
+		return;
+	}
+
+	// break the current surface if we are changing to a new material
+	if (hShader != surf->material) {
+		if (surf->numVerts) {
+			AdvanceSurf();
+		}
+
+		const_cast<idMaterial *>(hShader)->EnsureNotPurged();	// in case it was a gui item started before a level change
+
+		surf->material = hShader;
+	}
+
+	// add the verts and indexes to the current surface
+
+	if (clip) {
+		int i, j;
+
+		// FIXME:	this is grim stuff, and should be rewritten if we have any significant
+		//			number of guis asking for clipping
+		idFixedWinding w;
+		byte colors[4];
+		memcpy(&colors[0], &dverts[0].color[0], 4);
+
+		for (i = 0; i < indexCount; i += 3) {
+			w.Clear();
+			w.AddPoint(idVec5(dverts[dindexes[i]].xyz.x, dverts[dindexes[i]].xyz.y, dverts[dindexes[i]].xyz.z, dverts[dindexes[i]].st.x, dverts[dindexes[i]].st.y));
+			w.AddPoint(idVec5(dverts[dindexes[i+1]].xyz.x, dverts[dindexes[i+1]].xyz.y, dverts[dindexes[i+1]].xyz.z, dverts[dindexes[i+1]].st.x, dverts[dindexes[i+1]].st.y));
+			w.AddPoint(idVec5(dverts[dindexes[i+2]].xyz.x, dverts[dindexes[i+2]].xyz.y, dverts[dindexes[i+2]].xyz.z, dverts[dindexes[i+2]].st.x, dverts[dindexes[i+2]].st.y));
+
+			for (j = 0; j < 3; j++) {
+				if (w[j].x < min_x || w[j].x > max_x ||
+				    w[j].y < min_y || w[j].y > max_y) {
+					break;
+				}
+			}
+
+			if (j < 3) {
+				idPlane p;
+				p.Normal().y = p.Normal().z = 0.0f;
+				p.Normal().x = 1.0f;
+				p.SetDist(min_x);
+				w.ClipInPlace(p);
+				p.Normal().y = p.Normal().z = 0.0f;
+				p.Normal().x = -1.0f;
+				p.SetDist(-max_x);
+				w.ClipInPlace(p);
+				p.Normal().x = p.Normal().z = 0.0f;
+				p.Normal().y = 1.0f;
+				p.SetDist(min_y);
+				w.ClipInPlace(p);
+				p.Normal().x = p.Normal().z = 0.0f;
+				p.Normal().y = -1.0f;
+				p.SetDist(-max_y);
+				w.ClipInPlace(p);
+			}
+
+			int	numVerts = verts.Num();
+			verts.SetNum(numVerts + w.GetNumPoints(), false);
+
+			for (j = 0 ; j < w.GetNumPoints() ; j++) {
+				idDrawVert *dv = &verts[numVerts+j];
+
+				dv->xyz.x = w[j].x;
+				dv->xyz.y = w[j].y;
+				dv->xyz.z = w[j].z;
+				dv->st.x = w[j].s;
+				dv->st.y = w[j].t;
+				dv->normal.Set(0, 0, 1);
+				dv->tangents[0].Set(1, 0, 0);
+				dv->tangents[1].Set(0, 1, 0);
+				dv->color[0] = colors[0];
+				dv->color[1] = colors[1];
+				dv->color[2] = colors[2];
+				dv->color[3] = colors[3];
+			}
+
+			surf->numVerts += w.GetNumPoints();
+
+			for (j = 2; j < w.GetNumPoints(); j++) {
+				indexes.Append(numVerts - surf->firstVert);
+				indexes.Append(numVerts + j - 1 - surf->firstVert);
+				indexes.Append(numVerts + j - surf->firstVert);
+				surf->numIndexes += 3;
+			}
+		}
+
+	} else {
+
+		int numVerts = verts.Num();
+		int numIndexes = indexes.Num();
+
+		verts.AssureSize(numVerts + vertCount);
+		indexes.AssureSize(numIndexes + indexCount);
+
+		surf->numVerts += vertCount;
+		surf->numIndexes += indexCount;
+
+		for (int i = 0; i < indexCount; i++) {
+			indexes[numIndexes + i] = numVerts + dindexes[i] - surf->firstVert;
+		}
+
+		memcpy(&verts[numVerts], dverts, vertCount * sizeof(verts[0]));
+	}
+}
+
+/*
+=============
+DrawStretchPicWithColor
+=============
+*/
+void sdGuiModel::DrawStretchPicWithColor(const idDrawVert *dverts, const glIndex_t *dindexes, int vertCount, int indexCount, const idMaterial *hShader, 
+                                bool clip, const idVec4 *color, float min_x, float min_y, float max_x, float max_y)
+{
+	if (!glConfig.isInitialized) {
+		return;
+	}
+
+	if (!(dverts && dindexes && vertCount && indexCount && hShader)) {
+		return;
+	}
+
+	// break the current surface if we are changing to a new material
+	if (hShader != surf->material) {
+		if (surf->numVerts) {
+			AdvanceSurf();
+		}
+
+		const_cast<idMaterial *>(hShader)->EnsureNotPurged();	// in case it was a gui item started before a level change
+
+		surf->material = hShader;
+	}
+
+	// add the verts and indexes to the current surface
+	byte colors[4];
+	if(color)
+	{
+		colors[0] = COLOR_FTOUB((*color)[0]);
+		colors[1] = COLOR_FTOUB((*color)[1]);
+		colors[2] = COLOR_FTOUB((*color)[2]);
+		colors[3] = COLOR_FTOUB((*color)[3]);
+	}
+	else
+	{
+		colors[0] = 255;
+		colors[1] = 255;
+		colors[2] = 255;
+		colors[3] = 255;
+	}
+
+	if (clip) {
+		int i, j;
+
+		// FIXME:	this is grim stuff, and should be rewritten if we have any significant
+		//			number of guis asking for clipping
+		idFixedWinding w;
+
+		for (i = 0; i < indexCount; i += 3) {
+			w.Clear();
+			w.AddPoint(idVec5(dverts[dindexes[i]].xyz.x, dverts[dindexes[i]].xyz.y, dverts[dindexes[i]].xyz.z, dverts[dindexes[i]].st.x, dverts[dindexes[i]].st.y));
+			w.AddPoint(idVec5(dverts[dindexes[i+1]].xyz.x, dverts[dindexes[i+1]].xyz.y, dverts[dindexes[i+1]].xyz.z, dverts[dindexes[i+1]].st.x, dverts[dindexes[i+1]].st.y));
+			w.AddPoint(idVec5(dverts[dindexes[i+2]].xyz.x, dverts[dindexes[i+2]].xyz.y, dverts[dindexes[i+2]].xyz.z, dverts[dindexes[i+2]].st.x, dverts[dindexes[i+2]].st.y));
+
+			for (j = 0; j < 3; j++) {
+				if (w[j].x < min_x || w[j].x > max_x ||
+				    w[j].y < min_y || w[j].y > max_y) {
+					break;
+				}
+			}
+
+			if (j < 3) {
+				idPlane p;
+				p.Normal().y = p.Normal().z = 0.0f;
+				p.Normal().x = 1.0f;
+				p.SetDist(min_x);
+				w.ClipInPlace(p);
+				p.Normal().y = p.Normal().z = 0.0f;
+				p.Normal().x = -1.0f;
+				p.SetDist(-max_x);
+				w.ClipInPlace(p);
+				p.Normal().x = p.Normal().z = 0.0f;
+				p.Normal().y = 1.0f;
+				p.SetDist(min_y);
+				w.ClipInPlace(p);
+				p.Normal().x = p.Normal().z = 0.0f;
+				p.Normal().y = -1.0f;
+				p.SetDist(-max_y);
+				w.ClipInPlace(p);
+			}
+
+			int	numVerts = verts.Num();
+			verts.SetNum(numVerts + w.GetNumPoints(), false);
+
+			for (j = 0 ; j < w.GetNumPoints() ; j++) {
+				idDrawVert *dv = &verts[numVerts+j];
+
+				dv->xyz.x = w[j].x;
+				dv->xyz.y = w[j].y;
+				dv->xyz.z = w[j].z;
+				dv->st.x = w[j].s;
+				dv->st.y = w[j].t;
+				dv->normal.Set(0, 0, 1);
+				dv->tangents[0].Set(1, 0, 0);
+				dv->tangents[1].Set(0, 1, 0);
+				dv->color[0] = colors[0];
+				dv->color[1] = colors[1];
+				dv->color[2] = colors[2];
+				dv->color[3] = colors[3];
+			}
+
+			surf->numVerts += w.GetNumPoints();
+
+			for (j = 2; j < w.GetNumPoints(); j++) {
+				indexes.Append(numVerts - surf->firstVert);
+				indexes.Append(numVerts + j - 1 - surf->firstVert);
+				indexes.Append(numVerts + j - surf->firstVert);
+				surf->numIndexes += 3;
+			}
+		}
+
+	} else {
+
+		int numVerts = verts.Num();
+		int numIndexes = indexes.Num();
+
+		verts.AssureSize(numVerts + vertCount);
+		indexes.AssureSize(numIndexes + indexCount);
+
+		surf->numVerts += vertCount;
+		surf->numIndexes += indexCount;
+
+		for (int i = 0; i < indexCount; i++) {
+			indexes[numIndexes + i] = numVerts + dindexes[i] - surf->firstVert;
+		}
+
+		memcpy(&verts[numVerts], dverts, vertCount * sizeof(verts[0]));
+		for(int m = 0; m < vertCount; m++)
+		{
+			idDrawVert *dv = &verts[numVerts + m];
+			dv->color[0] = colors[0];
+			dv->color[1] = colors[1];
+			dv->color[2] = colors[2];
+			dv->color[3] = colors[3];
+		}
+	}
 }
 
 #endif

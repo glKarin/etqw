@@ -130,7 +130,7 @@ typedef struct serverClient_s {
 
 class idAsyncServer
 {
-#ifdef _RAVEN
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	friend class idNetworkSystem;
 #endif
 	public:

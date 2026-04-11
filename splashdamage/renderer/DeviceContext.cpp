@@ -30,6 +30,8 @@
 
 #define AsASCIICharLang(text_, len_) ( !_hasWideCharFont || idStr::IsPureASCII(text_, len_) )
 
+#define COLOR_FTOUB(x) ((byte)((x) * 255.0f))
+
 extern idCVar harm_gui_useD3BFGFont;
 extern idCVar gui_smallFontLimit;
 extern idCVar gui_mediumFontLimit;
@@ -51,12 +53,12 @@ static void R_DC_DebugMaterial(const idMaterial *shader, float x, float y, float
 	if(!shader)
 		return;
 
-	idVec4 c = tr.newGuiModel->CurrentColor();
-	renderSystem->SetColor(idVec4(1.0f, 0.0f, 0.0f, 0.5f));
+	idVec4 c = tr.gameGuiModel->CurrentColor();
+	tr.gameGuiModel->SetColor(1.0f, 0.0f, 0.0f, 0.5f);
 	idWStr str = StrToWStr(shader->GetName());
 	sdBounds2D bb = sdBounds2D(x, y, 640/* - x - w*/, 480/* - y - h*/);
 	deviceContext->DrawText(str.c_str(), bb, DTF_WORDWRAP);
-	renderSystem->SetColor(c);
+	tr.gameGuiModel->SetColor(c[0], c[1], c[2], c[3]);
 }
 
 sdDeviceContextLocal::sdDeviceContextLocal()
@@ -78,25 +80,25 @@ void sdDeviceContextLocal::Reset() {
 }
 
 void sdDeviceContextLocal::BeginEmitToCurrentView( const float modelMatrix[16], const int allowInViewID, const bool weaponDepthHack ) {
-	tr.newGuiModel->BeginEmitToCurrentView(modelMatrix, allowInViewID, weaponDepthHack);
+	tr.gameGuiModel->BeginEmitToCurrentView(modelMatrix, allowInViewID, weaponDepthHack);
 }
 
 void sdDeviceContextLocal::BeginEmitFullScreen() {
-	tr.newGuiModel->BeginEmitFullScreen();
+	tr.gameGuiModel->BeginEmitFullScreen();
 }
 
 void sdDeviceContextLocal::End() {
-	tr.newGuiModel->End();
-	tr.newGuiModel->SetRegisters(NULL);
-	renderSystem->SetColor4(0.0f, 0.0f, 0.0f, 0.0f);
+	tr.gameGuiModel->End();
+	tr.gameGuiModel->SetRegisters(NULL);
+	SetColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void sdDeviceContextLocal::SetColor( const idVec4& color ) {
-    renderSystem->SetColor(color);
+    tr.gameGuiModel->SetColor(color[0], color[1], color[2], color[3]);
 }
 
 void sdDeviceContextLocal::SetColor( const float r, const float g, const float b, const float a ) {
-    renderSystem->SetColor4(r, g, b, a);
+    tr.gameGuiModel->SetColor(r, g, b, a);
 }
 
 idVec4 sdDeviceContextLocal::SetColorMultiplier( const idVec4& c ) {
@@ -104,11 +106,11 @@ idVec4 sdDeviceContextLocal::SetColorMultiplier( const idVec4& c ) {
 }
 
 void sdDeviceContextLocal::SetRegister( const int index, const float value ) {
-	tr.newGuiModel->SetRegister(index, value);
+	tr.gameGuiModel->SetRegister(index, value);
 }
 
 void sdDeviceContextLocal::SetRegisters( const float* values ) {
-	tr.newGuiModel->SetRegisters(values);
+	tr.gameGuiModel->SetRegisters(values);
 }
 
 void sdDeviceContextLocal::EnableClipping( bool enable ) {
@@ -250,7 +252,7 @@ void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, flo
 		verts[i].xyz += origTrans;
 	}
 
-	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, material, (angle == 0.0) ? false : true);
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], 4, 6, material, (angle == 0.0) ? false : true);
 
 	DC_DEBUG_MATERIAL(material, x, y, w, h);
 }
@@ -329,13 +331,9 @@ void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float 
 		return;
 	}
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
-
-	UnsetTempColor();
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle, &color);
 }
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
@@ -395,13 +393,9 @@ void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, con
 		return;
 	}
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
-
-	UnsetTempColor();
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle, &color);
 }
 
 void sdDeviceContextLocal::DrawMaterial( const idVec4& rect, const idMaterial *material, const idVec4 &color, const idVec2& scale, const idVec2& offset, float angle ) {
@@ -430,13 +424,9 @@ void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, con
 		return;
 	}
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPic(x, y, w, h, s0, t0, s1, t1, material);
-
-	UnsetTempColor();
+	DrawStretchPic(x, y, w, h, s0, t0, s1, t1, material, &color);
 
 	DC_DEBUG_MATERIAL(material, x, y, w, h);
 }
@@ -495,13 +485,9 @@ void sdDeviceContextLocal::DrawRotatedMaterial( float angle, idVec2 topLeft, idV
 		return;
 	}
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPicRotated(x, y, w, h, s0, t0, s1, t1, material, angle);
-
-	UnsetTempColor();
+	DrawStretchPicRotated(x, y, w, h, s0, t0, s1, t1, material, angle, &color);
 }
 
 void sdDeviceContextLocal::DrawWindingMaterial( const idWinding2D& winding, const idMaterial* material, const idVec4& color ) {
@@ -518,13 +504,9 @@ void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, const i
         return;
     }
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPic(x, y, w, h, 0, 0, 0, 0, whiteImage);
-
-	UnsetTempColor();
+	DrawStretchPic(x, y, w, h, 0, 0, 0, 0, whiteImage, &color);
 }
 
 void sdDeviceContextLocal::DrawClippedRect( float x, float y, float w, float h, const idVec4 &color ) {
@@ -548,15 +530,11 @@ void sdDeviceContextLocal::DrawBox( float x, float y, float w, float h, float si
         return;
     }
 
-	SetTempColor(color);
-
     AdjustCoords(&x, &y, &w, &h);
-    DrawStretchPic(x, y, size, h, 0, 0, 0, 0, whiteImage);
-    DrawStretchPic(x + w - size, y, size, h, 0, 0, 0, 0, whiteImage);
-    DrawStretchPic(x, y, w, size, 0, 0, 0, 0, whiteImage);
-    DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, whiteImage);
-
-	UnsetTempColor();
+    DrawStretchPic(x, y, size, h, 0, 0, 0, 0, whiteImage, &color);
+    DrawStretchPic(x + w - size, y, size, h, 0, 0, 0, 0, whiteImage, &color);
+    DrawStretchPic(x, y, w, size, 0, 0, 0, 0, whiteImage, &color);
+    DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, whiteImage, &color);
 }
 
 void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, float size, const idVec4 &color ) {
@@ -585,8 +563,8 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float _x, const float _y, c
 
 	float x = _x - radius.x;
 	float y = _y - radius.y;
-	float w = _x + radius.x;
-	float h = _y + radius.y;
+	float w = radius.x * 2.0f;
+	float h = radius.y * 2.0f;
 
 	float u0 = tcInfo[0];
 	float v0 = tcInfo[1];
@@ -640,13 +618,9 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float _x, const float _y, c
 		return;
 	}
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
-
-	UnsetTempColor();
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle, &color);
 }
 
 void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float _y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle, float u0, float v0, float u1, float v1 ) {
@@ -661,8 +635,8 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float
 
 	float x = _x - radius.x;
 	float y = _y - radius.y;
-	float w = _x + radius.x;
-	float h = _y + radius.y;
+	float w = radius.x * 2.0f;
+	float h = radius.y * 2.0f;
 
 	float offsetX = tcInfo[0];
 	float offsetY = tcInfo[1];
@@ -711,13 +685,9 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float
 		return;
 	}
 
-	SetTempColor(color);
-
 	AdjustCoords(&x, &y, &w, &h);
 
-	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle);
-
-	UnsetTempColor();
+	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle, &color);
 }
 
 void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec2& radius, const float width, const int numSides, const idVec4& color ) {
@@ -903,7 +873,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	DrawText(str.c_str(), DC_DEFAULT_FONT_SCALE, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
+	DrawText(str.c_str(), DC_DEFAULT_FONT_SCALE, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
@@ -921,13 +891,13 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_LEFT;
 	if(lineBreaks)
 	{
-		width = DrawText(str.c_str(), fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+		width = DrawText(str.c_str(), fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
 		height = MaxCharHeight(fontScale) * lineBreaks->Num() + 5 * (lineBreaks->Num() - 1);
 	}
 	else
 	{
 		idList<int> lbs;
-		width = DrawText(str.c_str(), fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
+		width = DrawText(str.c_str(), fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
 		height = MaxCharHeight(fontScale) * lbs.Num() + 5 * (lbs.Num() - 1);
 	}
 
@@ -1018,7 +988,7 @@ bool sdDeviceContextLocal::ClippedCoords(float *x, float *y, float *w, float *h,
     return (*w == 0 || *h == 0) ? true : false;
 }
 
-void sdDeviceContextLocal::DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader)
+void sdDeviceContextLocal::DrawStretchPic(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, const idVec4 *color)
 {
 	//printf("ttt|%f %f %f %f\n",s1,t1,s2,t2);
 	idDrawVert verts[4];
@@ -1086,7 +1056,7 @@ void sdDeviceContextLocal::DrawStretchPic(float x, float y, float w, float h, fl
 	verts[3].tangents[1][1] = 1;
 	verts[3].tangents[1][2] = 0;
 
-	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, false);
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], 4, 6, shader, false, color);
 
 	//DC_DEBUG_MATERIAL(shader, x, y, w, h);
 }
@@ -1122,7 +1092,7 @@ void sdDeviceContextLocal::AdjustCoords(float *x, float *y, float *w, float *h)
 	}
 }
 
-void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle)
+void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle, const idVec4 *color)
 {
 
 	//printf("rrr|%f %f %f %f\n",s1,t1,s2,t2);
@@ -1219,7 +1189,7 @@ void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, floa
 		verts[i].xyz += origTrans;
 	}
 
-	renderSystem->DrawStretchPic(&verts[0], &indexes[0], 4, 6, shader, (angle == 0.0) ? false : true);
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], 4, 6, shader, (angle == 0.0) ? false : true, color);
 
 	DC_DEBUG_MATERIAL(shader, x, y, w, h);
 }
@@ -1261,7 +1231,7 @@ void sdDeviceContextLocal::SetFontByScale(float scale)
 	}
 }
 
-void sdDeviceContextLocal::PaintChar(float x,float y,float width,float height,float scale,float	s,float	t,float	s2,float t2,const idMaterial *hShader)
+void sdDeviceContextLocal::PaintChar(float x,float y,float width,float height,float scale,float	s,float	t,float	s2,float t2,const idMaterial *hShader, const idVec4 *color)
 {
 	float	w, h;
 	w = width * scale;
@@ -1272,10 +1242,10 @@ void sdDeviceContextLocal::PaintChar(float x,float y,float width,float height,fl
 	}
 
 	AdjustCoords(&x, &y, &w, &h);
-	DrawStretchPic(x, y, w, h, s, t, s2, t2, hShader);
+	DrawStretchPic(x, y, w, h, s, t, s2, t2, hShader, color);
 }
 
-void sdDeviceContextLocal::DrawEditCursor(float x, float y, float scale)
+void sdDeviceContextLocal::DrawEditCursor(float x, float y, float scale, const idVec4 *color)
 {
 	if ((int)(com_ticNumber >> 4) & 1) {
 		return;
@@ -1285,7 +1255,7 @@ void sdDeviceContextLocal::DrawEditCursor(float x, float y, float scale)
 	float useScale = scale * useFont->glyphScale;
 	const glyphInfo_t *glyph2 = &useFont->glyphs[(overStrikeMode) ? '_' : '|'];
 	float	yadj = useScale * glyph2->top;
-	PaintChar(x, y - yadj,glyph2->imageWidth,glyph2->imageHeight,useScale,glyph2->s,glyph2->t,glyph2->s2,glyph2->t2,glyph2->glyph);
+	PaintChar(x, y - yadj,glyph2->imageWidth,glyph2->imageHeight,useScale,glyph2->s,glyph2->t,glyph2->s2,glyph2->t2,glyph2->glyph, color);
 }
 
 int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, const char *text, float adjust, int limit, int style, int cursor)
@@ -1300,7 +1270,6 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 
 	if (text && color.w != 0.0f) {
 		const unsigned char	*s = (const unsigned char *)text;
-		renderSystem->SetColor(color);
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
 		len = strlen(text);
 
@@ -1339,23 +1308,20 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 
 					if (cursor == count) {
 						partialSkip *= 2.0f;
-					} else {
-						renderSystem->SetColor(newColor);
 					}
 
-					DrawEditCursor(x - partialSkip, y, scale);
+					DrawEditCursor(x - partialSkip, y, scale, &newColor);
 				}
 
-				renderSystem->SetColor(newColor);
 				s += 2;
 				count += 2;
 				continue;
 			} else {
 				float yadj = useScale * glyph->top;
-				PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph);
+				PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
 
 				if (cursor == count) {
-					DrawEditCursor(x, y, scale);
+					DrawEditCursor(x, y, scale, &newColor);
 				}
 
 				x += (glyph->xSkip * useScale) + adjust;
@@ -1394,21 +1360,18 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 
                         if (cursor == count) {
                             partialSkip *= 2.0f;
-                        } else {
-                            renderSystem->SetColor(newColor);
                         }
 
-                        DrawEditCursor(x - partialSkip, y, scale);
+                        DrawEditCursor(x - partialSkip, y, scale, &newColor);
                     }
-                    renderSystem->SetColor( newColor );
                     charIndex++; //karin: skip color value character
                     continue;
                 } else {
                     float yadj = useScale * glyph->top;
-                    PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph);
+                    PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
 
                     if( cursor == charIndex - 1 ) {
-                        DrawEditCursor( x, y, scale );
+                        DrawEditCursor( x, y, scale, &newColor );
                     }
 
                     x += (glyph->xSkip * useScale) + adjust;
@@ -1418,7 +1381,7 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 #endif
 
 		if (cursor == len) {
-			DrawEditCursor(x, y, scale);
+			DrawEditCursor(x, y, scale, &newColor);
 		}
 	}
 
@@ -1470,14 +1433,11 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 	textWidth = 0;
 	newLinePtr = NULL;
 
-	SetTempColor(color);
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
-			renderSystem->SetColor(color);
-			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale);
+			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
 		}
 
-		UnsetTempColor();
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
@@ -1567,7 +1527,6 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 			}
 
 			if (!wrap) {
-				UnsetTempColor();
 				return newLine;
 			}
 
@@ -1699,7 +1658,6 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 
                 // If wrap is disabled return at this point.
                 if( !wrap ) {
-					UnsetTempColor();
                     return lastBreak;
                 }
 
@@ -1739,24 +1697,24 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
     }
 #endif
 
-	UnsetTempColor();
-
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 }
 
 void sdDeviceContextLocal::SetTempColor(const idVec4 &c)
 {
-	tempColor = tr.newGuiModel->CurrentColor();
-	renderSystem->SetColor(c);
+	return;
+	tempColor = tr.gameGuiModel->CurrentColor();
+	tr.gameGuiModel->SetColor(c[0], c[1], c[2], c[3]);
 	usingTempColor = true;
 }
 
 void sdDeviceContextLocal::UnsetTempColor()
 {
+	return;
 	if(usingTempColor)
 	{
 		usingTempColor = false;
-		renderSystem->SetColor(tempColor);
+		tr.gameGuiModel->SetColor(tempColor[0], tempColor[1], tempColor[2], tempColor[3]);
 	}
 }
 
@@ -1860,7 +1818,6 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 
 	if (text && color.w != 0.0f) {
 		const wchar_t *s = text;
-		renderSystem->SetColor(color);
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
 		len = idWStr::Length(text);
 
@@ -1892,22 +1849,19 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 
                     if (cursor == count) {
                         partialSkip *= 2.0f;
-                    } else {
-                        renderSystem->SetColor(newColor);
                     }
 
-                    DrawEditCursor(x - partialSkip, y, scale);
+                    DrawEditCursor(x - partialSkip, y, scale, &newColor);
                 }
-            	renderSystem->SetColor( newColor );
             	s += 2;
             	count += 2;
                 continue;
             } else {
                 float yadj = useScale * glyph->top;
-                PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph);
+                PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
 
                 if( cursor == count ) {
-                    DrawEditCursor( x, y, scale );
+                    DrawEditCursor( x, y, scale, &newColor );
                 }
 
             	x += (glyph->xSkip * useScale) + adjust;
@@ -1917,7 +1871,7 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
         }
 
 		if (cursor == len) {
-			DrawEditCursor(x, y, scale);
+			DrawEditCursor(x, y, scale, &newColor);
 		}
 	}
 
@@ -1944,14 +1898,11 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
 	textWidth = 0;
 	newLinePtr = NULL;
 
-	SetTempColor(color);
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
-			renderSystem->SetColor(color);
-			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale);
+			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
 		}
 
-		UnsetTempColor();
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
@@ -2036,7 +1987,6 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
         	}
 
         	if (!wrap) {
-        		UnsetTempColor();
         		return newLine;
         	}
 
@@ -2074,8 +2024,6 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
 		}
     }
 
-	UnsetTempColor();
-
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 }
 
@@ -2088,7 +2036,7 @@ void sdDeviceContextLocal::DrawText( const char* text, const sdBounds2D& rect, u
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
+	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, false, NULL, 0);
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
@@ -2104,13 +2052,13 @@ void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D
 		textAlign = ALIGN_LEFT;
 	if(lineBreaks)
 	{
-		width = DrawText(text, fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
+		width = DrawText(text, fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
 		height = MaxCharHeight(fontScale) * lineBreaks->Num() + 5 * (lineBreaks->Num() - 1);
 	}
 	else
 	{
 		idList<int> lbs;
-		width = DrawText(text, fontScale, textAlign, tr.newGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
+		width = DrawText(text, fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
 		height = MaxCharHeight(fontScale) * lbs.Num() + 5 * (lbs.Num() - 1);
 	}
 
