@@ -41,16 +41,22 @@ bool sdDeclTemplate::Parse( const char *text, const int textLength ) {
 			break;
 		}
 
-		if( !token.Icmp( "text" )) {
-			src.ParseBracedSection(this->text, -1, true);
-			this->text.StripTrailingWhitespace();
-			this->text.StripLeadingOnce("{");
-			this->text.StripTrailingOnce("}");
+		if( !token.Icmp( "parameters" )) {
+			if(!ParseParameters(src))
+			{
+				src.SkipBracedSection(false);
+				break;
+			}
 			continue;
 		}
 
-		if( !token.Icmp( "parameters" )) {
-			if(!ParseParameters(src))
+		if( !token.Icmp( "text" )) {
+			ParseText(src);
+			continue;
+		}
+
+		if( !token.Icmp( "commands" )) {
+			if(!ParseCommands(src))
 			{
 				src.SkipBracedSection(false);
 				break;
@@ -68,7 +74,7 @@ bool sdDeclTemplate::Parse( const char *text, const int textLength ) {
 
 void sdDeclTemplate::FreeData( void ) {
 	parameters.Clear();
-	text.Clear();
+	decls.Clear();
 }
 
 void sdDeclTemplate::Print( void ) const {
@@ -113,9 +119,138 @@ bool sdDeclTemplate::ParseParameters( idParser &src ) {
 	return true;
 }
 
-void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
+bool sdDeclTemplate::ParseCondition( idParser &src, condition_t &cond ) {
 	idToken token;
-	newDecl.Append(text);
+	if( !src.ExpectTokenString( "(" )) {
+		src.Error( "sdDeclTemplate::ParseCondition: expected (." );
+		return false;
+	}
+
+	if( !src.ReadToken( &token )) {
+		src.Error( "sdDeclTemplate::ParseCondition: unable to read variable name." );
+		return false;
+	}
+	cond.name = token.c_str();
+
+	if( !src.ReadToken( &token )) {
+		src.Error( "sdDeclTemplate::ParseCondition: unable to read operator." );
+		return false;
+	}
+	cond.op = token.c_str();
+
+	if( !src.ReadToken( &token )) {
+		src.Error( "sdDeclTemplate::ParseCondition: unable to read value." );
+		return false;
+	}
+	cond.value = token.c_str();
+
+	src.ExpectTokenString( ")" );
+
+	return true;
+}
+
+bool sdDeclTemplate::ParseCommand( idParser &src, command_t &cmd ) {
+	idToken token;
+	if( !src.ExpectTokenString( "if" )) {
+		src.Error( "sdDeclTemplate::ParseCommand: expected if." );
+		return false;
+	}
+
+	if( !ParseCondition(src, cmd.cond)) {
+		return false;
+	}
+
+	if( !src.ExpectTokenString( "{" )) {
+		src.Error( "sdDeclTemplate::ParseCommand: expected {." );
+		return false;
+	}
+
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclTemplate::ParseCommand: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Cmp("}")) {
+			break;
+		}
+
+		if (!token.Icmp("append")) {
+			src.ParseBracedSection(cmd.append, -1, true);
+			continue;
+		}
+
+		src.Warning( "sdDeclTemplate::ParseCommand: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+	}
+
+	return true;
+}
+
+bool sdDeclTemplate::ParseCommands( idParser &src ) {
+	idToken token;
+	if( !src.ExpectTokenString( "{" )) {
+		src.Error( "sdDeclTemplate::ParseCommands: expected {." );
+		return false;
+	}
+
+	idList<command_t> commands;
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclTemplate::ParseCommands: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Cmp("}")) {
+			break;
+		}
+
+		if (!token.Cmp("if")) {
+			src.UnreadToken(&token);
+			command_t cmd;
+			if (ParseCommand(src, cmd)) {
+				commands.Append(cmd);
+			}
+			continue;
+		}
+
+		src.Warning( "sdDeclTemplate::ParseCommands: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+	}
+
+	if (commands.Num() > 0) {
+		decl_t &decl = decls.Alloc();
+		decl.type = SEC_COMMANDS;
+		decl.commands.Swap(commands);
+	}
+
+	return true;
+}
+
+bool sdDeclTemplate::ParseText( idParser &src ) {
+	idToken token;
+	if( !src.ExpectTokenString( "{" )) {
+		src.Error( "sdDeclTemplate::ParseText: expected {." );
+		return false;
+	}
+
+	idStr text;
+	src.ParseBracedSection(text, -1, false);
+	text.StripTrailingWhitespace();
+	text.StripLeadingOnce("{");
+	text.StripTrailingOnce("}");
+
+	if (!text.IsEmpty()) {
+		decl_t &decl = decls.Alloc();
+		decl.type = SEC_TEXT;
+		decl.text = text;
+	}
+
+	return true;
+}
+
+void sdDeclTemplate::ExpandParameters(idLexer &src, idDict &newDecl) const {
+	idToken token;
 
 	src.ExpectTokenString("<");
 	for (int i = 0; i < parameters.Num(); i++ )
@@ -125,20 +260,11 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 		if(token == ">")
 		{
 			src.UnreadToken(&token);
-			newDecl.Replace(parm.name.c_str(), parm.defaultValue.c_str());
+			newDecl.Set(parm.name.c_str(), parm.defaultValue.c_str());
 			continue;
 		}
 
-#if 0
-		if (token.type == TT_STRING) {
-			idStr str("\"");
-			str.Append(token);
-			str.Append("\"");
-			newDecl.Replace(parameters[i].c_str(), idStr("\"") + token + idStr("\""));
-		}
-		else
-#endif
-			newDecl.Replace(parm.name.c_str(), token);
+		newDecl.Set(parm.name.c_str(), token);
 
 		src.ReadToken(&token);
 		if(token != ",") //karin: maybe has ,
@@ -147,6 +273,81 @@ void sdDeclTemplate::Expand(idLexer &src, idStr &newDecl) const {
 		}
 	}
 	src.ExpectTokenString(">");
+}
+
+void sdDeclTemplate::ExpandText(const idStr &text, idStr &ret, const idDict &parms) const {
+	idStr newDecl;
+	newDecl.Append(text);
+
+	for (int i = 0; i < parameters.Num(); i++ )
+	{
+		const parameter_t &parm = parameters[i];
+		const char *token = parms.GetString(parm.name);
+		newDecl.Replace(parm.name.c_str(), token);
+	}
+
+	ret.Append("\n");
+	ret.Append(newDecl);
+}
+
+bool sdDeclTemplate::CheckCondition(const condition_t &cond, const idDict &parms) const {
+	const char *value = parms.GetString(cond.name, NULL);
+	if (!value)
+		return false;
+
+	if (!cond.op.Cmp("==")) {
+		return cond.value.Icmp(value);
+	}
+	if (!cond.op.Cmp("!=")) {
+		return cond.value.Icmp(value);
+	}
+	common->Warning("Unknown template command operator '%s' in %s:%s", cond.op.c_str(), GetFileName(), GetName());
+	return false;
+}
+
+void sdDeclTemplate::ExpandCommand(const command_t &cmd, idStr &ret, const idDict &parms) const {
+	if (!CheckCondition(cmd.cond, parms))
+		return;
+
+	idStr newDecl;
+	newDecl.Append(cmd.append);
+
+	for (int i = 0; i < parameters.Num(); i++ )
+	{
+		const parameter_t &parm = parameters[i];
+		const char *token = parms.GetString(parm.name);
+		newDecl.Replace(parm.name.c_str(), token);
+	}
+
+	ret.Append("\n");
+	ret.Append(newDecl);
+}
+
+void sdDeclTemplate::ExpandCommands(const idList<command_t> &cmds, idStr &ret, const idDict &parms) const {
+	for (int i = 0; i < cmds.Num(); i++ )
+	{
+		const command_t &cmd = cmds[i];
+		ExpandCommand(cmd, ret, parms);
+	}
+}
+
+void sdDeclTemplate::ExpandDecl(const decl_t &src, idStr &ret, const idDict &parms) const {
+	if (src.type == SEC_COMMANDS)
+		ExpandCommands(src.commands, ret, parms);
+	else
+		ExpandText(src.text, ret, parms);
+}
+
+
+void sdDeclTemplate::Expand(idLexer &src, idStr &ret) const {
+	idDict parms;
+	ExpandParameters(src, parms);
+
+	for (int i = 0; i < decls.Num(); i++ )
+	{
+		const decl_t &decl = decls[i];
+		ExpandDecl(decl, ret, parms);
+	}
 }
 
 int sdDeclTemplate::ReplacePlaceholder( int start, // include
