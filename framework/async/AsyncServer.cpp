@@ -870,6 +870,7 @@ void idAsyncServer::BeginLocalClient(void)
 	game->SetUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum], false);
 #elif defined(_SPLASHDAMAGE)
 	game->ValidateUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum]);
+	game->UserInfoChanged(localClientNum);
 #else
 	game->SetUserInfo(localClientNum, sessLocal.mapSpawnData.userInfo[localClientNum], false, false);
 #endif
@@ -1077,10 +1078,8 @@ void idAsyncServer::SendUserInfoBroadcast(int userInfoNum, const idDict &info, b
 	gameInfo = game->SetUserInfo(userInfoNum, info, false);
 #elif defined(_SPLASHDAMAGE)
 	idDict tempInfo = info;
-	if (game->ValidateUserInfo(localClientNum, tempInfo))
-		gameInfo = &tempInfo;
-	else
-		gameInfo = NULL;
+	game->ValidateUserInfo(userInfoNum, tempInfo);
+	gameInfo = &tempInfo;
 #else
 	gameInfo = game->SetUserInfo(userInfoNum, info, false, true);
 #endif
@@ -1127,6 +1126,9 @@ void idAsyncServer::SendUserInfoBroadcast(int userInfoNum, const idDict &info, b
 	}
 
 	sessLocal.mapSpawnData.userInfo[userInfoNum] = *gameInfo;
+#ifdef _SPLASHDAMAGE //karin: update game player user info here
+	game->UserInfoChanged(userInfoNum);
+#endif
 }
 
 /*
@@ -3284,6 +3286,7 @@ int idAsyncServer::AllocOpenClientSlotForAI(int maxPlayersOnServer) {
 
 	// Set all the spawn args for the new bot.
 	spawnArgs.Set("ui_name", botName);
+	spawnArgs.SetBool("ui_bot", true); //karin: mark is bot
 
 	// Init the new client, and broadcast it to the rest of the players.
 	game->ServerClientBegin(botClientId, true);

@@ -74,8 +74,8 @@ If you have questions concerning this license or the applicable additional terms
 
 //karin: compat for DOOM3
 #define TFL_CROUCH							BIT(15)		// crouching
-#define TFL_FLY								BIT(16)		// fly
-#define TFL_SPECIAL							BIT(17)		// special
+#define TFL_FLY								TFL_AIR		// fly
+#define TFL_SPECIAL							BIT(16)		// special
 
 #define TFL_VALID_GDF						( ~( TFL_INVALID | TFL_INVALID_GDF ) )
 #define TFL_VALID_STROGG					( ~( TFL_INVALID | TFL_INVALID_STROGG ) )
@@ -115,9 +115,9 @@ If you have questions concerning this license or the applicable additional terms
 #define AREA_FLOOR							BIT(5)		// AI can stand on the floor in this area
 #define AREA_GAP							BIT(6)		// area has a gap
 #define AREA_LADDER							BIT(7)		// area contains one or more ladder faces
-#define AREA_LIQUID							BIT(13)		// area contains a liquid
-#define AREA_CROUCH							BIT(14)		// AI cannot walk but can only crouch in this area
-#define AREA_REACHABLE_FLY					BIT(16)		// area is reachable by flying
+#define AREA_LIQUID							AAS_AREA_CONTENTS_WATER		// area contains a liquid
+#define AREA_CROUCH							BIT(13)		// AI cannot walk but can only crouch in this area
+#define AREA_REACHABLE_FLY					BIT(14)		// area is reachable by flying
 
 #define FACE_SOLID					AAS_EDGE_WALL		// solid at the other side
 #define FACE_LADDER					AAS_EDGE_LADDER		// ladder surface

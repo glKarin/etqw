@@ -1059,6 +1059,7 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 				game->SetUserInfo(clientNum, info, true);
 #elif defined(_SPLASHDAMAGE)
 				game->ValidateUserInfo(clientNum, info);
+				game->UserInfoChanged(clientNum);
 #else
 				game->SetUserInfo(clientNum, info, true, false);
 #endif
@@ -1134,6 +1135,7 @@ void idAsyncClient::ProcessReliableServerMessages(void)
 				game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true);
 #elif defined(_SPLASHDAMAGE)
 				game->ValidateUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ]);
+				game->UserInfoChanged(clientNum);
 #else
 				game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false);
 #endif
@@ -2042,6 +2044,7 @@ void idAsyncClient::RunFrame(void)
 		game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true);
 #elif defined(_SPLASHDAMAGE)
 		game->ValidateUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ]);
+		game->UserInfoChanged(clientNum);
 #else
 		game->SetUserInfo(clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false);
 #endif

@@ -2150,6 +2150,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->SetUserInfo( i, mapSpawnData.userInfo[i], false );
 #elif defined(_SPLASHDAMAGE)
 		game->ValidateUserInfo( i, mapSpawnData.userInfo[i] );
+		game->UserInfoChanged(i);
 #else
 		game->SetUserInfo(i, mapSpawnData.userInfo[i], idAsyncNetwork::client.IsActive(), false);
 #endif
@@ -3542,6 +3543,7 @@ void idSessionLocal::Frame()
 		game->SetUserInfo(0, mapSpawnData.userInfo[0], false);
 #elif defined(_SPLASHDAMAGE)
 		game->ValidateUserInfo(0, mapSpawnData.userInfo[0]);
+		game->UserInfoChanged(0);
 #else
 		game->SetUserInfo(0, mapSpawnData.userInfo[0], false, false);
 #endif
