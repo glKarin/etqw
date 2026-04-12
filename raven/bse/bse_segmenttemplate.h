@@ -124,10 +124,6 @@ public:
     {
         return BSE::SegmentTypeName(mSegType);
     }
-#ifdef _SPLASHDAMAGE
-	bool					GetUseMaterialColor( void ) const { return( !!( mFlags & STFLAG_USEMATCOLOR ) ); }
-	bool					GetInverseDrawOrder( void ) const { return( !!( mFlags & STFLAG_INVERSE_DRAWORDER ) ); }
-#endif
 public:
     /* data * identical order to the dump so pointer arithmetic stays valid */
     rvDeclEffect* mDeclEffect;

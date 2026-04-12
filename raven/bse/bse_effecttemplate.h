@@ -73,9 +73,6 @@ public:
     // internal comparison used by the editor diff logic
     bool            Compare(const rvDeclEffect& rhs) const;
     float           CalculateBounds() const;               // expensive * walk segments and find radius
-#ifdef _SPLASHDAMAGE
-	float					GetCutOffDistance( void ) const { return mCutOffDistance; }
-#endif
 
     // --------------------------------------------------------------------- //
     //  Private data

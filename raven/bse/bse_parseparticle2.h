@@ -108,14 +108,6 @@ public:
         const idVec3* acceleration,
         const idVec3* friction
     ) const;
-#ifdef _SPLASHDAMAGE
-	int					GetTrailRepeat( void ) { return mTrailRepeat; }
-	float				GetWindDeviationAngle( void ) { return mWindDeviationAngle; }
-	bool				GetHasLineHit( void ) const { return( !!( mFlags & PTFLAG_HAS_LINEHIT ) ); }
-	bool				GetParentVelocity( void ) const { return( !!( mFlags & PTFLAG_PARENTVEL ) ); }
-	float				GetTrailScale( void ) const { return mTrailScale; }
-	int					GetNumFrames( void ) { return mNumFrames; }
-#endif
 
     // ---------------------------------------------------------------------
     //  Parsing helpers (return true on success)

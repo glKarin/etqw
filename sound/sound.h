@@ -369,6 +369,9 @@ class idSoundShader : public idDecl
         int						playCount;					// For profiling
 // RAVEN END
 #endif
+#ifdef _SPLASHDAMAGE
+		bool					lowPriority;
+#endif
 
 	private:
 		void					Init(void);

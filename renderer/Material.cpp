@@ -914,6 +914,9 @@ int idMaterial::ParseTerm(idLexer &src)
 	if (!token.Icmp("InteractionMult")) {
 		return GetExpressionConstant(1.0f);
 	}
+	if (!token.Icmp("desat_sun_r")) {
+		return GetExpressionConstant(1.0f);
+	}
 #endif
 
 	if (!token.Icmp("fragmentPrograms")) {
@@ -2280,7 +2283,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("matrix")) { // matrix a, b, c, d, e, f
-			idToken				t;
+			idToken t;
 			while (true) {
 				ParseExpression(src);
 				src.ReadToken(&t);
@@ -2304,7 +2307,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("fillMode")) { // fillMode	lines	1
 			idToken t;
 			src.ExpectAnyToken(&t);
-			(float)src.ParseFloat();
+			src.ParseFloat();
 			continue;
 		}
 		if (!token.Icmp("environmentcubemap")) { // environmentcubemap cubemap env/sewer/floodway
@@ -2363,6 +2366,45 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("subsurfacePower")) { // subsurfacePower	1, 32
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("deformScroll")) { // deformScroll 0, 0
+			ParseExpression(src);
+			// 1:
+			idToken t;
+			src.ReadToken(&t);
+			if (!t.Cmp(","))
+				ParseExpression(src);
+			else
+				src.UnreadToken(&t);
+			continue;
+		}
+		if (!token.Icmp("deformMagnitude")) { // deformMagnitude 1
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("deformMagnitude")) { // deformScroll 0
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("colorModulate")) { // colorModulate 1,1,1,1
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("colorAdd")) { // colorAdd 0,0,0,0
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
 			src.ParseFloat();
 			src.ExpectTokenString(",");
 			src.ParseFloat();

@@ -964,8 +964,6 @@ bool rvParticleTemplate::ParseSpawnDomains(rvDeclEffect* effect,
 #ifdef _SPLASHDAMAGE
         else if (!idStr::Icmp(tok, "windStrength")) // windStrength { line 0.125,0.25 }
 			src->SkipBracedSection(true);
-        else if (!idStr::Icmp(tok, "friction")) // friction { point 0,20,0 }
-			src->SkipBracedSection(true);
 #endif
         else {
             common->Warning("^4BSE:^1 Invalid spawn keyword '%s' in '%s' "

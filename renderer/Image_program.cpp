@@ -502,6 +502,14 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
 		return true;
 	}
+	if (!token.Icmp("premultiplyAlpha")) {
+		src.ExpectTokenString("(");
+		if (!R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)) {
+			return false;
+		}
+		src.ExpectTokenString(")");
+		return true;
+	}
 #endif
 	AppendToken(token);
 

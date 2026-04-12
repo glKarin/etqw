@@ -60,6 +60,7 @@ void idSoundShader::Init(void)
 	parms.subIndex = -1;
 #endif
 #ifdef _SPLASHDAMAGE
+	lowPriority = false;
 	parms.pitchShift = 0.0f;
 	parms.soundArea = 0;
 	parms.farDistance = 0;
@@ -221,6 +222,7 @@ bool idSoundShader::ParseShader(idLexer &src)
 	parms.subIndex = -1;
 #endif
 #ifdef _SPLASHDAMAGE
+	lowPriority = false;
 	parms.pitchShift = 0.0f;
 	parms.soundArea = 0;
 	parms.farDistance = 0;
@@ -324,6 +326,9 @@ bool idSoundShader::ParseShader(idLexer &src)
 		}
 		else if (!token.Icmp("randomize")) {
 			parms.soundShaderFlags |= SSF_RANDOMIZE;
+		}
+		else if (!token.Icmp("lowPriority")) { // lowPriority
+			lowPriority = true;
 		}
 #endif
 		// shakes screen
