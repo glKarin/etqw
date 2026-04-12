@@ -13,7 +13,7 @@ public:
 	struct rect_t {
 		const sdDeclSurfaceType *surfaceType;
 		idVec3 surfaceColor;
-		idVec2 coords[2];
+		idList<idVec2> coords;
 	};
 public:
 							sdDeclSurfaceTypeMap( void );
@@ -33,6 +33,7 @@ public:
 
 private:
 	bool					ParseRect(idParser *src);
+	bool					ParseWinding(idParser *src);
 
 private:
 	int						width;

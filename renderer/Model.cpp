@@ -2706,8 +2706,20 @@ int idRenderModelStatic::GetSurfaceMask(const char *name) const
 #endif
 
 #ifdef _SPLASHDAMAGE
+//karin: must implements it, it maybe causes idVertexCache::Alloc with size = 0
 void idRenderModelStatic::DirtyVertexAmbientCache() {
+	for (int j = 0 ; j < surfaces.Num() ; j++) {
+		srfTriangles_t *tri = surfaces[j].geometry;
 
+		if (!tri) {
+			continue;
+		}
+
+		if (tri->ambientCache) {
+			vertexCache.Free(tri->ambientCache);
+			tri->ambientCache = NULL;
+		}
+	}
 }
 
 // Returns the number of GUI surfaces

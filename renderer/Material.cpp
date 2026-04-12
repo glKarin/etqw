@@ -2354,6 +2354,20 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			src.ParseFloat();
 			continue;
 		}
+		if (!token.Icmp("subsurfaceColor")) { // subsurfaceColor 0.02352941, 0.2, 0.282353
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
+		if (!token.Icmp("subsurfacePower")) { // subsurfacePower	1, 32
+			src.ParseFloat();
+			src.ExpectTokenString(",");
+			src.ParseFloat();
+			continue;
+		}
 #endif
 
 		if (!token.Icmp("if")) {

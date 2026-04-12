@@ -105,8 +105,63 @@ bool sdDeclSurfaceTypeMap::ParseRect( idParser *src ) {
 		}
 
 		if (!token.Icmp("coords")) {
+			item.coords.SetNum(2);
 			src->Parse1DMatrix(2, item.coords[0].ToFloatPtr());
 			src->Parse1DMatrix(2, item.coords[1].ToFloatPtr());
+			continue;
+		}
+
+		src->Warning( "sdDeclSurfaceTypeMap::ParseRect: unexpected token '%s'.", token.c_str() );
+		src->SkipBracedSection(false);
+		break;
+	}
+	rects.Append(item);
+
+	return true;
+}
+
+bool sdDeclSurfaceTypeMap::ParseWinding( idParser *src ) {
+	idToken token;
+	if( !src->ExpectTokenString( "{" )) {
+		src->Error( "sdDeclSurfaceTypeMap::ParseWinding: expected {." );
+		return false;
+	}
+
+	rect_t item;
+	while (1) {
+		if( !src->ReadToken( &token )) {
+			src->Error( "sdDeclSurfaceTypeMap::ParseWinding: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if (!token.Icmp("surfaceType")) {
+			if( !src->ReadToken(&token)) {
+				src->Error( "sdDeclSurfaceTypeMap::ParseWinding: failed to parse name" );
+				break;
+			}
+			item.surfaceType = static_cast<const sdDeclSurfaceType *>(declManager->FindType(DECL_SURFACETYPE, token));
+			if (!item.surfaceType) {
+				src->Warning( "sdDeclSurfaceTypeMap::ParseWinding: couldn't find surface type '%s'.", token.c_str() );
+			}
+			continue;
+		}
+
+		if (!token.Icmp("surfaceColor")) {
+			src->Parse1DMatrix(3, item.surfaceColor.ToFloatPtr());
+			continue;
+		}
+
+		if (!token.Icmp("coords")) {
+			int num = src->ParseInt();
+			src->ExpectTokenString("{");
+			item.coords.SetNum(num);
+			for(int i = 0; i < num; i++)
+				src->Parse1DMatrix(2, item.coords[i].ToFloatPtr());
+			src->ExpectTokenString("}");
 			continue;
 		}
 

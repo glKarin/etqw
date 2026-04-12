@@ -122,7 +122,10 @@ typedef struct srfTriangles_s
 	// pointers into the original surface, and should not be freed
 	
 #ifdef _SPLASHDAMAGE
+	//BEGIN RAVEN
     int							numAllocedVerts;
+	int							numAllocedIndices;
+	//END RAVEN
 #endif
 
 	int							numVerts;				// number of vertices
