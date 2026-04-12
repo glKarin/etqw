@@ -64,6 +64,9 @@ rvDeclEffect::rvDeclEffect()
           mSize(BSE_LARGEST/* 512.0f */),
           mPlayCount(0),
           mLoopCount(0)
+#ifdef _SPLASHDAMAGE
+		  , mCutOffDistance(0.0f)
+#endif
 {
     //mSegmentTemplates.SetGranularity(16);
     // base is assigned by idDecl::Create after construction
@@ -131,6 +134,9 @@ void rvDeclEffect::Init() {
     mSize = BSE_LARGEST/* 512.0f */;
     mPlayCount = 0;
     mLoopCount = 0;
+#ifdef _SPLASHDAMAGE
+	mCutOffDistance = 0.0f;
+#endif
 
     FreeData();                     // clears the list
 }
@@ -168,6 +174,9 @@ void rvDeclEffect::CopyData(const rvDeclEffect& src) {
     for (int i = 0; i < src.mSegmentTemplates.Num(); ++i) {
         mSegmentTemplates[i] = src.mSegmentTemplates[i];
     }
+#ifdef _SPLASHDAMAGE
+	mCutOffDistance = src.mCutOffDistance;
+#endif
 }
 
 //------------------------------------------------------------------------
@@ -301,7 +310,12 @@ void rvDeclEffect::Revert() {
 //  Parsing
 //==========================================================================//
 
-bool rvDeclEffect::Parse(const char* text, int textLength, bool noCaching) {
+#ifdef _SPLASHDAMAGE
+bool rvDeclEffect::Parse(const char* text, int textLength) 
+#else
+bool rvDeclEffect::Parse(const char* text, int textLength, bool noCaching) 
+#endif
+{
     idLexer lexer;
     lexer.LoadMemory(text, textLength, GetFileName(), GetLineNum());
     lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS);
@@ -324,6 +338,12 @@ bool rvDeclEffect::Parse(const char* text, int textLength, bool noCaching) {
             mSize = lexer.ParseFloat();
             continue;
         }
+#ifdef _SPLASHDAMAGE
+        if (!tok.Icmp("cutOffDistance")) {
+            mCutOffDistance = lexer.ParseFloat();
+            continue;
+        }
+#endif
 
         //--------------------------------------------------------------//
         //  Segment creation

@@ -3607,6 +3607,27 @@ bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
 
 #ifdef _SPLASHDAMAGE
 void idRenderWorldLocal::RestartEffectDef( qhandle_t effectHandle ) {
+    rvRenderEffectLocal *effect;
+
+    if ( r_skipUpdates.GetBool() )
+        return;
+    if ( !bse_enabled.GetBool() )
+        return;
+
+    if ( effectHandle < 0 || effectHandle >= effectDefs.Num() )
+    {
+        common->Error( "idRenderWorld::StopEffectDef: invalid handle %i >= %i\n", effectHandle, effectDefs.Num());
+    }
+    else
+    {
+        effect = effectDefs[effectHandle];
+        if ( effect )
+        {
+            bse->StopEffect(effect);
+			float time = (float)effect->effect->mCurrentTime;
+			bse->PlayEffect(effect, time);
+		}
+	}
 }
 
 void idRenderWorldLocal::FreeStoppedEffectDefs( void ) {

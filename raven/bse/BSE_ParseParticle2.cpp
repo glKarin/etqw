@@ -390,6 +390,12 @@ void rvParticleTemplate::Init(void) {
     mNumTimeoutEffects = 0;
     memset(mImpactEffects, 0, sizeof(mImpactEffects));
     memset(mTimeoutEffects, 0, sizeof(mTimeoutEffects));
+#ifdef _SPLASHDAMAGE
+	mTrailRepeat = 0;
+	mWindDeviationAngle = 0.0f;
+	mTrailScale = 1.0f;
+	mNumFrames = 0;
+#endif
 }
 
 /*
@@ -955,6 +961,12 @@ bool rvParticleTemplate::ParseSpawnDomains(rvDeclEffect* effect,
         else if (!idStr::Icmp(tok, "angle")) ParseSpawnParms(effect, src, mSpawnAngle, 3);
         else if (!idStr::Icmp(tok, "offset")) ParseSpawnParms(effect, src, mSpawnOffset, 3);
         else if (!idStr::Icmp(tok, "length")) ParseSpawnParms(effect, src, mSpawnLength, 3);
+#ifdef _SPLASHDAMAGE
+        else if (!idStr::Icmp(tok, "windStrength")) // windStrength { line 0.125,0.25 }
+			src->SkipBracedSection(true);
+        else if (!idStr::Icmp(tok, "friction")) // friction { point 0,20,0 }
+			src->SkipBracedSection(true);
+#endif
         else {
             common->Warning("^4BSE:^1 Invalid spawn keyword '%s' in '%s' "
                 "(file: %s, line: %d)",
@@ -1466,6 +1478,24 @@ bool rvParticleTemplate::Parse(rvDeclEffect* effect, idLexer* src)
         /*  impact / timeout blocks ---------------------------------------- */
         else if (!idStr::Icmp(tok, "impact")) ParseImpact(effect, src);
         else if (!idStr::Icmp(tok, "timeout")) ParseTimeout(effect, src);
+#ifdef _SPLASHDAMAGE
+        else if (!idStr::Icmp(tok, "trailRepeat")) 
+			mTrailRepeat = src->ParseInt();
+        else if (!idStr::Icmp(tok, "lineHit"))
+            mFlags |= PTFLAG_HAS_LINEHIT;
+        else if (!idStr::Icmp(tok, "windDeviationAngle")) 
+			mWindDeviationAngle = src->ParseFloat();
+        else if (!idStr::Icmp(tok, "parentvelocity")) 
+            mFlags |= PTFLAG_PARENTVEL;
+        else if (!idStr::Icmp(tok, "trailScale")) 
+			mTrailScale = src->ParseFloat();
+        else if (!idStr::Icmp(tok, "useLightningAxis")) 
+            mFlags |= PTFLAG_USELIGHTNING_AXIS;
+        else if (!idStr::Icmp(tok, "numFrames")) 
+			mNumFrames = src->ParseInt();
+        else if (!idStr::Icmp(tok, "fadeIn")) 
+            mFlags |= PTFLAG_FADE_IN;
+#endif
 
         /*  unknown keyword ------------------------------------------------- */
         else {

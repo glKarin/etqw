@@ -79,6 +79,9 @@ public:
       mSoundVolume(idVec2(0.0f, 0.0f)),
       mFreqShift(idVec2(1.0f, 1.0f)),
       mBSEEffect(NULL)
+#ifdef _SPLASHDAMAGE
+	  , mDecalAxis(0)
+#endif
     {
         for(int i = 0; i < sizeof(mEffects) / sizeof(mEffects[0]); i++)
             mEffects[i] = NULL;
@@ -121,6 +124,10 @@ public:
     {
         return BSE::SegmentTypeName(mSegType);
     }
+#ifdef _SPLASHDAMAGE
+	bool					GetUseMaterialColor( void ) const { return( !!( mFlags & STFLAG_USEMATCOLOR ) ); }
+	bool					GetInverseDrawOrder( void ) const { return( !!( mFlags & STFLAG_INVERSE_DRAWORDER ) ); }
+#endif
 public:
     /* data * identical order to the dump so pointer arithmetic stays valid */
     rvDeclEffect* mDeclEffect;
@@ -153,4 +160,7 @@ public:
     rvBSE*                  mBSEEffect;
 
     idStr                  mSegmentName;
+#ifdef _SPLASHDAMAGE
+	int						mDecalAxis;						// Axis to project decals along
+#endif
 };

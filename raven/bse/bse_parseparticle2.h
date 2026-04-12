@@ -108,6 +108,14 @@ public:
         const idVec3* acceleration,
         const idVec3* friction
     ) const;
+#ifdef _SPLASHDAMAGE
+	int					GetTrailRepeat( void ) { return mTrailRepeat; }
+	float				GetWindDeviationAngle( void ) { return mWindDeviationAngle; }
+	bool				GetHasLineHit( void ) const { return( !!( mFlags & PTFLAG_HAS_LINEHIT ) ); }
+	bool				GetParentVelocity( void ) const { return( !!( mFlags & PTFLAG_PARENTVEL ) ); }
+	float				GetTrailScale( void ) const { return mTrailScale; }
+	int					GetNumFrames( void ) { return mNumFrames; }
+#endif
 
     // ---------------------------------------------------------------------
     //  Parsing helpers (return true on success)
@@ -223,4 +231,12 @@ public:
 
     // ── optional entityDef attachment (for spawned rigid-bodys etc.) ──────
     idStr       mEntityDefName;
+#ifdef _SPLASHDAMAGE
+	int			mTrailRepeat;
+	float					mWindDeviationAngle;
+	float					mTrailScale;							// Width of the motion trails will be particleSize scaled by this
+	byte					mNumFrames;
+	//rvParticleParms			*mpSpawnWindStrength;
+	//rvParticleParms			*mpSpawnFriction;
+#endif
 };

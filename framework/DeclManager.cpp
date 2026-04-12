@@ -461,6 +461,7 @@ public:
 		static void					ListDecls_f(const idCmdArgs &args);
 		static void					ReloadDecls_f(const idCmdArgs &args);
 		static void					TouchDecl_f(const idCmdArgs &args);
+		static void					ParseAllDecls_f(const idCmdArgs &args);
 };
 
 idCVar idDeclManagerLocal::decl_show("decl_show", "0", CVAR_SYSTEM, "set to 1 to print parses, 2 to also print references", 0, 2, idCmdSystem::ArgCompletion_Integer<0,2>);
@@ -1466,7 +1467,7 @@ void idDeclManagerLocal::Init(void)
 	{
 		declTypeTables[i] = declIdentifierList[i];
 	}
-	// compte for DOOM3
+	// compat for DOOM3
 	declTypeTables[DECL_FONT] = "font";
 	declTypeTables[DECL_MODELDEF] = "modelDef";
 	declTypeTables[DECL_FX] = "fx";
@@ -1585,6 +1586,8 @@ void idDeclManagerLocal::Init(void)
 
 	cmdSystem->AddCommand("reloadDecls", ReloadDecls_f, CMD_FL_SYSTEM, "reloads decls");
 	cmdSystem->AddCommand("touch", TouchDecl_f, CMD_FL_SYSTEM, "touches a decl");
+
+	cmdSystem->AddCommand("parseAllDecls", ParseAllDecls_f, CMD_FL_SYSTEM, "parse all entries of a decl");
 
 	cmdSystem->AddCommand("listTables", idListDecls_f<DECL_TABLE>, CMD_FL_SYSTEM, "lists tables", idCmdSystem::ArgCompletion_String<listDeclStrings>);
 	cmdSystem->AddCommand("listMaterials", idListDecls_f<DECL_MATERIAL>, CMD_FL_SYSTEM, "lists materials", idCmdSystem::ArgCompletion_String<listDeclStrings>);
@@ -3716,6 +3719,49 @@ const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse 
 	return static_cast<const hhDeclBeam*>(DeclByIndex(DECL_BEAM, index, forceParse));
 }
 #endif
+
+void idDeclManagerLocal::ParseAllDecls_f(const idCmdArgs &args)
+{
+	bool	force;
+
+	if(args.Argc() < 2) {
+		common->Printf("Usage: %s <type>\n", args.Argv(0));
+		common->Printf("valid types: ");
+
+		for (int i = 0 ; i < declManagerLocal.declTypes.Num() ; i++) {
+			if (declManagerLocal.declTypes[i]) {
+				common->Printf("%s ", declManagerLocal.declTypes[i]->typeName.c_str());
+			}
+		}
+
+		common->Printf("\n");
+		return;
+	}
+
+	const char *type = args.Argv(1);
+	const idDeclType *declType = NULL;
+
+	for (int i = 0; i < declManagerLocal.declTypes.Num(); i++) {
+		if (declManagerLocal.declTypes[i] && declManagerLocal.declTypes[i]->typeName.Icmp(args.Argv(1)) == 0) {
+			declType = declManagerLocal.declTypes[i];
+			break;
+		}
+	}
+
+	if (!declType) {
+		common->Printf("unknown decl type '%s'\n", type);
+		return;
+	}
+
+	int numDecls = declManagerLocal.GetNumDecls(DECL_RENDERPROGRAM);
+	common->Printf("Parse: %s decls %d entries\n", type, numDecls);
+	soundSystem->SetMute(true);
+
+	for(int m = 0; m < numDecls; m++)
+		declManagerLocal.DeclByIndex(declType->type, m, true);
+
+	soundSystem->SetMute(false);
+}
 
 #ifdef _SPLASHDAMAGE //karin: parse binary declb file and binary global token cache file
 void idDeclLocal::SetBinarySource( const byte* source, int length ) {

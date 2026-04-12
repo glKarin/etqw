@@ -412,6 +412,14 @@ bool rvSegmentTemplate::Parse(rvDeclEffect* effect,
         }
         else if (token.Icmp("volume") == 0) { READ_VEC2(mSoundVolume); }
         else if (token.Icmp("freqShift") == 0) { READ_VEC2(mFreqShift); }
+#ifdef _SPLASHDAMAGE
+        else if (token.Icmp("useMaterialColor") == 0) { mFlags |= STFLAG_USEMATCOLOR; }
+        else if (token.Icmp("inverseDrawOrder") == 0) { mFlags |= STFLAG_INVERSE_DRAWORDER; }
+        else if (token.Icmp("decalAxis") == 0) { mDecalAxis = lexer->ParseInt(); }
+        else if (token.Icmp("calcDuration") == 0) { }
+        else if (token.Icmp("orientateIdentity") == 0) { }
+        else if (token.Icmp("depthsort") == 0) { }
+#endif
         /* --- nested effect refs --------------------------------------- */
         else if (token.Icmp("effect") == 0)
         {
