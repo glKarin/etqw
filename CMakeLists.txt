@@ -554,6 +554,7 @@ if(D3_COMPILER_IS_GCC_OR_CLANG)
 	add_compile_options(-Wno-local-type-template-args -Wno-parentheses-equality -Wno-unused-value)
 	add_compile_options(-Wno-self-assign-field -Wno-logical-not-parentheses -Wno-overloaded-virtual -Wno-c++11-compat-deprecated-writable-strings)
 	add_compile_options(-Wno-undefined-inline -Wno-null-conversion -Wno-extra-tokens -Wno-c++11-extensions)
+	add_compile_options(-Wno-missing-declarations)
 	if(NOT ANDROID)
 		CHECK_CXX_COMPILER_FLAG("-Woverloaded-virtual" cxx_has_Woverload_virtual)
 		if(cxx_has_Woverload_virtual)
@@ -3537,7 +3538,9 @@ if(ETQW)
 	target_include_directories(etqwgame PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
 	if(NOT MSVC)
 		#target_compile_options(etqwgame PRIVATE -Wno-format-security)
-		target_compile_options(etqwgame PRIVATE -Wno-format-security -fno-delete-null-pointer-checks) # allow check this is NULL
+		#target_compile_options(etqwgame PRIVATE -Wno-format-security -fno-delete-null-pointer-checks -fno-inline) # allow check this is NULL
+		#target_compile_options(etqwgame PRIVATE -Wno-format-security -fno-delete-null-pointer-checks) # allow check this is NULL
+		target_compile_options(etqwgame PRIVATE -Wno-format-security -fno-delete-null-pointer-checks -ffinite-math-only) # -ffp-model=fast
 	endif()
 	#target_compile_options(app3 PRIVATE -U_WLANG)
 

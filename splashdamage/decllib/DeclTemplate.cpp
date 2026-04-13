@@ -176,7 +176,12 @@ bool sdDeclTemplate::ParseCommand( idParser &src, command_t &cmd ) {
 		}
 
 		if (!token.Icmp("append")) {
-			src.ParseBracedSection(cmd.append, -1, true);
+			idStr text;
+			if (ParseTextSource(src, text)) {
+				cmd.append = text;
+			}
+			else
+				return false;
 			continue;
 		}
 
@@ -227,32 +232,51 @@ bool sdDeclTemplate::ParseCommands( idParser &src ) {
 	return true;
 }
 
-bool sdDeclTemplate::ParseText( idParser &src ) {
+bool sdDeclTemplate::ParseTextSource(idParser &src, idStr &text) {
 	idToken token;
 	if( !src.ExpectTokenString( "{" )) {
-		src.Error( "sdDeclTemplate::ParseText: expected {." );
+		src.Error( "sdDeclTemplate::ParseTextSource: expected {." );
 		return false;
 	}
 
-	idStr text;
 	src.ParseBracedSection(text, -1, false);
+	text.StripLeadingWhiteSpace();
 	text.StripTrailingWhitespace();
-	text.StripLeadingOnce("{");
 	text.StripTrailingOnce("}");
+	/*text.StripLeadingOnce("{");*/
+	// /*// text.StripLeadingWhiteSpace();
+	// // text.StripTrailingWhitespace();
+	// // text.StripQuotes();*/
 
-	if (!text.IsEmpty()) {
+	return !text.IsEmpty();
+}
+
+bool sdDeclTemplate::ParseText( idParser &src ) {
+	idStr text;
+	if (ParseTextSource(src, text)) {
 		decl_t &decl = decls.Alloc();
 		decl.type = SEC_TEXT;
 		decl.text = text;
+		return true;
 	}
-
-	return true;
+	else
+		return false;
 }
 
 void sdDeclTemplate::ExpandParameters(idLexer &src, idDict &newDecl) const {
 	idToken token;
 
-	src.ExpectTokenString("<");
+	// src.ExpectTokenString("<"); //karin: why could read <16 in <16, 0.333> ???
+	if(!src.ReadToken(&token) || token[0] != '<')
+	{
+		src.Error("Expect '<'");
+		return;
+	}
+	if(token.Length() > 1)
+	{
+		token = token.c_str() + 1;
+		src.UnreadToken(&token);
+	}
 	for (int i = 0; i < parameters.Num(); i++ )
 	{
 		const parameter_t &parm = parameters[i];
@@ -268,9 +292,7 @@ void sdDeclTemplate::ExpandParameters(idLexer &src, idDict &newDecl) const {
 
 		src.ReadToken(&token);
 		if(token != ",") //karin: maybe has ,
-		{
 			src.UnreadToken(&token);
-		}
 	}
 	src.ExpectTokenString(">");
 }
@@ -286,8 +308,11 @@ void sdDeclTemplate::ExpandText(const idStr &text, idStr &ret, const idDict &par
 		newDecl.Replace(parm.name.c_str(), token);
 	}
 
-	ret.Append("\n");
-	ret.Append(newDecl);
+	idStr str;
+	if(ExpandTemplate(str, newDecl.c_str(), newDecl.Length()))
+		ret.Append(str);
+	else
+		ret.Append(newDecl);
 }
 
 bool sdDeclTemplate::CheckCondition(const condition_t &cond, const idDict &parms) const {
@@ -309,18 +334,7 @@ void sdDeclTemplate::ExpandCommand(const command_t &cmd, idStr &ret, const idDic
 	if (!CheckCondition(cmd.cond, parms))
 		return;
 
-	idStr newDecl;
-	newDecl.Append(cmd.append);
-
-	for (int i = 0; i < parameters.Num(); i++ )
-	{
-		const parameter_t &parm = parameters[i];
-		const char *token = parms.GetString(parm.name);
-		newDecl.Replace(parm.name.c_str(), token);
-	}
-
-	ret.Append("\n");
-	ret.Append(newDecl);
+	ExpandText(cmd.append, ret, parms);
 }
 
 void sdDeclTemplate::ExpandCommands(const idList<command_t> &cmds, idStr &ret, const idDict &parms) const {
@@ -372,8 +386,10 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
     idToken	token, token2;
 
     src.LoadMemory(_text, textLength, "useTemplate", 0);
-    src.SetFlags(DECL_LEXER_FLAGS);
+    src.SetFlags(DECL_LEXER_FLAGS | ~LEXFL_ALLOWRAWSTRINGBLOCKS);
 
+	int range_start = 0;
+	int range_end = 0;
     while (1)
     {
         if (!src.ReadToken(&token))
@@ -382,13 +398,16 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
         if (idStr::Icmp(token, "useTemplate"))
 			continue;
 
-		int range_start = src.GetFileOffset() - idStr::Length("useTemplate"); //karin: record range start before next `ReadToken`
+		range_end = src.GetFileOffset() - idStr::Length("useTemplate"); //karin: record range start before next `ReadToken`
+														
+		if(range_start < range_end)
+			finalBuffer.Append(text + range_start, range_end - range_start);
+
 		idToken name;
 
 		src.ReadToken(&name);
 		const idDecl *decl = declManager->FindType(DECL_TEMPLATE, name, false);
 
-		idStr newDecl;
 		if (!decl)
 		{
 			common->Warning("Failed to find template '%s'", name.c_str());
@@ -399,23 +418,16 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
 		else
 		{
 			const sdDeclTemplate *declTemplate = static_cast<const sdDeclTemplate *>(decl);
+			idStr newDecl;
 			declTemplate->Expand(src, newDecl);
+			finalBuffer.Append(newDecl);
+			ret = true;
 		}
-
-		finalBuffer = _text;
-
-		int range_end = src.GetFileOffset(); //karin: record range end after last `ReadToken`
-		ReplacePlaceholder(range_start, range_end, newDecl, finalBuffer);
-		ret = true;
-
-		newDecl = "";
-		if(ExpandTemplate(newDecl, finalBuffer.c_str(), finalBuffer.Length()))
-		{
-			finalBuffer = newDecl;
-		}
-		break;
+		range_start = src.GetFileOffset(); //karin: record range start before next `ReadToken`
 	}
 
+	if(range_start < textLength)
+		finalBuffer.Append(text + range_start, textLength - range_start);
 	return ret;
 }
 

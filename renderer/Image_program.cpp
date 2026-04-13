@@ -361,6 +361,48 @@ static void R_ImageAdd(byte *data1, int width1, int height1, byte *data2, int wi
 static char parseBuffer[MAX_IMAGE_NAME];
 #ifdef _SPLASHDAMAGE //karin: save image program stage parms
 idStrList stageParms;
+
+/*
+===================
+R_ImageAdd
+
+===================
+*/
+static void R_ImageAdd(byte *data1, int width1, int height1, byte r, byte g, byte b, byte a)
+{
+	int		i, j, k;
+	int		c;
+	byte color[] = {r, g, b, a};
+
+	c = width1 * height1 * 4;
+
+	for (i = 0 ; i < c ; i+=4) {
+		for (k = 0; k < 4; k++) {
+			j = data1[i+k] + color[k];
+
+			if (j > 255) {
+				j = 255;
+			}
+
+			data1[i+k] = j;
+		}
+	}
+}
+
+/*
+===================
+AppendToken
+===================
+*/
+static void AppendToken(const char *token)
+{
+	// add a leading space if not at the beginning
+	if (parseBuffer[0]) {
+		idStr::Append(parseBuffer, MAX_IMAGE_NAME, " ");
+	}
+
+	idStr::Append(parseBuffer, MAX_IMAGE_NAME, token);
+}
 #endif
 
 /*
@@ -499,19 +541,43 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 	if (!token.Icmp("colormipmaps")) {
 		idStr tmp;
 	    src.ParseBracedSection( tmp, -1, true, '(', ')' );
+		/*idLexer lexer;
+		lexer.LoadMemory(tmp.c_str(), tmp.Length(), "colormipmaps");
+		idToken t;
+		while (src.ReadToken(&t)) {
+			AppendToken(t);
+		}*/
 		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
 		return true;
 	}
+#ifdef _SPLASHDAMAGE //karin: image program stage parms
+
+	AppendToken(token);
+
+#endif
 	if (!token.Icmp("premultiplyAlpha")) {
-		src.ExpectTokenString("(");
+		MatchAndAppendToken(src, "(");
 		if (!R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)) {
 			return false;
 		}
-		src.ExpectTokenString(")");
+		MatchAndAppendToken(src, ")");
+		return true;
+	}
+	if (!token.Icmp("mulAlpha")) {
+		MatchAndAppendToken(src, "(");
+		if (!R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)) {
+			return false;
+		}
+
+		MatchAndAppendToken(src, ",");
+
+		if (!R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)) {
+			return false;
+		}
+		MatchAndAppendToken(src, ")");
 		return true;
 	}
 #endif
-	AppendToken(token);
 
 	if (!token.Icmp("heightmap")) {
 		MatchAndAppendToken(src, "(");
@@ -605,6 +671,31 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 
 		MatchAndAppendToken(src, ",");
 
+#ifdef _SPLASHDAMAGE //karin: add(img, r, g, b, a)
+		idToken t;
+		if (!src.ExpectAnyToken(&t))
+			return false;
+
+		src.UnreadToken(&t);
+		if (t.type == TT_NUMBER) {
+			byte r = (byte)src.ParseInt();
+			AppendToken(va("%d", r));
+			MatchAndAppendToken(src, ",");
+			byte g = (byte)src.ParseInt();
+			AppendToken(va("%d", g));
+			MatchAndAppendToken(src, ",");
+			byte b = (byte)src.ParseInt();
+			AppendToken(va("%d", b));
+			MatchAndAppendToken(src, ",");
+			byte a = (byte)src.ParseInt();
+			AppendToken(va("%d", a));
+			if (pic)
+				R_ImageAdd(*pic, *width, *height, r, g, b, a);
+		}
+		else
+		{
+#endif
+
 		if (!R_ParseImageProgram_r(src, pic ? &pic2 : NULL, &width2, &height2, timestamps, depth)) {
 			if (pic) {
 				R_StaticFree(*pic);
@@ -619,6 +710,9 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 			R_ImageAdd(*pic, *width, *height, pic2, width2, height2);
 			R_StaticFree(pic2);
 		}
+#ifdef _SPLASHDAMAGE //karin: add(img, r, g, b, a)
+		}
+#endif
 
 		MatchAndAppendToken(src, ")");
 		return true;

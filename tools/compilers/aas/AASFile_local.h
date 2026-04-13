@@ -124,6 +124,9 @@ class idAASFileLocal : public idAASFile
 		virtual bool				PushPointIntoArea( int areaNum, idVec3 &point ) const;
 		virtual bool				TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const;
 		virtual bool				TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const;
+
+		void						CalcAreaPlanes(void);
+		void						LoadAreaPlane_r(int nodeNum, idList<idList<int>> &faceMap);
 #endif
 
 	private:

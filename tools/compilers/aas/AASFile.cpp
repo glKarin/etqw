@@ -213,6 +213,22 @@ idAASSettings::idAASSettings(void)
 	tt_startCrouching = 100;
 	tt_waterJump = 100;
 	tt_startWalkOffLedge = 100;
+#ifdef _SPLASHDAMAGE
+	type = AAS_PLAYER;
+	boundingBox = idBounds(idVec3(-16, -16, 0), idVec3(16, 16, 72));
+	primitiveModeBrush = AAS_PRIMITIVE_MODE_DEFAULT;
+	primitiveModePatch = AAS_PRIMITIVE_MODE_EXPLICIT;
+	primitiveModeModel = AAS_PRIMITIVE_MODE_NEVER;
+	primitiveModeTerrain = AAS_PRIMITIVE_MODE_ALWAYS;
+	minHighCeiling = 80.0f;
+	groundSpeed = 256.0f;
+	waterSpeed = 150.0f;
+	ladderSpeed = 50.0f;
+	wallCornerEdgeRadius = 0.0f;
+	ledgeCornerEdgeRadius = 0.0f;
+	obstaclePVSRadius = 1024.0f;
+	tt_startLadderClimb = 200;
+#endif
 }
 
 /*
@@ -1780,22 +1796,6 @@ bool idAASSettings::ReadFromFileBinary(idFile *file)
 	return true;
 }
 
-int idAASFileLocal::FindReachabilityByName( const char *name ) const {
-	return -1;
-}
-
-bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
-	return false;
-}
-
-bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const {
-	return false;
-}
-
-bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const {
-	return false;
-}
-
 /*
 ================
 idAASFileLocal::LoadBinary
@@ -1926,6 +1926,9 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 		common->Error("idAASFileLocal::Load: tree depth = %d", depth);
 	}
 
+	//karin: make area planes info
+	CalcAreaPlanes();
+
 	common->Printf("done.\n");
 
 	return true;
@@ -1952,7 +1955,7 @@ bool idAASFileLocal::ParsePlanesBinary(idFile *file)
 		file->ReadFloat(vec[3]);
 
 		plane.SetNormal(vec.ToVec3());
-		plane.SetDist(vec[3]);
+		plane[3] = vec[3];
 		planeList.Append(plane);
 	}
 
@@ -2217,6 +2220,483 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 	}
 
 	return true;
+}
+
+void idAASFileLocal::LoadAreaPlane_r(int nodeNum, idList<idList<int>> &faceMap) {
+	int i, areaNum;
+	const aasNode_t *node;
+
+	node = &nodes[nodeNum];
+
+	for (i = 0; i < 2; i++) {
+		nodeNum = node->children[i];
+
+		if (nodeNum == 0) { // is solid
+			continue;
+		}
+		if (nodeNum < 0) { // is area
+			areaNum = -nodeNum;
+			aasFace_t &face = faces.Alloc();
+			face.planeNum = node->planeNum;
+			face.areas[0] = (short)areaNum;
+			faceMap[areaNum].Append(faces.Num() - 1);
+			continue;
+		}
+		LoadAreaPlane_r(nodeNum, faceMap);
+	}
+}
+
+void idAASFileLocal::CalcAreaPlanes(void)
+{
+	int i, j;
+	aasArea_t *area;
+
+	idList<idList<int>> faceMap;
+	faceMap.SetNum(areas.Num());
+	LoadAreaPlane_r(1, faceMap);
+
+	for (i = 0; i < areas.Num(); i++) {
+		area = &areas[i];
+		idList<aasIndex_t> &areaFaces = faceMap[i];
+		area->firstFace = faceIndex.Num();
+		area->numFaces = areaFaces.Num();
+
+		for (j = 0; j < areaFaces.Num(); j++) {
+			faceIndex.Append(areaFaces[j]);
+		}
+	}
+}
+
+int idAASFileLocal::FindReachabilityByName( const char *name ) const {
+	for (int i = 0; i < reachabilityNames.Num(); i++) {
+		if (!idStr::Icmp(reachabilityNames[i].name, name)) {
+			return reachabilityNames[i].index;
+		}
+	}
+	return -1;
+}
+
+bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
+	int i, faceNum;
+	const aasArea_t *area;
+	const aasFace_t *face;
+
+	area = &areas[areaNum];
+
+	bool ret = false;
+	// push the point to the right side of all area face planes
+	for (i = 0; i < area->numFaces; i++) {
+		faceNum = faceIndex[area->firstFace + i];
+		face = &faces[abs(faceNum)];
+
+		const idPlane &plane = planeList[face->planeNum ^ INTSIGNBITSET(faceNum)];
+		float dist = plane.Distance(point);
+
+		// project the point onto the face plane if it is on the wrong side
+		if (dist < 0.0f) {
+			point -= dist * plane.Normal();
+			ret = true;
+		}
+	}
+
+	return ret;
+}
+
+#define TRACEPLANE_EPSILON		0.125f
+
+typedef struct aasTraceStack_s {
+	idVec3			start;
+	idVec3			end;
+	int				planeNum;
+	int				nodeNum;
+} aasTraceStack_t;
+
+bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const {
+	return false;
+	int side, nodeNum, tmpPlaneNum;
+	double front, back, frac;
+	idVec3 cur_start, cur_end, cur_mid, v1, v2;
+	aasTraceStack_t tracestack[MAX_AAS_TREE_DEPTH];
+	aasTraceStack_t *tstack_p;
+	const aasNode_t *node;
+	const idPlane *plane;
+	const boolean getOutOfSolid = false;
+	int planeNum = 0;
+	const int flags = AAS_NODE_FLAG_COLUMN_HEIGHT;
+	int lastAreaNum = 0;
+	float fraction = 1.0f;
+	idVec3 endpos;
+
+	trace.numPoints = 0;
+
+	tstack_p = tracestack;
+	tstack_p->start = start;
+	tstack_p->end = end;
+	tstack_p->planeNum = 0;
+	tstack_p->nodeNum = 1;		//start with the root of the tree
+	tstack_p++;
+
+	while (1) {
+
+		tstack_p--;
+
+		// if the trace stack is empty
+		if (tstack_p < tracestack) {
+			if (!lastAreaNum) {
+				// completely in solid
+				fraction = 0.0f;
+				endpos = start;
+			} else {
+				// nothing was hit
+				fraction = 1.0f;
+				endpos = end;
+			}
+
+			planeNum = 0;
+			return false;
+		}
+
+		// number of the current node to test the line against
+		nodeNum = tstack_p->nodeNum;
+
+		// if it is an area
+		if (nodeNum < 0) {
+			// if can't enter the area
+			if ((areas[-nodeNum].flags & flags)) {
+				if (!lastAreaNum) {
+					fraction = 0.0f;
+					v1 = vec3_origin;
+				} else {
+					v1 = end - start;
+					v2 = tstack_p->start - start;
+					fraction = v2.Length() / v1.Length();
+				}
+
+				endpos = tstack_p->start;
+				planeNum = tstack_p->planeNum;
+				// always take the plane with normal facing towards the trace start
+				plane = &planeList[planeNum];
+
+				if (v1 * plane->Normal() > 0.0f) {
+					planeNum ^= 1;
+				}
+
+				return true;
+			}
+
+			lastAreaNum = -nodeNum;
+
+			continue;
+		}
+
+		// if it is a solid leaf
+		if (!nodeNum) {
+			if (!lastAreaNum) {
+				fraction = 0.0f;
+				v1 = vec3_origin;
+			} else {
+				v1 = end - start;
+				v2 = tstack_p->start - start;
+				fraction = v2.Length() / v1.Length();
+			}
+
+			endpos = tstack_p->start;
+			planeNum = tstack_p->planeNum;
+			// always take the plane with normal facing towards the trace start
+			plane = &planeList[planeNum];
+
+			if (v1 * plane->Normal() > 0.0f) {
+				planeNum ^= 1;
+			}
+
+			if (!lastAreaNum && getOutOfSolid) {
+				continue;
+			} else {
+				return true;
+			}
+		}
+
+		// the node to test against
+		node = &nodes[nodeNum];
+		if ((node->flags & AAS_NODE_FLAG_COLUMN_HEIGHT) == 0)
+			continue;
+		// start point of current line to test against node
+		cur_start = tstack_p->start;
+		// end point of the current line to test against node
+		cur_end = tstack_p->end;
+		// the current node plane
+		plane = &planeList[node->planeNum];
+
+		front = plane->Distance(cur_start);
+		back = plane->Distance(cur_end);
+
+		// if the whole to be traced line is totally at the front of this node
+		// only go down the tree with the front child
+		if (front >= -ON_EPSILON && back >= -ON_EPSILON) {
+			// keep the current start and end point on the stack and go down the tree with the front child
+			tstack_p->nodeNum = node->children[0];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+		}
+		// if the whole to be traced line is totally at the back of this node
+		// only go down the tree with the back child
+		else if (front < ON_EPSILON && back < ON_EPSILON) {
+			// keep the current start and end point on the stack and go down the tree with the back child
+			tstack_p->nodeNum = node->children[1];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+		}
+		// go down the tree both at the front and back of the node
+		else {
+			tmpPlaneNum = tstack_p->planeNum;
+
+			// calculate the hit point with the node plane
+			// put the cross point TRACEPLANE_EPSILON on the near side
+			if (front < 0) {
+				frac = (front + TRACEPLANE_EPSILON) / (front - back);
+			} else {
+				frac = (front - TRACEPLANE_EPSILON) / (front - back);
+			}
+
+			if (frac < 0) {
+				frac = 0.001f; //0
+			} else if (frac > 1) {
+				frac = 0.999f; //1
+			}
+
+			cur_mid = cur_start + (cur_end - cur_start) * frac;
+
+			// side the front part of the line is on
+			side = front < 0;
+
+			// first put the end part of the line on the stack (back side)
+			tstack_p->start = cur_mid;
+			tstack_p->planeNum = node->planeNum;
+			tstack_p->nodeNum = node->children[!side];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+
+			// now put the part near the start of the line on the stack so we will
+			// continue with that part first.
+			tstack_p->start = cur_start;
+			tstack_p->end = cur_mid;
+			tstack_p->planeNum = tmpPlaneNum;
+			tstack_p->nodeNum = node->children[side];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const {
+	return false;
+	int side, nodeNum, tmpPlaneNum;
+	double front, back, frac;
+	idVec3 cur_start, cur_end, cur_mid, v1, v2;
+	aasTraceStack_t tracestack[MAX_AAS_TREE_DEPTH];
+	aasTraceStack_t *tstack_p;
+	const aasNode_t *node;
+	const idPlane *plane;
+	const boolean getOutOfSolid = false;
+	int planeNum = 0;
+	const int flags = 0;
+
+	trace.lastAreaNum = 0;
+	trace.lastEdgeNum = 0;
+
+	tstack_p = tracestack;
+	tstack_p->start = start;
+	tstack_p->end = end;
+	tstack_p->planeNum = 0;
+	tstack_p->nodeNum = 1;		//start with the root of the tree
+	tstack_p++;
+
+	while (1) {
+
+		tstack_p--;
+
+		// if the trace stack is empty
+		if (tstack_p < tracestack) {
+			if (!trace.lastAreaNum) {
+				// completely in solid
+				trace.fraction = 0.0f;
+				trace.endpos = start;
+			} else {
+				// nothing was hit
+				trace.fraction = 1.0f;
+				trace.endpos = end;
+			}
+
+			planeNum = 0;
+			return false;
+		}
+
+		// number of the current node to test the line against
+		nodeNum = tstack_p->nodeNum;
+
+		// if it is an area
+		if (nodeNum < 0) {
+			// if can't enter the area
+			if ((areas[-nodeNum].flags & flags) || (areas[-nodeNum].travelFlags & travelFlags)) {
+				if (!trace.lastAreaNum) {
+					trace.fraction = 0.0f;
+					v1 = vec3_origin;
+				} else {
+					v1 = end - start;
+					v2 = tstack_p->start - start;
+					trace.fraction = v2.Length() / v1.Length();
+				}
+
+				trace.endpos = tstack_p->start;
+				planeNum = tstack_p->planeNum;
+				// always take the plane with normal facing towards the trace start
+				plane = &planeList[planeNum];
+
+				if (v1 * plane->Normal() > 0.0f) {
+					planeNum ^= 1;
+				}
+
+				return true;
+			}
+
+			trace.lastAreaNum = -nodeNum;
+
+			continue;
+		}
+
+		// if it is a solid leaf
+		if (!nodeNum) {
+			if (!trace.lastAreaNum) {
+				trace.fraction = 0.0f;
+				v1 = vec3_origin;
+			} else {
+				v1 = end - start;
+				v2 = tstack_p->start - start;
+				trace.fraction = v2.Length() / v1.Length();
+			}
+
+			trace.endpos = tstack_p->start;
+			planeNum = tstack_p->planeNum;
+			// always take the plane with normal facing towards the trace start
+			plane = &planeList[planeNum];
+
+			if (v1 * plane->Normal() > 0.0f) {
+				planeNum ^= 1;
+			}
+
+			if (!trace.lastAreaNum && getOutOfSolid) {
+				continue;
+			} else {
+				return true;
+			}
+		}
+
+		// the node to test against
+		node = &nodes[nodeNum];
+		if ((node->flags & AAS_NODE_FLAG_FLOOR_PLANE) == 0)
+			continue;
+		// start point of current line to test against node
+		cur_start = tstack_p->start;
+		// end point of the current line to test against node
+		cur_end = tstack_p->end;
+		// the current node plane
+		plane = &planeList[node->planeNum];
+
+		front = plane->Distance(cur_start);
+		back = plane->Distance(cur_end);
+
+		// if the whole to be traced line is totally at the front of this node
+		// only go down the tree with the front child
+		if (front >= -ON_EPSILON && back >= -ON_EPSILON) {
+			// keep the current start and end point on the stack and go down the tree with the front child
+			tstack_p->nodeNum = node->children[0];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+		}
+		// if the whole to be traced line is totally at the back of this node
+		// only go down the tree with the back child
+		else if (front < ON_EPSILON && back < ON_EPSILON) {
+			// keep the current start and end point on the stack and go down the tree with the back child
+			tstack_p->nodeNum = node->children[1];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+		}
+		// go down the tree both at the front and back of the node
+		else {
+			tmpPlaneNum = tstack_p->planeNum;
+
+			// calculate the hit point with the node plane
+			// put the cross point TRACEPLANE_EPSILON on the near side
+			if (front < 0) {
+				frac = (front + TRACEPLANE_EPSILON) / (front - back);
+			} else {
+				frac = (front - TRACEPLANE_EPSILON) / (front - back);
+			}
+
+			if (frac < 0) {
+				frac = 0.001f; //0
+			} else if (frac > 1) {
+				frac = 0.999f; //1
+			}
+
+			cur_mid = cur_start + (cur_end - cur_start) * frac;
+
+			// side the front part of the line is on
+			side = front < 0;
+
+			// first put the end part of the line on the stack (back side)
+			tstack_p->start = cur_mid;
+			tstack_p->planeNum = node->planeNum;
+			tstack_p->nodeNum = node->children[!side];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+
+			// now put the part near the start of the line on the stack so we will
+			// continue with that part first.
+			tstack_p->start = cur_start;
+			tstack_p->end = cur_mid;
+			tstack_p->planeNum = tmpPlaneNum;
+			tstack_p->nodeNum = node->children[side];
+			tstack_p++;
+
+			if (tstack_p >= &tracestack[MAX_AAS_TREE_DEPTH]) {
+				common->Error("idAASFileLocal::Trace: stack overflow\n");
+				return false;
+			}
+		}
+	}
+
+	return false;
 }
 
 #endif

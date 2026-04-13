@@ -514,6 +514,20 @@ class idAASSettings
 #endif
 
 #ifdef _SPLASHDAMAGE
+		enum type_t {
+			AAS_PLAYER,
+			AAS_VEHICLE
+		};
+
+		enum aasPrimitiveMode_t {
+			AAS_PRIMITIVE_MODE_DEFAULT		= 0,		// compile if marked or part of the world
+			AAS_PRIMITIVE_MODE_NEVER		= 1,		// never compile
+			AAS_PRIMITIVE_MODE_ALWAYS		= 2,		// always compile
+			AAS_PRIMITIVE_MODE_EXPLICIT		= 3			// compile only if the primitive is marked
+		};
+
+		int							type;
+
 		// collision settings
 		idBounds					boundingBox;
 

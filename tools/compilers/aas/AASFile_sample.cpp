@@ -423,16 +423,16 @@ idAASFileLocal::PushPointIntoAreaNum
 */
 void idAASFileLocal::PushPointIntoAreaNum(int areaNum, idVec3 &point) const
 {
+#ifdef _SPLASHDAMAGE //karin: removed in ETQW game
+	// TODO
+	common->Error("Disable idAASFileLocal::PushPointIntoAreaNum(%d)", areaNum);
+#else
 	int i, faceNum;
 	const aasArea_t *area;
 	const aasFace_t *face;
 
 	area = &areas[areaNum];
 
-#ifdef _SPLASHDAMAGE //karin: removed in ETQW game
-	// TODO
-	common->Error("Disable idAASFileLocal::PushPointIntoAreaNum(%d)", areaNum);
-#else
 	// push the point to the right side of all area face planes
 	for (i = 0; i < area->numFaces; i++) {
 		faceNum = faceIndex[area->firstFace + i];

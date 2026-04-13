@@ -52,6 +52,7 @@ private:
 
 private:
 	bool					ParseParameters(idParser &src);
+	bool					ParseTextSource(idParser &src, idStr &out);
 	bool					ParseText(idParser &src);
 	bool					ParseCommands(idParser &src);
 	bool					ParseCommand(idParser &src, command_t &cmd);
