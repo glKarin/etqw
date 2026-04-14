@@ -1943,19 +1943,15 @@ bool idAASFileLocal::ParsePlanesBinary(idFile *file)
 {
 	int numPlanes, i;
 	idPlane plane;
-	idVec4 vec;
 
 	file->ReadInt(numPlanes);
 	planeList.Resize(numPlanes);
 
 	for (i = 0; i < numPlanes; i++) {
-		file->ReadFloat(vec[0]);
-		file->ReadFloat(vec[1]);
-		file->ReadFloat(vec[2]);
-		file->ReadFloat(vec[3]);
-
-		plane.SetNormal(vec.ToVec3());
-		plane[3] = vec[3];
+		file->ReadFloat(plane[0]);
+		file->ReadFloat(plane[1]);
+		file->ReadFloat(plane[2]);
+		file->ReadFloat(plane[3]);
 		planeList.Append(plane);
 	}
 
@@ -2049,8 +2045,8 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		area.travelFlags = uh;
 		file->ReadUnsignedShort(area.flags);
 		area.contents = 0;
-		file->ReadInt(area.firstEdge);
 		file->ReadInt(area.numEdges);
+		file->ReadInt(area.firstEdge);
 		file->ReadShort(area.cluster);
 		file->ReadShort(area.clusterAreaNum);
 		file->ReadUnsignedInt(area.obstaclePVSOffset);
@@ -2222,7 +2218,7 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 	return true;
 }
 
-void idAASFileLocal::LoadAreaPlane_r(int nodeNum, idList<idList<int>> &faceMap) {
+void idAASFileLocal::LoadAreaPlane_r(int nodeNum, idList<idList<int> > &faceMap) {
 	int i, areaNum;
 	const aasNode_t *node;
 
@@ -2251,7 +2247,7 @@ void idAASFileLocal::CalcAreaPlanes(void)
 	int i, j;
 	aasArea_t *area;
 
-	idList<idList<int>> faceMap;
+	idList<idList<int> > faceMap;
 	faceMap.SetNum(areas.Num());
 	LoadAreaPlane_r(1, faceMap);
 
@@ -2320,7 +2316,7 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
 	aasTraceStack_t *tstack_p;
 	const aasNode_t *node;
 	const idPlane *plane;
-	const boolean getOutOfSolid = false;
+	const bool getOutOfSolid = false;
 	int planeNum = 0;
 	const int flags = AAS_NODE_FLAG_COLUMN_HEIGHT;
 	int lastAreaNum = 0;
@@ -2515,7 +2511,7 @@ bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, in
 	aasTraceStack_t *tstack_p;
 	const aasNode_t *node;
 	const idPlane *plane;
-	const boolean getOutOfSolid = false;
+	const bool getOutOfSolid = false;
 	int planeNum = 0;
 	const int flags = 0;
 

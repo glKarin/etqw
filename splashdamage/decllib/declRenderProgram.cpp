@@ -51,8 +51,8 @@ bool sdDeclRenderProgram::Parse( const char* text, const int textLength ) {
 		}
 
 		if( !token.Icmp( "state" )) {
-			src.ReadToken(&token);
-			src.SkipBracedSection(true);
+			src.SkipUntilString("{");
+			src.SkipBracedSection(false);
 			continue;
 		}
 
@@ -64,6 +64,69 @@ bool sdDeclRenderProgram::Parse( const char* text, const int textLength ) {
 
 		if( !token.Icmp( "instanceVersion" )) {
 			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "alphaToCoverageVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "notlitVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "depthVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "earlyCullVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "coverageVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "amblitVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "ambientVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "machineSpec" )) {
+			src.ParseInt();
+			continue;
+		}
+
+		if( !token.Icmp( "imposterBrightness" )) {
+			src.ParseFloat();
+			continue;
+		}
+
+		if( !token.Icmp( "fallBack" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "lodVersion" )) {
+			src.ReadToken(&token);
+			continue;
+		}
+
+		if( !token.Icmp( "interaction" )) {
+			continue;
+		}
+
+		if( !token.Icmp( "lowrangeuv" )) {
 			continue;
 		}
 

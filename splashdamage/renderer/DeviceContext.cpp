@@ -889,17 +889,10 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	if(lineBreaks)
-	{
-		width = DrawText(str.c_str(), fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
-		height = MaxCharHeight(fontScale) * lineBreaks->Num() + 5 * (lineBreaks->Num() - 1);
-	}
-	else
-	{
-		idList<int> lbs;
-		width = DrawText(str.c_str(), fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
-		height = MaxCharHeight(fontScale) * lbs.Num() + 5 * (lbs.Num() - 1);
-	}
+	int size[2] = {0};
+	DrawText(str.c_str(), fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0, size);
+	width = size[0];
+	height = size[1];
 
 	if (scale)
 		*scale = fontScale;
@@ -1258,7 +1251,7 @@ void sdDeviceContextLocal::DrawEditCursor(float x, float y, float scale, const i
 	PaintChar(x, y - yadj,glyph2->imageWidth,glyph2->imageHeight,useScale,glyph2->s,glyph2->t,glyph2->s2,glyph2->t2,glyph2->glyph, color);
 }
 
-int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, const char *text, float adjust, int limit, int style, int cursor)
+int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, const char *text, float adjust, int limit, int style, int cursor, bool calcOnly, int *rWidth)
 {
 	int			len, count;
 	idVec4		newColor;
@@ -1267,8 +1260,9 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 	SetFontByScale(scale);
 	useScale = scale * useFont->glyphScale;
 	count = 0;
+	int tWidth = 0;
 
-	if (text && color.w != 0.0f) {
+	if ((text && color.w != 0.0f) || calcOnly) {
 		const unsigned char	*s = (const unsigned char *)text;
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
 		len = strlen(text);
@@ -1310,6 +1304,7 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 						partialSkip *= 2.0f;
 					}
 
+					if(!calcOnly)
 					DrawEditCursor(x - partialSkip, y, scale, &newColor);
 				}
 
@@ -1318,15 +1313,18 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 				continue;
 			} else {
 				float yadj = useScale * glyph->top;
+				if(!calcOnly)
 				PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
 
 				if (cursor == count) {
+					if(!calcOnly)
 					DrawEditCursor(x, y, scale, &newColor);
 				}
 
 				x += (glyph->xSkip * useScale) + adjust;
 				s++;
 				count++;
+				tWidth += (glyph->xSkip * useScale) + adjust;
 			}
 		}
 #ifdef _WCHAR_LANG
@@ -1362,28 +1360,39 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
                             partialSkip *= 2.0f;
                         }
 
+						if(!calcOnly)
                         DrawEditCursor(x - partialSkip, y, scale, &newColor);
                     }
                     charIndex++; //karin: skip color value character
                     continue;
                 } else {
                     float yadj = useScale * glyph->top;
+					if(!calcOnly)
                     PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
 
                     if( cursor == charIndex - 1 ) {
+						if(!calcOnly)
                         DrawEditCursor( x, y, scale, &newColor );
                     }
 
                     x += (glyph->xSkip * useScale) + adjust;
+					tWidth += (glyph->xSkip * useScale) + adjust;
                 }
             }
         }
 #endif
 
 		if (cursor == len) {
+			if(!calcOnly)
 			DrawEditCursor(x, y, scale, &newColor);
 		}
 	}
+
+	//if(tWidth > 0) tWidth -= adjust;
+	if(rWidth)
+		*rWidth = tWidth;
+	if(calcOnly)
+		count = 0;
 
 	return count;
 }
@@ -1413,7 +1422,7 @@ int sdDeviceContextLocal::CharWidth(const char c, float scale)
 	return idMath::FtoiFast(glyph->xSkip * useScale);
 }
 
-int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit)
+int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
 {
 	const char	*p, *textPtr, *newLinePtr;
 	char		buff[1024];
@@ -1427,6 +1436,7 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 	float		cursorSkip = (cursor >= 0 ? charSkip : 0);
 
 	bool		lineBreak, wordBreak;
+	int tWidth = 0, tHeight = 0;
 
 	SetFontByScale(textScale);
 
@@ -1438,6 +1448,13 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
 		}
 
+		tWidth = charSkip;
+		tHeight = lineSkip;
+		if(rSize)
+		{
+			rSize[0] = tWidth;
+			rSize[1] = tHeight;
+		}
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
@@ -1516,8 +1533,12 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 				}
 			}
 
-			if (!calcOnly) {
-				count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor);
+			//if (!calcOnly) 
+			{
+				int tw = 0;
+				count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor, calcOnly, &tw);
+				if(tw > tWidth)
+					tWidth = tw;
 			}
 
 			if (cursor < newLine) {
@@ -1527,6 +1548,11 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 			}
 
 			if (!wrap) {
+				if(rSize)
+				{
+					rSize[0] = tWidth;
+					rSize[1] = tHeight;
+				}
 				return newLine;
 			}
 
@@ -1535,6 +1561,7 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 			}
 
 			y += lineSkip + 5;
+			tHeight += lineSkip + 5;
 
 			if (!calcOnly && y > rectDraw.GetBottom()) {
 				break;
@@ -1640,14 +1667,18 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
                 }
 
                 // Draw what's in the current text buffer.
-                if( !calcOnly ) {
+                //if( !calcOnly ) 
+				{
+					int tw = 0;
                     if( lastBreak > 0 ) {
-                        count += DrawText( x, y, textScale, color, textBuffer.Left( lastBreak ).c_str(), 0, 0, 0, cursor );
+                        count += DrawText( x, y, textScale, color, textBuffer.Left( lastBreak ).c_str(), 0, 0, 0, cursor, calcOnly, &tw );
                         textBuffer = textBuffer.Right( textBuffer.Length() - lastBreak );
                     } else {
-                        count += DrawText( x, y, textScale, color, textBuffer.c_str(), 0, 0, 0, cursor );
+                        count += DrawText( x, y, textScale, color, textBuffer.c_str(), 0, 0, 0, cursor, calcOnly, &tw );
                         textBuffer.Clear();
                     }
+					if(tw > tWidth)
+						tWidth = tw;
                 }
 
                 if( cursor < lastBreak ) {
@@ -1658,6 +1689,11 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
 
                 // If wrap is disabled return at this point.
                 if( !wrap ) {
+					if(rSize)
+					{
+						rSize[0] = tWidth;
+						rSize[1] = tHeight;
+					}
                     return lastBreak;
                 }
 
@@ -1667,6 +1703,7 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
                 }
 
                 y += lineSkip + 5;
+				tHeight += lineSkip + 5;
 
                 if( !calcOnly && y > rectDraw.GetBottom() ) {
                     break;
@@ -1697,6 +1734,12 @@ int sdDeviceContextLocal::DrawText(const char *text, float textScale, int textAl
     }
 #endif
 
+	//if(tHeight > lineSkip) tHeight -= 5;
+	if(rSize)
+	{
+		rSize[0] = tWidth;
+		rSize[1] = tHeight;
+	}
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 }
 
@@ -1806,7 +1849,7 @@ void sdDeviceContextLocal::LoadFontConfigs(const char *lang) {
 	fileSystem->FreeFileList(fileList);
 }
 
-int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, const wchar_t *text, float adjust, int limit, int style, int cursor)
+int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, const wchar_t *text, float adjust, int limit, int style, int cursor, bool calcOnly, int *rWidth)
 {
 	int			len, count;
 	idVec4		newColor;
@@ -1815,8 +1858,9 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
 	SetFontByScale(scale);
 	useScale = scale * useFont->glyphScale;
 	count = 0;
+	int tWidth = 0;
 
-	if (text && color.w != 0.0f) {
+	if ((text && color.w != 0.0f) || calcOnly) {
 		const wchar_t *s = text;
 		memcpy(&newColor[0], &color[0], sizeof(idVec4));
 		len = idWStr::Length(text);
@@ -1851,6 +1895,7 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
                         partialSkip *= 2.0f;
                     }
 
+					if(!calcOnly)
                     DrawEditCursor(x - partialSkip, y, scale, &newColor);
                 }
             	s += 2;
@@ -1858,27 +1903,37 @@ int sdDeviceContextLocal::DrawText(float x, float y, float scale, idVec4 color, 
                 continue;
             } else {
                 float yadj = useScale * glyph->top;
+				if(!calcOnly)
                 PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
 
                 if( cursor == count ) {
+					if(!calcOnly)
                     DrawEditCursor( x, y, scale, &newColor );
                 }
 
             	x += (glyph->xSkip * useScale) + adjust;
             	s++;
             	count++;
+				tWidth += (glyph->xSkip * useScale) + adjust;
             }
         }
 
 		if (cursor == len) {
+			if(!calcOnly)
 			DrawEditCursor(x, y, scale, &newColor);
 		}
 	}
 
+	//if(tWidth > 0) tWidth -= adjust;
+	if(rWidth)
+		*rWidth = tWidth;
+	if(calcOnly)
+		count = 0;
+
 	return count;
 }
 
-int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit)
+int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
 {
 	const wchar_t	*p, *textPtr, *newLinePtr;
 	wchar_t		buff[1024];
@@ -1892,6 +1947,7 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
 	float		cursorSkip = (cursor >= 0 ? charSkip : 0);
 
 	bool		lineBreak, wordBreak;
+	int tWidth = 0, tHeight = 0;
 
 	SetFontByScale(textScale);
 
@@ -1903,6 +1959,13 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
 			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
 		}
 
+		tWidth = charSkip;
+		tHeight = lineSkip;
+		if(rSize)
+		{
+			rSize[0] = tWidth;
+			rSize[1] = tHeight;
+		}
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
@@ -1976,8 +2039,12 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
         	}
 
             // Draw what's in the current text buffer.
-            if( !calcOnly ) {
-				count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor);
+            //if( !calcOnly ) 
+			{
+				int tw = 0;
+				count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor, calcOnly, &tw);
+				if(tw > tWidth)
+					tWidth = tw;
             }
 
         	if (cursor < newLine) {
@@ -1987,6 +2054,11 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
         	}
 
         	if (!wrap) {
+				if(rSize)
+				{
+					rSize[0] = tWidth;
+					rSize[1] = tHeight;
+				}
         		return newLine;
         	}
 
@@ -1995,6 +2067,7 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
         	}
 
         	y += lineSkip + 5;
+			tHeight += lineSkip + 5;
 
         	if (!calcOnly && y > rectDraw.GetBottom()) {
         		break;
@@ -2024,6 +2097,12 @@ int sdDeviceContextLocal::DrawText(const wchar_t *text, float textScale, int tex
 		}
     }
 
+	//if(tHeight > lineSkip) tHeight -= 5;
+	if(rSize)
+	{
+		rSize[0] = tWidth;
+		rSize[1] = tHeight;
+	}
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 }
 
@@ -2050,17 +2129,10 @@ void sdDeviceContextLocal::GetTextDimensions( const char* text, const sdBounds2D
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-	if(lineBreaks)
-	{
-		width = DrawText(text, fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0) * MaxCharWidth(fontScale);
-		height = MaxCharHeight(fontScale) * lineBreaks->Num() + 5 * (lineBreaks->Num() - 1);
-	}
-	else
-	{
-		idList<int> lbs;
-		width = DrawText(text, fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, &lbs, 0) * MaxCharWidth(fontScale);
-		height = MaxCharHeight(fontScale) * lbs.Num() + 5 * (lbs.Num() - 1);
-	}
+	int size[2] = {0};
+	DrawText(text, fontScale, textAlign, tr.gameGuiModel->CurrentColor(), rect, wrap, -1, true, lineBreaks, 0, size);
+	width = size[0];
+	height = size[1];
 
 	if (scale)
 		*scale = fontScale;

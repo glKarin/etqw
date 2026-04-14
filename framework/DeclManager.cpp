@@ -3118,7 +3118,7 @@ void idDeclLocal::ParseLocal(void)
 			buf.Append("\"\n");
 		}
 		buf.Append(finalPreprocessedBuffer.c_str());
-		finalPreprocessedBuffer = buf.c_str();;
+		finalPreprocessedBuffer = buf.c_str();
 	}
 	//Sys_Printf("OOO|%s|\n----------------\nPPP|%s|\n", idStr(declText,0,GetTextLength()).c_str(), finalPreprocessedBuffer.c_str());
 	self->Parse(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length());

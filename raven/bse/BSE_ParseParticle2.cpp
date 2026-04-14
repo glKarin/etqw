@@ -395,6 +395,7 @@ void rvParticleTemplate::Init(void) {
 	mWindDeviationAngle = 0.0f;
 	mTrailScale = 1.0f;
 	mNumFrames = 0;
+	mPhysicsDistance = 0.0f;
 #endif
 }
 
@@ -1051,6 +1052,10 @@ bool rvParticleTemplate::ParseImpact(rvDeclEffect* effect,
         {
             mBounce = src->ParseFloat();
         }
+#ifdef _SPLASHDAMAGE
+        else if (!idStr::Icmp(tok, "physicsDistance")) 
+			mPhysicsDistance = src->ParseFloat();
+#endif
         else                                            // ----- unknown key
         {
             common->Warning("^4BSE:^1 Invalid impact keyword '%s' in '%s' "

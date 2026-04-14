@@ -228,6 +228,7 @@ public:
 	float					mWindDeviationAngle;
 	float					mTrailScale;							// Width of the motion trails will be particleSize scaled by this
 	byte					mNumFrames;
+	float					mPhysicsDistance;
 	//rvParticleParms			*mpSpawnWindStrength;
 	//rvParticleParms			*mpSpawnFriction;
 #endif

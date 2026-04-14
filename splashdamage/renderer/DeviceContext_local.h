@@ -95,10 +95,10 @@ private:
 	void 					DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle, const idVec4 *color = NULL);
 	void					SetupFonts();
 	void					SetFontByScale(float scale);
-	int						DrawText(float x, float y, float scale, idVec4 color, const char *text, float adjust, int limit, int style, int cursor = -1);
+	int						DrawText(float x, float y, float scale, idVec4 color, const char *text, float adjust, int limit, int style, int cursor = -1, bool calcOnly = false, int *rWidth = NULL);
 	void					PaintChar(float x,float y,float width,float height,float scale,float	s,float	t,float	s2,float t2,const idMaterial *hShader, const idVec4 *color = NULL);
 	void					DrawEditCursor(float x, float y, float scale, const idVec4 *color = NULL);
-	int						DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, idList<int> *breaks = NULL, int limit = 0);
+	int						DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor = -1, bool calcOnly = false, idList<int> *breaks = NULL, int limit = 0, int rSize[] = NULL);
 	int						MaxCharHeight(float scale);
 	int						MaxCharWidth(float scale);
 	int						CharWidth(const char c, float scale);
@@ -107,8 +107,8 @@ private:
 	bool					ParseFontConfig(const char *path, sdLocFont_t &config);
 	sdLocFont_t *			FindFontConfig(const char *name);
 	void					LoadFontConfigs(const char *lang);
-	int						DrawText(float x, float y, float scale, idVec4 color, const wchar_t *text, float adjust, int limit, int style, int cursor);
-	int						DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit);
+	int						DrawText(float x, float y, float scale, idVec4 color, const wchar_t *text, float adjust, int limit, int style, int cursor, bool calcOnly = false, int *rWidth = NULL);
+	int						DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[] = NULL);
 	void					DrawText( const char* text, const sdBounds2D& rect, unsigned int flags );
 	void					GetTextDimensions( const char* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale = NULL, int** charAdvances = NULL, idList< int >* lineBreaks = NULL );
 
