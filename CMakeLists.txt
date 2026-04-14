@@ -3176,6 +3176,7 @@ if(SPLASHDAMAGE)
 			splashdamage/framework/GraphManager.cpp
 			splashdamage/framework/NotificationSystem.cpp
 			splashdamage/renderer/DeviceContext.cpp
+			splashdamage/renderer/FontManager.cpp
 			splashdamage/sys/sys_ime.cpp
 			splashdamage/sys/sys_keyboard.cpp
 	)
