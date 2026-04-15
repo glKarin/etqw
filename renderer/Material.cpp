@@ -40,6 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE //karin: image program stage parms
 #include "decllib/DeclSurfaceType.h"
 #include "decllib/DeclSurfaceTypeMap.h"
+#include "decllib/declRenderBinding.h"
+#include "decllib/declRenderProgram.h"
 #include "framework/DeclParseHelper.h"
 
 extern idStrList stageParms;
@@ -63,6 +65,16 @@ extern idStrList stageParms;
 	}
 
 extern idStr R_RestorePastImageProgram(const char *img, bool clearParms);
+
+static void R_ReloadMaterialStageImages(materialStage_t *stage, bool force)
+{
+	for (int i = 0 ; i < stage->numTextures ; i++) {
+		if (stage->textures[i].image) {
+			stage->textures[i].image->Reload(false, force);
+		}
+	}
+}
+
 #endif
 
 // jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
@@ -233,6 +245,15 @@ void idMaterial::FreeData()
 				delete stages[i].newShaderStage;
 				stages[i].newShaderStage = NULL;
 			}
+#endif
+#ifdef _SPLASHDAMAGE
+			Mem_Free(stages[i].vectors);
+			stages[i].numVectors = 0;
+			Mem_Free(stages[i].textures);
+			stages[i].numTextures = 0;
+			Mem_Free(stages[i].textureMatrices);
+			stages[i].numTextureMatrices = 0;
+			stages[i].renderProgram = NULL;
 #endif
 		}
 
@@ -1108,6 +1129,15 @@ void idMaterial::ClearStage(shaderStage_t *ss)
 	ss->isNotSpiritWalk = false;
 	ss->isShuttleView = false;
 #endif
+#ifdef _SPLASHDAMAGE
+	Mem_Free(ss->vectors);
+	ss->numVectors = 0;
+	Mem_Free(ss->textures);
+	ss->numTextures = 0;
+	Mem_Free(ss->textureMatrices);
+	ss->numTextureMatrices = 0;
+	ss->renderProgram = NULL;
+#endif
 }
 
 /*
@@ -1554,7 +1584,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #endif
 #ifdef _SPLASHDAMAGE //karin: fake interaction program
 	bool isInteractionProgram = false;
-	idStrList extrasTextures; // if is interaction shader, split this stage
+	stageParseData_t spd;
 #endif
 
 	if (numStages >= MAX_SHADER_STAGES) {
@@ -2038,136 +2068,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 #ifdef _SPLASHDAMAGE //karin: material stage
-		if (!token.Icmp("cinematicY")) { // cinematicY _cinematicY
-			ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("parameters")) { // parameters 0[, 1[, 2[, 3]]]
-			idToken				t;
-
-			// 0:
-			ParseExpression(src);
-
-			// 1:
-			src.ReadToken(&t);
-			if (!t.Cmp(",")) {
-				ParseExpression(src);
-				// 2:
-				src.ReadToken(&t);
-				if (!t.Cmp(",")) {
-					ParseExpression(src);
-					// 3:
-					src.ReadToken(&t);
-					if (!t.Cmp(",")) {
-						ParseExpression(src);
-					} else {
-						src.UnreadToken(&t);
-					}
-				} else {
-					src.UnreadToken(&t);
-				}
-			} else {
-				src.UnreadToken(&t);
-			}
-			continue;
-		}
-		if (!token.Icmp("parameters2")) { // parameters 0[, 1[, 2[, 3]]]
-			idToken				t;
-
-			// 0:
-			ParseExpression(src);
-
-			// 1:
-			src.ReadToken(&t);
-			if (!t.Cmp(",")) {
-				ParseExpression(src);
-				// 2:
-				src.ReadToken(&t);
-				if (!t.Cmp(",")) {
-					ParseExpression(src);
-					// 3:
-					src.ReadToken(&t);
-					if (!t.Cmp(",")) {
-						ParseExpression(src);
-					} else {
-						src.UnreadToken(&t);
-					}
-				} else {
-					src.UnreadToken(&t);
-				}
-			} else {
-				src.UnreadToken(&t);
-			}
-			continue;
-		}
-		if (!token.Icmp("lightProjectionMap")) {
-			if(!imageName[0])
-			{
-			str = R_ParsePastImageProgram(src);
-			idStr::Copynz(imageName, str, sizeof(imageName));
-			SETUP_STAGE_PROGRAM_PARMS();
-			}
-			continue;
-		}
-		if (!token.Icmp("lightFallOffMap")) {
-			str = R_ParsePastImageProgram(src);
-			if (!lightFalloffImage) {
-			idStr	copy;
-
-			copy = str;	// so other things don't step on it
-			lightFalloffImage = globalImages->ImageFromFile(copy, TF_DEFAULT, false, TR_CLAMP /* TR_CLAMP_TO_ZERO */, TD_DEFAULT);
-			//SETUP_STAGE_PROGRAM_PARMS();
-			}
-			continue;
-		}
-		if (!token.Icmp("selfIllumMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("diffuseDetailMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("bumpDetailMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("specDetailMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("detailWeightMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("fogMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("fogEnterMap")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
-		if (!token.Icmp("mask")) {
-			/*str = */R_ParsePastImageProgram(src);
-			//idStr::Copynz(imageName, str, sizeof(imageName));
-			//SETUP_STAGE_PROGRAM_PARMS();
-			continue;
-		}
 		if (!token.Icmp("depthFunc")) { // depthFunc equal
 			idToken t;
 			src.ReadToken(&t);
@@ -2203,29 +2103,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				common->Warning("unknown cull face '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
 			continue;
 		}
-		// diffusemap for stage shortcut
-		if (!token.Icmp("diffusemap")) {
-			str = R_ParsePastImageProgram(src);
-			idStr::Copynz(imageName, str, sizeof(imageName));
-			SETUP_STAGE_PROGRAM_PARMS();
-			ss->lighting = SL_DIFFUSE;
-			isInteractionProgram = true;
-			continue;
-		}
-		// specularmap for stage shortcut
-		if (!token.Icmp("specularmap")) {
-			str = R_ParsePastImageProgram(src);
-			if(isInteractionProgram)
-			extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
-			continue;
-		}
-		// normalmap for stage shortcut
-		if (!token.Icmp("bumpmap")) {
-			str = R_ParsePastImageProgram(src);
-			if(isInteractionProgram)
-			extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
-			continue;
-		}
 		if (!token.Icmp("heightmap")) {
 			str = R_ParsePastImageProgram(src);
 			idStr t;
@@ -2236,71 +2113,10 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			//extrasTextures.Append(token + "\nmap " + R_RestorePastImageProgram(str, true) + "\n}\n");
 			continue;
 		}
-		if (!token.Icmp("detailMult")) { // detailMult 0,1,2,3
-			ParseExpression(src);
-			MatchToken(src, ",");
-			ParseExpression(src);
-			MatchToken(src, ",");
-			ParseExpression(src);
-			MatchToken(src, ",");
-			ParseExpression(src);
-			continue;
-		}
 		if (!token.Icmp("alphatocoverage")) {
 			continue;
 		}
-		if (!token.Icmp("specularPower")) { // specularPower 32
-			ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("specularColor")) { // specularColor 0,1,2[,3]
-			idToken				t;
-
-			// 0:
-			ParseExpression(src);
-
-			// 1:
-			src.ReadToken(&t);
-			if (!t.Cmp(",")) {
-				ParseExpression(src);
-				// 2:
-				src.ReadToken(&t);
-				if (!t.Cmp(",")) {
-					ParseExpression(src);
-					// 3:
-					src.ReadToken(&t);
-					if (!t.Cmp(",")) {
-						ParseExpression(src);
-					} else {
-						src.UnreadToken(&t);
-					}
-				} else {
-					src.UnreadToken(&t);
-				}
-			} else {
-				src.UnreadToken(&t);
-			}
-			continue;
-		}
-		if (!token.Icmp("textureMatrix")) { // textureMatrix diffuseMatrix { scale 1, 1 }
-			idToken t;
-			src.ExpectAnyToken(&t);
-			src.SkipBracedSection(true);
-			continue;
-		}
 		if (!token.Icmp("writeDepth")) {
-			continue;
-		}
-		if (!token.Icmp("matrix")) { // matrix a, b, c, d, e, f
-			idToken t;
-			while (true) {
-				ParseExpression(src);
-				src.ReadToken(&t);
-				if (t.Cmp(",")) {
-					src.UnreadToken(&t);
-					break;
-				}
-			}
 			continue;
 		}
 		if (!token.Icmp("skies_cloudColor")) { // skies_cloudColor 1, 1, 1, 1
@@ -2317,13 +2133,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idToken t;
 			src.ExpectAnyToken(&t);
 			src.ParseFloat();
-			continue;
-		}
-		if (!token.Icmp("environmentcubemap")) { // environmentcubemap cubemap env/sewer/floodway
-			idToken t;
-			src.ReadToken(&t);
-			if(!idStr::Icmp(t, "cubemap"))
-				src.ExpectAnyToken(&t);
 			continue;
 		}
 		if (!token.Icmp("water_tint")) { // water_tint	  1.2, 1.2, 1
@@ -2399,24 +2208,69 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			src.ParseFloat();
 			continue;
 		}
-		if (!token.Icmp("colorModulate")) { // colorModulate 1,1,1,1
-			src.ParseFloat();
-			src.ExpectTokenString(",");
-			src.ParseFloat();
-			src.ExpectTokenString(",");
-			src.ParseFloat();
-			src.ExpectTokenString(",");
-			src.ParseFloat();
+		if (!token.Icmp("matrix")) { // matrix a, b, c, d, e, f
+			matrix[0][0] = ParseExpression(src);
+			MatchToken(src, ",");
+			matrix[0][1] = ParseExpression(src);
+			MatchToken(src, ",");
+			matrix[0][2] = ParseExpression(src);
+			MatchToken(src, ",");
+			matrix[1][0] = ParseExpression(src);
+			MatchToken(src, ",");
+			matrix[1][1] = ParseExpression(src);
+			MatchToken(src, ",");
+			matrix[1][2] = ParseExpression(src);
+			MultiplyTextureMatrix(ts, matrix);
 			continue;
 		}
-		if (!token.Icmp("colorAdd")) { // colorAdd 0,0,0,0
-			src.ParseFloat();
-			src.ExpectTokenString(",");
-			src.ParseFloat();
-			src.ExpectTokenString(",");
-			src.ParseFloat();
-			src.ExpectTokenString(",");
-			src.ParseFloat();
+
+        // shader bindings
+		// texture
+		if ( !token.Icmp("diffusemap")
+			|| !token.Icmp("specularmap")
+			|| !token.Icmp("bumpmap")
+			|| !token.Icmp("lightProjectionMap")
+			|| !token.Icmp("lightFallOffMap")
+			|| !token.Icmp("mask")
+			|| !token.Icmp("fogEnterMap")
+			|| !token.Icmp("fogMap")
+			|| !token.Icmp("detailWeightMap")
+			|| !token.Icmp("specDetailMap")
+			|| !token.Icmp("bumpDetailMap")
+			|| !token.Icmp("diffuseDetailMap")
+			|| !token.Icmp("selfIllumMap")
+			|| !token.Icmp("cinematicY")
+			)
+		{
+			src.UnreadToken(&token);
+			ParseProgramStageTexture(src, spd);
+			if ( !token.Icmp("diffusemap")
+				// || !token.Icmp("specularmap")
+				// || !token.Icmp("bumpmap")
+				// || !token.Icmp("lightProjectionMap")
+				// || !token.Icmp("lightFallOffMap")
+				)
+				isInteractionProgram = true;
+			continue;
+		}
+		// vector 4
+		if ( !token.Icmp("parameters")
+			|| !token.Icmp("parameters2")
+			|| !token.Icmp("specularColor")
+			|| !token.Icmp("colorModulate")
+			|| !token.Icmp("colorAdd")
+			|| !token.Icmp("detailMult")
+			|| !token.Icmp("specularPower")
+			)
+		{
+			src.UnreadToken(&token);
+			ParseProgramStageVector(src, spd);
+			continue;
+		}
+
+		// matrix 2x3
+		if (!token.Icmp("textureMatrix")) { // textureMatrix diffuseMatrix { scale 1, 1 }
+			ParseProgramStageMatrix(src, spd);
 			continue;
 		}
 #endif
@@ -2699,6 +2553,16 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	// successfully parsed a stage
 	numStages++;
 
+#ifdef _SPLASHDAMAGE
+	if(isInteractionProgram) {
+		CompleteInterationStage(ss, spd);
+		if (ss->texture.image)
+			return;
+	} else if (spd.shaderProgram) {
+		CompleteStage(ss, spd, NULL, 0);
+		FinishStage(ss, spd);
+	}
+#endif
 	// select a compressed depth based on what the stage is
 	if (td == TD_DEFAULT) {
 		switch (ss->lighting) {
@@ -2727,26 +2591,13 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #ifdef _RAVEN //karin: GLSL newShaderStage
 			&& !ss->newShaderStage
 #endif
+#ifdef _SPLASHDAMAGE
+			&& !ss->renderProgram
+#endif
 			) {
 		common->Warning("material '%s' had stage with no image", GetName());
 		ts->image = globalImages->defaultImage;
 	}
-#ifdef _SPLASHDAMAGE
-	if(isInteractionProgram)
-	for(int i = 0; i < extrasTextures.Num(); i++)
-	{
-		idStr &text = extrasTextures[i];
-		int index = text.Find(' ');
-		idStr tempName = text.Left(index);
-		tempName.Append(" extras");
-		text.Insert("blend ", 0);
-		idParser newSrc;
-		newSrc.LoadMemory(text.c_str(), text.Length(), tempName);
-		newSrc.SetFlags(LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWPATHNAMES);
-		ParseStage(newSrc, trpDefault);
-		newSrc.FreeSource();
-	}
-#endif
 }
 
 /*
@@ -4430,6 +4281,10 @@ void idMaterial::ReloadImages(bool force) const
 		} else if (stages[i].newShaderStage) {
 			stages[i].newShaderStage->ReloadImages(force);
 #endif
+#ifdef _SPLASHDAMAGE
+		} else if (stages[i].renderProgram) {
+			R_ReloadMaterialStageImages(&stages[i], force);
+#endif
 		} else if (stages[i].texture.image) {
 			stages[i].texture.image->Reload(false, force);
 		}
@@ -4622,6 +4477,382 @@ void idMaterial::ParseGLSLProgram(idLexer &src, newShaderStage_t *newStage)
 #endif
 
 #ifdef _SPLASHDAMAGE
+bool idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
+{
+	idToken token;
+	stageVector_t *vector;
+	int regs[4] = {-1, -1, -1, -1};
+
+	if (!src.ReadToken(&token)) {
+		src.Warning("idMaterial::ParseProgramStageVector: excepted binding name");
+		return false;
+	}
+	idStr name = token.c_str();
+
+	// parse first
+	// 0:
+	regs[0] = ParseExpression(src);
+	// 1:
+	src.ReadToken(&token);
+	if (!token.Cmp(",")) {
+		regs[1] = ParseExpression(src);
+		// 2:
+		src.ReadToken(&token);
+		if (!token.Cmp(",")) {
+			regs[2] = ParseExpression(src);
+			// 3:
+			src.ReadToken(&token);
+			if (!token.Cmp(",")) {
+				regs[3] = ParseExpression(src);
+			} else {
+				src.UnreadToken(&token);
+			}
+		} else {
+			src.UnreadToken(&token);
+		}
+	} else {
+		src.UnreadToken(&token);
+	}
+
+	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, name.c_str(), false);
+	if (!decl) {
+		src.Warning("idMaterial::ParseProgramStageVector: render binding '%s' not found", name.c_str());
+		return false;
+	}
+	const sdDeclRenderBinding *binding = static_cast<const sdDeclRenderBinding *>(decl);
+	if (binding->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
+		src.Warning("idMaterial::ParseProgramStageVector: render binding type '%s' not vector", binding->GetName());
+		return false;
+	}
+
+	if (spd.numVectors >= MAX_STAGE_VECTORS) {
+		src.Warning("idMaterial::ParseProgramStageVector: stage vectors num over %d", MAX_STAGE_VECTORS);
+		return false;
+	}
+	vector = &spd.vectors[spd.numVectors++];
+	vector->renderBinding = binding;
+	for (int i = 0; i < 4; i++) {
+		if (regs[i] < 0)
+			vector->registers[i] = GetExpressionConstant(binding->GetDefaultVector()[0]);
+		else
+			vector->registers[i] = regs[i];
+	}
+
+	return true;
+}
+
+bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd )
+{
+	idToken token;
+	stageTexture_t *texture;
+	const char *str;
+	textureFilter_t		tf;
+	textureRepeat_t		trp;
+	textureDepth_t		td;
+	bool				allowPicmip;
+	idImage *img;
+
+	if (!src.ReadToken(&token)) {
+		src.Warning("idMaterial::ParseProgramStageTexture: excepted binding name");
+		return false;
+	}
+	tf = TF_DEFAULT;
+	trp = TR_REPEAT;
+	td = TD_DEFAULT;
+	allowPicmip = true;
+
+	str = R_ParsePastImageProgram(src);
+	for(int _i = 0; _i < stageParms.Num(); _i++) {
+		const idStr &p = stageParms[_i];
+		if(!idStr::Icmp(p, "clamp")) trp = TR_CLAMP;
+		else if(!idStr::Icmp(p, "clamp_x")) trp = TR_CLAMP_X;
+		else if(!idStr::Icmp(p, "clamp_y")) trp = TR_CLAMP_Y;
+		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false;
+		else if(!idStr::Icmp(p, "linear")) tf = TF_LINEAR;
+		else if(!idStr::Icmp(p, "nearest")) tf = TF_NEAREST;
+		else if(!idStr::Icmp(p, "highquality")) {
+			if (!globalImages->image_ignoreHighQuality.GetInteger()) td = TD_HIGH_QUALITY;
+		}
+		else if(!idStr::Icmp(p, "forceHighQuality")) td = TD_HIGH_QUALITY;
+		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO;
+		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA;
+		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false;
+		else if(!idStr::Icmp(p, "partialLoad"));
+	}
+
+	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, token.c_str(), false);
+	if (!decl) {
+		src.Warning("idMaterial::ParseProgramStageTexture: render binding '%s' not found", token.c_str());
+		return false;
+	}
+	const sdDeclRenderBinding *binding = static_cast<const sdDeclRenderBinding *>(decl);
+	if (binding->GetBindingType() != sdDeclRenderBinding::BT_TEXTURE) {
+		src.Warning("idMaterial::ParseProgramStageTexture: render binding type '%s' not vector", binding->GetName());
+		return false;
+	}
+	if (spd.numTextures >= MAX_STAGE_TEXTURES) {
+		src.Warning("idMaterial::ParseProgramStageTexture: stage textures num over %d", MAX_STAGE_TEXTURES);
+		return false;
+	}
+
+	td = binding->GetTextureDepth();
+	img = globalImages->ImageFromFile(str, tf, allowPicmip, trp, td, binding->GetCubeMap());
+	if (!img) {
+		src.Warning("idMaterial::ParseProgramStageTexture: stage texture image load fail: %s", str);
+		img = binding->GetDefaultImage();
+	}
+
+	texture = &spd.textures[spd.numTextures++];
+	texture->renderBinding = binding;
+	texture->image = img;
+	return true;
+}
+
+bool idMaterial::ParseProgramStageMatrix( idParser &src, stageParseData_t& spd )
+{
+	idToken token;
+	idStr matrixType;
+	stageTextureMatrix_t *textureMatrix;
+	int					matrix[2][3];
+	int					a, b;
+	textureStage_t		ts;
+
+	if (!src.ReadToken(&token)) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: excepted binding name");
+		return false;
+	}
+
+	matrixType = token.c_str();
+	ts.hasMatrix = false;
+
+	// parse first
+	src.ExpectTokenString("{");
+
+	while (1) {
+		if (!src.ExpectAnyToken(&token)) {
+			return false;
+		}
+
+		if (token == "}") {
+			break;
+		}
+
+		if (!token.Icmp("scroll") || !token.Icmp("translate")) {
+			a = ParseExpression(src);
+			MatchToken(src, ",");
+			b = ParseExpression(src);
+			matrix[0][0] = GetExpressionConstant(1);
+			matrix[0][1] = GetExpressionConstant(0);
+			matrix[0][2] = a;
+			matrix[1][0] = GetExpressionConstant(0);
+			matrix[1][1] = GetExpressionConstant(1);
+			matrix[1][2] = b;
+
+			MultiplyTextureMatrix(&ts, matrix);
+			continue;
+		}
+
+		if (!token.Icmp("scale")) {
+			a = ParseExpression(src);
+			MatchToken(src, ",");
+			b = ParseExpression(src);
+			// this just scales without a centering
+			matrix[0][0] = a;
+			matrix[0][1] = GetExpressionConstant(0);
+			matrix[0][2] = GetExpressionConstant(0);
+			matrix[1][0] = GetExpressionConstant(0);
+			matrix[1][1] = b;
+			matrix[1][2] = GetExpressionConstant(0);
+
+			MultiplyTextureMatrix(&ts, matrix);
+			continue;
+		}
+
+		if (!token.Icmp("centerScale")) {
+			a = ParseExpression(src);
+			MatchToken(src, ",");
+			b = ParseExpression(src);
+			// this subtracts 0.5, then scales, then adds 0.5
+			matrix[0][0] = a;
+			matrix[0][1] = GetExpressionConstant(0);
+			matrix[0][2] = EmitOp(GetExpressionConstant(0.5), EmitOp(GetExpressionConstant(0.5), a, OP_TYPE_MULTIPLY), OP_TYPE_SUBTRACT);
+			matrix[1][0] = GetExpressionConstant(0);
+			matrix[1][1] = b;
+			matrix[1][2] = EmitOp(GetExpressionConstant(0.5), EmitOp(GetExpressionConstant(0.5), b, OP_TYPE_MULTIPLY), OP_TYPE_SUBTRACT);
+
+			MultiplyTextureMatrix(&ts, matrix);
+			continue;
+		}
+
+		if (!token.Icmp("shear")) {
+			a = ParseExpression(src);
+			MatchToken(src, ",");
+			b = ParseExpression(src);
+			// this subtracts 0.5, then shears, then adds 0.5
+			matrix[0][0] = GetExpressionConstant(1);
+			matrix[0][1] = a;
+			matrix[0][2] = EmitOp(GetExpressionConstant(-0.5), a, OP_TYPE_MULTIPLY);
+			matrix[1][0] = b;
+			matrix[1][1] = GetExpressionConstant(1);
+			matrix[1][2] = EmitOp(GetExpressionConstant(-0.5), b, OP_TYPE_MULTIPLY);
+
+			MultiplyTextureMatrix(&ts, matrix);
+			continue;
+		}
+
+		if (!token.Icmp("rotate")) {
+			const idDeclTable *table;
+			int		sinReg, cosReg;
+
+			// in cycles
+			a = ParseExpression(src);
+
+			table = static_cast<const idDeclTable *>(declManager->FindType(DECL_TABLE, "sinTable", false));
+
+			if (!table) {
+				common->Warning("no sinTable for rotate defined");
+				return false;
+			}
+
+			sinReg = EmitOp(table->Index(), a, OP_TYPE_TABLE);
+
+			table = static_cast<const idDeclTable *>(declManager->FindType(DECL_TABLE, "cosTable", false));
+
+			if (!table) {
+				common->Warning("no cosTable for rotate defined");
+				return false;
+			}
+
+			cosReg = EmitOp(table->Index(), a, OP_TYPE_TABLE);
+
+			// this subtracts 0.5, then rotates, then adds 0.5
+			matrix[0][0] = cosReg;
+			matrix[0][1] = EmitOp(GetExpressionConstant(0), sinReg, OP_TYPE_SUBTRACT);
+			matrix[0][2] = EmitOp(EmitOp(EmitOp(GetExpressionConstant(-0.5), cosReg, OP_TYPE_MULTIPLY),
+			                             EmitOp(GetExpressionConstant(0.5), sinReg, OP_TYPE_MULTIPLY), OP_TYPE_ADD),
+			                      GetExpressionConstant(0.5), OP_TYPE_ADD);
+
+			matrix[1][0] = sinReg;
+			matrix[1][1] = cosReg;
+			matrix[1][2] = EmitOp(EmitOp(EmitOp(GetExpressionConstant(-0.5), sinReg, OP_TYPE_MULTIPLY),
+			                             EmitOp(GetExpressionConstant(-0.5), cosReg, OP_TYPE_MULTIPLY), OP_TYPE_ADD),
+			                      GetExpressionConstant(0.5), OP_TYPE_ADD);
+
+			MultiplyTextureMatrix(&ts, matrix);
+			continue;
+		}
+
+		src.Warning("idMaterial::ParseProgramStageMatrix: unknown matrix transform '%s'", token.c_str());
+
+		src.SkipBracedSection(false);
+		return false;
+	}
+
+	idStr bindingName = matrixType + "_s";
+	const idDecl *decl_s = declManager->FindType(DECL_RENDERBINDING, bindingName.c_str(), false);
+	if (!decl_s) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: render binding '%s' not found", bindingName.c_str());
+		return false;
+	}
+	const sdDeclRenderBinding *binding_s = static_cast<const sdDeclRenderBinding *>(decl_s);
+	if (binding_s->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: render binding type '%s' not vector", binding_s->GetName());
+		return false;
+	}
+	if (spd.numTextureMatrices >= MAX_STAGE_TEXTUREMATRICES) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: stage matrix num over %d", MAX_STAGE_TEXTUREMATRICES);
+		return false;
+	}
+
+	bindingName = matrixType + "_t";
+	const idDecl *decl_t = declManager->FindType(DECL_RENDERBINDING, bindingName.c_str(), false);
+	if (!decl_t) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: render binding '%s' not found", bindingName.c_str());
+		return false;
+	}
+	const sdDeclRenderBinding *binding_t = static_cast<const sdDeclRenderBinding *>(decl_t);
+	if (binding_s->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: render binding type '%s' not vector", binding_t->GetName());
+		return false;
+	}
+	if (spd.numTextureMatrices >= MAX_STAGE_TEXTUREMATRICES) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: stage matrix num over %d", MAX_STAGE_TEXTUREMATRICES);
+		return false;
+	}
+
+	textureMatrix = &spd.textureMatrices[spd.numTextureMatrices++];
+	textureMatrix->renderBinding_s = binding_s;
+	textureMatrix->renderBinding_t = binding_t;
+	memcpy(textureMatrix->matrix, matrix, sizeof(textureMatrix->matrix));
+	return true;
+}
+
+void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& spd ) {
+	shaderStage_t		*newSS;
+	//Sys_Printf("CCC %s\n", GetName());
+
+	for(int i = 0; i < spd.numTextures; i++) {
+		const stageTexture_t &tex = spd.textures[i];
+		const char *name = tex.renderBinding->GetName();
+		if ( !idStr::Icmp(name, "diffusemap") ) {
+			//Sys_Printf("diffusemap %s\n", tex.image->imgName.c_str());
+			ss->lighting = SL_DIFFUSE;
+			ss->texture.image = tex.image;
+		}
+		else if ( !idStr::Icmp(name, "specularmap") ) {
+			newSS = &pd->parseStages[numStages++];
+			ClearStage(newSS);
+			*newSS = *ss;
+			newSS->lighting = SL_SPECULAR;
+			newSS->texture.image = tex.image;
+			//Sys_Printf("specularmap %s\n", tex.image->imgName.c_str());
+		}
+		else if ( !idStr::Icmp(name, "bumpmap") ) {
+			newSS = &pd->parseStages[numStages++];
+			ClearStage(newSS);
+			*newSS = *ss;
+			newSS->lighting = SL_BUMP;
+			newSS->texture.image = tex.image;
+			//Sys_Printf("bumpmap %s\n", tex.image->imgName.c_str());
+		}
+		else if ( !idStr::Icmp(name, "lightProjectionMap") ) {
+			newSS = &pd->parseStages[numStages++];
+			ClearStage(newSS);
+			*newSS = *ss;
+			newSS->lighting = SL_DIFFUSE;
+			newSS->texture.image = tex.image;
+			//Sys_Printf("lightProjectionMap %s\n", tex.image->imgName.c_str());
+		}
+		else if ( !idStr::Icmp(name, "lightFallOffMap") ) {
+			lightFalloffImage = tex.image;
+			//Sys_Printf("lightFallOffMap %s\n", tex.image->imgName.c_str());
+		} else {
+			//Sys_Printf("%s %s\n", name,tex.image->imgName.c_str());
+		}
+	}
+	//Sys_Printf("xxxxxxxxxxxxxxxxx %s\n\n", GetName());
+}
+
+void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults ) {
+	memset(ms, 0, sizeof(*ms));
+	if (spd.numVectors > 0) {
+		ms->vectors = (stageVector_t *)Mem_Alloc(spd.numVectors * sizeof(*ms->vectors));
+		memcpy(ms->vectors, spd.vectors, spd.numVectors * sizeof(*ms->vectors));
+	}
+	if (spd.numTextures > 0) {
+		ms->textures = (stageTexture_t *)Mem_Alloc(spd.numTextures * sizeof(*ms->textures));
+		memcpy(ms->textures, spd.textures, spd.numTextures * sizeof(*ms->textures));
+	}
+	if (spd.numTextureMatrices > 0) {
+		ms->textureMatrices = (stageTextureMatrix_t *)Mem_Alloc(spd.numTextureMatrices * sizeof(*ms->textures));
+		memcpy(ms->textureMatrices, spd.textureMatrices, spd.numTextureMatrices * sizeof(*ms->textureMatrices));
+	}
+}
+
+void idMaterial::FinishStage( materialStage_t* ms, stageParseData_t& spd ) {
+
+}
+
 void idMaterial::CacheFromDict( const idDict& dict ) {
 	const idKeyValue* kv = NULL;
 

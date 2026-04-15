@@ -268,9 +268,6 @@ static const int	MAX_FRAGMENT_PARMS = 8;
 static const int	MAX_VERTEX_PARMS = 4;
 static const int	MAX_FRAGMENT_PARMS = 4; // add for DOOM3
 #endif
-#ifdef _RAVEN
-class rvNewShaderStage;
-#endif
 
 typedef struct {
 	int					vertexProgram;
@@ -321,6 +318,27 @@ struct stageTextureMatrix_t {
 	const sdDeclRenderBinding*	renderBinding_t;
 };
 const int MAX_STAGE_TEXTUREMATRICES = 3;
+
+struct stageParseData_t {
+							stageParseData_t() :
+								numVectors( 0 ),
+								numTextures( 0 ),
+								numTextureMatrices( 0 ) {
+								memset( vectors, 0, sizeof( vectors ) );
+								memset( textures, 0, sizeof( textures ) );
+								memset( textureMatrices, 0, sizeof( textureMatrices ) );
+								shaderProgram = 0;
+							}
+
+	int						numVectors;
+	stageVector_t			vectors[MAX_STAGE_VECTORS];
+	int						numTextures;
+	stageTexture_t			textures[MAX_STAGE_TEXTURES];
+	int						numTextureMatrices;
+	stageTextureMatrix_t	textureMatrices[MAX_STAGE_TEXTUREMATRICES];
+
+	int						shaderProgram;
+};
 #endif
 
 typedef struct {
@@ -341,7 +359,7 @@ typedef struct {
 #ifdef _RAVEN
 	// RAVEN BEGIN
 // rjohnson: new shader stage system
-	rvNewShaderStage	*newShaderStage;
+	class rvNewShaderStage	*newShaderStage;
 #endif
 
 #ifdef _HUMANHEAD
@@ -356,7 +374,14 @@ typedef struct {
 #endif
 
 #ifdef _SPLASHDAMAGE
-    stageTexture_t*				textures;
+	const sdDeclRenderProgram*	renderProgram;
+
+	int							numVectors;
+	stageVector_t*				vectors;
+	int							numTextures;
+	stageTexture_t*				textures;
+	int							numTextureMatrices;
+	stageTextureMatrix_t*		textureMatrices;
 #endif
 } shaderStage_t;
 #ifdef _SPLASHDAMAGE
@@ -1177,6 +1202,15 @@ class idMaterial : public idDecl
 #else
         void                ParseGLSLProgram(idLexer &src, newShaderStage_t *newStage);
 #endif
+#endif
+
+#ifdef _SPLASHDAMAGE
+        void				CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults );
+        void				CompleteInterationStage( materialStage_t *ss, stageParseData_t& spd );
+        void				FinishStage( materialStage_t* ms, stageParseData_t& spd );
+        bool				ParseProgramStageVector( idParser &src, stageParseData_t& spd );
+        bool				ParseProgramStageTexture( idParser &src, stageParseData_t& spd );
+        bool				ParseProgramStageMatrix( idParser &src, stageParseData_t& spd );
 #endif
 
 	private:
