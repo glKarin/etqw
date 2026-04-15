@@ -41,6 +41,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "framework/GraphManager.h"
 #include "framework/KeyInputManager_Local.h"
 #include "renderer/DeviceContext.h"
+#include "renderer/FontManager.h"
 #include "sdnet/SDNet.h"
 #endif
 
@@ -3779,6 +3780,7 @@ void idCommonLocal::InitGame(void)
 
 	// initialize the user interfaces
 #ifdef _SPLASHDAMAGE
+	fontManager->Init();
 	deviceContext->Reset();
 	networkService->Init();
 #else

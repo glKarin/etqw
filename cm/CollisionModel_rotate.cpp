@@ -1831,6 +1831,9 @@ void idCollisionModelManagerLocal::Rotation(trace_t *results, const idVec3 &star
                 const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
                 cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis)
 {
+#ifdef _SPLASHDAMAGE //karin: lock in multi-threading
+	CM_LOCK_THREAD();
+#endif
 	idVec3 tmp;
 	float maxa, stepa, a, lasta;
 

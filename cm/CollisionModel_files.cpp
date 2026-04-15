@@ -1021,7 +1021,6 @@ void idCollisionModelManagerLocal::ParseBrushes_Binary(idFile *file, cm_model_t 
 	cm_brush_t *b;
 	int i, numPlanes, j;
 	int numBrushes, numBrushComponents;
-	float f;
 	short bv[6];
 	idStr token;
 

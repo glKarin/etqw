@@ -266,7 +266,7 @@ bool sdDeclTemplate::ParseText( idParser &src ) {
 void sdDeclTemplate::ExpandParameters(idLexer &src, idDict &newDecl) const {
 	idToken token;
 
-	// src.ExpectTokenString("<"); //karin: why could read <16 in <16, 0.333> ???
+	// src.ExpectTokenString("<"); //karin: why could read '<16' in <16, 0.333> ???
 	if(!src.ReadToken(&token) || token[0] != '<')
 	{
 		src.Error("Expect '<'");
@@ -277,6 +277,7 @@ void sdDeclTemplate::ExpandParameters(idLexer &src, idDict &newDecl) const {
 		token = token.c_str() + 1;
 		src.UnreadToken(&token);
 	}
+
 	for (int i = 0; i < parameters.Num(); i++ )
 	{
 		const parameter_t &parm = parameters[i];
@@ -290,9 +291,21 @@ void sdDeclTemplate::ExpandParameters(idLexer &src, idDict &newDecl) const {
 
 		newDecl.Set(parm.name.c_str(), token);
 
-		src.ReadToken(&token);
-		if(token != ",") //karin: maybe has ,
-			src.UnreadToken(&token);
+		if(src.ReadToken(&token))
+		{
+			if(token[0] == ',') //karin: maybe has , // why read ',1.0' in <16,1.0>
+			{
+				if(token.Length() == 1)
+					continue;
+				else
+				{
+					token = token.c_str() + 1;
+					src.UnreadToken(&token);
+				}
+			}
+			else
+				src.UnreadToken(&token);
+		}
 	}
 	src.ExpectTokenString(">");
 }
@@ -428,6 +441,7 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
 
 	if(range_start < textLength)
 		finalBuffer.Append(text + range_start, textLength - range_start);
+	//printf("OOO\n|%s|\n", finalBuffer.c_str());
 	return ret;
 }
 

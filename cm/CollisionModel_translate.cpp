@@ -913,6 +913,9 @@ void idCollisionModelManagerLocal::Translation(trace_t *results, const idVec3 &s
                 cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis)
 {
 
+#ifdef _SPLASHDAMAGE //karin: lock in multi-threading
+	CM_LOCK_THREAD();
+#endif
 	int i, j;
 	float dist;
 	bool model_rotated, trm_rotated;

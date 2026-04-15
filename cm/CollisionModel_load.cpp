@@ -5373,18 +5373,33 @@ void cm_model_t::SetWorld( bool tf ) {
 #endif
 
 #ifdef _SPLASHDAMAGE
+// main thread ID muse be 1
 void idCollisionModelManagerLocal::AllocThread( void ) {
+	sdScopedLock<true> guard(lock);
+	uintptr_t pid = threadId;
+	if(!pid)
+	{
+		threadId = ++threadCount;
+	}
 }
 
 void idCollisionModelManagerLocal::FreeThread( void ) {
+	sdScopedLock<true> guard(lock);
+	uintptr_t pid = threadId;
+	if(pid)
+	{
+		threadId.Remove();
+		threadCount--;
+	}
 }
 
 int idCollisionModelManagerLocal::GetThreadId( void ) {
-	return MAIN_THREAD_ID;
+	return threadId;
+	//return MAIN_THREAD_ID;
 }
 
 int idCollisionModelManagerLocal::GetThreadCount( void ) {
-	return 0;
+	return threadCount;
 }
 
 void idCollisionModelManagerLocal::LoadMap( const char* fileName, bool forceReload ) {

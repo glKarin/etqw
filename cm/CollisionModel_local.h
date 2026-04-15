@@ -41,8 +41,21 @@ If you have questions concerning this license or the applicable additional terms
 #define CM_MAX_POLYGON_EDGES				64
 #define CIRCLE_APPROXIMATION_LENGTH			64.0f
 
-#ifdef _RAVEN
-#define	MAX_SUBMODELS						4096 //k: include trace models
+#ifdef _SPLASHDAMAGE //karin: is multi-threading in game
+#include "splashdamage/idlib/threading/ThreadLocal.h"
+
+#define CM_LOCK_IN_COLLISION_TESTING 1
+
+#if CM_LOCK_IN_COLLISION_TESTING
+#define CM_LOCK_THREAD() sdScopedLock<true> _guard(lock)
+#else
+#define CM_LOCK_THREAD()
+#endif
+
+#endif
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: include trace models
+#define	MAX_SUBMODELS						4096
 #else
 #define	MAX_SUBMODELS						2048
 #endif
@@ -677,6 +690,11 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		int				numProcNodes;
 		cm_procNode_t 	*procNodes;
 		// for retrieving contact points
+#ifdef _SPLASHDAMAGE //karin: is multi-threading in game
+		mutable sdLock			lock;				// lock for multi-threading
+		int threadCount;
+		sdThreadLocal<uintptr_t>				threadId;
+#endif
 		bool			getContacts;
 		contactInfo_t 	*contacts;
 		int				maxContacts;

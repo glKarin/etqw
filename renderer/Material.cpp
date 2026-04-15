@@ -917,6 +917,12 @@ int idMaterial::ParseTerm(idLexer &src)
 	if (!token.Icmp("desat_sun_r")) {
 		return GetExpressionConstant(1.0f);
 	}
+	if (!token.Icmp("desat_sun_g")) {
+		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("desat_sun_b")) {
+		return GetExpressionConstant(1.0f);
+	}
 	if (!token.Icmp("lightscale")) {
 		return GetExpressionConstant(1.0f);
 	}

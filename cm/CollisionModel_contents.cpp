@@ -803,6 +803,9 @@ int idCollisionModelManagerLocal::Contents(const idVec3 &start,
                 const idTraceModel *trm, const idMat3 &trmAxis, int contentMask,
                 cmHandle_t model, const idVec3 &modelOrigin, const idMat3 &modelAxis)
 {
+#ifdef _SPLASHDAMAGE //karin: lock in multi-threading
+	CM_LOCK_THREAD();
+#endif
 	trace_t results;
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: idCollisionModel vs. handler
