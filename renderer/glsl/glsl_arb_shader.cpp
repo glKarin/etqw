@@ -117,6 +117,10 @@ private:
     void MAX(void);
     void LRP(void);
     void POW(void);
+    void ABS(void);
+    void FRC(void);
+    void CMP(void);
+    void SLT(void);
     void MAD_SAT(void);
     void ADD_SAT(void);
     void DP3_SAT(void);
@@ -232,6 +236,10 @@ void idARBProgram::Command(const char *cmd)
     else ARB_HANDLE_CMD(DP4)
     else ARB_HANDLE_CMD(LRP)
     else ARB_HANDLE_CMD(POW)
+    else ARB_HANDLE_CMD(ABS)
+    else ARB_HANDLE_CMD(FRC)
+    else ARB_HANDLE_CMD(SLT)
+    else ARB_HANDLE_CMD(CMP)
     else ARB_HANDLE_CMD(DP3_SAT)
     else ARB_HANDLE_CMD(DP4_SAT)
     else ARB_HANDLE_CMD(MUL_SAT)
@@ -665,6 +673,11 @@ void idARBProgram::ParseValue(void)
 			neg = true;
 			continue;
 		}
+		else if(!token.Cmp("$")) // ETQW: placeholder
+		{
+		    str.Append("$");
+		    continue;
+		}
 		else
 		{
 			str.Append(token);
@@ -715,7 +728,7 @@ bool idARBProgram::ParseFile(const char *file)
 
 bool idARBProgram::Parse(const char *source, int length)
 {
-    parser.SetFlags(LEXFL_ALLOWFLOATEXCEPTIONS | LEXFL_NOBASEINCLUDES);
+    parser.SetFlags(LEXFL_ALLOWFLOATEXCEPTIONS | LEXFL_NOBASEINCLUDES | LEXFL_NODOLLARPRECOMPILE);
 	idStr text;
 	text.Append(source, length);
 	text.Replace("..", " \"..\" ");
@@ -1370,6 +1383,75 @@ void idARBProgram::POW(void)
     parser.ExpectTokenString(",");
     AddToken(",");
     ParseValue();
+    AddToken(")");
+    AddEnding();
+    parser.ExpectTokenString(";");
+}
+
+// ABS T, S -> T = abs(S)
+void idARBProgram::ABS(void)
+{
+    ExpectTokenString("ABS");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    AddToken("abs");
+    AddToken("(");
+    ParseValue();
+    AddToken(")");
+    AddEnding();
+    parser.ExpectTokenString(";");
+}
+
+// FRC T, S -> T = fract(S)
+void idARBProgram::FRC(void)
+{
+    ExpectTokenString("FRC");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    AddToken("fract");
+    AddToken("(");
+    ParseValue();
+    AddToken(")");
+    AddEnding();
+    parser.ExpectTokenString(";");
+}
+
+// CMP T, C, A, B -> T = C ? A : B
+void idARBProgram::CMP(void)
+{
+    ExpectTokenString("CMP");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    ParseValue();
+    AddToken("?");
+    ParseValue();
+    AddToken(":");
+    ParseValue();
+    AddEnding();
+    parser.ExpectTokenString(";");
+}
+
+// SLT T, A, B -> T = fract(S)
+void idARBProgram::SLT(void)
+{
+    ExpectTokenString("SLT");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    AddToken("vec4");
+    AddToken("(");
+    AddToken("lessThan");
+    ParseValue();
+    parser.ExpectTokenString(",");
+    ParseValue();
+    AddToken(")");
     AddToken(")");
     AddEnding();
     parser.ExpectTokenString(";");

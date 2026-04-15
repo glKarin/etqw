@@ -2209,7 +2209,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			SETUP_STAGE_PROGRAM_PARMS();
 			ss->lighting = SL_DIFFUSE;
-			bool isInteractionProgram = true;
+			isInteractionProgram = true;
 			continue;
 		}
 		// specularmap for stage shortcut

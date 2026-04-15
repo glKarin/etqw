@@ -18,7 +18,6 @@ template<class T>
 class sdThreadLocal {
 public:
 						sdThreadLocal(void);
-						sdThreadLocal(const T &other);
 						~sdThreadLocal(void);
 
 	bool				Has(void) const;
@@ -51,22 +50,12 @@ private:
 
 template<class T>
 ID_INLINE sdThreadLocal<T>::sdThreadLocal(void) {
-	char _assert[sizeof(T) <= sizeof(void *) ? 1 : 0];
+	char _assert[sizeof(T) <= sizeof(void *) ? 1 : -1];
 #if defined( _WIN32 )
 	tlsIndex = TlsAlloc();
 #else
     pthread_key_create(&tlsIndex, NULL);
 #endif
-}
-
-template<class T>
-sdThreadLocal<T>::sdThreadLocal(const T &other) {
-#if defined( _WIN32 )
-	tlsIndex = TlsAlloc();
-#else
-    pthread_key_create(&tlsIndex, NULL);
-#endif
-	Set(other);
 }
 
 template<class T>
