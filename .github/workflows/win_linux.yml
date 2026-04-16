@@ -5,12 +5,12 @@ name: Windows/Linux testing build
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
     paths:
       - '.github/workflows/win_linux.yml'
       - '.github/workflows/win_linux.changelog'
   pull_request:
-    branches: [ "master" ]
+    branches: [ "main" ]
     paths:
       - '.github/workflows/win_linux.yml'
       - '.github/workflows/win_linux.changelog'
