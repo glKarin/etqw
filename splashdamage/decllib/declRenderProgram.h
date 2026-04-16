@@ -32,11 +32,37 @@ class sdRenderProgramShader
 		void Init(void);
 		bool IsValid(void) const;
 		bool Parse(idParser &src);
+		void ParsePost(void);
+		shaderType_t GetType(void) const {
+			return type;
+		}
+		shaderLang_t GetLang(void) const {
+			return lang;
+		}
+		const char * GetSource(void) const {
+			return source.c_str();
+		}
+		const idStrList & GetPlaceholders(void) const {
+			return placeholders;
+		}
+		const idList<const sdDeclRenderBinding *> & GetBindings(void) const {
+			return bindings;
+		}
+		int NumBindings(void) const {
+			return bindings.Num();
+		}
+		const sdDeclRenderBinding * GetBinding(int i) const {
+			return i >= 0 && i < bindings.Num() ? bindings[i] : NULL;
+		}
+		const sdDeclRenderBinding * GetBinding(const char *name) const;
 
 	private:
 		shaderType_t type;
 		shaderLang_t lang;
+		idStr sourceRaw;
+		idStrList placeholders;
 		idStr source;
+		idList<const sdDeclRenderBinding *> bindings;
 
 		friend class sdDeclRenderProgram;
 };
@@ -53,6 +79,12 @@ public:
 	virtual bool					Parse( const char* text, const int textLength );
 	virtual size_t					Size( void ) const { return sizeof( sdDeclRenderProgram ); }
 	virtual void					FreeData();
+	const sdRenderProgramShader	*	GetVertexShader(void) const {
+		return vertex.IsValid() ? &vertex : NULL;
+	}
+	const sdRenderProgramShader	*	GetFragmentShader(void) const {
+		return fragment.IsValid() ? &fragment : NULL;
+	}
 
 private:
 	void							Init(void);

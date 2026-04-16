@@ -1,0 +1,102 @@
+#ifndef _KARIN_SHADER_MANAGER_H
+#define _KARIN_SHADER_MANAGER_H
+
+#define GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(x) ( (x) + 1 )
+#define GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(x) ( -( (x) + 1) )
+#define GLSL_BUILTIN_SHADER_HANDLE_TO_INDEX(x) ( (x) - 1 )
+#define GLSL_CUSTOM_SHADER_HANDLE_TO_INDEX(x) ( -(x) - 1 )
+
+struct GLSLShaderProp
+{
+	idStr name;
+	shaderProgram_t *program;
+	idStr default_vertex_shader_source;
+	idStr default_fragment_shader_source;
+	idStr macros;
+	idStr vertex_shader_source_file;
+	idStr fragment_shader_source_file;
+    int type; // glsl_program_t
+
+	GLSLShaderProp()
+			: program(NULL),
+            type(-1)
+	{}
+
+	GLSLShaderProp(const char *name)
+			: name(name),
+			  program(NULL),
+              type(-1)
+	{
+		vertex_shader_source_file = name;
+		vertex_shader_source_file += ".vert";
+		fragment_shader_source_file = name;
+		fragment_shader_source_file += ".frag";
+	}
+
+	GLSLShaderProp(const char *name, int type, shaderProgram_t *program, const idStr &vs, const idStr &fs, const idStr &macros)
+			: name(name),
+              type(type),
+			  program(program),
+			  default_vertex_shader_source(vs),
+			  default_fragment_shader_source(fs),
+			  macros(macros)
+	{
+		vertex_shader_source_file = name;
+		vertex_shader_source_file += ".vert";
+		fragment_shader_source_file = name;
+		fragment_shader_source_file += ".frag";
+	}
+};
+
+/**
+ * > 0: internal shader(index = handle - 1)
+ * < 0: custom shader(index = -handle - 1)
+ * = 0: invalid
+ */
+typedef int shaderHandle_t;
+#define SHADER_HANDLE_IS_VALID(x) ( (x) != idGLSLShaderManager::INVALID_SHADER_HANDLE )
+#define SHADER_HANDLE_IS_INVALID(x) ( (x) == idGLSLShaderManager::INVALID_SHADER_HANDLE )
+#define SHADER_HANDLE_INVALID ( idGLSLShaderManager::INVALID_SHADER_HANDLE )
+#define SHADER_HANDLE_IS_BUILTIN(x) ( (x) > idGLSLShaderManager::INVALID_SHADER_HANDLE )
+#define SHADER_HANDLE_IS_CUSTOM(x) ( (x) < idGLSLShaderManager::INVALID_SHADER_HANDLE )
+
+#define SHADER_MAX_CUSTOM 64
+
+class idGLSLShaderManager
+{
+public:
+	~idGLSLShaderManager();
+	int AddBuiltin(const GLSLShaderProp &prop); // return added shader's index
+    void Shutdown(void);
+	const shaderProgram_t * Find(const char *name) const;
+	const shaderProgram_t * Find(GLuint openGLHandle) const; // handle is OpenGL shader program's handle
+	shaderHandle_t Load(const GLSLShaderProp &prop); // frontend: if in multi-threading, only add on queue, because current thread has not OpenGL context; else if not in multi-threading, actual load directly. however always return a shader program handle, if has loaded, return OpenGL program handle(> 0), else return -(customShaders::index + 1), error return 0.
+	void ActuallyLoad(void); // backend: if in multi-threading, load actually from queue with OpenGL context
+	const shaderProgram_t * Get(shaderHandle_t handle) const;
+	shaderHandle_t GetHandle(const char *name) const;
+	void ReloadShaders(void);
+	void Print(void);
+
+	static idGLSLShaderManager _shaderManager;
+	static const shaderHandle_t INVALID_SHADER_HANDLE;
+
+private:
+	int AddPlaceholder(const GLSLShaderProp &prop); // return added shader's index
+	int AddCustom(const GLSLShaderProp &prop); // return added shader's index
+	int FindIndex(const char *name) const; // return raw index
+	int FindIndex(GLuint openGLHandle) const; // return raw index
+    GLSLShaderProp * FindCustom(const char *name, int *index = NULL);
+	void Resize(int type);
+
+private:
+	idList<shaderProgram_t *> shaders; // available shaders, include internal shaders and loaded custom shaders
+	idList<GLSLShaderProp> customShaders; // custom shaders load list. GLSLShaderProp::program == NULL: loading not start; GLSLShaderProp::program->program > 0: load success; GLSLShaderProp::program->program == 0: load failed
+	// idList<unsigned int> queue; // custom shaders load queue: index to customShaders
+	unsigned int queueCurrentIndex; // current loaded index in customShaders
+
+private:
+	idGLSLShaderManager(void);
+};
+extern idGLSLShaderManager *shaderManager;
+
+#endif // _KARIN_SHADER_MANAGER_H

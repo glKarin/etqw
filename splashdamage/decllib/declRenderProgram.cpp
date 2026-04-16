@@ -152,12 +152,15 @@ void sdRenderProgramShader::Init(void)
 {
 	type = ST_INVALID;
 	lang = SL_UNKNOWN;
+	sourceRaw.Clear();
+	placeholders.Clear();
 	source.Clear();
+	bindings.Clear();
 }
 
 bool sdRenderProgramShader::IsValid(void) const
 {
-	return type != ST_INVALID && lang != SL_UNKNOWN && !source.IsEmpty();
+	return type != ST_INVALID && lang != SL_UNKNOWN && !sourceRaw.IsEmpty();
 }
 
 bool sdRenderProgramShader::Parse(idParser &src)
@@ -208,12 +211,69 @@ bool sdRenderProgramShader::Parse(idParser &src)
 	text.StripLeadingOnce("{");
 	text.StripTrailingOnce("}");
 	text.StripTrailingWhitespace();
-	text.StripQuotes();
+	text.ReplaceChar('"', ' ');
 	text.StripTrailingWhitespace();
-	if (!sdDeclTemplate::ExpandTemplate(source, text.c_str(), text.Length()))
-		source = text;
+	if (!sdDeclTemplate::ExpandTemplate(sourceRaw, text.c_str(), text.Length()))
+		sourceRaw = text;
 
 	return IsValid();
+}
+
+const sdDeclRenderBinding * sdRenderProgramShader::GetBinding(const char *name) const {
+	for(int i = 0; i < bindings.Num(); i++)
+	{
+		const sdDeclRenderBinding *binding = bindings[i];
+		if(!binding)
+			continue;
+		if(!idStr::Icmp(binding->GetName(), name))
+			return binding;
+	}
+	return NULL;
+}
+
+void sdRenderProgramShader::ParsePost(void) {
+	if(sourceRaw.IsEmpty())
+		return;
+
+	idParser src;
+	src.LoadMemory(sourceRaw.c_str(), sourceRaw.Length(), "shader");
+	src.SetFlags(LEXFL_NOFATALERRORS);
+	idToken token;
+	const idDecl *decl;
+
+	sdStringBuilder_Heap buf;
+	while (1) {
+		if(!src.ReadToken(&token))
+			break;
+
+		if(token.linesCrossed && buf.Length() > 0)
+			buf.Append("\n");
+
+		if(token == "$")
+		{
+			if(!src.ReadToken(&token))
+			{
+				src.Warning("sdRenderProgramShader::ParsePost: missing placeholder name");
+				break;
+			}
+			placeholders.Append(token);
+		}
+
+		if(buf.Length() > 0)
+			buf.Append(' ');
+		buf.Append(token);
+	}
+
+	source = buf.c_str();
+	for(int i = 0; i < placeholders.Num(); i++) {
+		decl = declManager->FindType(DECL_RENDERBINDING, placeholders[i], false);
+		if( !decl ) {
+			common->Warning( "sdRenderProgramShader::ParsePost: could't find binding '%s'.", placeholders[i].c_str() );
+			bindings.Append(NULL);
+		}
+		else
+			bindings.Append(static_cast<const sdDeclRenderBinding *>(decl));
+	}
 }
 
 void sdDeclRenderProgram::Init(void)
@@ -281,6 +341,7 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 		}
 	}
 
+#if 0
 	const char *typeName;
 	if(shader->type == sdRenderProgramShader::ST_VERTEX)
 		typeName = "vert";
@@ -303,7 +364,26 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 			langName = "arb";
 			break;
 	}
+	fileSystem->WriteFile(va("progs/%s.%s.%s", GetName(), typeName, langName), shader->sourceRaw.c_str(), shader->sourceRaw.Length());
+#endif
 
-	fileSystem->WriteFile(va("progs/%s.%s.%s", GetName(), typeName, langName), shader->source.c_str(), shader->source.Length());
+	shader->ParsePost();
+
+#if 0
+	idStr str;
+	str.Append(shader->source.c_str());
+	str.Append("\n\n");
+	for(int i = 0; i < shader->placeholders.Num(); i++)
+	{
+		str.Append("$");
+		str.Append(shader->placeholders[i]);
+		str.Append(" ");
+		const sdDeclRenderBinding *binding = shader->GetBinding(i);
+		str.Append(va("%d", binding ? (int)binding->GetBindingType() : -1));
+		str.Append("\n");
+	}
+	fileSystem->WriteFile(va("progs/%s.%s.post.%s", GetName(), typeName, langName), str.c_str(), str.Length());
+#endif
+
 	return true;
 }

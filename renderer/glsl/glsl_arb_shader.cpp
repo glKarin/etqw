@@ -738,6 +738,7 @@ bool idARBProgram::Parse(const char *source, int length)
         return false;
     }
 
+	parser.SetFlags(LEXFL_NOFATALERRORS);
     try
     {
         ParseCMD();

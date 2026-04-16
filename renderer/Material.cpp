@@ -61,7 +61,7 @@ extern idStrList stageParms;
 		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO; \
 		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA; \
 		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
-		else if(!idStr::Icmp(p, "partialLoad")); \
+		else if(!idStr::Icmp(p, "partialLoad")) {} \
 	}
 
 extern idStr R_RestorePastImageProgram(const char *img, bool clearParms);
@@ -2554,13 +2554,26 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	numStages++;
 
 #ifdef _SPLASHDAMAGE
-	if(isInteractionProgram) {
-		CompleteInterationStage(ss, spd);
+	if(spd.numTextures)
+	{
+		if(isInteractionProgram) {
+			CompleteInterationStage(ss, spd);
+		} else if (spd.shaderProgram) {
+			CompleteStage(ss, spd, NULL, 0);
+		} else {
+			FinishStage(ss, spd);
+		}
 		if (ss->texture.image)
+		{
+			if(ss->numTextures == 0) //karin: must has 1 image in ::textures(same as ::texture)
+			{
+				ss->numTextures = 1;
+				ss->textures = (stageTexture_t *)Mem_Alloc(sizeof(*ss->textures));
+				ss->textures[0].image = ss->texture.image;
+				ss->textures[0].renderBinding = NULL;
+			}
 			return;
-	} else if (spd.shaderProgram) {
-		CompleteStage(ss, spd, NULL, 0);
-		FinishStage(ss, spd);
+		}
 	}
 #endif
 	// select a compressed depth based on what the stage is
@@ -2598,6 +2611,15 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		common->Warning("material '%s' had stage with no image", GetName());
 		ts->image = globalImages->defaultImage;
 	}
+#ifdef _SPLASHDAMAGE
+	if(ss->numTextures == 0) //karin: must has 1 image in ::textures(same as ::texture)
+	{
+		ss->numTextures = 1;
+		ss->textures = (stageTexture_t *)Mem_Alloc(sizeof(*ss->textures));
+		ss->textures[0].image = ss->texture.image;
+		ss->textures[0].renderBinding = NULL;
+	}
+#endif
 }
 
 /*
@@ -4577,7 +4599,7 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO;
 		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA;
 		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false;
-		else if(!idStr::Icmp(p, "partialLoad"));
+		else if(!idStr::Icmp(p, "partialLoad")) {}
 	}
 
 	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, token.c_str(), false);
@@ -4834,7 +4856,6 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 }
 
 void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults ) {
-	memset(ms, 0, sizeof(*ms));
 	if (spd.numVectors > 0) {
 		ms->vectors = (stageVector_t *)Mem_Alloc(spd.numVectors * sizeof(*ms->vectors));
 		memcpy(ms->vectors, spd.vectors, spd.numVectors * sizeof(*ms->vectors));
@@ -4849,8 +4870,26 @@ void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, cons
 	}
 }
 
-void idMaterial::FinishStage( materialStage_t* ms, stageParseData_t& spd ) {
+void idMaterial::FinishStage( materialStage_t* ss, stageParseData_t& spd ) {
+	shaderStage_t		*newSS;
+	//Sys_Printf("CCC %s\n", GetName());
 
+	for(int i = 0; i < spd.numTextures; i++) {
+		const stageTexture_t &tex = spd.textures[i];
+		const char *name = tex.renderBinding->GetName();
+		if ( !idStr::Icmp(name, "lightProjectionMap") ) {
+			//ss->lighting = SL_DIFFUSE;
+			ss->texture.image = tex.image;
+			//Sys_Printf("lightProjectionMap %s\n", tex.image->imgName.c_str());
+		}
+		else if ( !idStr::Icmp(name, "lightFallOffMap") ) {
+			lightFalloffImage = tex.image;
+			//Sys_Printf("lightFallOffMap %s\n", tex.image->imgName.c_str());
+		} else {
+			//Sys_Printf("%s %s\n", name,tex.image->imgName.c_str());
+		}
+	}
+	//Sys_Printf("xxxxxxxxxxxxxxxxx %s\n\n", GetName());
 }
 
 void idMaterial::CacheFromDict( const idDict& dict ) {
