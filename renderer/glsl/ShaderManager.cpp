@@ -90,7 +90,7 @@ int idGLSLShaderManager::AddPlaceholder(const GLSLShaderProp &prop)
 		return index; // -1
 	}
 
-	common->Printf("idGLSLShaderManager::Add placeholder shader program %d '%s'.\n", prop.name.c_str());
+	common->Printf("idGLSLShaderManager::Add placeholder shader program '%s'.\n", prop.name.c_str());
 	int newType = shaders.Num();
 	if (newType < SHADER_CUSTOM) // built-in shaders not loaded???
 		newType = SHADER_CUSTOM;
@@ -250,7 +250,12 @@ shaderHandle_t idGLSLShaderManager::Load(const GLSLShaderProp &inProp)
 	p.type = SHADER_CUSTOM;
 	p.program = NULL;
 	index = AddPlaceholder(p);
+	if (index < 0)
+		return INVALID_SHADER_HANDLE;
 	common->Printf("idGLSLShaderManager::Load shader push '%s' into queue.\n", p.name.c_str());
+	prop = &customShaders[index];
+	if (prop->read_source)
+		prop->read_source(prop);
 
 #ifdef _MULTITHREAD // in multi-threading, push on queue and load on backend
 	if(!multithreadActive) {
@@ -320,6 +325,8 @@ void idGLSLShaderManager::ActuallyLoad(void)
 		if(RB_GLSL_LoadShaderProgramFromProp(&prop))
 		{
 			AddCustom(prop);
+			if (prop.load_finish)
+				prop.load_finish(&prop);
 		}
 		else
 		{
@@ -398,8 +405,12 @@ void idGLSLShaderManager::ReloadShaders(void)
 		}
 		else if (prop->program)
 		{
+			if (prop->read_source)
+				prop->read_source(prop);
 			if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
 				shaders[i] = prop->program;
+				if (prop->load_finish)
+					prop->load_finish(prop);
 			}
 			else
 			{

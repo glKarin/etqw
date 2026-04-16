@@ -313,6 +313,7 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 	}
 
 	src.ReadToken(&token);
+	bool isRef = false;
 	if(!token.Icmp("reference")) {
 		if( !src.ReadToken( &token )) {
 			src.Warning( "sdDeclRenderProgram::ParseShader: expect reference shader program name." );
@@ -324,11 +325,12 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 			return false;
 		}
 		const sdDeclRenderProgram *program = static_cast<const sdDeclRenderProgram *>(decl);
-		if(shader->type == sdRenderProgramShader::ST_VERTEX)
+		if(type == sdRenderProgramShader::ST_VERTEX)
 			*shader = program->vertex;
 		else
 			*shader = program->fragment;
 		shader->type = type;
+		isRef = true;
 	}
 	else
 	{
@@ -341,7 +343,8 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 		}
 	}
 
-#if 0
+//#define RENDERPROGRAM_OUTPUT_TO_FILE 1
+#if RENDERPROGRAM_OUTPUT_TO_FILE
 	const char *typeName;
 	if(shader->type == sdRenderProgramShader::ST_VERTEX)
 		typeName = "vert";
@@ -367,9 +370,10 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 	fileSystem->WriteFile(va("progs/%s.%s.%s", GetName(), typeName, langName), shader->sourceRaw.c_str(), shader->sourceRaw.Length());
 #endif
 
-	shader->ParsePost();
+	if (!isRef)
+		shader->ParsePost();
 
-#if 0
+#if RENDERPROGRAM_OUTPUT_TO_FILE
 	idStr str;
 	str.Append(shader->source.c_str());
 	str.Append("\n\n");

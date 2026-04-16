@@ -327,7 +327,6 @@ struct stageParseData_t {
 								memset( vectors, 0, sizeof( vectors ) );
 								memset( textures, 0, sizeof( textures ) );
 								memset( textureMatrices, 0, sizeof( textureMatrices ) );
-								shaderProgram = 0;
 							}
 
 	int						numVectors;
@@ -337,7 +336,7 @@ struct stageParseData_t {
 	int						numTextureMatrices;
 	stageTextureMatrix_t	textureMatrices[MAX_STAGE_TEXTUREMATRICES];
 
-	int						shaderProgram;
+	idStr					shaderProgram;
 };
 #endif
 
@@ -374,7 +373,7 @@ typedef struct {
 #endif
 
 #ifdef _SPLASHDAMAGE
-	const sdDeclRenderProgram*	renderProgram;
+	class sdRenderProgram*	renderProgram;
 
 	int							numVectors;
 	stageVector_t*				vectors;

@@ -55,6 +55,9 @@ class sdRenderProgramShader
 			return i >= 0 && i < bindings.Num() ? bindings[i] : NULL;
 		}
 		const sdDeclRenderBinding * GetBinding(const char *name) const;
+		const char * GetPlaceholder(int i) const {
+			return i >= 0 && i < placeholders.Num() ? placeholders[i].c_str() : NULL;
+		}
 
 	private:
 		shaderType_t type;
@@ -84,6 +87,9 @@ public:
 	}
 	const sdRenderProgramShader	*	GetFragmentShader(void) const {
 		return fragment.IsValid() ? &fragment : NULL;
+	}
+	bool							IsCompleted(void) const {
+		return vertex.IsValid() && fragment.IsValid();
 	}
 
 private:

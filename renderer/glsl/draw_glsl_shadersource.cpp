@@ -351,6 +351,8 @@ void RB_GLSL_ConvertGL2ESVertexShader(idStr &ret, const char *text, int version)
     ret += attribute + " highp vec4 attr_TexCoord;\n";
     ret += attribute + " lowp vec4 attr_Color;\n";
     ret += attribute + " vec3 attr_Normal;\n";
+    ret += attribute + " vec3 attr_Tangent;\n";
+    ret += attribute + " vec3 attr_Bitangent;\n";
     ret += "\n";
 
     ret += "uniform lowp vec4 u_glColor;\n";

@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "decllib/declRenderBinding.h"
 #include "decllib/declRenderProgram.h"
 #include "framework/DeclParseHelper.h"
+#include "renderer/RenderProgram.h"
 
 extern idStrList stageParms;
 #define SETUP_STAGE_PROGRAM_PARMS() \
@@ -2315,6 +2316,9 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
                         newStage.glslProgram = SHADER_HANDLE_INVALID;
 						common->Printf("Stage program '%s' not found in material '%s' at file '%s'\n", token.c_str(), GetName(), GetFileName());
 						isInteractionProgram = !idStr::Icmpn(token.c_str(), "interaction", idStr::Length("interaction"));
+#ifdef _SPLASHDAMAGE //karin: record shader program name
+                    	spd.shaderProgram = token.c_str();
+#endif
 					}
                 }
 #endif
@@ -4867,6 +4871,12 @@ void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, cons
 	if (spd.numTextureMatrices > 0) {
 		ms->textureMatrices = (stageTextureMatrix_t *)Mem_Alloc(spd.numTextureMatrices * sizeof(*ms->textures));
 		memcpy(ms->textureMatrices, spd.textureMatrices, spd.numTextureMatrices * sizeof(*ms->textureMatrices));
+	}
+
+	sdRenderProgram renderProgram;
+	if (renderProgram.LoadProgram(spd.shaderProgram)) {
+		ms->renderProgram = (sdRenderProgram *)Mem_Alloc(sizeof(*ms->renderProgram));
+		*ms->renderProgram = renderProgram;
 	}
 }
 

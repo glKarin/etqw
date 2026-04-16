@@ -2,14 +2,14 @@
 #define _KARIN_GLSL_ARB_SHADER_H
 
 class idARBProgram;
-class idARBTokenList : public idStrList
+class idARBTokenList : public idList<idStr>
 {
 public:
     void ToSource(idStr &source);
 
     int AddToken(const char *token) {
         if(token && token[0])
-            return Append(token);
+            return this->Append(token);
         else
             return Num() - 1;
     }
@@ -728,7 +728,7 @@ bool idARBProgram::ParseFile(const char *file)
 
 bool idARBProgram::Parse(const char *source, int length)
 {
-    parser.SetFlags(LEXFL_ALLOWFLOATEXCEPTIONS | LEXFL_NOBASEINCLUDES | LEXFL_NODOLLARPRECOMPILE);
+    parser.SetFlags(LEXFL_ALLOWFLOATEXCEPTIONS | LEXFL_NOBASEINCLUDES | LEXFL_NODOLLARPRECOMPILE | LEXFL_NOFATALERRORS);
 	idStr text;
 	text.Append(source, length);
 	text.Replace("..", " \"..\" ");
@@ -738,7 +738,6 @@ bool idARBProgram::Parse(const char *source, int length)
         return false;
     }
 
-	parser.SetFlags(LEXFL_NOFATALERRORS);
     try
     {
         ParseCMD();

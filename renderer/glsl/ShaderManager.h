@@ -8,6 +8,9 @@
 
 struct GLSLShaderProp
 {
+	typedef void (*readSource_f)(GLSLShaderProp *prop); // when start load on main thread
+	typedef void (*loadFinish_f)(GLSLShaderProp *prop); // when load successful on render thread
+
 	idStr name;
 	shaderProgram_t *program;
 	idStr default_vertex_shader_source;
@@ -16,21 +19,40 @@ struct GLSLShaderProp
 	idStr vertex_shader_source_file;
 	idStr fragment_shader_source_file;
     int type; // glsl_program_t
+	void *data;
+	readSource_f read_source;
+	loadFinish_f load_finish;
 
 	GLSLShaderProp()
 			: program(NULL),
-            type(-1)
+            type(-1),
+	data(NULL),
+			read_source(NULL),
+			load_finish(NULL)
 	{}
 
 	GLSLShaderProp(const char *name)
 			: name(name),
 			  program(NULL),
-              type(-1)
+				type(-1),
+	data(NULL),
+			  read_source(NULL),
+			  load_finish(NULL)
 	{
 		vertex_shader_source_file = name;
 		vertex_shader_source_file += ".vert";
 		fragment_shader_source_file = name;
 		fragment_shader_source_file += ".frag";
+	}
+
+	GLSLShaderProp(const char *name, void *data, readSource_f readSource, loadFinish_f loadFinish)
+			: name(name),
+			  program(NULL),
+				type(-1),
+				data(data),
+			  read_source(readSource),
+			  load_finish(loadFinish)
+	{
 	}
 
 	GLSLShaderProp(const char *name, int type, shaderProgram_t *program, const idStr &vs, const idStr &fs, const idStr &macros)
@@ -39,7 +61,10 @@ struct GLSLShaderProp
 			  program(program),
 			  default_vertex_shader_source(vs),
 			  default_fragment_shader_source(fs),
-			  macros(macros)
+				macros(macros),
+	data(NULL),
+			  read_source(NULL),
+			  load_finish(NULL)
 	{
 		vertex_shader_source_file = name;
 		vertex_shader_source_file += ".vert";

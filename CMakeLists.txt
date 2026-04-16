@@ -3175,10 +3175,13 @@ if(SPLASHDAMAGE)
 			splashdamage/framework/BuildVersion.cpp
 			splashdamage/framework/GraphManager.cpp
 			splashdamage/framework/NotificationSystem.cpp
-			splashdamage/renderer/DeviceContext.cpp
-			splashdamage/renderer/FontManager.cpp
 			splashdamage/sys/sys_ime.cpp
 			splashdamage/sys/sys_keyboard.cpp
+	)
+	set(splashdamage_renderer_src
+			splashdamage/renderer/DeviceContext.cpp
+			splashdamage/renderer/FontManager.cpp
+			splashdamage/renderer/RenderProgram.cpp
 	)
 	set(splashdamage_decl_src
 			splashdamage/decllib/declAmbientCubeMap.cpp
@@ -3224,6 +3227,7 @@ if(SPLASHDAMAGE)
 			${src_renderbump}
 			${src_dmap}
 			${splashdamage_engine_src}
+			${splashdamage_renderer_src}
 			${splashdamage_bse_src}
 			${splashdamage_decl_src}
 	)
