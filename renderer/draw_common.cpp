@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "tr_local.h"
+#include "renderer/RenderProgram.h"
 
 #ifdef _K_DEV //karin: debug shader pass
 #define _HARM_SKIP_RENDER_SHADER_PASS
@@ -810,6 +811,59 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Normal));
 
 			newShaderStage->Unbind();
+
+			continue;
+		}
+#endif
+
+#ifdef _SPLASHDAMAGE //karin: custom stage shader
+		// see if we are a new-style stage
+		const sdRenderProgram *renderProgram = pStage->renderProgram;
+
+		if (renderProgram && renderProgram->IsValid()) {
+			if ( r_skipNewAmbient.GetBool() ) {
+				continue;
+			}
+
+			if(!renderProgram->Bind(pStage, regs))
+				continue;
+
+			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
+			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
+			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Color));
+			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Normal));
+			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Tangent));
+			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Bitangent));
+
+			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), ac->st.ToFloatPtr());
+			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), &ac->color);
+			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Normal), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
+			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Tangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[0].ToFloatPtr());
+			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Bitangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[1].ToFloatPtr());
+
+			// set the color
+			color[0] = regs[ pStage->color.registers[0] ];
+			color[1] = regs[ pStage->color.registers[1] ];
+			color[2] = regs[ pStage->color.registers[2] ];
+			color[3] = regs[ pStage->color.registers[3] ];
+			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
+
+			// set standard transformations
+			GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), rb_MVP);
+
+			GL_State( pStage->drawStateBits );
+
+			RB_DrawElementsWithCounters( tri );
+
+			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
+			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
+			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Color));
+			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Normal));
+			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Tangent));
+			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Bitangent));
+
+			renderProgram->Unbind(pStage);
 
 			continue;
 		}

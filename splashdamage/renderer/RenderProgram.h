@@ -16,8 +16,8 @@ public:
     bool LoadProgram(const sdDeclRenderProgram *name);
 
     // bind
-    bool Bind(const float *regs);
-    void Unbind(void);
+    bool Bind(const materialStage_t *stage, const float *regs) const;
+    void Unbind(const materialStage_t *stage) const;
 
     // state
     bool IsValid(void) const {
@@ -41,12 +41,12 @@ private:
     void InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
-    bool LoadGLSLProgram(const char *name);
 	void GetLocations(shaderHandle_t handle);
 	void GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader);
     int GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const;
-    void BindUniform(const shaderProgram_t *shader, const float *regs);
-    void UnbindUniform(void);
+    void BindUniform(const materialStage_t *stage, const float *regs) const;
+    void UnbindUniform(const materialStage_t *stage) const;
+    GLint GetBindingLocation(const sdDeclRenderBinding *binding) const;
 
 
     shaderHandle_t 				                    shaderProgram;

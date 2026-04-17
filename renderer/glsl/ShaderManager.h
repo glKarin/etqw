@@ -13,7 +13,7 @@ typedef int shaderHandle_t;
 #define SHADER_HANDLE_IS_BUILTIN(x) ( (x) > idGLSLShaderManager::INVALID_SHADER_HANDLE )
 #define SHADER_HANDLE_IS_CUSTOM(x) ( (x) < idGLSLShaderManager::INVALID_SHADER_HANDLE )
 
-#define SHADER_MAX_CUSTOM 64
+#define SHADER_MAX_CUSTOM 64 // 32
 
 #define GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(x) ( (x) + 1 )
 #define GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(x) ( -( (x) + 1) )

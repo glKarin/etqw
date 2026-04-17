@@ -119,7 +119,7 @@ const shaderProgram_t * idGLSLShaderManager::Find(const char *name) const
 		const shaderProgram_t *shader = shaders[i];
 		if(shader && !idStr::Icmp(name, shader->name))
         {
-            common->Printf("idGLSLShaderManager::Find '%s' -> %d, type=%d %s.\n", shader->name, shader->program, shader->type, shader->type == SHADER_CUSTOM ? "custom" : "built-in");
+            common->Printf("idGLSLShaderManager::Find '%s' -> %d, type=%d %s.\n", shader->name, shader->program, shader->type, shader->type < SHADER_CUSTOM ? "built-in" : "custom");
             return shader;
         }
 	}
@@ -147,7 +147,7 @@ int idGLSLShaderManager::FindIndex(const char *name) const
 		const shaderProgram_t *shader = shaders[i];
 		if(shader && !idStr::Icmp(name, shader->name))
 		{
-			common->Printf("idGLSLShaderManager::FindIndex '%s' -> %d %s.\n", shader->name, shader->type, shader->type == SHADER_CUSTOM ? "custom" : "built-in");
+			common->Printf("idGLSLShaderManager::FindIndex '%s' -> %d %s.\n", shader->name, shader->type, shader->type < SHADER_CUSTOM ? "built-in" : "custom");
 			return i;
 		}
 	}
@@ -501,7 +501,7 @@ idGLSLShaderManager::idGLSLShaderManager(void)
 }
 
 
-static void GLSL_PrintShaders_f(const idCmdArgs &args)
+static void GLSL_ListShaders_f(const idCmdArgs &args)
 {
 	shaderManager->Print();
 }

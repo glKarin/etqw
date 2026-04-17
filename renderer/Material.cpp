@@ -1587,6 +1587,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #ifdef _SPLASHDAMAGE //karin: fake interaction program
 	bool isInteractionProgram = false;
 	stageParseData_t spd;
+	const sdDeclRenderBinding *imageBinding = NULL;
 #endif
 
 	if (numStages >= MAX_SHADER_STAGES) {
@@ -1641,6 +1642,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idStr::Copynz(imageName, str, sizeof(imageName));
 #ifdef _SPLASHDAMAGE //karin: setup image program stage parms
 			SETUP_STAGE_PROGRAM_PARMS();
+			// map also is a binding
+			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
 #endif
 			continue;
 		}
@@ -1738,6 +1741,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			cubeMap = CF_NATIVE;
 #ifdef _SPLASHDAMAGE
 			SETUP_STAGE_PROGRAM_PARMS();
+			if (!imageBinding)
+			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
 #endif
 			continue;
 		}
@@ -1748,6 +1753,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			cubeMap = CF_CAMERA;
 #ifdef _SPLASHDAMAGE
 			SETUP_STAGE_PROGRAM_PARMS();
+			if (!imageBinding)
+			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
 #endif
 			continue;
 		}
@@ -2121,16 +2128,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("writeDepth")) {
 			continue;
 		}
-		if (!token.Icmp("skies_cloudColor")) { // skies_cloudColor 1, 1, 1, 1
-			ParseExpression(src);
-			MatchToken(src, ",");
-			ParseExpression(src);
-			MatchToken(src, ",");
-			ParseExpression(src);
-			MatchToken(src, ",");
-			ParseExpression(src);
-			continue;
-		}
 		if (!token.Icmp("fillMode")) { // fillMode	lines	1
 			idToken t;
 			src.ExpectAnyToken(&t);
@@ -2263,6 +2260,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			|| !token.Icmp("colorAdd")
 			|| !token.Icmp("detailMult")
 			|| !token.Icmp("specularPower")
+			|| !token.Icmp("skies_cloudColor")
 			)
 		{
 			src.UnreadToken(&token);
@@ -2310,8 +2308,13 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
                     token.StripFileExtension();
                     const shaderProgram_t *shaderProgram = shaderManager->Find(token.c_str());
 					NS_DEBUG(common->Printf("NS program: %s -> %s\n", GetName(), shaderProgram ? shaderProgram->name : "NULL"));
-                    if(shaderProgram && shaderProgram->program > 0)
-                        newStage.glslProgram = shaderProgram->program;
+                    if(shaderProgram && shaderProgram->program > 0) {
+                    	newStage.glslProgram = shaderProgram->program;
+#ifdef _SPLASHDAMAGE //karin: force load external shader first
+                    	if (shaderProgram->type >= SHADER_CUSTOM)
+                    		spd.shaderProgram = token.c_str();
+#endif
+                    }
                     else
 					{
                         newStage.glslProgram = SHADER_HANDLE_INVALID;
@@ -2558,29 +2561,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	// successfully parsed a stage
 	numStages++;
 
-#ifdef _SPLASHDAMAGE
-	if(spd.numTextures)
-	{
-		if(isInteractionProgram) {
-			CompleteInterationStage(ss, spd);
-		} else if (!spd.shaderProgram.IsEmpty()) {
-			CompleteStage(ss, spd, NULL, 0);
-		} else {
-			FinishStage(ss, spd);
-		}
-		if (ss->texture.image)
-		{
-			if(ss->numTextures == 0) //karin: must has 1 image in ::textures(same as ::texture)
-			{
-				ss->numTextures = 1;
-				ss->textures = (stageTexture_t *)Mem_Alloc(sizeof(*ss->textures));
-				ss->textures[0].image = ss->texture.image;
-				ss->textures[0].renderBinding = NULL;
-			}
-			return;
-		}
-	}
-#endif
 	// select a compressed depth based on what the stage is
 	if (td == TD_DEFAULT) {
 		switch (ss->lighting) {
@@ -2610,19 +2590,26 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			&& !ss->newShaderStage
 #endif
 #ifdef _SPLASHDAMAGE
-			&& !ss->renderProgram
+			&& (spd.shaderProgram.IsEmpty() && spd.numTextures == 0)
 #endif
 			) {
 		common->Warning("material '%s' had stage with no image", GetName());
 		ts->image = globalImages->defaultImage;
 	}
+
 #ifdef _SPLASHDAMAGE
-	if(ss->numTextures == 0) //karin: must has 1 image in ::textures(same as ::texture)
-	{
-		ss->numTextures = 1;
-		ss->textures = (stageTexture_t *)Mem_Alloc(sizeof(*ss->textures));
-		ss->textures[0].image = ss->texture.image;
-		ss->textures[0].renderBinding = NULL;
+	//karin: must have 1 image in ::textures(same as ::texture)
+	ss->numTextures = 1;
+	ss->textures = (stageTexture_t *)Mem_Alloc(sizeof(*ss->textures));
+	ss->textures[0].image = ts->image;
+	ss->textures[0].renderBinding = imageBinding;
+
+	if(isInteractionProgram) {
+		CompleteInterationStage(ss, spd);
+	} else if (!spd.shaderProgram.IsEmpty()) {
+		CompleteStage(ss, spd, NULL, 0);
+	} else {
+		FinishStage(ss, spd);
 	}
 #endif
 }
@@ -3362,6 +3349,9 @@ void idMaterial::ParseMaterial(idLexer &src)
 #endif
 
 #ifdef _SPLASHDAMAGE //karin: material parms
+		} else if (!token.IcmpPrefix("parmName")) { // parmName 1 "Wind rotation speed" float 0.0 0.0 0.1
+			src.SkipRestOfLine();
+			continue;
 		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
 			SetMaterialFlag(MF_NOATMOSPHERE);
 			continue;
@@ -4862,14 +4852,25 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 
 void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults ) {
 	if (spd.numVectors > 0) {
+		ms->numVectors = spd.numVectors;
 		ms->vectors = (stageVector_t *)Mem_Alloc(spd.numVectors * sizeof(*ms->vectors));
 		memcpy(ms->vectors, spd.vectors, spd.numVectors * sizeof(*ms->vectors));
 	}
-	if (spd.numTextures > 0) {
-		ms->textures = (stageTexture_t *)Mem_Alloc(spd.numTextures * sizeof(*ms->textures));
-		memcpy(ms->textures, spd.textures, spd.numTextures * sizeof(*ms->textures));
+	if (spd.numTextures > 0) { // ms may have 1 image already
+		int numTextures = ms->numTextures + spd.numTextures;
+		stageTexture_t *st = (stageTexture_t *)Mem_Alloc(numTextures * sizeof(*ms->textures));
+
+		if (ms->textures && ms->numTextures) {
+			memcpy(st, ms->textures, ms->numTextures * sizeof(*ms->textures));
+			Mem_Free(ms->textures); // free old one
+		}
+		memcpy(st + ms->numTextures, spd.textures, spd.numTextures * sizeof(*ms->textures));
+
+		ms->numTextures = numTextures;
+		ms->textures = st;
 	}
 	if (spd.numTextureMatrices > 0) {
+		ms->numTextureMatrices = spd.numTextureMatrices;
 		ms->textureMatrices = (stageTextureMatrix_t *)Mem_Alloc(spd.numTextureMatrices * sizeof(*ms->textures));
 		memcpy(ms->textureMatrices, spd.textureMatrices, spd.numTextureMatrices * sizeof(*ms->textureMatrices));
 	}

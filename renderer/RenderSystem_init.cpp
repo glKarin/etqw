@@ -31,6 +31,11 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
+#ifdef _SPLASHDAMAGE
+#include "splashdamage/renderer/RenderProgramManager.h"
+#include "splashdamage/framework/CmdSystemDeclCompletion.h"
+#endif
+
 // functions that are not called every frame
 
 glconfig_t	glConfig;
@@ -2397,6 +2402,11 @@ void R_InitCommands(void)
 #endif
 #ifdef _MODEL_MD5_EXT
     R_Model_AddCommand();
+#endif
+
+#ifdef _SPLASHDAMAGE //karin: shader commands
+	cmdSystem->AddCommand("loadProgram", sdRenderProgramManager::LoadProgram_f, CMD_FL_RENDERER, "load shader program", idArgCompletionDecl_f<DECLTYPE_RENDERPROGRAM>);
+	cmdSystem->AddCommand("listPrograms", sdRenderProgramManager::ListPrograms_f, CMD_FL_RENDERER, "list shader programs");
 #endif
 }
 

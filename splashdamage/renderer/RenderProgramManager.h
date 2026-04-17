@@ -14,6 +14,9 @@ public:
     // parse
     const sdRenderProgram * LoadProgram(const char *name);
 
+    static void LoadProgram_f(const idCmdArgs &args);
+    static void ListPrograms_f(const idCmdArgs &args);
+
 private:
     const sdRenderProgram * Alloc(const char *name);
     const sdRenderProgram * Find(const char *name);

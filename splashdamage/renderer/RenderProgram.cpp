@@ -63,6 +63,10 @@ bool sdRenderProgram::LoadProgram(const sdDeclRenderProgram *decl)
 #endif
 
     GLSLShaderProp prop(decl->GetName(), this, &sdRenderProgram::LoadSourceCallback, &sdRenderProgram::BindingLocationCallback);
+    prop.vertex_shader_source_file = decl->GetName();
+    prop.vertex_shader_source_file.SetFileExtension(".vert");
+    prop.fragment_shader_source_file = decl->GetName();
+    prop.fragment_shader_source_file.SetFileExtension(".frag");
     handle = shaderManager->Load(prop);
     if(SHADER_HANDLE_IS_INVALID(handle))
     {
@@ -86,68 +90,83 @@ void sdRenderProgram::BindingLocationCallback(struct GLSLShaderProp *prop) {
     self->GetLocations(prop->handle);
 }
 
-void sdRenderProgram::BindUniform(const shaderProgram_t *shader, const float *regs)
+void sdRenderProgram::BindUniform(const materialStage_t *stage, const float *regs) const
 {
-    //common->Printf("BBB %d\n", shaderProgram);
-    // setting local parameters (specified in material definition)
-    /*for ( int i = 0; i < numShaderParms; i++ ) {
-        rvNewShaderStageParm<int[4]> *p = shaderParms + i;
+    const stageVector_t *vec;
+    const stageTextureMatrix_t *mat;
+    const stageTexture_t *tex;
+    GLint location;
+
+    //Sys_Printf("BBB %d %d %d %d\n", shaderProgram, stage->numVectors, stage->numTextureMatrices, stage->numTextures);
+    // setup vectors uniform
+    for ( int i = 0; i < stage->numVectors; i++ ) {
+        vec = &stage->vectors[i];
+
+        location = GetBindingLocation(vec->renderBinding);
+        //Sys_Printf("VVV %d %d %p\n", i,location, vec->renderBinding);
+        if (location < 0)
+            continue;
 
         idVec4 vparm;
-        for (int d = 0; d < 4; d++)
-        {
-            int m = p->value[d];
-            switch (m) {
-                case VIEW_ORIGIN_X:
-                    vparm[d] = backEnd.viewDef->renderView.vieworg[0];
-                    break;
-                case VIEW_ORIGIN_Y:
-                    vparm[d] = backEnd.viewDef->renderView.vieworg[1];
-                    break;
-                case VIEW_ORIGIN_Z:
-                    vparm[d] = backEnd.viewDef->renderView.vieworg[2];
-                    break;
-                default:
-                    vparm[d] = regs[ m ];
-                    break;
+        for (int d = 0; d < 4; d++) {
+            int m = vec->registers[d];
+            vparm[d] = regs[ m ];
+        }
+
+        qglUniform4fv(location, 1, vparm.ToFloatPtr());
+        //Sys_Printf("VVV %d %d %s %s\n", i,location, vec->renderBinding->GetName(), vparm.ToString());
+    }
+
+    // setup matrix uniform vec3 x 2
+    for ( int i = 0; i < stage->numTextureMatrices; i++ ) {
+        mat = &stage->textureMatrices[i];
+
+        location = GetBindingLocation(mat->renderBinding_s);
+        //Sys_Printf("MMM111 %d %d %p\n", i,location, mat->renderBinding_s);
+        if (location != -1) {
+            idVec3 vparm;
+            for (int d = 0; d < 3; d++) {
+                int m = mat->matrix[0][d];
+                vparm[d] = regs[ m ];
             }
+
+            qglUniform3fv(location, 1, vparm.ToFloatPtr());
+            //Sys_Printf("MMM111 %d %d %s %s\n", i,location, mat->renderBinding_s->GetName(), vparm.ToString());
         }
 
-        GLint location = GetLocation(shader, p);
-        switch(p->numValue)
-        {
-            case 1:
-                qglUniform1fv(location, 1, vparm.ToFloatPtr());
-                break;
-            case 2:
-                qglUniform2fv(location, 1, vparm.ToFloatPtr());
-                break;
-            case 3:
-                qglUniform3fv(location, 1, vparm.ToFloatPtr());
-                break;
-            case 4:
-            default:
-                qglUniform4fv(location, 1, vparm.ToFloatPtr());
-                break;
-        }
-        //printf("UUU %d %d %s %s\n", i,location, p->name.c_str(), vparm.ToString(6));
-    }*/
+        location = GetBindingLocation(mat->renderBinding_t);
+        //Sys_Printf("MMM222 %d %d %p\n", i,location, mat->renderBinding_t);
+        if (location != -1) {
+            idVec3 vparm;
+            for (int d = 0; d < 3; d++) {
+                int m = mat->matrix[1][d];
+                vparm[d] = regs[ m ];
+            }
 
-    // setting textures
-    // note: the textures are also bound to TUs at this moment
-    /*for ( int i = 0; i < numShaderTextures; i++ ) {
-        if ( shaderTextures[i].value ) {
-            rvNewShaderStageParm<idImage *> *p = shaderTextures + i;
-            GLint location = GetLocation(shader, p);
-            GL_SelectTexture( i );
-            p->value->Bind();
-            qglUniform1i(location, i);
-            //printf("TTT %d %d %s %s\n", i,location, p->name.c_str(), p->value ? p->value->imgName.c_str() : "NULL");
+            qglUniform3fv(location, 1, vparm.ToFloatPtr());
+            //Sys_Printf("MMM222 %d %d %s %s\n", i,location, mat->renderBinding_t->GetName(), vparm.ToString());
         }
-    }*/
+    }
+
+    // setup sampler uniform
+    for ( int i = 0; i < stage->numTextures; i++ ) {
+        tex = &stage->textures[i];
+
+        if (!tex->image)
+            continue;
+
+        location = GetBindingLocation(tex->renderBinding);
+        //Sys_Printf("TTT %d %d %s %s\n", i,location, tex->renderBinding ? tex->renderBinding->GetName(): "<NULL>", tex->image->imgName.c_str());
+        if (location < 0)
+            continue;
+
+        GL_SelectTexture( i );
+        tex->image->Bind();
+        qglUniform1i(location, i);
+    }
 }
 
-bool sdRenderProgram::Bind(const float *regs)
+bool sdRenderProgram::Bind(const materialStage_t *stage, const float *regs) const
 {
     if(!IsValid())
         return false;
@@ -157,24 +176,35 @@ bool sdRenderProgram::Bind(const float *regs)
         return false;
     GL_UseProgram((shaderProgram_t *)shader);
 
-    BindUniform(shader, regs);
+    BindUniform(stage, regs);
 
     return true;
 }
 
-void sdRenderProgram::UnbindUniform(void)
+void sdRenderProgram::UnbindUniform(const materialStage_t *stage) const
 {
-    /*for ( int i = 0; i < numShaderTextures; i++ ) {
-        if ( shaderTextures[i].value ) {
-            GL_SelectTexture( i );
-            globalImages->BindNull();
-        }
-    }*/
+    const stageTexture_t *tex;
+    GLint location;
+
+    // binding sampler uniform to null
+    for ( int i = 0; i < stage->numTextures; i++ ) {
+        tex = &stage->textures[i];
+
+        if (!tex->image)
+            continue;
+
+        location = GetBindingLocation(tex->renderBinding);
+        if (location < 0)
+            continue;
+
+        GL_SelectTexture( i );
+        globalImages->BindNull();
+    }
 }
 
-void sdRenderProgram::Unbind(void)
+void sdRenderProgram::Unbind(const materialStage_t *stage) const
 {
-    UnbindUniform();
+    UnbindUniform(stage);
     GL_SelectTextureForce(0);
     GL_UseProgram(NULL);
 }
@@ -316,13 +346,17 @@ void sdRenderProgram::GetLocations(shaderHandle_t handle)
 void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader)
 {
     const sdDeclRenderBinding *binding;
+    GLint location;
 
     for (int i = 0; i < shader->NumBindings(); i++) {
         binding = shader->GetBinding(i);
         if (!binding)
             continue;
-		if(bindings.FindIndex(binding) < 0)
+		if(bindings.FindIndex(binding) != -1)
 			continue;
+        location = GetLocation(glHandle, binding, shader->GetPlaceholder(i));
+        if(location < 0)
+            continue;
 		bindings.Append(binding);
 		locations.Append(GetLocation(glHandle, binding, shader->GetPlaceholder(i)));
     }
@@ -341,6 +375,15 @@ int sdRenderProgram::GetLocation(GLuint glHandle, const sdDeclRenderBinding *bin
 			return qglGetUniformLocation(glHandle, rawName);
         default:
             common->Warning("sdRenderProgram::GetLocation: unknown render binding %s type: %d", binding->GetName(), binding->GetBindingType());
-            break;
+		return -1;
     }
+}
+
+GLint sdRenderProgram::GetBindingLocation(const sdDeclRenderBinding *binding) const {
+    if (!binding)
+        return -1;
+    int index = bindings.FindIndex(binding);
+    if (index < 0)
+        return -1;
+    return locations[index];
 }
