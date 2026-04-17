@@ -24,7 +24,13 @@ public:
         return SHADER_HANDLE_IS_VALID(shaderProgram);
     }
 
-    shaderHandle_t 				                    shaderProgram;
+    const sdDeclRenderProgram * GetDeclRenderProgram(void) const {
+        return declRenderProgram;
+    }
+
+    shaderHandle_t GetShaderProgram(void) const {
+        return shaderProgram;
+    }
 
 private:
     void LoadSource(idStr &vsOut, idStr &fsOut) const;
@@ -36,13 +42,22 @@ private:
     void InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     bool LoadGLSLProgram(const char *name);
+	void GetLocations(shaderHandle_t handle);
+	void GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader);
+    int GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const;
     void BindUniform(const shaderProgram_t *shader, const float *regs);
     void UnbindUniform(void);
 
-    const sdDeclRenderProgram *declRenderProgram;
 
-    static void LoadSource(struct GLSLShaderProp *prop);
-    static void BindingLocation(struct GLSLShaderProp *prop);
+    shaderHandle_t 				                    shaderProgram;
+    const sdDeclRenderProgram *declRenderProgram;
+    idList<const sdDeclRenderBinding *>				bindings;
+    idList<GLint>									locations;
+
+    static void LoadSourceCallback(struct GLSLShaderProp *prop);
+    static void BindingLocationCallback(struct GLSLShaderProp *prop);
+
+    friend class sdRenderProgramManager;
 };
 
 #endif //_KARIN_RENDERPROGRAM_H

@@ -1,78 +1,6 @@
 #ifndef _KARIN_SHADER_MANAGER_H
 #define _KARIN_SHADER_MANAGER_H
 
-#define GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(x) ( (x) + 1 )
-#define GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(x) ( -( (x) + 1) )
-#define GLSL_BUILTIN_SHADER_HANDLE_TO_INDEX(x) ( (x) - 1 )
-#define GLSL_CUSTOM_SHADER_HANDLE_TO_INDEX(x) ( -(x) - 1 )
-
-struct GLSLShaderProp
-{
-	typedef void (*readSource_f)(GLSLShaderProp *prop); // when start load on main thread
-	typedef void (*loadFinish_f)(GLSLShaderProp *prop); // when load successful on render thread
-
-	idStr name;
-	shaderProgram_t *program;
-	idStr default_vertex_shader_source;
-	idStr default_fragment_shader_source;
-	idStr macros;
-	idStr vertex_shader_source_file;
-	idStr fragment_shader_source_file;
-    int type; // glsl_program_t
-	void *data;
-	readSource_f read_source;
-	loadFinish_f load_finish;
-
-	GLSLShaderProp()
-			: program(NULL),
-            type(-1),
-	data(NULL),
-			read_source(NULL),
-			load_finish(NULL)
-	{}
-
-	GLSLShaderProp(const char *name)
-			: name(name),
-			  program(NULL),
-				type(-1),
-	data(NULL),
-			  read_source(NULL),
-			  load_finish(NULL)
-	{
-		vertex_shader_source_file = name;
-		vertex_shader_source_file += ".vert";
-		fragment_shader_source_file = name;
-		fragment_shader_source_file += ".frag";
-	}
-
-	GLSLShaderProp(const char *name, void *data, readSource_f readSource, loadFinish_f loadFinish)
-			: name(name),
-			  program(NULL),
-				type(-1),
-				data(data),
-			  read_source(readSource),
-			  load_finish(loadFinish)
-	{
-	}
-
-	GLSLShaderProp(const char *name, int type, shaderProgram_t *program, const idStr &vs, const idStr &fs, const idStr &macros)
-			: name(name),
-              type(type),
-			  program(program),
-			  default_vertex_shader_source(vs),
-			  default_fragment_shader_source(fs),
-				macros(macros),
-	data(NULL),
-			  read_source(NULL),
-			  load_finish(NULL)
-	{
-		vertex_shader_source_file = name;
-		vertex_shader_source_file += ".vert";
-		fragment_shader_source_file = name;
-		fragment_shader_source_file += ".frag";
-	}
-};
-
 /**
  * > 0: internal shader(index = handle - 1)
  * < 0: custom shader(index = -handle - 1)
@@ -87,6 +15,86 @@ typedef int shaderHandle_t;
 
 #define SHADER_MAX_CUSTOM 64
 
+#define GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(x) ( (x) + 1 )
+#define GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(x) ( -( (x) + 1) )
+#define GLSL_BUILTIN_SHADER_HANDLE_TO_INDEX(x) ( (x) - 1 )
+#define GLSL_CUSTOM_SHADER_HANDLE_TO_INDEX(x) ( -(x) - 1 )
+
+#define GLSL_SHADER_HANDLE_TO_INDEX(x) ( (x) > 0 ? GLSL_BUILTIN_SHADER_HANDLE_TO_INDEX(x) : ( (x) < 0 ? GLSL_CUSTOM_SHADER_HANDLE_TO_INDEX(x) : -1 ) )
+#define GLSL_SHADER_INDEX_TO_HANDLE(x) ( (x) >= SHADER_CUSTOM ? GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(x) : ( (x) >= 0 ? GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(x) : INVALID_SHADER_HANDLE ) )
+
+struct GLSLShaderProp
+{
+	typedef void (*readSource_f)(GLSLShaderProp *prop); // when start load on main thread
+	typedef void (*loadFinish_f)(GLSLShaderProp *prop); // when load successful on render thread
+
+	idStr name;
+	shaderProgram_t *program;
+	shaderHandle_t handle;
+	idStr default_vertex_shader_source;
+	idStr default_fragment_shader_source;
+	idStr macros;
+	idStr vertex_shader_source_file;
+	idStr fragment_shader_source_file;
+    int type; // glsl_program_t
+	void *data;
+	readSource_f read_source;
+	loadFinish_f load_finish;
+
+	GLSLShaderProp()
+			: program(NULL),
+			handle(0),
+            type(-1),
+	data(NULL),
+			read_source(NULL),
+			load_finish(NULL)
+	{}
+
+	GLSLShaderProp(const char *name)
+			: name(name),
+			  program(NULL),
+			handle(0),
+				type(-1),
+	data(NULL),
+			  read_source(NULL),
+			  load_finish(NULL)
+	{
+		vertex_shader_source_file = name;
+		vertex_shader_source_file += ".vert";
+		fragment_shader_source_file = name;
+		fragment_shader_source_file += ".frag";
+	}
+
+	GLSLShaderProp(const char *name, void *data, readSource_f readSource, loadFinish_f loadFinish)
+			: name(name),
+			  program(NULL),
+			handle(0),
+				type(-1),
+				data(data),
+			  read_source(readSource),
+			  load_finish(loadFinish)
+	{
+	}
+
+	GLSLShaderProp(const char *name, int type, shaderProgram_t *program, const idStr &vs, const idStr &fs, const idStr &macros)
+			: name(name),
+              type(type),
+			  program(program),
+			handle(0),
+			  default_vertex_shader_source(vs),
+			  default_fragment_shader_source(fs),
+				macros(macros),
+	data(NULL),
+			  read_source(NULL),
+			  load_finish(NULL)
+	{
+		vertex_shader_source_file = name;
+		vertex_shader_source_file += ".vert";
+		fragment_shader_source_file = name;
+		fragment_shader_source_file += ".frag";
+	}
+};
+
 class idGLSLShaderManager
 {
 public:
@@ -99,6 +107,7 @@ public:
 	void ActuallyLoad(void); // backend: if in multi-threading, load actually from queue with OpenGL context
 	const shaderProgram_t * Get(shaderHandle_t handle) const;
 	shaderHandle_t GetHandle(const char *name) const;
+	const GLSLShaderProp * FindProp(const char *name) const;
 	void ReloadShaders(void);
 	void Print(void);
 

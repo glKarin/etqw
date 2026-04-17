@@ -80,6 +80,7 @@ public:
     bool Parse(const char *source, int length);
     void Write(const char *path, const char *name);
     void Print(void);
+	void SetShaderType(const char *type);
 
 private:
     void ParseValue(void);
@@ -540,6 +541,24 @@ void idARBProgram::ParseOption(void)
 	AddToken(str);
 }
 
+void idARBProgram::SetShaderType(const char *typeStr)
+{
+    if(!idStr::Icmpn(typeStr, "ARBvp", 5))
+    {
+        type = 1;
+        shader = &vertexShader;
+    }
+    else if(!idStr::Icmpn(typeStr, "ARBfp", 5))
+    {
+        type = 2;
+        shader = &fragmentShader;
+    }
+    else
+    {
+		common->Error("Unexpect ARB type '%s'", typeStr);
+    }
+}
+
 void idARBProgram::ParseType(void)
 {
     ExpectTokenString("!");
@@ -547,21 +566,7 @@ void idARBProgram::ParseType(void)
 
     idToken typeStr;
     parser.ExpectAnyToken(&typeStr);
-    if(!typeStr.Icmpn("ARBvp", 5))
-    {
-        type = 1;
-        shader = &vertexShader;
-    }
-    else if(!typeStr.Icmpn("ARBfp", 5))
-    {
-        type = 2;
-        shader = &fragmentShader;
-    }
-    else
-    {
-        parser.Error("Unexpect ARB type '%s'", typeStr.c_str());
-        return;
-    }
+	SetShaderType(typeStr.c_str());
 	AddToken("//");
 	AddToken(typeStr);
     float ver = parser.ParseFloat();
@@ -1649,7 +1654,7 @@ idARBShader * idARBProgram::Shader(void)
 {
     if(!shader)
     {
-        parser.Error("No shader");
+        common->Error("No shader");
         return NULL;
     }
     return shader;
@@ -1748,13 +1753,13 @@ idStr idARBProgram::TextureFunc(const char *td, const char *d)
 
 static void GLSL_ArgCompletion_glprogs(const idCmdArgs &args, void(*callback)(const char *s))
 {
-	cmdSystem->ArgCompletion_FolderExtension(args, callback, "glprogs/", false, ".vfp", ".fp", ".vp", ".txt", NULL);
+	cmdSystem->ArgCompletion_FolderExtension(args, callback, "", false, ".vfp", ".fp", ".vp", ".txt", ".arb", NULL);
 }
 
 static void GLSL_ConvertARBShader_f(const idCmdArgs &args)
 {
     if (args.Argc() < 2) {
-        common->Printf("Usage: %s <ARB shader source file> [<version=100,300> <save path>].\n", args.Argv(0));
+        common->Printf("Usage: %s <ARB shader source file> [<version=100,300> <type=ARBvp,ARBfp> <save path>].\n", args.Argv(0));
         return;
     }
 
@@ -1769,9 +1774,11 @@ static void GLSL_ConvertARBShader_f(const idCmdArgs &args)
     if(args.Argc() > 2)
         version = atoi(args.Argv(2));
     idARBProgram arb(version);
-    idStr savePath;
     if(args.Argc() > 3)
-        savePath = args.Argv(3);
+        arb.SetShaderType(args.Argv(3));
+    idStr savePath;
+    if(args.Argc() > 4)
+        savePath = args.Argv(4);
     else
         path.ExtractFilePath(savePath);
 

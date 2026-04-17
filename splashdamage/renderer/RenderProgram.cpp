@@ -62,7 +62,7 @@ bool sdRenderProgram::LoadProgram(const sdDeclRenderProgram *decl)
     }
 #endif
 
-    GLSLShaderProp prop(decl->GetName(), this, &sdRenderProgram::LoadSource, &sdRenderProgram::BindingLocation);
+    GLSLShaderProp prop(decl->GetName(), this, &sdRenderProgram::LoadSourceCallback, &sdRenderProgram::BindingLocationCallback);
     handle = shaderManager->Load(prop);
     if(SHADER_HANDLE_IS_INVALID(handle))
     {
@@ -74,15 +74,16 @@ bool sdRenderProgram::LoadProgram(const sdDeclRenderProgram *decl)
     return true;
 }
 
-void sdRenderProgram::LoadSource(GLSLShaderProp *prop) {
+void sdRenderProgram::LoadSourceCallback(GLSLShaderProp *prop) {
     sdRenderProgram *self = (sdRenderProgram *)prop->data;
     prop->default_vertex_shader_source.Clear();
     prop->default_fragment_shader_source.Clear();
     self->LoadSource(prop->default_vertex_shader_source, prop->default_fragment_shader_source);
 }
 
-void sdRenderProgram::BindingLocation(struct GLSLShaderProp *prop) {
-
+void sdRenderProgram::BindingLocationCallback(struct GLSLShaderProp *prop) {
+    sdRenderProgram *self = (sdRenderProgram *)prop->data;
+    self->GetLocations(prop->handle);
 }
 
 void sdRenderProgram::BindUniform(const shaderProgram_t *shader, const float *regs)
@@ -274,7 +275,7 @@ void sdRenderProgram::InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDec
         buf.Append("attr_Tangent");
     else if (!idStr::Icmp(rawName, "signAttrib"))
         buf.Append("attr_Bitangent");
-    buf.Append(";\n");
+    buf.Append("\n");
 #else
     buf.Append("attribute vec4 ");
     buf.Append(binding->GetName());
@@ -290,5 +291,56 @@ void sdRenderProgram::InsertBindings(sdStringBuilder_Heap &buf, const sdRenderPr
         if (!binding)
             continue;
         InsertBinding(buf, binding, shader->GetPlaceholder(i));
+    }
+}
+
+void sdRenderProgram::GetLocations(shaderHandle_t handle)
+{
+	shaderProgram = handle;
+    const shaderProgram_t *shader = shaderManager->Get(shaderProgram);
+    if(!shader) {
+		common->Warning("sdRenderProgram::GetLocations: invalid program %d", shaderProgram);
+        return;
+	}
+
+	bindings.Clear();
+	locations.Clear();
+	GetShaderLocations(shader->program, declRenderProgram->GetVertexShader());
+	GetShaderLocations(shader->program, declRenderProgram->GetFragmentShader());
+	bindings.Resize(bindings.Num());
+	bindings.SetGranularity(1);
+	locations.Resize(locations.Num());
+	locations.SetGranularity(1);
+}
+
+void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader)
+{
+    const sdDeclRenderBinding *binding;
+
+    for (int i = 0; i < shader->NumBindings(); i++) {
+        binding = shader->GetBinding(i);
+        if (!binding)
+            continue;
+		if(bindings.FindIndex(binding) < 0)
+			continue;
+		bindings.Append(binding);
+		locations.Append(GetLocation(glHandle, binding, shader->GetPlaceholder(i)));
+    }
+}
+
+int sdRenderProgram::GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const {
+	if(!binding)
+		return -1;
+    if (!rawName || !rawName[0])
+        rawName = binding->GetName();
+    switch (binding->GetBindingType()) {
+        case sdDeclRenderBinding::BT_ATTRIB:
+			return qglGetAttribLocation(glHandle, rawName);
+        case sdDeclRenderBinding::BT_TEXTURE:
+        case sdDeclRenderBinding::BT_VECTOR:
+			return qglGetUniformLocation(glHandle, rawName);
+        default:
+            common->Warning("sdRenderProgram::GetLocation: unknown render binding %s type: %d", binding->GetName(), binding->GetBindingType());
+            break;
     }
 }

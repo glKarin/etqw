@@ -69,6 +69,10 @@ bool sdDeclTemplate::Parse( const char *text, const int textLength ) {
 		break;
 	}
 
+	parameters.Resize(parameters.Num());
+	parameters.SetGranularity(1);
+	decls.Resize(decls.Num());
+	decls.SetGranularity(1);
 	return true;
 }
 

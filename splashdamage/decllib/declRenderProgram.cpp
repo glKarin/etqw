@@ -23,7 +23,6 @@ const char* sdDeclRenderProgram::DefaultDefinition( void ) const {
 }
 
 bool sdDeclRenderProgram::Parse( const char* text, const int textLength ) {
-	Init();
 	idParser src;
 	idToken	token;
 
@@ -274,6 +273,9 @@ void sdRenderProgramShader::ParsePost(void) {
 		else
 			bindings.Append(static_cast<const sdDeclRenderBinding *>(decl));
 	}
+
+	bindings.Resize(bindings.Num());
+	bindings.SetGranularity(1);
 }
 
 void sdDeclRenderProgram::Init(void)

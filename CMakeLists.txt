@@ -3182,6 +3182,7 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/DeviceContext.cpp
 			splashdamage/renderer/FontManager.cpp
 			splashdamage/renderer/RenderProgram.cpp
+			splashdamage/renderer/RenderProgramManager.cpp
 	)
 	set(splashdamage_decl_src
 			splashdamage/decllib/declAmbientCubeMap.cpp
@@ -3266,6 +3267,7 @@ if(SPLASHDAMAGE)
 	set_target_properties(${ETQWBINARY} PROPERTIES COMPILE_DEFINITIONS "_SPLASHDAMAGE;_RAVEN_BSE;${CORE_DEFINES}")
 	set_target_properties(${ETQWBINARY} PROPERTIES LINK_FLAGS "${ldflags}")
 	target_include_directories(${ETQWBINARY} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage" "${CMAKE_CURRENT_SOURCE_DIR}/raven" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib" "${CMAKE_CURRENT_SOURCE_DIR}/splashdamage/idlib/sys")
+	#target_compile_options(${ETQWBINARY} PRIVATE -fno-inline) # allow check this is NULL
 
 	target_link_libraries(${ETQWBINARY}
 			idlib_splashdamage

@@ -44,6 +44,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "decllib/declRenderProgram.h"
 #include "framework/DeclParseHelper.h"
 #include "renderer/RenderProgram.h"
+#include "renderer/RenderProgramManager.h"
 
 extern idStrList stageParms;
 #define SETUP_STAGE_PROGRAM_PARMS() \
@@ -2562,7 +2563,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	{
 		if(isInteractionProgram) {
 			CompleteInterationStage(ss, spd);
-		} else if (spd.shaderProgram) {
+		} else if (!spd.shaderProgram.IsEmpty()) {
 			CompleteStage(ss, spd, NULL, 0);
 		} else {
 			FinishStage(ss, spd);
@@ -4873,15 +4874,10 @@ void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, cons
 		memcpy(ms->textureMatrices, spd.textureMatrices, spd.numTextureMatrices * sizeof(*ms->textureMatrices));
 	}
 
-	sdRenderProgram renderProgram;
-	if (renderProgram.LoadProgram(spd.shaderProgram)) {
-		ms->renderProgram = (sdRenderProgram *)Mem_Alloc(sizeof(*ms->renderProgram));
-		*ms->renderProgram = renderProgram;
-	}
+	ms->renderProgram = renderProgramManager->LoadProgram(spd.shaderProgram.c_str()); // shared
 }
 
 void idMaterial::FinishStage( materialStage_t* ss, stageParseData_t& spd ) {
-	shaderStage_t		*newSS;
 	//Sys_Printf("CCC %s\n", GetName());
 
 	for(int i = 0; i < spd.numTextures; i++) {

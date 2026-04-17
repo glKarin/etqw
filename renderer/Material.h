@@ -44,6 +44,7 @@ class sdDeclRenderBinding;
 class sdDeclRenderProgram;
 class sdDeclSurfaceType;
 class sdDeclSurfaceTypeMap;
+class sdRenderProgram;
 #endif
 
 class idImage;
@@ -373,7 +374,7 @@ typedef struct {
 #endif
 
 #ifdef _SPLASHDAMAGE
-	class sdRenderProgram*	renderProgram;
+	const sdRenderProgram*		renderProgram;
 
 	int							numVectors;
 	stageVector_t*				vectors;

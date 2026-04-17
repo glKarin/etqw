@@ -35,7 +35,7 @@ int idGLSLShaderManager::AddCustom(const GLSLShaderProp &prop) // return added s
 
 	common->Printf("idGLSLShaderManager::Add custom shader program %d '%s' -> %d.\n", prop.type, shader->name, shader->program);
 	shaders[shader->type] = shader;
-	customShaders[shader->type] = prop;
+	//customShaders[shader->type] = prop;
 
 	return shader->type;
 }
@@ -69,6 +69,7 @@ int idGLSLShaderManager::AddBuiltin(const GLSLShaderProp &prop)
 	Resize(shader->type);
 	shaders[shader->type] = shader;
 	customShaders[shader->type] = prop;
+	customShaders[shader->type].handle = GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(shader->type);
 
 	return shader->type;
 }
@@ -90,14 +91,15 @@ int idGLSLShaderManager::AddPlaceholder(const GLSLShaderProp &prop)
 		return index; // -1
 	}
 
-	common->Printf("idGLSLShaderManager::Add placeholder shader program '%s'.\n", prop.name.c_str());
 	int newType = shaders.Num();
 	if (newType < SHADER_CUSTOM) // built-in shaders not loaded???
 		newType = SHADER_CUSTOM;
+	common->Printf("idGLSLShaderManager::Add placeholder shader program '%s': %d.\n", prop.name.c_str(), newType);
 	Resize(newType);
 	shaders[newType] = NULL;
 	customShaders[newType] = prop;
 	customShaders[newType].type = newType;
+	customShaders[newType].handle = GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(newType);
 
 	return newType;
 }
@@ -189,6 +191,16 @@ shaderHandle_t idGLSLShaderManager::GetHandle(const char *name) const
 		return INVALID_SHADER_HANDLE;
 
     return index < SHADER_CUSTOM ? GLSL_CUSTOM_SHADER_INDEX_TO_HANDLE(index) : GLSL_BUILTIN_SHADER_INDEX_TO_HANDLE(index);
+}
+
+const GLSLShaderProp * idGLSLShaderManager::FindProp(const char *name) const {
+	for (int i = 0; i < customShaders.Num(); i++)
+	{
+		const GLSLShaderProp *prop = &customShaders[i];
+		if(!idStr::Icmp(name, prop->name))
+			return prop;
+	}
+	return NULL;
 }
 
 GLSLShaderProp * idGLSLShaderManager::FindCustom(const char *name, int *index)
@@ -463,11 +475,19 @@ void idGLSLShaderManager::Print(void)
 				common->FatalError("idGLSLShaderManager: %d property type(%d) != property index(%d)", i, prop->type, i);
 				return;
 			}
+			if (prop->handle != GLSL_SHADER_INDEX_TO_HANDLE(i)) {
+				common->FatalError("idGLSLShaderManager: %d property handle(%d) != property index(%d)", i, prop->handle, GLSL_SHADER_HANDLE_TO_INDEX(i));
+				return;
+			}
+			if (i != GLSL_SHADER_HANDLE_TO_INDEX(prop->handle)) {
+				common->FatalError("idGLSLShaderManager: %d property index(%d) != property handle(%d)", i, i, GLSL_SHADER_INDEX_TO_HANDLE(prop->handle));
+				return;
+			}
 		}
 
 		if (prop->type != -1) {
-			common->Printf("[%2d] %s: type = %d(%s), OpenGL handle = %d\n", i,
-				prop->name.c_str(), prop->type, shader ? shader->type >= SHADER_CUSTOM ? "custom" : "built-in" : "unload",
+			common->Printf("[%2d] %s: type=%d(%s), handle=%d, OpenGL handle=%d\n", i,
+				prop->name.c_str(), prop->type, shader ? shader->type >= SHADER_CUSTOM ? "custom" : "built-in" : "unload", prop->handle,
 				shader ? shader->program : -1
 				);
 		}
