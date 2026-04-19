@@ -305,11 +305,7 @@ idCVar g_showPlayerClassIcon(		"g_showPlayerClassIcon",	"0",			CVAR_GAME | CVAR_
 idCVar g_showPlayerShadow(			"g_showPlayerShadow",		"1",			CVAR_GAME | CVAR_PROFILE | CVAR_ARCHIVE | CVAR_BOOL, "enables shadow of player model" );
 idCVar g_showHud(					"g_showHud",				"1",			CVAR_GAME | CVAR_BOOL | CVAR_NOCHEAT, "draw the hud gui" );
 idCVar g_advancedHud(				"g_advancedHud",			"0",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE | CVAR_PROFILE, "Draw advanced HUD" );
-#ifdef _ETQW //karin: save to config file
-idCVar g_skipPostProcess(			"g_skipPostProcess",		"1",			CVAR_GAME | CVAR_BOOL | CVAR_ARCHIVE, "draw the post process gui" );
-#else
 idCVar g_skipPostProcess(			"g_skipPostProcess",		"0",			CVAR_GAME | CVAR_BOOL, "draw the post process gui" );
-#endif
 idCVar g_gun_x(						"g_gunX",					"0",			CVAR_GAME | CVAR_FLOAT, "" );
 idCVar g_gun_y(						"g_gunY",					"0",			CVAR_GAME | CVAR_FLOAT, "" );
 idCVar g_gun_z(						"g_gunZ",					"0",			CVAR_GAME | CVAR_FLOAT, "" );

@@ -1544,6 +1544,8 @@ void idDeclManagerLocal::Init(void)
 
 #ifdef _SPLASHDAMAGE
 	RegisterDeclFolder("templates",		".template",				DECL_TEMPLATE);
+    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERBINDING);
+    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERPROGRAM);
 #endif
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
 	RegisterDeclFolder("skins",			".skin",			DECL_SKIN);
@@ -1577,8 +1579,6 @@ void idDeclManagerLocal::Init(void)
     RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTER);
     RegisterDeclFolder("imposters",			".imp",				DECL_IMPOSTERGENERATOR);
     RegisterDeclFolder("stuff",			".stuff",				DECL_STUFFTYPE);
-    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERBINDING);
-    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERPROGRAM);
 #endif
 
 	// add console commands
