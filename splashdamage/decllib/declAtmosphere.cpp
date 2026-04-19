@@ -35,9 +35,9 @@ void sdPrecipitationParameters::Save( idFile_Memory& f ) const {
 
 static void postProcessParms_t_Init(sdDeclAtmosphere::postProcessParms_t &parms) {
 	parms.tint.Set(1.0f, 1.0f, 1.0f);
-	parms.saturation = 0.0f;
-	parms.contrast = 0.0f;
-	parms.glareParms.Set(1.0f, 1.0f, 1.0f, 1.0f);
+	parms.saturation = 1.0f;
+	parms.contrast = 1.0f;
+	parms.glareParms.Set(1.0f, 0.0f, 1.0f, 1.0f);
 	parms.glareBases.Set(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
@@ -202,6 +202,7 @@ bool sdDeclAtmosphere::Parse( const char* text, const int textLength ) {
 				src.SkipBracedSection(false);
 				break;
 			}
+			postProcessParms = defaultPostProcessParms;
 			continue;
 		}
 
@@ -412,7 +413,7 @@ bool sdDeclAtmosphere::ParsePostProcessParms( idParser& src ) {
 		}
 
 		if (!token.Icmp("tint")) {
-			if( !src.Parse1DMatrix(3, postProcessParms.tint.ToFloatPtr())) {
+			if( !src.Parse1DMatrix(3, defaultPostProcessParms.tint.ToFloatPtr())) {
 				src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: failed to parse tint" );
 				break;
 			}
@@ -420,17 +421,17 @@ bool sdDeclAtmosphere::ParsePostProcessParms( idParser& src ) {
 		}
 
 		if (!token.Icmp("saturation")) {
-			postProcessParms.saturation = src.ParseFloat();
+			defaultPostProcessParms.saturation = src.ParseFloat();
 			continue;
 		}
 
 		if (!token.Icmp("contrast")) {
-			postProcessParms.contrast = src.ParseFloat();
+			defaultPostProcessParms.contrast = src.ParseFloat();
 			continue;
 		}
 
 		if (!token.Icmp("glareParms")) {
-			if( !src.Parse1DMatrix(4, postProcessParms.glareParms.ToFloatPtr())) {
+			if( !src.Parse1DMatrix(4, defaultPostProcessParms.glareParms.ToFloatPtr())) {
 				src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: failed to parse glareParms" );
 				break;
 			}
@@ -438,7 +439,7 @@ bool sdDeclAtmosphere::ParsePostProcessParms( idParser& src ) {
 		}
 
 		if (!token.Icmp("glareBases")) {
-			if( !src.Parse1DMatrix(4, postProcessParms.glareBases.ToFloatPtr())) {
+			if( !src.Parse1DMatrix(4, defaultPostProcessParms.glareBases.ToFloatPtr())) {
 				src.Error( "sdDeclAmbientCubeMap::ParsePostProcessParms: failed to parse glareBases" );
 				break;
 			}

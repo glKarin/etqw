@@ -236,17 +236,17 @@ void sdRenderProgramShader::ParsePost(void) {
 
 	idParser src;
 	src.LoadMemory(sourceRaw.c_str(), sourceRaw.Length(), "shader");
-	src.SetFlags(LEXFL_NOFATALERRORS);
+	src.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_NODOLLARPRECOMPILE | LEXFL_NOFATALERRORS);
 	idToken token;
 	const idDecl *decl;
 
-	sdStringBuilder_Heap buf;
+	//sdStringBuilder_Heap buf;
 	while (1) {
 		if(!src.ReadToken(&token))
 			break;
 
-		if(token.linesCrossed && buf.Length() > 0)
-			buf.Append("\n");
+		//if(token.linesCrossed && buf.Length() > 0)
+			//buf.Append("\n");
 
 		if(token == "$")
 		{
@@ -255,15 +255,17 @@ void sdRenderProgramShader::ParsePost(void) {
 				src.Warning("sdRenderProgramShader::ParsePost: missing placeholder name");
 				break;
 			}
-			placeholders.Append(token);
+			placeholders.AddUnique(token);
 		}
 
-		if(buf.Length() > 0)
-			buf.Append(' ');
-		buf.Append(token);
+		//if(buf.Length() > 0)
+			//buf.Append(' ');
+		//buf.Append(token);
 	}
 
-	source = buf.c_str();
+	//source = buf.c_str();
+	source = sourceRaw;
+	source.ReplaceChar('$', ' ');
 	for(int i = 0; i < placeholders.Num(); i++) {
 		decl = declManager->FindType(DECL_RENDERBINDING, placeholders[i], false);
 		if( !decl ) {

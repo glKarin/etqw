@@ -629,6 +629,105 @@ ID_INLINE static void RB_STD_T_SetNewShaderPassesUniforms(const drawSurf_t *surf
     // window coord to 0.0 to 1.0 conversion
     RB_SetProgramEnvironment();
 }
+
+#ifdef _SPLASHDAMAGE //karin: custom stage shader
+// call in backend render thread
+static void RB_SetBuiltinProgramEnvironment(void)
+{
+	float	parm[4];
+	int		pot;
+
+	// screen power of two correction factor, assuming the copy to _currentRender
+	// also copied an extra row and column for the bilerp
+	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
+	pot = globalImages->currentRenderImage->uploadWidth;
+	parm[0] = w;
+
+	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
+	pot = globalImages->currentRenderImage->uploadHeight;
+	parm[1] = h;
+
+	// window coord to 0.0 to 1.0 conversion
+	parm[2] = 1.0f / (float)w;
+	parm[3] = 1.0f / (float)h;
+
+	backEnd.parms.currentRenderTexelSize[0] = parm[0];
+	backEnd.parms.currentRenderTexelSize[1] = parm[1];
+	backEnd.parms.currentRenderTexelSize[2] = parm[2];
+	backEnd.parms.currentRenderTexelSize[3] = parm[3];
+}
+
+// call in frontend thread
+void R_AddCopyParmsCmd(const viewDef_t *view)
+{
+	materialStageBuiltinUniform_s builtinUniforms;
+
+	if(view->renderWorld && view->renderWorld->GetAtmosphere())
+	{
+		const sdDeclAtmosphere *atmosphere = view->renderWorld->GetAtmosphere();
+
+		const sdDeclAtmosphere::postProcessParms_t &ppParms = atmosphere->GetPostProcessParms();
+
+		builtinUniforms.postTint.Set(ppParms.tint[0], ppParms.tint[1], ppParms.tint[2], 1.0f);
+		builtinUniforms.postSaturationContrast.Set(ppParms.saturation, ppParms.contrast, 1.0, 1.0f);
+		builtinUniforms.postGlareParameters.Set(ppParms.glareParms[0], ppParms.glareParms[1], ppParms.glareParms[2], ppParms.glareParms[3]);
+	}
+	else
+	{
+		builtinUniforms.postTint.Set(1.0, 1.0, 1.0, 1.0f);
+		builtinUniforms.postSaturationContrast.Set(1.0, 1.0, 1.0, 1.0f);
+		builtinUniforms.postGlareParameters.Set(1.0, 0.0, 1.0, 1.0f);
+	}
+
+	copyParmsCommand_t	*cmd;
+
+	cmd = (copyParmsCommand_t *)R_GetCommandBuffer(sizeof(*cmd));
+	cmd->commandId = RC_COPY_PARMS;
+
+	cmd->parms = builtinUniforms;
+}
+
+void RB_CopyParms(const void *data)
+{
+	const copyParmsCommand_t	*cmd;
+
+	cmd = (const copyParmsCommand_t *)data;
+
+	backEnd.parms = cmd->parms;
+}
+
+
+static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const shaderStage_t *pStage)
+{
+	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize.ToFloatPtr());
+	program->BindVector("postTint", backEnd.parms.postTint.ToFloatPtr());
+	program->BindVector("postSaturationContrast", backEnd.parms.postSaturationContrast.ToFloatPtr());
+	program->BindVector("postGlareParameters", backEnd.parms.postGlareParameters.ToFloatPtr());
+	float parm[4];
+	parm[0] = backEnd.viewDef->renderView.vieworg[0];
+	parm[1] = backEnd.viewDef->renderView.vieworg[1];
+	parm[2] = backEnd.viewDef->renderView.vieworg[2];
+	parm[3] = 1.0;
+	program->BindVector("viewOrigin", parm);
+
+	switch (pStage->vertexColor) {
+		case SVC_MODULATE:
+			program->BindVector("colorModulate", oneModulate);
+			program->BindVector("colorAdd", zero);
+			break;
+		case SVC_INVERSE_MODULATE:
+			program->BindVector("colorModulate", negOneModulate);
+			program->BindVector("colorAdd", one);
+			break;
+		case SVC_IGNORE:
+		default:
+			program->BindVector("colorModulate", zero);
+			program->BindVector("colorAdd", one);
+			break;
+	}
+}
+#endif
+
 /*
 ==================
 RB_STD_T_RenderShaderPasses
@@ -659,6 +758,9 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
     // Custom new stage state
     idList<int> customNewStageAttrIsSet(SHADER_MAX_CUSTOM);
     idList<int> customNewStageUniformIsSet(SHADER_MAX_CUSTOM);
+#endif
+#ifdef _SPLASHDAMAGE //karin: custom stage shader
+	bool materialBuiltinVariablesLoaded = false;
 #endif
 
 	tri = surf->geo;
@@ -828,6 +930,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			if(!renderProgram->Bind(pStage, regs))
 				continue;
 
+			if(!materialBuiltinVariablesLoaded) {
+				RB_SetBuiltinProgramEnvironment();
+				materialBuiltinVariablesLoaded = true;
+			}
+
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Color));
@@ -848,6 +955,9 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			color[2] = regs[ pStage->color.registers[2] ];
 			color[3] = regs[ pStage->color.registers[3] ];
 			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
+
+			// bind builtin program variables
+			RB_BindBuiltinProgramEnvironment(renderProgram, pStage);
 
 			// set standard transformations
 			GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), rb_MVP);
@@ -1216,6 +1326,9 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
+#ifdef _SPLASHDAMAGE //karin: after postprocess
+	bool isPostprocess = false;
+#endif
 	if (drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS
 #ifdef _RAVEN //karin: sniper's blur is 2D and has flag `MF_NEED_CURRENT_RENDER`
 		|| drawSurfs[0]->material->TestMaterialFlag(MF_NEED_CURRENT_RENDER)
@@ -1226,7 +1339,7 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 		}
 
 		// only dump if in a 3d view
-#if !defined(_RAVEN) && !defined(_HUMANHEAD) //karin: sniper's blur is 2D on Quake4 and spiritWalk and deathwalk on Prey //TODO: check it for avoid unused operation
+#if !defined(_RAVEN) && !defined(_HUMANHEAD) && !defined(_SPLASHDAMAGE) //karin: sniper's blur is 2D on Quake4 and spiritWalk and deathwalk on Prey //TODO: check it for avoid unused operation
 		if (backEnd.viewDef->viewEntitys)
 #endif
 		{
@@ -1236,6 +1349,17 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 		}
 
 		backEnd.currentRenderCopied = true;
+#ifdef _SPLASHDAMAGE //karin: _postProcessBuffer_* image
+		isPostprocess = true;
+		globalImages->postProcessBuffers[0]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
+				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
+				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
+		backEnd.postProcessBuffersCopied[0] = true;
+		globalImages->postProcessBuffers[1]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
+				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
+				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
+		backEnd.postProcessBuffersCopied[1] = true;
+#endif
 	}
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
@@ -1290,6 +1414,19 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 		}
 
 		backEnd.currentSpace = surf->space;
+#ifdef _SPLASHDAMAGE //karin: recopy _postProcessBuffer_* image
+		if (isPostprocess && surf->material->GetSort() >= SS_POST_PROCESS)
+		{
+			globalImages->postProcessBuffers[0]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
+					backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
+					backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
+			backEnd.postProcessBuffersCopied[0] = true;
+			globalImages->postProcessBuffers[1]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
+					backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
+					backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
+			backEnd.postProcessBuffersCopied[1] = true;
+		}
+#endif
 	}
 
 	backEnd.currentSpace = NULL; //k2023
@@ -2101,7 +2238,5 @@ void	RB_STD_DrawView(void)
 	if (processed < numDrawSurfs) {
 		RB_STD_DrawShaderPasses(drawSurfs+processed, numDrawSurfs-processed);
 	}
-	#ifndef ANDROID_NOGLERRHACK
 	RB_RenderDebugTools(drawSurfs, numDrawSurfs);
-	#endif
 }

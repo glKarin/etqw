@@ -508,6 +508,7 @@ class idImageManager
 		idImage 			*whiteImage;					// full of 0xff
 #ifdef _SPLASHDAMAGE
 	    idImage			    *grayImage;					// full of 0x77
+		idImage				*postProcessBuffers[2];
 #endif
 		idImage 			*blackImage;					// full of 0x00
 		idImage 			*normalCubeMapImage;			// cube map to normalize STR into RGB

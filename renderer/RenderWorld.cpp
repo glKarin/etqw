@@ -823,6 +823,9 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 	parms->initialViewAreaOrigin = renderView->vieworg;
 	parms->floatTime = parms->renderView.time * 0.001f;
 	parms->renderWorld = this;
+#ifdef _SPLASHDAMAGE //karin: custom stage shader parms
+	R_AddCopyParmsCmd(parms);
+#endif
 
 	// use this time for any subsequent 2D rendering, so damage blobs/etc
 	// can use level time

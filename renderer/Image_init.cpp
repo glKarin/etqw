@@ -1724,10 +1724,6 @@ idImage	*idImageManager::ImageFromFile(const char *_name, textureFilter_t filter
 		declManager->MediaPrint("DEFAULTED\n");
 		return globalImages->defaultImage;
 	}
-#ifdef _SPLASHDAMAGE //karin: TODO postprocess using _currentRender
-	if(!idStr::Icmpn(_name, "_postProcessBuffer_", idStr::Length("_postProcessBuffer_")))
-		_name = "_currentRender";
-#endif
 
 	// strip any .tga file extensions from anywhere in the _name, including image program parameters
 	name = _name;
@@ -2300,6 +2296,8 @@ void idImageManager::Init()
 	ImageFromFunction("_quadratic", R_QuadraticImage);
 #ifdef _SPLASHDAMAGE
 	grayImage = ImageFromFunction("_gray", R_GrayImage);
+	postProcessBuffers[0] = ImageFromFunction("_postProcessBuffer_0", R_RGBA8Image);
+	postProcessBuffers[1] = ImageFromFunction("_postProcessBuffer_2", R_RGBA8Image);
 #endif
 
 	// cinematicImage is used for cinematic drawing

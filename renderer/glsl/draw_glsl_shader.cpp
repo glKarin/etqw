@@ -1056,9 +1056,9 @@ int RB_GLSL_LoadShaderProgram(
 void GLSL_AddCommand(void)
 {
 	cmdSystem->AddCommand("listShaders", GLSL_ListShaders_f, CMD_FL_RENDERER, "list shader manager shaders");
-	cmdSystem->AddCommand("exportGLSLShaderSource", R_ExportGLSLShaderSource_f, CMD_FL_RENDERER, "export built-in GLSL shader source to game data directory\nUsage: COMMAND [name1 name2 ...] [save_path]");
+	cmdSystem->AddCommand("exportGLSLShaderSource", idGLSLShaderManager::R_ExportGLSLShaderSource_f, CMD_FL_RENDERER, "export built-in GLSL shader source to game data directory\nUsage: COMMAND [name1 name2 ...] [save_path]");
     cmdSystem->AddCommand("cleanExternalGLSLShaderSource", R_CleanGLSLShaderSource_f, CMD_FL_RENDERER, "remove external GLSL shader source directory");
-	cmdSystem->AddCommand("printGLSLShaderSource", R_PrintGLSLShaderSource_f, CMD_FL_RENDERER, "print built-in GLSL shader source\nUsage: COMMAND [name1 name2 ...]");
+	cmdSystem->AddCommand("printGLSLShaderSource", idGLSLShaderManager::R_PrintGLSLShaderSource_f, CMD_FL_RENDERER, "print built-in GLSL shader source\nUsage: COMMAND [name1 name2 ...]");
 	cmdSystem->AddCommand("exportDevShaderSource", R_ExportDevShaderSource_f, CMD_FL_RENDERER, "export built-in original C-String GLSL shader source for developer");
 #ifdef GL_ES_VERSION_3_0
     cmdSystem->AddCommand("cleanGLSLShaderBinary", R_CleanGLSLShaderBinary_f, CMD_FL_RENDERER, "remove GLSL shader binary directory");

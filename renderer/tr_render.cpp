@@ -915,6 +915,10 @@ void RB_DrawView(const void *data)
 	// we will need to do a new copyTexSubImage of the screen
 	// when a SS_POST_PROCESS material is used
 	backEnd.currentRenderCopied = false;
+#ifdef _SPLASHDAMAGE //karin: _postProcessBuffer_* image
+	backEnd.postProcessBuffersCopied[0] = false;
+	backEnd.postProcessBuffersCopied[1] = false;
+#endif
 
 	// if there aren't any drawsurfs, do nothing
 	if (!backEnd.viewDef->numDrawSurfs) {
@@ -1162,3 +1166,4 @@ void RB_CreateSingleDrawGlobalIllumination(const drawSurf_t *drawSurf, void (*Dr
     backEnd.currentSpace = drawSurf->space; //k2023
 }
 #endif
+

@@ -18,6 +18,7 @@ public:
     // bind
     bool Bind(const materialStage_t *stage, const float *regs) const;
     void Unbind(const materialStage_t *stage) const;
+	void BindVector(const char *name, const float regs[]) const;
 
     // state
     bool IsValid(void) const {
@@ -37,6 +38,7 @@ private:
     void LoadVertexSource(idStr &out) const;
     void LoadFragmentSource(idStr &out) const;
     void InsertBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
+	void InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char *rawName) const;
     void InsertBindings(sdStringBuilder_Heap &buf, const sdRenderProgramShader *shader) const;
     void InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
@@ -47,11 +49,13 @@ private:
     void BindUniform(const materialStage_t *stage, const float *regs) const;
     void UnbindUniform(const materialStage_t *stage) const;
     GLint GetBindingLocation(const sdDeclRenderBinding *binding) const;
+	void BindTexelSize(const char *name, const idImage *img) const;
 
 
     shaderHandle_t 				                    shaderProgram;
     const sdDeclRenderProgram *declRenderProgram;
     idList<const sdDeclRenderBinding *>				bindings;
+    idList<idStr>									bindingNames;
     idList<GLint>									locations;
 
     static void LoadSourceCallback(struct GLSLShaderProp *prop);

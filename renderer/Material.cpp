@@ -77,6 +77,16 @@ static void R_ReloadMaterialStageImages(materialStage_t *stage, bool force)
 	}
 }
 
+ID_INLINE static void R_AllocMaterialStageDefaultTexture(materialStage_t *stage, const sdDeclRenderBinding *binding = NULL)
+{
+	if(stage->numTextures > 0)
+		return;
+	stage->numTextures = 1;
+	stage->textures = (stageTexture_t *)Mem_Alloc(sizeof(*stage->textures));
+	stage->textures[0].image = stage->texture.image;
+	stage->textures[0].renderBinding = binding;
+}
+
 #endif
 
 // jmarshall - calling ParsePastImageProgram twice is a perf hit on load, and causes parsing problems during the stage parse.
@@ -914,16 +924,20 @@ int idMaterial::ParseTerm(idLexer &src)
 		return GetExpressionConstant(0.0f);
 	}
 	if (!token.Icmp("sun_r")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_R;
 	}
 	if (!token.Icmp("sun_g")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_G;
 	}
 	if (!token.Icmp("sun_b")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_B;
 	}
 	if (!token.Icmp("sun_azimuth")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_AZIMUTH;
 	}
 	if (!token.Icmp("wind_x")) {
 		return GetExpressionConstant(1.0f);
@@ -2599,18 +2613,23 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 
 #ifdef _SPLASHDAMAGE
 	//karin: must have 1 image in ::textures(same as ::texture)
-	ss->numTextures = 1;
-	ss->textures = (stageTexture_t *)Mem_Alloc(sizeof(*ss->textures));
-	ss->textures[0].image = ts->image;
-	ss->textures[0].renderBinding = imageBinding;
-
 	if(isInteractionProgram) {
 		CompleteInterationStage(ss, spd);
 	} else if (!spd.shaderProgram.IsEmpty()) {
+		idList<stageTexture_t> texList;
+		texList.SetNum(spd.numTextures + 1);
+		texList[0].image = ts->image;
+		texList[0].renderBinding = imageBinding;
+		for(int m = 0; m < spd.numTextures; m++)
+			texList[1 + m] = spd.textures[m];
+		memcpy(spd.textures, texList.Ptr(), sizeof(stageTexture_t) * texList.Num());
+		spd.numTextures = texList.Num();
+
 		CompleteStage(ss, spd, NULL, 0);
 	} else {
 		FinishStage(ss, spd);
 	}
+	R_AllocMaterialStageDefaultTexture(ss, imageBinding);
 #endif
 }
 
@@ -3612,6 +3631,23 @@ bool idMaterial::Parse(const char *text, const int textLength)
 
 			break;
 		}
+#ifdef _SPLASHDAMAGE //karin: find has postprocess image
+		bool hasPostProcess = false;
+		for(int k = 0; k < sizeof(globalImages->postProcessBuffers) / sizeof(globalImages->postProcessBuffers[0]); k++)
+		{
+			if (pStage->texture.image == globalImages->postProcessBuffers[k]) {
+				if (sort != SS_PORTAL_SKY) {
+					sort = SS_POST_PROCESS;
+					coverage = MC_TRANSLUCENT;
+				}
+
+				hasPostProcess = true;
+				break;
+			}
+		}
+		if(hasPostProcess)
+			break;
+#endif
 
 		if (pStage->newStage) {
 			for (int j = 0 ; j < pStage->newStage->numFragmentProgramImages ; j++) {
@@ -3647,6 +3683,38 @@ bool idMaterial::Parse(const char *text, const int textLength)
 			//karin: don't render 2D GUIs to currentRenderImage when start render 2D
 			if(postProcess && TestMaterialFlag(MF_NEED_CURRENT_RENDER) && sort == SS_GUI)
 				sort = SS_PREGUI;
+		}
+#endif
+#ifdef _SPLASHDAMAGE //karin: find has postprocess image
+		if (pStage->renderProgram) {
+			for (int j = 0 ; j < pStage->numTextures ; j++) {
+				if (pStage->textures[j].image == globalImages->currentRenderImage) {
+					if (sort != SS_PORTAL_SKY && sort != SS_GUI) {
+						sort = SS_POST_PROCESS;
+						coverage = MC_TRANSLUCENT;
+					}
+
+					i = numStages;
+					break;
+				}
+				hasPostProcess = false;
+				for(int k = 0; k < sizeof(globalImages->postProcessBuffers) / sizeof(globalImages->postProcessBuffers[0]); k++)
+				{
+					if (pStage->textures[j].image == globalImages->postProcessBuffers[k]) {
+						if (sort != SS_PORTAL_SKY) {
+							sort = SS_POST_PROCESS;
+							coverage = MC_TRANSLUCENT;
+						}
+
+						hasPostProcess = true;
+						break;
+					}
+				}
+				if(hasPostProcess) {
+					i = numStages;
+					break;
+				}
+			}
 		}
 #endif
 	}
@@ -3804,6 +3872,9 @@ const char *opNames[] = {
 #ifdef _HUMANHEAD
 	, "OP_TYPE_FRAGMENTPROGRAMS" // HUMANHEAD CJR:  Added so fragment programs support can be toggled
 #endif
+#ifdef _SPLASHDAMAGE
+	, "OP_TYPE_LOAD"
+#endif
 };
 
 void idMaterial::Print() const
@@ -3900,6 +3971,24 @@ void idMaterial::EvaluateRegisters(float *registers, const float shaderParms[MAX
 	registers[EXP_REG_GLOBAL5] = view->renderView.shaderParms[5];
 	registers[EXP_REG_GLOBAL6] = view->renderView.shaderParms[6];
 	registers[EXP_REG_GLOBAL7] = view->renderView.shaderParms[7];
+#ifdef _SPLASHDAMAGE //karin: material shader parms
+	if(view->renderWorld && view->renderWorld->GetAtmosphere())
+	{
+		const sdDeclAtmosphere *atmosphere = view->renderWorld->GetAtmosphere();
+		const idVec3 &sunColor = atmosphere->GetSunColor();
+		registers[EXP_REG_SUN_R] = sunColor[0];
+		registers[EXP_REG_SUN_G] = sunColor[1];
+		registers[EXP_REG_SUN_B] = sunColor[2];
+		registers[EXP_REG_SUN_AZIMUTH] = atmosphere->GetSunAzimuth();
+	}
+	else
+	{
+		registers[EXP_REG_SUN_R] = 1.0f;
+		registers[EXP_REG_SUN_G] = 1.0f;
+		registers[EXP_REG_SUN_B] = 1.0f;
+		registers[EXP_REG_SUN_AZIMUTH] = 0.0f;
+	}
+#endif
 
 	op = ops;
 
@@ -4822,6 +4911,7 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 			*newSS = *ss;
 			newSS->lighting = SL_SPECULAR;
 			newSS->texture.image = tex.image;
+			R_AllocMaterialStageDefaultTexture(newSS, tex.renderBinding);
 			//Sys_Printf("specularmap %s\n", tex.image->imgName.c_str());
 		}
 		else if ( !idStr::Icmp(name, "bumpmap") ) {
@@ -4830,6 +4920,7 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 			*newSS = *ss;
 			newSS->lighting = SL_BUMP;
 			newSS->texture.image = tex.image;
+			R_AllocMaterialStageDefaultTexture(newSS, tex.renderBinding);
 			//Sys_Printf("bumpmap %s\n", tex.image->imgName.c_str());
 		}
 		else if ( !idStr::Icmp(name, "lightProjectionMap") ) {
@@ -4838,6 +4929,7 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 			*newSS = *ss;
 			newSS->lighting = SL_DIFFUSE;
 			newSS->texture.image = tex.image;
+			R_AllocMaterialStageDefaultTexture(newSS, tex.renderBinding);
 			//Sys_Printf("lightProjectionMap %s\n", tex.image->imgName.c_str());
 		}
 		else if ( !idStr::Icmp(name, "lightFallOffMap") ) {
@@ -4847,6 +4939,7 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 			//Sys_Printf("%s %s\n", name,tex.image->imgName.c_str());
 		}
 	}
+	
 	//Sys_Printf("xxxxxxxxxxxxxxxxx %s\n\n", GetName());
 }
 
@@ -4857,17 +4950,9 @@ void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, cons
 		memcpy(ms->vectors, spd.vectors, spd.numVectors * sizeof(*ms->vectors));
 	}
 	if (spd.numTextures > 0) { // ms may have 1 image already
-		int numTextures = ms->numTextures + spd.numTextures;
-		stageTexture_t *st = (stageTexture_t *)Mem_Alloc(numTextures * sizeof(*ms->textures));
-
-		if (ms->textures && ms->numTextures) {
-			memcpy(st, ms->textures, ms->numTextures * sizeof(*ms->textures));
-			Mem_Free(ms->textures); // free old one
-		}
-		memcpy(st + ms->numTextures, spd.textures, spd.numTextures * sizeof(*ms->textures));
-
-		ms->numTextures = numTextures;
-		ms->textures = st;
+		ms->numTextures = spd.numTextures;
+		ms->textures = (stageTexture_t *)Mem_Alloc(spd.numTextures * sizeof(*ms->textures));
+		memcpy(ms->textures, spd.textures, spd.numTextures * sizeof(*ms->textures));
 	}
 	if (spd.numTextureMatrices > 0) {
 		ms->numTextureMatrices = spd.numTextureMatrices;

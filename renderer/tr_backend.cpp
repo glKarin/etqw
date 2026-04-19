@@ -717,6 +717,11 @@ void RB_ExecuteBackEndCommands(const emptyCommand_t *cmds)
 				RB_CopyRender(cmds);
 				c_copyRenders++;
 				break;
+#ifdef _SPLASHDAMAGE //karin: copy frontend parms to backend
+			case RC_COPY_PARMS:
+				RB_CopyParms(cmds);
+				break;
+#endif
 			default:
 				common->Error("RB_ExecuteBackEndCommands: bad commandId");
 				break;

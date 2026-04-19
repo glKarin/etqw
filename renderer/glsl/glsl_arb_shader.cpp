@@ -1434,8 +1434,10 @@ void idARBProgram::CMP(void)
     parser.ExpectTokenString(",");
     AddToken("=");
     ParseValue();
+    parser.ExpectTokenString(",");
     AddToken("?");
     ParseValue();
+    parser.ExpectTokenString(",");
     AddToken(":");
     ParseValue();
     AddEnding();
@@ -1453,8 +1455,10 @@ void idARBProgram::SLT(void)
     AddToken("vec4");
     AddToken("(");
     AddToken("lessThan");
+    AddToken("(");
     ParseValue();
     parser.ExpectTokenString(",");
+    AddToken(",");
     ParseValue();
     AddToken(")");
     AddToken(")");

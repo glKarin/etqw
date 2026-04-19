@@ -113,6 +113,8 @@ public:
 
 	static idGLSLShaderManager _shaderManager;
 	static const shaderHandle_t INVALID_SHADER_HANDLE;
+	static void R_ExportGLSLShaderSource_f(const idCmdArgs &args);
+	static void R_PrintGLSLShaderSource_f(const idCmdArgs &args);
 
 private:
 	int AddPlaceholder(const GLSLShaderProp &prop); // return added shader's index

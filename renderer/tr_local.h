@@ -630,7 +630,9 @@ typedef enum {
 	RC_SET_BUFFER,
 	RC_COPY_RENDER,
 	RC_SWAP_BUFFERS		// can't just assume swap at end of list because
-	// of forced list submission before syncs
+#ifdef _SPLASHDAMAGE //karin: copy frontend parms to backend
+		, RC_COPY_PARMS
+#endif
 } renderCommand_t;
 
 typedef struct {
@@ -654,6 +656,23 @@ typedef struct {
 	idImage	*image;
 	int		cubeFace;					// when copying to a cubeMap
 } copyRenderCommand_t;
+
+#ifdef _SPLASHDAMAGE //karin: copy frontend parms to backend
+typedef struct materialStageBuiltinUniform_s {
+	idVec4 currentRenderTexelSize;
+	idVec4		postTint;
+	idVec4		postSaturationContrast;
+	idVec4		postGlareParameters;		// source brightness, blur brightness, brightness threshold, threshold dependency
+} materialStageBuiltinUniform_t;
+
+typedef struct {
+	renderCommand_t		commandId, *next;
+	materialStageBuiltinUniform_t parms;
+} copyParmsCommand_t;
+
+void R_AddCopyParmsCmd(const viewDef_t *view);
+void RB_CopyParms(const void *data);
+#endif
 
 //=======================================================================
 
@@ -796,6 +815,7 @@ typedef struct {
 	int		msec;			// total msec for backend run
 } backEndCounters_t;
 
+
 // all state modified by the back end is separated
 // from the front end state
 typedef struct {
@@ -828,6 +848,10 @@ typedef struct {
 #ifdef _SHADOW_MAPPING
     RenderMatrix		shadowV[6];				// shadow depth view matrix
     RenderMatrix		shadowP[6];				// shadow depth projection matrix
+#endif
+#ifdef _SPLASHDAMAGE //karin: custom stage shader parms
+	bool				postProcessBuffersCopied[2];	// true if any material has already referenced _postProcessBuffer_*
+	materialStageBuiltinUniform_t parms;
 #endif
 } backEndState_t;
 

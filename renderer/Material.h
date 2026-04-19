@@ -166,6 +166,9 @@ typedef enum {
 	,
     OP_TYPE_FRAGMENTPROGRAMS // HUMANHEAD CJR:  Added so fragment programs support can be toggled
 #endif
+#ifdef _SPLASHDAMAGE
+	, OP_TYPE_LOAD
+#endif
 } expOpType_t;
 
 typedef enum {
@@ -203,6 +206,13 @@ typedef enum {
 	EXP_REG_DISTANCE, // HUMANHEAD: CJR
 #endif
 
+#ifdef _SPLASHDAMAGE
+	EXP_REG_NUMLIGHTS,
+	EXP_REG_SUN_R,
+	EXP_REG_SUN_G,
+	EXP_REG_SUN_B,
+	EXP_REG_SUN_AZIMUTH,
+#endif
 	EXP_REG_NUM_PREDEFINED
 } expRegister_t;
 
