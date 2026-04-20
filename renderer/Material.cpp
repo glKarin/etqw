@@ -68,23 +68,14 @@ extern idStrList stageParms;
 
 extern idStr R_RestorePastImageProgram(const char *img, bool clearParms);
 
-static void R_ReloadMaterialStageImages(materialStage_t *stage, bool force)
-{
-	for (int i = 0 ; i < stage->numTextures ; i++) {
-		if (stage->textures[i].image) {
-			stage->textures[i].image->Reload(false, force);
-		}
-	}
-}
-
 ID_INLINE static void R_AllocMaterialStageDefaultTexture(materialStage_t *stage, const sdDeclRenderBinding *binding = NULL)
 {
 	if(stage->numTextures > 0)
 		return;
-	stage->numTextures = 1;
 	stage->textures = (stageTexture_t *)Mem_Alloc(sizeof(*stage->textures));
 	stage->textures[0].image = stage->texture.image;
 	stage->textures[0].renderBinding = binding;
+	stage->numTextures = 1;
 }
 
 #endif
@@ -260,10 +251,13 @@ void idMaterial::FreeData()
 #endif
 #ifdef _SPLASHDAMAGE
 			Mem_Free(stages[i].vectors);
+			stages[i].vectors = NULL;
 			stages[i].numVectors = 0;
 			Mem_Free(stages[i].textures);
+			stages[i].textures = NULL;
 			stages[i].numTextures = 0;
 			Mem_Free(stages[i].textureMatrices);
+			stages[i].textureMatrices = NULL;
 			stages[i].numTextureMatrices = 0;
 			stages[i].renderProgram = NULL;
 #endif
@@ -3689,8 +3683,9 @@ bool idMaterial::Parse(const char *text, const int textLength)
 #endif
 #ifdef _SPLASHDAMAGE //karin: find has postprocess image
 		if (pStage->renderProgram) {
-			for (int j = 0 ; j < pStage->numTextures ; j++) {
-				if (pStage->textures[j].image == globalImages->currentRenderImage) {
+			for (int j = 0 ; j < pStage->numTextures; j++) {
+				const stageTexture_t &st = pStage->textures[j];
+				if (st.image == globalImages->currentRenderImage) {
 					if (sort != SS_PORTAL_SKY && sort != SS_GUI) {
 						sort = SS_POST_PROCESS;
 						coverage = MC_TRANSLUCENT;
@@ -3702,7 +3697,7 @@ bool idMaterial::Parse(const char *text, const int textLength)
 				hasPostProcess = false;
 				for(int k = 0; k < sizeof(globalImages->postProcessBuffers) / sizeof(globalImages->postProcessBuffers[0]); k++)
 				{
-					if (pStage->textures[j].image == globalImages->postProcessBuffers[k]) {
+					if (st.image == globalImages->postProcessBuffers[k]) {
 						if (sort != SS_PORTAL_SKY) {
 							sort = SS_POST_PROCESS;
 							coverage = MC_TRANSLUCENT;
@@ -4391,7 +4386,11 @@ void idMaterial::ReloadImages(bool force) const
 #endif
 #ifdef _SPLASHDAMAGE
 		} else if (stages[i].renderProgram) {
-			R_ReloadMaterialStageImages(&stages[i], force);
+			for (int m = 0 ; m < stages[i].numTextures; m++) {
+				if (stages[i].textures[m].image) {
+					stages[i].textures[m].image->Reload(false, force);
+				}
+			}
 #endif
 		} else if (stages[i].texture.image) {
 			stages[i].texture.image->Reload(false, force);
@@ -4625,6 +4624,11 @@ bool idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
 		src.UnreadToken(&token);
 	}
 
+	if (spd.numVectors >= MAX_STAGE_VECTORS) {
+		src.Warning("idMaterial::ParseProgramStageVector: stage vectors num over %d", MAX_STAGE_VECTORS);
+		return false;
+	}
+
 	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, name.c_str(), false);
 	if (!decl) {
 		src.Warning("idMaterial::ParseProgramStageVector: render binding '%s' not found", name.c_str());
@@ -4636,10 +4640,6 @@ bool idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
 		return false;
 	}
 
-	if (spd.numVectors >= MAX_STAGE_VECTORS) {
-		src.Warning("idMaterial::ParseProgramStageVector: stage vectors num over %d", MAX_STAGE_VECTORS);
-		return false;
-	}
 	vector = &spd.vectors[spd.numVectors++];
 	vector->renderBinding = binding;
 	for (int i = 0; i < 4; i++) {
@@ -4691,6 +4691,11 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 		else if(!idStr::Icmp(p, "partialLoad")) {}
 	}
 
+	if (spd.numTextures >= MAX_STAGE_TEXTURES) {
+		src.Warning("idMaterial::ParseProgramStageTexture: stage textures num over %d", MAX_STAGE_TEXTURES);
+		return false;
+	}
+
 	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, token.c_str(), false);
 	if (!decl) {
 		src.Warning("idMaterial::ParseProgramStageTexture: render binding '%s' not found", token.c_str());
@@ -4699,10 +4704,6 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 	const sdDeclRenderBinding *binding = static_cast<const sdDeclRenderBinding *>(decl);
 	if (binding->GetBindingType() != sdDeclRenderBinding::BT_TEXTURE) {
 		src.Warning("idMaterial::ParseProgramStageTexture: render binding type '%s' not vector", binding->GetName());
-		return false;
-	}
-	if (spd.numTextures >= MAX_STAGE_TEXTURES) {
-		src.Warning("idMaterial::ParseProgramStageTexture: stage textures num over %d", MAX_STAGE_TEXTURES);
 		return false;
 	}
 
@@ -4859,6 +4860,11 @@ bool idMaterial::ParseProgramStageMatrix( idParser &src, stageParseData_t& spd )
 		return false;
 	}
 
+	if (spd.numTextureMatrices >= MAX_STAGE_TEXTUREMATRICES) {
+		src.Warning("idMaterial::ParseProgramStageMatrix: stage matrix num over %d", MAX_STAGE_TEXTUREMATRICES);
+		return false;
+	}
+
 	idStr bindingName = matrixType + "_s";
 	const idDecl *decl_s = declManager->FindType(DECL_RENDERBINDING, bindingName.c_str(), false);
 	if (!decl_s) {
@@ -4868,10 +4874,6 @@ bool idMaterial::ParseProgramStageMatrix( idParser &src, stageParseData_t& spd )
 	const sdDeclRenderBinding *binding_s = static_cast<const sdDeclRenderBinding *>(decl_s);
 	if (binding_s->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
 		src.Warning("idMaterial::ParseProgramStageMatrix: render binding type '%s' not vector", binding_s->GetName());
-		return false;
-	}
-	if (spd.numTextureMatrices >= MAX_STAGE_TEXTUREMATRICES) {
-		src.Warning("idMaterial::ParseProgramStageMatrix: stage matrix num over %d", MAX_STAGE_TEXTUREMATRICES);
 		return false;
 	}
 
@@ -4884,10 +4886,6 @@ bool idMaterial::ParseProgramStageMatrix( idParser &src, stageParseData_t& spd )
 	const sdDeclRenderBinding *binding_t = static_cast<const sdDeclRenderBinding *>(decl_t);
 	if (binding_s->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
 		src.Warning("idMaterial::ParseProgramStageMatrix: render binding type '%s' not vector", binding_t->GetName());
-		return false;
-	}
-	if (spd.numTextureMatrices >= MAX_STAGE_TEXTUREMATRICES) {
-		src.Warning("idMaterial::ParseProgramStageMatrix: stage matrix num over %d", MAX_STAGE_TEXTUREMATRICES);
 		return false;
 	}
 
@@ -4954,14 +4952,14 @@ void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, cons
 		ms->vectors = (stageVector_t *)Mem_Alloc(spd.numVectors * sizeof(*ms->vectors));
 		memcpy(ms->vectors, spd.vectors, spd.numVectors * sizeof(*ms->vectors));
 	}
-	if (spd.numTextures > 0) { // ms may have 1 image already
+	if (spd.numTextures > 0) {
 		ms->numTextures = spd.numTextures;
 		ms->textures = (stageTexture_t *)Mem_Alloc(spd.numTextures * sizeof(*ms->textures));
 		memcpy(ms->textures, spd.textures, spd.numTextures * sizeof(*ms->textures));
 	}
 	if (spd.numTextureMatrices > 0) {
 		ms->numTextureMatrices = spd.numTextureMatrices;
-		ms->textureMatrices = (stageTextureMatrix_t *)Mem_Alloc(spd.numTextureMatrices * sizeof(*ms->textures));
+		ms->textureMatrices = (stageTextureMatrix_t *)Mem_Alloc(spd.numTextureMatrices * sizeof(*ms->textureMatrices));
 		memcpy(ms->textureMatrices, spd.textureMatrices, spd.numTextureMatrices * sizeof(*ms->textureMatrices));
 	}
 
