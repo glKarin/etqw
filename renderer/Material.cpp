@@ -1146,12 +1146,12 @@ void idMaterial::ClearStage(shaderStage_t *ss)
 	ss->isShuttleView = false;
 #endif
 #ifdef _SPLASHDAMAGE
-	Mem_Free(ss->vectors);
 	ss->numVectors = 0;
-	Mem_Free(ss->textures);
 	ss->numTextures = 0;
-	Mem_Free(ss->textureMatrices);
 	ss->numTextureMatrices = 0;
+	ss->vectors = NULL;
+	ss->textures = NULL;
+	ss->textureMatrices = NULL;
 	ss->renderProgram = NULL;
 #endif
 }
@@ -2318,25 +2318,27 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				newStage.vertexProgram = -1;
 				newStage.fragmentProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
-                {
+#ifdef _SPLASHDAMAGE //karin: record shader program name
+				isInteractionProgram = isInteractionProgram || !token.IcmpPrefix("interaction");
+				if(isInteractionProgram)
+				{
+					spd.shaderProgram.Clear();
+					newStage.glslProgram = SHADER_HANDLE_INVALID;
+				}
+				else
+					spd.shaderProgram = token.c_str();
+#endif
+				{
                     token.StripFileExtension();
                     const shaderProgram_t *shaderProgram = shaderManager->Find(token.c_str());
 					NS_DEBUG(common->Printf("NS program: %s -> %s\n", GetName(), shaderProgram ? shaderProgram->name : "NULL"));
                     if(shaderProgram && shaderProgram->program > 0) {
                     	newStage.glslProgram = shaderProgram->program;
-#ifdef _SPLASHDAMAGE //karin: force load external shader first
-                    	if (shaderProgram->type >= SHADER_CUSTOM)
-                    		spd.shaderProgram = token.c_str();
-#endif
                     }
                     else
 					{
                         newStage.glslProgram = SHADER_HANDLE_INVALID;
 						common->Printf("Stage program '%s' not found in material '%s' at file '%s'\n", token.c_str(), GetName(), GetFileName());
-						isInteractionProgram = !idStr::Icmpn(token.c_str(), "interaction", idStr::Length("interaction"));
-#ifdef _SPLASHDAMAGE //karin: record shader program name
-                    	spd.shaderProgram = token.c_str();
-#endif
 					}
                 }
 #endif
@@ -4897,6 +4899,11 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 	shaderStage_t		*newSS;
 	//Sys_Printf("CCC %s\n", GetName());
 
+	ss->renderProgram = NULL;
+	if (ss->newStage != NULL) {
+		Mem_Free(ss->newStage);
+		ss->newStage = NULL;
+	}
 	for(int i = 0; i < spd.numTextures; i++) {
 		const stageTexture_t &tex = spd.textures[i];
 		const char *name = tex.renderBinding->GetName();
@@ -4904,29 +4911,24 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 			//Sys_Printf("diffusemap %s\n", tex.image->imgName.c_str());
 			ss->lighting = SL_DIFFUSE;
 			ss->texture.image = tex.image;
+			R_AllocMaterialStageDefaultTexture(ss, tex.renderBinding);
 		}
 		else if ( !idStr::Icmp(name, "specularmap") ) {
-			newSS = &pd->parseStages[numStages++];
-			ClearStage(newSS);
-			*newSS = *ss;
+			newSS = AllocAndCopyStage(ss);
 			newSS->lighting = SL_SPECULAR;
 			newSS->texture.image = tex.image;
 			R_AllocMaterialStageDefaultTexture(newSS, tex.renderBinding);
 			//Sys_Printf("specularmap %s\n", tex.image->imgName.c_str());
 		}
 		else if ( !idStr::Icmp(name, "bumpmap") ) {
-			newSS = &pd->parseStages[numStages++];
-			ClearStage(newSS);
-			*newSS = *ss;
+			newSS = AllocAndCopyStage(ss);
 			newSS->lighting = SL_BUMP;
 			newSS->texture.image = tex.image;
 			R_AllocMaterialStageDefaultTexture(newSS, tex.renderBinding);
 			//Sys_Printf("bumpmap %s\n", tex.image->imgName.c_str());
 		}
 		else if ( !idStr::Icmp(name, "lightProjectionMap") ) {
-			newSS = &pd->parseStages[numStages++];
-			ClearStage(newSS);
-			*newSS = *ss;
+			newSS = AllocAndCopyStage(ss);
 			newSS->lighting = SL_DIFFUSE;
 			newSS->texture.image = tex.image;
 			R_AllocMaterialStageDefaultTexture(newSS, tex.renderBinding);
@@ -4982,6 +4984,24 @@ void idMaterial::FinishStage( materialStage_t* ss, stageParseData_t& spd ) {
 		}
 	}
 	//Sys_Printf("xxxxxxxxxxxxxxxxx %s\n\n", GetName());
+}
+
+materialStage_t * idMaterial::AllocAndCopyStage(const materialStage_t *ss)
+{
+	shaderStage_t		*newSS;
+
+	newSS = &pd->parseStages[numStages++];
+	ClearStage(newSS);
+	*newSS = *ss;
+	newSS->newStage = NULL;
+	newSS->numVectors = 0;
+	newSS->numTextures = 0;
+	newSS->numTextureMatrices = 0;
+	newSS->vectors = NULL;
+	newSS->textures = NULL;
+	newSS->textureMatrices = NULL;
+
+	return newSS;
 }
 
 void idMaterial::CacheFromDict( const idDict& dict ) {

@@ -4808,53 +4808,59 @@ int idParser::DollarDirective_elif( void )
 }
 #endif
 
-void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
-	idFile *f = idLib::fileSystem->OpenFileWrite(va("formatted/%s/%s", name, fileName));
+void OutputTextSource(idParser &src, sdStringBuilder_Heap &buf) {
 	idToken token2;
 	int intent = 0;
 	bool nl    = false;
 	while (src.ReadToken(&token2)) {
+		nl = token2.linesCrossed;
 		if (token2.type != TT_STRING) {
 			if (token2 == "}") {
 				intent--;
-				nl = true;
+				//nl = true;
 			}
 		}
 		if (nl) {
-			f->Write("\n", 1);
+			buf.Append("\n");
 			for (int m = 0; m < intent; m++) {
-				f->Write("    ", 4);
+				buf.Append("    ");
 			}
-			nl = false;
+			//nl = false;
 		}
 		if (token2.type == TT_STRING) {
-			f->Write("\"", 1);
+			buf.Append("\"");
 		}
-		f->Write(token2.c_str(), token2.Length());
+		buf.Append(token2.c_str());
 		if (token2.type == TT_STRING) {
-			f->Write("\"", 1);
+			buf.Append("\"");
 		}
 		if (token2.type != TT_STRING) {
 			if (token2 == ";") {
-				nl = true;
+				//nl = true;
 			}
 			else if (token2 == "{") {
 				intent++;
-				nl = true;
+				//nl = true;
 			}
 			else if (token2 == "}") {
-				nl = true;
+				//nl = true;
 			}
 			else {
-				nl = false;
-				f->Write(" ", 1);
+				//nl = false;
+				buf.Append(" ");
 			}
 		}
 		else {
-			nl = false;
-			f->Write(" ", 1);
+			//nl = false;
+			buf.Append(" ");
 		}
 	}
+}
+
+void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
+	idFile *f = idLib::fileSystem->OpenFileWrite(va("formatted/%s/%s", name, fileName));
+	sdStringBuilder_Heap buf;
+	OutputTextSource(src, buf);
 	idLib::fileSystem->CloseFile(f);
 }
 

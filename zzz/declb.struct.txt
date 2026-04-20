@@ -26,7 +26,7 @@ declb {
         <SEEK_SET> DeclEntry_t.dataOffsetOfFile
         DeclCompressedData_t {
             uncompressedLength: uint32
-            compressedLength: uint32
+            compressedLength: uint32 # if not compressed, uncompressedLength == compressedLength
             compressedData: [compressedLength]uint8
         }
     <EOF>
@@ -34,5 +34,5 @@ declb {
 
 # uncompressed data struct
 uncompressedData {
-    ??? # I guess using idCompressor_FixedHuffman, I don't known
+    # decompress by idCompressor_Huffman(outFile, false, 16)
 }

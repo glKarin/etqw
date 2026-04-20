@@ -1215,6 +1215,7 @@ class idMaterial : public idDecl
 #endif
 
 #ifdef _SPLASHDAMAGE
+		materialStage_t *	AllocAndCopyStage(const materialStage_t *ss);
         void				CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults );
         void				CompleteInterationStage( materialStage_t *ss, stageParseData_t& spd );
         void				FinishStage( materialStage_t* ms, stageParseData_t& spd );

@@ -72,6 +72,10 @@ struct binaryDeclEntry_t {
 	unsigned int uncompressedLength;
 	unsigned int compressedLength;
 	idList<byte> data;
+
+	bool IsCompressed() const {
+		return uncompressedLength != compressedLength; // invalid, maybe equals
+	}
 };
 
 struct binaryDecl_t {
@@ -455,6 +459,9 @@ public:
 #ifdef _SPLASHDAMAGE
 		idTokenCache				globalTokencache;
 		mutable idStrList			declTypeTables;
+
+private:
+		static void					DeclbToText_f(const idCmdArgs &args);
 #endif
 
 	private:
@@ -1206,7 +1213,7 @@ static int LoadBinaryDeclHeader(binaryDecl_t &header, idFile *file) {
 			byte whitespace;
 			file->ReadUnsignedChar(whitespace);
 			file->ReadUnsignedInt(entry.offset);
-			if(entry.offset >= file->Length())
+			if((int)entry.offset >= file->Length())
 			{
 				common->Warning("Decl binary entry %s %s invalid offset: %d", entry.type.c_str(), entry.name.c_str(), entry.offset);
 				return false;
@@ -1315,6 +1322,7 @@ int idDeclFile::LoadAndParseBinary(void)
 		entry.data.SetNum(entry.compressedLength);
 		file->Read(entry.data.Ptr(), entry.compressedLength);
 		//file->Seek(pos, FS_SEEK_SET);
+
 		idList<byte> out;
 		DecompressDeclb(entry, out);
 
@@ -1322,13 +1330,13 @@ int idDeclFile::LoadAndParseBinary(void)
 		{
 			newDecl->SetBinarySource(&out[0], entry.uncompressedLength);
 			newDecl->sourceTextLength = 0;
-			//printf("is bin|%s\n", fileName.c_str());
+			//Sys_Printf("is bin|%s\n", fileName.c_str());
 		}
 		else
 		{
-			newDecl->SetTextLocal((const char *)out.Ptr(), entry.uncompressedLength - 1);
-			newDecl->sourceTextLength = entry.uncompressedLength - 1;
-			//printf("is text|%s\n", fileName.c_str());
+			newDecl->SetTextLocal((const char *)entry.data.Ptr(), entry.uncompressedLength);
+			newDecl->sourceTextLength = entry.uncompressedLength;
+			//Sys_Printf("is text1|%s|%s|\n", fileName.c_str(),(const char *)entry.data.Ptr());
 		}
 
 		newDecl->sourceFile = this;
@@ -1587,8 +1595,6 @@ void idDeclManagerLocal::Init(void)
 	cmdSystem->AddCommand("reloadDecls", ReloadDecls_f, CMD_FL_SYSTEM, "reloads decls");
 	cmdSystem->AddCommand("touch", TouchDecl_f, CMD_FL_SYSTEM, "touches a decl");
 
-	cmdSystem->AddCommand("parseAllDecls", ParseAllDecls_f, CMD_FL_SYSTEM, "parse all entries of a decl");
-
 	cmdSystem->AddCommand("listTables", idListDecls_f<DECL_TABLE>, CMD_FL_SYSTEM, "lists tables", idCmdSystem::ArgCompletion_String<listDeclStrings>);
 	cmdSystem->AddCommand("listMaterials", idListDecls_f<DECL_MATERIAL>, CMD_FL_SYSTEM, "lists materials", idCmdSystem::ArgCompletion_String<listDeclStrings>);
 	cmdSystem->AddCommand("listSkins", idListDecls_f<DECL_SKIN>, CMD_FL_SYSTEM, "lists skins", idCmdSystem::ArgCompletion_String<listDeclStrings>);
@@ -1620,6 +1626,11 @@ void idDeclManagerLocal::Init(void)
 	cmdSystem->AddCommand("printAudio", idPrintDecls_f<DECL_AUDIO>, CMD_FL_SYSTEM, "prints an Video", idCmdSystem::ArgCompletion_Decl<DECL_AUDIO>);
 
 	cmdSystem->AddCommand("listHuffmanFrequencies", ListHuffmanFrequencies_f, CMD_FL_SYSTEM, "lists decl text character frequencies");
+
+	cmdSystem->AddCommand("parseAllDecls", ParseAllDecls_f, CMD_FL_SYSTEM, "parse all entries of a decl");
+#ifdef _SPLASHDAMAGE
+	cmdSystem->AddCommand("declbToText", DeclbToText_f, CMD_FL_SYSTEM, "convert declb to text files");
+#endif
 
 	common->Printf("------------------------------\n");
 }
@@ -3722,8 +3733,6 @@ const hhDeclBeam *		idDeclManagerLocal::BeamByIndex( int index, bool forceParse 
 
 void idDeclManagerLocal::ParseAllDecls_f(const idCmdArgs &args)
 {
-	bool	force;
-
 	if(args.Argc() < 2) {
 		common->Printf("Usage: %s <type>\n", args.Argv(0));
 		common->Printf("valid types: ");
@@ -4170,6 +4179,85 @@ bool idDeclManagerLocal::LoadGlobalTokenCache(void)
 #endif
 
 	return true;
+}
+
+extern void OutputTextSource(idParser &src, sdStringBuilder_Heap &buf);
+void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
+	idStr folder = GENERATED_PREFIX "/" GENERATED_DECLB;
+	const char *extension = "";
+	idFile *file;
+	idStr outPath = "";
+	if (args.Argc() > 1) {
+		outPath.Append(args.Argv(1));
+		outPath.Append("/");
+	}
+	if (args.Argc() > 2) {
+		folder.AppendPath(args.Argv(2));
+	}
+	idFileList* list = fileSystem->ListFilesTree(folder, extension, true);
+
+	for (int d = 0; d < list->GetNumFiles(); d++)
+	{
+		const char *path = list->GetFile(d);
+
+		file = fileSystem->OpenFileRead(path);
+
+		if(!file)
+		{
+			common->Warning("declb file can't load: %s", path);
+			continue;
+		}
+
+		binaryDecl_t header;
+		if (LoadBinaryDeclHeader(header, file) == -1) {
+			common->Warning("Decl binary read 0 entries: %s", path);
+			fileSystem->CloseFile(file);
+			continue;
+		}
+
+		sdStringBuilder_Heap buf;
+		for (int m = 0; m < header.num; ++m) {
+			binaryDeclEntry_t &entry = header.entries[m];
+			/*buf.Append(entry.type.c_str());
+			buf.Append(" ");
+			buf.Append(entry.name.c_str());
+			buf.Append(" {\n");*/
+
+			file->Seek(entry.offset, FS_SEEK_SET);
+			file->ReadUnsignedInt(entry.uncompressedLength);
+			file->ReadUnsignedInt(entry.compressedLength);
+			entry.data.SetNum(entry.compressedLength);
+			file->Read(entry.data.Ptr(), entry.compressedLength);
+			//file->Seek(pos, FS_SEEK_SET);
+
+			idList<byte> out;
+			DecompressDeclb(entry, out);
+
+			if(out[0] == 6 && !idStr::Cmpn((const char *)&out[4], LEXB_VERSION, 6)) // is binary lex: like idFile::ReadString() num:int32 chars[num]
+			{
+				idParser src;
+				src.LoadMemoryBinary(&out[0], entry.uncompressedLength, "declbToText", &declManagerLocal.globalTokencache);
+				OutputTextSource(src, buf);
+				buf.Append("\n");
+			}
+			else
+			{
+				buf.Append((const char *)entry.data.Ptr(), entry.uncompressedLength);
+				buf.Append("\n");
+			}
+
+			buf.Append("\n");
+		}
+
+		idStr out = va("%s%s", outPath.c_str(), path);
+		out.StripTrailingOnce("b");
+		fileSystem->WriteFile(out, buf.c_str(), buf.Length());
+		common->Printf("Output declb to text: %s\n", out.c_str());
+
+		fileSystem->CloseFile(file);
+	}
+
+	fileSystem->FreeFileList(list);
 }
 
 #endif
