@@ -738,7 +738,7 @@ void sdDeviceContextLocal::SetFontSize( const int pointSize ) {
 }
 
 void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect, unsigned int flags ) {
-	bool wrap = (flags & DTF_WORDWRAP) && (flags & DTF_SINGLELINE) == 0;
+	bool wrap = /*(flags & DTF_WORDWRAP) &&*/ (flags & DTF_SINGLELINE) == 0;
 	int textAlign;
 	if (flags & DTF_CENTER)
 		textAlign = ALIGN_CENTER;
@@ -751,7 +751,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
-	bool wrap = (flags & DTF_WORDWRAP) && (flags & DTF_SINGLELINE) == 0;
+	bool wrap = /*(flags & DTF_WORDWRAP) &&*/ (flags & DTF_SINGLELINE) == 0;
 	int textAlign;
 	if (flags & DTF_CENTER)
 		textAlign = ALIGN_CENTER;

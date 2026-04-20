@@ -1048,6 +1048,9 @@ int idDeclFile::LoadAndParse()
 		// make sure there's a '{'
 		if (!src.ReadToken(&token)) {
 			src.Warning("Type without definition at end of file");
+#ifdef _SPLASHDAMAGE
+			src.PopDependencies();
+#endif
 			break;
 		}
 
@@ -1074,6 +1077,9 @@ int idDeclFile::LoadAndParse()
 			if (newDecl->sourceFile != this || newDecl->redefinedInReload) {
 				src.Warning("%s '%s' previously defined at %s:%i", declManagerLocal.GetDeclNameFromType(identifiedType),
 				            name.c_str(), newDecl->sourceFile->fileName.c_str(), newDecl->sourceLine);
+#ifdef _SPLASHDAMAGE
+				src.PopDependencies();
+#endif
 				continue;
 			}
 
@@ -1141,13 +1147,6 @@ int idDeclFile::LoadAndParse()
 			decl->sourceTextLength = 0;
 			decl->sourceLine = decl->sourceFile->numLines;
 		}
-#ifdef _SPLASHDAMAGExxx
-		int cd = src.GetCurrentDependency();
-		for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd))
-		{
-			dependencies.AddUnique(d);
-		}
-#endif
 	}
 
 	return checksum;
@@ -1552,8 +1551,8 @@ void idDeclManagerLocal::Init(void)
 
 #ifdef _SPLASHDAMAGE
 	RegisterDeclFolder("templates",		".template",				DECL_TEMPLATE);
-    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERBINDING);
     RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERPROGRAM);
+    RegisterDeclFolder("renderprogs",			".rprog",				DECL_RENDERBINDING);
 #endif
 	RegisterDeclFolder("materials",		".mtr",				DECL_MATERIAL);
 	RegisterDeclFolder("skins",			".skin",			DECL_SKIN);
@@ -2237,12 +2236,6 @@ idDecl *idDeclManagerLocal::CreateNewDecl(declType_t type, const char *name, con
 	declText[header.Length() + 1 + idStr::Length(canonicalName)] = ' ';
 	memcpy(declText + header.Length() + 1 + idStr::Length(canonicalName) + 1, defaultText, defaultText.Length() + 1);
 
-#ifdef _SPLASHDAMAGExxx
-	idStr finalPreprocessedBuffer;
-	if (sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, size))
-		decl->SetTextLocal(finalPreprocessedBuffer, finalPreprocessedBuffer.Length());
-	else
-#endif
 	decl->SetTextLocal(declText, size);
 	decl->sourceFile = sourceFile;
 	decl->sourceTextOffset = sourceFile->fileSize;
@@ -3762,7 +3755,7 @@ void idDeclManagerLocal::ParseAllDecls_f(const idCmdArgs &args)
 		return;
 	}
 
-	int numDecls = declManagerLocal.GetNumDecls(DECL_RENDERPROGRAM);
+	int numDecls = declManagerLocal.GetNumDecls(declType->type);
 	common->Printf("Parse: %s decls %d entries\n", type, numDecls);
 	soundSystem->SetMute(true);
 

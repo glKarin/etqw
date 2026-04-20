@@ -4589,7 +4589,7 @@ bool idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
 {
 	idToken token;
 	stageVector_t *vector;
-	int regs[4] = {-1, -1, -1, -1};
+	int regs[4] = {0};
 
 	if (!src.ReadToken(&token)) {
 		src.Warning("idMaterial::ParseProgramStageVector: excepted binding name");
@@ -4613,12 +4613,15 @@ bool idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
 			if (!token.Cmp(",")) {
 				regs[3] = ParseExpression(src);
 			} else {
+				regs[3] = GetExpressionConstant(1);
 				src.UnreadToken(&token);
 			}
 		} else {
+			regs[2] = GetExpressionConstant(0);
 			src.UnreadToken(&token);
 		}
 	} else {
+		regs[1] = GetExpressionConstant(0);
 		src.UnreadToken(&token);
 	}
 

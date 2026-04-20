@@ -23,7 +23,7 @@ extern bool R_ExportTrueTypeFont(const char *fontPath, const char *fontType, con
 idList<fontInfoEx_t> sdFontManagerLocal::fonts;
 idList<sdLocFont_t> sdFontManagerLocal::fontConfigs;
 
-static idCVar harm_r_fontDefaultScale("harm_r_fontDefaultScale", "0.3", CVAR_FLOAT | CVAR_ARCHIVE | CVAR_RENDERER, "");
+static idCVar harm_r_fontDefaultScale("harm_r_fontDefaultScale", "0.3", CVAR_FLOAT | CVAR_ARCHIVE | CVAR_RENDERER, "default font scale");
 #define DC_DEFAULT_FONT_SCALE (harm_r_fontDefaultScale.GetFloat())
 
 sdFontManagerLocal::sdFontManagerLocal()
@@ -518,6 +518,8 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 		if (!lineBreak && (textWidth + nextCharWidth) > rectDraw.GetWidth()) {
 			// The next character will cause us to overflow, if we haven't yet found a suitable
 			// break spot, set it to be this character
+			if (!calcOnly || wrap) //karin: continue if in calc mode and single line
+			{
 			if (len > 0 && newLine == 0) {
 				newLine = len;
 				newLinePtr = p;
@@ -525,6 +527,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 			}
 
 			wordBreak = true;
+			}
 		} else if (lineBreak || (wrap && (*p == ' ' || *p == '\t'))) {
 			// The next character is in view, so if we are a break character, store our position
 			newLine = len;
@@ -566,7 +569,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 				cursor -= (newLine + 1);
 			}
 
-			if (!wrap) {
+			if (!wrap && !calcOnly) {
 				if(rSize)
 				{
 					rSize[0] = tWidth;
@@ -649,12 +652,15 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
             if( !lineBreak && ( textWidth > rectDraw.GetWidth() ) ) {
                 // The next character will cause us to overflow, if we haven't yet found a suitable
-                // break spot, set it to be this character
+            	// break spot, set it to be this character
+            	if (!calcOnly || wrap) //karin: continue if in calc mode and single line
+            	{
                 if( textBuffer.Length() > 0 && lastBreak == 0 ) {
                     lastBreak = textBuffer.Length();
                     textWidthAtLastBreak = textWidth;
                 }
                 wordBreak = true;
+				}
             } else if( lineBreak || ( wrap && ( textChar == ' ' || textChar == '\t' ) ) ) {
                 // The next character is in view, so if we are a break character, store our position
                 lastBreak = textBuffer.Length();
@@ -670,7 +676,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
                 }
 
                 // Align text if needed
-                if( textAlign == ALIGN_RIGHT ) {
+            	if( textAlign == ALIGN_RIGHT ) {
                     x = rectDraw.GetLeft() + rectDraw.GetWidth() - textWidth;
                 } else if( textAlign == ALIGN_CENTER ) {
                     x = rectDraw.GetRight() + ( rectDraw.GetWidth() - textWidth ) / 2;
@@ -707,7 +713,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
                 }
 
                 // If wrap is disabled return at this point.
-                if( !wrap ) {
+                if( !wrap && !calcOnly ) {
 					if(rSize)
 					{
 						rSize[0] = tWidth;
@@ -1003,6 +1009,8 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 		if( !lineBreak && ( (textWidth + nextCharWidth) > rectDraw.GetWidth() ) ) {
 			// The next character will cause us to overflow, if we haven't yet found a suitable
 			// break spot, set it to be this character
+			if (!calcOnly || wrap) //karin: continue if in calc mode and single line
+			{
 			if (len > 0 && newLine == 0) {
 				newLine = len;
 				newLinePtr = p;
@@ -1010,6 +1018,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 			}
 
             wordBreak = true;
+			}
 		} else if( lineBreak || ( wrap && ( *p == ' ' || *p == '\t' ) ) ) {
 			// The next character is in view, so if we are a break character, store our position
 			newLine = len;
@@ -1052,7 +1061,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         		cursor -= (newLine + 1);
         	}
 
-        	if (!wrap) {
+        	if (!wrap && !calcOnly) {
 				if(rSize)
 				{
 					rSize[0] = tWidth;
