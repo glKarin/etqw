@@ -966,70 +966,70 @@ renderProgram sfx/fadeedgeHardSkinningMatrix {
 renderProgram sfx/stroggForceField {
 	hwSkinningVersion sfx/stroggForceFieldSkinningMatrix sfx/stroggForceFieldHardSkinningMatrix
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP R1;
-		
-		DP4 result.texcoord[1].x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4 result.texcoord[1].y, $texCoordAttrib, $diffuseMatrix_t;
-		MOV result.texcoord[1].z, $parameters.x;
-		
-		DP4 result.texcoord[0].x, $texCoordAttrib, $maskMatrix_s;
-		DP4 result.texcoord[0].y, $texCoordAttrib, $maskMatrix_t;
-		
-		MAD R1, $colorAttrib, $colorModulate, $colorAdd;
-		MUL R1, R1, $diffuseColor;
-		SUB	R1, 1, R1;
-		ADD result.color, R1, R1;
-		MOV result.color.w, $colorAttrib;
+	program vertex glsl { <%
+varying vec3 noisePos;
+varying vec2 tex;
+varying vec4 color;
+varying vec4 color1;
 
-		MAD	R1, $colorAttrib, $colorModulate, $colorAdd;
-		MUL result.color.w, $diffuseColor, R1;
-		
-		TEMP _F1, _F2;
-		SUB		_F2, $positionAttrib, $viewOrigin;
-		DP3		_F1.x, _F2, _F2;
-		RSQ		_F1.y, _F1.x;
-		MUL		_F1.x, _F1.y, _F1.x;
-		MUL		_F2.x, $fogDepths.z, 0.5;
-		MAD		result.color.secondary, _F1.x, _F2.x, $fogDepths.w; 
-		
+void main ( void ) {
+// ARB_position_invariant;
+vec4 R1;
+noisePos.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+noisePos.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+noisePos.z = $parameters.x;
+tex.x = dot ( $texCoordAttrib , $maskMatrix_s );
+tex.y = dot ( $texCoordAttrib , $maskMatrix_t );
+R1 = $colorAttrib * $colorModulate + $colorAdd;
+R1 = R1 * $diffuseColor;
+R1 = 1.0 - R1;
+color = R1 + R1;
+color.w = $colorAttrib.w;
+R1 = $colorAttrib * $colorModulate + $colorAdd;
+color.w = ($diffuseColor * R1).w;
+vec4 _F1;
+vec4 _F2;
+_F2 = $positionAttrib - $viewOrigin;
+_F1.x = dot ( _F2.xyz , _F2.xyz );
+_F1.y = 1.0 / sqrt ( _F1.x );
+_F1.x = _F1.y * _F1.x;
+_F2.x = $fogDepths.z * 0.5;
+color1 = vec4( _F1.x * _F2.x + $fogDepths.w );
+gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+}
 	%> }
 
-	program fragment cg { <%
-		$include "noise.hg"
+	program fragment glsl { <%
+		$include "noise.glsl"
+
+		varying vec2 tex;
+		varying vec3 noisePos;
+		varying vec4 color;
+		varying vec4 color1;
 		
-		struct VsOutputs {
-			float2 tex		: TEXCOORD0;
-			float3 noisePos	: TEXCOORD1;
-			float4 color	: COLOR0;
-			float4 color1	: COLOR1;
-		};
-		
-		sampler2D rainbowMap : $map;
-		sampler2D refreshMap : $mask;
-		sampler2D diffuseMap : $diffuseMap;
-	
-		uniform float2 noiseScale : $parameters2;
+		#define rainbowMap $map
+		#define refreshMap $mask
+
+		#define noiseScale $parameters2
 
 		
-		float4 fragment( VsOutputs indata ) : COLOR {
+		void main() {
 		
 			// Do a traditional perlin noise lookup
-			float noise = perlin( indata.noisePos );		
+			float noise = perlin( noisePos );
 			
 			// Make bands in this noise (marble style)
-			float bands = tex2D( rainbowMap, float2( noise, 0 ) ).x;
+			float bands = texture2D( rainbowMap, vec2( noise, 0.0 ) ).x;
 			
 			// The refresh map is where the field is "fresh" or "old" it allows the field to be nonuniform this is a "signed" texture (+1 is fresh -1 is old )
-			float refresh = tex2D( refreshMap, indata.tex + noise * noiseScale ).x * 2 - 1;
+			float refresh = texture2D( refreshMap, tex + noise * noiseScale.xy ).x * 2.0 - 1.0;
 			bands += refresh;
 			
 			// The vertex color takes away density so we can fade it
-			bands -= indata.color.x;
+			bands -= color.x;
 			
 			// Map the grayscale "field density" value to a nice color gradient
-			return tex2D( diffuseMap, float2( bands, 0 ) ) * indata.color.a * (1-(indata.color1.r*indata.color1.r));
+			gl_FragColor = texture2D( $diffuseMap, vec2( bands, 0.0 ) ) * color.a * (1.0-(color1.r*color1.r));
 		}
 	%> }
 }

@@ -2308,7 +2308,9 @@ typedef struct aasTraceStack_s {
 } aasTraceStack_t;
 
 bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const {
-	return false;
+	trace.numPoints = 1;
+	trace.points[0] = end;
+	return true;
 	int side, nodeNum, tmpPlaneNum;
 	double front, back, frac;
 	idVec3 cur_start, cur_end, cur_mid, v1, v2;
@@ -2503,7 +2505,11 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
 }
 
 bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const {
-	return false;
+	trace.endpos = end;
+	trace.lastAreaNum = endAreaNum;
+	trace.lastEdgeNum = 0;
+	trace.fraction = 1;
+	return true;
 	int side, nodeNum, tmpPlaneNum;
 	double front, back, frac;
 	idVec3 cur_start, cur_end, cur_mid, v1, v2;

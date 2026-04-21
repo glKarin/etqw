@@ -96,7 +96,8 @@ void sdDeclRenderBinding::List( void ) const {
 bool sdDeclRenderBinding::ParseVector( idParser& src ) {
 	idToken	token;
 	type = BT_VECTOR;
-	defaults.vector[0] = defaults.vector[1] = defaults.vector[2] = defaults.vector[3] = 0.0f;
+	defaults.vector[0] = defaults.vector[1] = defaults.vector[2] = 0.0f;
+	defaults.vector[3] = 1.0f;
 	int i = 0;
 
 	src.ExpectTokenString("{");
@@ -191,7 +192,6 @@ bool sdDeclRenderBinding::ParseTexture( idParser& src ) {
 
 bool sdDeclRenderBinding::ParseAttrib( idParser& src ) {
 	type = BT_ATTRIB;
-	defaults.attrib = -1;
 
 	defaults.attrib	= src.ParseInt();
 

@@ -1594,6 +1594,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #endif
 #ifdef _SPLASHDAMAGE //karin: fake interaction program
 	bool isInteractionProgram = false;
+	bool hasInteractionMap = false;
 	stageParseData_t spd;
 	const sdDeclRenderBinding *imageBinding = NULL;
 #endif
@@ -2257,7 +2258,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				// || !token.Icmp("lightProjectionMap")
 				// || !token.Icmp("lightFallOffMap")
 				)
-				isInteractionProgram = true;
+				hasInteractionMap = true;
 			continue;
 		}
 		// vector 4
@@ -2313,14 +2314,13 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				newStage.fragmentProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
 #ifdef _SPLASHDAMAGE //karin: record shader program name
-				isInteractionProgram = isInteractionProgram || !token.IcmpPrefix("interaction");
-				if(isInteractionProgram)
-				{
-					spd.shaderProgram.Clear();
-					newStage.glslProgram = SHADER_HANDLE_INVALID;
+				spd.declRenderProgram = static_cast<const sdDeclRenderProgram *>(declManager->FindType(DECL_RENDERPROGRAM, token.c_str(), false));
+				if(!isInteractionProgram) {
+					if(spd.declRenderProgram)
+						isInteractionProgram = spd.declRenderProgram->IsInteraction();
+					else
+						isInteractionProgram = !token.IcmpPrefix("interaction");
 				}
-				else
-					spd.shaderProgram = token.c_str();
 #endif
 				{
                     token.StripFileExtension();
@@ -2554,7 +2554,11 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #if !defined(GL_ES_VERSION_2_0)
 	if (newStage.fragmentProgram || newStage.vertexProgram)
 #else
-	if (/*newStage.fragmentProgram || newStage.vertexProgram || */newStage.glslProgram)
+	if (/*newStage.fragmentProgram || newStage.vertexProgram || */newStage.glslProgram
+#ifdef _SPLASHDAMAGE //karin: check newStage
+			&& !spd.declRenderProgram
+#endif
+			)
 #endif
 	{
 		ss->newStage = (newShaderStage_t *)Mem_Alloc(sizeof(newStage));
@@ -2600,7 +2604,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			&& !ss->newShaderStage
 #endif
 #ifdef _SPLASHDAMAGE
-			&& (spd.shaderProgram.IsEmpty() && spd.numTextures == 0)
+			&& (!spd.declRenderProgram)
 #endif
 			) {
 		common->Warning("material '%s' had stage with no image", GetName());
@@ -2609,9 +2613,9 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 
 #ifdef _SPLASHDAMAGE
 	//karin: must have 1 image in ::textures(same as ::texture)
-	if(isInteractionProgram) {
+	if(isInteractionProgram || (!spd.declRenderProgram && !imageName[0] && hasInteractionMap)) {
 		CompleteInterationStage(ss, spd);
-	} else if (!spd.shaderProgram.IsEmpty()) {
+	} else if (spd.declRenderProgram) {
 		idList<stageTexture_t> texList;
 		texList.SetNum(spd.numTextures + 1);
 		texList[0].image = ts->image;
@@ -2624,6 +2628,12 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		CompleteStage(ss, spd, NULL, 0);
 	} else {
 		FinishStage(ss, spd);
+	}
+	if(!ss->texture.image) {
+		if(ss->numTextures > 0)
+			ss->texture.image = ss->textures[0].image;
+		else
+			ss->texture.image = globalImages->defaultImage;
 	}
 	R_AllocMaterialStageDefaultTexture(ss, imageBinding);
 #endif
@@ -4963,7 +4973,7 @@ void idMaterial::CompleteStage( materialStage_t* ms, stageParseData_t& spd, cons
 		memcpy(ms->textureMatrices, spd.textureMatrices, spd.numTextureMatrices * sizeof(*ms->textureMatrices));
 	}
 
-	ms->renderProgram = renderProgramManager->LoadProgram(spd.shaderProgram.c_str()); // shared
+	ms->renderProgram = renderProgramManager->LoadProgram(spd.declRenderProgram->GetName()); // shared
 }
 
 void idMaterial::FinishStage( materialStage_t* ss, stageParseData_t& spd ) {

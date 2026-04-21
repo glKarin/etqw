@@ -13,7 +13,7 @@ public:
 
     // parse
     bool LoadProgram(const char *name);
-    bool LoadProgram(const sdDeclRenderProgram *name);
+    bool LoadProgram(const sdDeclRenderProgram *decl);
 
     // bind
     bool Bind(const materialStage_t *stage, const float *regs) const;

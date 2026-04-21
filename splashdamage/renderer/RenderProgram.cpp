@@ -461,6 +461,8 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 
 void sdRenderProgram::BindVector(const char *name, const float regs[]) const
 {
+	if(name[0] == '$')
+		name++;
 	int index = bindingNames.FindIndex(name);
 	if(index < 0)
 		return;

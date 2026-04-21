@@ -338,6 +338,7 @@ struct stageParseData_t {
 								memset( vectors, 0, sizeof( vectors ) );
 								memset( textures, 0, sizeof( textures ) );
 								memset( textureMatrices, 0, sizeof( textureMatrices ) );
+								declRenderProgram = NULL;
 							}
 
 	int						numVectors;
@@ -347,7 +348,7 @@ struct stageParseData_t {
 	int						numTextureMatrices;
 	stageTextureMatrix_t	textureMatrices[MAX_STAGE_TEXTUREMATRICES];
 
-	idStr					shaderProgram;
+	const sdDeclRenderProgram *declRenderProgram;
 };
 #endif
 

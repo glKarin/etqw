@@ -697,7 +697,7 @@ void RB_CopyParms(const void *data)
 }
 
 
-static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const shaderStage_t *pStage)
+static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf, const shaderStage_t *pStage)
 {
 	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize.ToFloatPtr());
 	program->BindVector("postTint", backEnd.parms.postTint.ToFloatPtr());
@@ -708,7 +708,7 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	parm[1] = backEnd.viewDef->renderView.vieworg[1];
 	parm[2] = backEnd.viewDef->renderView.vieworg[2];
 	parm[3] = 1.0;
-	program->BindVector("viewOrigin", parm);
+	program->BindVector("viewOriginWorld", parm);
 
 	switch (pStage->vertexColor) {
 		case SVC_MODULATE:
@@ -725,6 +725,18 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 			program->BindVector("colorAdd", one);
 			break;
 	}
+
+    idMat4 modelMatrix;
+    memcpy(&modelMatrix, surf->space->modelMatrix, sizeof(modelMatrix));
+    modelMatrix.TransposeSelf();
+	program->BindVector("transposedModelMatrix_x", modelMatrix[0].ToFloatPtr());
+	program->BindVector("transposedModelMatrix_y", modelMatrix[1].ToFloatPtr());
+	program->BindVector("transposedModelMatrix_z", modelMatrix[2].ToFloatPtr());
+
+    idVec4 localViewOrigin;
+    R_GlobalPointToLocal(surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewOrigin.ToVec3());
+    localViewOrigin[3] = 1.0f;
+	program->BindVector("viewOrigin", localViewOrigin.ToFloatPtr());
 }
 #endif
 
@@ -957,7 +969,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
 
 			// bind builtin program variables
-			RB_BindBuiltinProgramEnvironment(renderProgram, pStage);
+			RB_BindBuiltinProgramEnvironment(renderProgram, surf, pStage);
 
 			// set standard transformations
 			GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), rb_MVP);

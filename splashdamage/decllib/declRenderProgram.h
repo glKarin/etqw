@@ -32,7 +32,7 @@ class sdRenderProgramShader
 		void Init(void);
 		bool IsValid(void) const;
 		bool Parse(idParser &src);
-		void ParsePost(void);
+		void PostParse(const sdDeclRenderProgram *program);
 		shaderType_t GetType(void) const {
 			return type;
 		}
@@ -60,6 +60,10 @@ class sdRenderProgramShader
 		}
 
 	private:
+		void HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName);
+		void HandleSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length);
+
+	private:
 		shaderType_t type;
 		shaderLang_t lang;
 		idStr sourceRaw;
@@ -73,6 +77,10 @@ class sdRenderProgramShader
 // NOT use, only for parse renderprogs decl
 class sdDeclRenderProgram : public idDecl {
 public:
+	enum {
+		LOWRANGEUV = 1 << 1,
+		INTERACTION = 1 << 2,
+	};
 									sdDeclRenderProgram();
 
 	virtual							~sdDeclRenderProgram() {}
@@ -91,12 +99,16 @@ public:
 	bool							IsCompleted(void) const {
 		return vertex.IsValid() && fragment.IsValid();
 	}
+	bool							IsInteraction(void) const {
+		return (flags & INTERACTION) != 0;
+	}
 
 private:
 	void							Init(void);
 	bool							ParseShader(idParser &src);
 
 private:
+	int								flags;
 	sdRenderProgramShader			vertex;
 	sdRenderProgramShader			fragment;
 };

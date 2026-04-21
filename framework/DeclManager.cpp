@@ -4187,6 +4187,8 @@ void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
 	if (args.Argc() > 2) {
 		folder.AppendPath(args.Argv(2));
 	}
+	soundSystem->SetMute(true);
+
 	idFileList* list = fileSystem->ListFilesTree(folder, extension, true);
 
 	for (int d = 0; d < list->GetNumFiles(); d++)
@@ -4251,6 +4253,7 @@ void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
 	}
 
 	fileSystem->FreeFileList(list);
+	soundSystem->SetMute(false);
 }
 
 #endif

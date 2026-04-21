@@ -73,6 +73,7 @@ static bool RB_GLSL_LoadNotAllowError(void) {
 static bool RB_GLSL_IgnoreLoadError(void) {
 	return RB_GLSL_SetupLoadError(false);
 }
+static idStrList reloadShaderNames;
 
 static idStr RB_GLSL_GetExternalShaderSourcePath(void);
 
@@ -129,7 +130,13 @@ void RB_GLSL_HandleShaders(void)
     {
         shaderManager->ReloadShaders();
         reloadGLSLShaders = false;
+    	reloadShaderNames.Clear();
     }
+	else if (reloadShaderNames.Num() > 0)
+	{
+        shaderManager->ReloadShaders(reloadShaderNames);
+    	reloadShaderNames.Clear();
+	}
 }
 #endif
 
@@ -1064,4 +1071,5 @@ void GLSL_AddCommand(void)
     cmdSystem->AddCommand("cleanGLSLShaderBinary", R_CleanGLSLShaderBinary_f, CMD_FL_RENDERER, "remove GLSL shader binary directory");
 #endif
     cmdSystem->AddCommand("convertARB", GLSL_ConvertARBShader_f, CMD_FL_RENDERER, "convert ARB shader to GLSL shader", GLSL_ArgCompletion_glprogs);
+	cmdSystem->AddCommand("reloadShader", R_ReloadShader_f, CMD_FL_RENDERER, "reload shader", idGLSLShaderManager::ArgCompletion_Shaders);
 }

@@ -14,8 +14,9 @@ sdDeclRenderProgram
 ===============================================================================
 */
 
-sdDeclRenderProgram::sdDeclRenderProgram() {
-
+sdDeclRenderProgram::sdDeclRenderProgram()
+	: flags(0)
+{
 }
 
 const char* sdDeclRenderProgram::DefaultDefinition( void ) const {
@@ -122,10 +123,12 @@ bool sdDeclRenderProgram::Parse( const char* text, const int textLength ) {
 		}
 
 		if( !token.Icmp( "interaction" )) {
+			flags |= INTERACTION;
 			continue;
 		}
 
 		if( !token.Icmp( "lowrangeuv" )) {
+			flags |= LOWRANGEUV;
 			continue;
 		}
 
@@ -230,42 +233,62 @@ const sdDeclRenderBinding * sdRenderProgramShader::GetBinding(const char *name) 
 	return NULL;
 }
 
-void sdRenderProgramShader::ParsePost(void) {
-	if(sourceRaw.IsEmpty())
-		return;
-
-	idParser src;
-	src.LoadMemory(sourceRaw.c_str(), sourceRaw.Length(), "shader");
+void sdRenderProgramShader::HandleSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length)
+{
+	idLexer src;
+	src.LoadMemory(text, length, "shader");
 	src.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_NODOLLARPRECOMPILE | LEXFL_NOFATALERRORS);
 	idToken token;
-	const idDecl *decl;
 
-	//sdStringBuilder_Heap buf;
+	int range_start = 0;
+	int range_end = 0;
 	while (1) {
 		if(!src.ReadToken(&token))
 			break;
 
 		//if(token.linesCrossed && buf.Length() > 0)
-			//buf.Append("\n");
+		//buf.Append("\n");
 
 		if(token == "$")
 		{
-			if(!src.ReadToken(&token))
+			range_end = src.GetFileOffset() - token.Length();
+			if(!src.ReadTokenOnLine(&token))
 			{
 				src.Warning("sdRenderProgramShader::ParsePost: missing placeholder name");
-				break;
+				continue;
 			}
-			placeholders.AddUnique(token);
+			if (!token.Icmp("include")) {
+				idStr str;
+				if(!src.ReadRestOfLine(str))
+				{
+					src.Warning("sdRenderProgramShader::ParsePost: missing include file name");
+					continue;
+				}
+				if(range_start < range_end)
+					buf.Append(text + range_start, range_end - range_start);
+				HandleInclude(buf, program, str.c_str());
+				range_start = src.GetFileOffset();
+			}
+			else
+				placeholders.AddUnique(token);
 		}
-
-		//if(buf.Length() > 0)
-			//buf.Append(' ');
-		//buf.Append(token);
 	}
 
-	//source = buf.c_str();
-	source = sourceRaw;
+	if(range_start < length)
+		buf.Append(text + range_start, length - range_start);
+}
+
+void sdRenderProgramShader::PostParse(const sdDeclRenderProgram *program) {
+	if(sourceRaw.IsEmpty())
+		return;
+
+	sdStringBuilder_Heap buf;
+	HandleSource(buf, program, sourceRaw.c_str(), sourceRaw.Length());
+	source = buf.c_str();
 	source.ReplaceChar('$', ' ');
+
+	const idDecl *decl;
+
 	for(int i = 0; i < placeholders.Num(); i++) {
 		decl = declManager->FindType(DECL_RENDERBINDING, placeholders[i], false);
 		if( !decl ) {
@@ -280,8 +303,37 @@ void sdRenderProgramShader::ParsePost(void) {
 	bindings.SetGranularity(1);
 }
 
+void sdRenderProgramShader::HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName) {
+	idStr name = fileName;
+	name.StripLeading("\"");
+	name.StripTrailing("\"");
+	name.StripLeading("<");
+	name.StripTrailing(">");
+	char *text = NULL;
+	int length = 0;
+
+	if ((length = fileSystem->ReadFile(name, (void **)&text, NULL)) <= 0)
+	{
+		idStr path = program->GetFileName();
+		path.StripFilename();
+		path.AppendPath(name);
+		//Sys_Printf("XXX %s|%s|\n", program->GetFileName(), path.c_str());
+		length = fileSystem->ReadFile(path, (void **)&text, NULL);
+	}
+	if (!text || length <= 0)
+	{
+		common->Warning("sdRenderProgramShader::HandleInclude: Could not load include file: %s", name.c_str());
+		return;
+	}
+
+	HandleSource(buf, program, text, length);
+
+	Mem_Free(text);
+}
+
 void sdDeclRenderProgram::Init(void)
 {
+	flags = 0;
 	vertex.Init();
 	fragment.Init();
 }
@@ -375,7 +427,7 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 #endif
 
 	if (!isRef)
-		shader->ParsePost();
+		shader->PostParse(this);
 
 #if RENDERPROGRAM_OUTPUT_TO_FILE
 	idStr str;

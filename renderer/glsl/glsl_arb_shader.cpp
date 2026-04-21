@@ -122,6 +122,7 @@ private:
     void FRC(void);
     void CMP(void);
     void SLT(void);
+    void XPD(void);
     void MAD_SAT(void);
     void ADD_SAT(void);
     void DP3_SAT(void);
@@ -240,7 +241,9 @@ void idARBProgram::Command(const char *cmd)
     else ARB_HANDLE_CMD(ABS)
     else ARB_HANDLE_CMD(FRC)
     else ARB_HANDLE_CMD(SLT)
+    else ARB_HANDLE_CMD(XPD)
     else ARB_HANDLE_CMD(CMP)
+    else ARB_HANDLE_CMD(KIL)
     else ARB_HANDLE_CMD(DP3_SAT)
     else ARB_HANDLE_CMD(DP4_SAT)
     else ARB_HANDLE_CMD(MUL_SAT)
@@ -1301,6 +1304,12 @@ void idARBProgram::KIL(void)
 {
     ExpectTokenString("KIL");
 
+    AddToken("if");
+    AddToken("(");
+    ParseValue();
+    AddToken("<");
+    AddToken("0.0");
+    AddToken(")");
     AddToken("discard");
     AddEnding();
     parser.ExpectTokenString(";");
@@ -1461,6 +1470,25 @@ void idARBProgram::SLT(void)
     AddToken(",");
     ParseValue();
     AddToken(")");
+    AddToken(")");
+    AddEnding();
+    parser.ExpectTokenString(";");
+}
+
+// XPD T, A, B -> T = cross(A, B)
+void idARBProgram::XPD(void)
+{
+    ExpectTokenString("XPD");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    AddToken("cross");
+    AddToken("(");
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken(",");
+    ParseValue();
     AddToken(")");
     AddEnding();
     parser.ExpectTokenString(";");
