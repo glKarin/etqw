@@ -100,6 +100,9 @@ void idReachability::CopyBase(idReachability &reach)
 	travelType = reach.travelType;
 	toAreaNum = reach.toAreaNum;
 #ifdef _SPLASHDAMAGE
+	travelFlags = reach.travelFlags;
+	fromAreaNum = reach.fromAreaNum;
+	areaTTOfsAndNumber = reach.areaTTOfsAndNumber;
 	start[0] = reach.start[0];
 	start[1] = reach.start[1];
 	start[2] = reach.start[2];
@@ -2208,7 +2211,7 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 
 		file->Seek(4 * 2, FS_SEEK_CUR); // 2 32bit pointer
 
-		reach.travelType = reach.travelFlags;
+		reach.travelType = 0;
 		reach.edgeNum = 0;
 
 		newReach = &reachabilities[j];

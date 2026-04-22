@@ -1716,22 +1716,22 @@ bool idAASFileLocal::SplitFloorWinding(
 		float *a4,
 		int *a5) const
 {
-	const aasArea_t *num; // eax
+	const aasArea_t *list; // eax
 	int v6; // ebp
 	bool v7; // cc
 	const aasArea_t *v8; // eax
 	float *v9; // edi
 	int v10; // esi
-	const float *v11; // eax
+	const idVec3 *v11; // eax
 	int v12; // eax
 	int v14; // [esp+4h] [ebp-8h]
 	int v15; // [esp+8h] [ebp-4h]
 	const aasArea_t *v16; // [esp+10h] [ebp+4h]
 
-	num = this->areas.Ptr();
+	list = this->areas.Ptr();
 	v6 = 0;
-	v7 = num[a2].numEdges /* + 4 )*/ <= 0;
-	v8 = &num[a2];
+	v7 = list[a2].numEdges <= 0;
+	v8 = &list[a2];
 	v15 = 1;
 	v14 = 0;
 	v16 = v8;
@@ -1741,20 +1741,22 @@ bool idAASFileLocal::SplitFloorWinding(
 		do
 		{
 			v10 = this->edgeIndex[v6 + v8->firstEdge];
-			v11 = &this->vertices[this->edges[abs(v10)].vertexNum[v10 >> 31]].x;
+			v11 = &this->vertices[this->edges[abs(v10)].vertexNum[v10 >> 31]];
 			++v6;
-			*v9++ = v11[1] * a3->ToFloatPtr()[1] + *v11 * a3->ToFloatPtr()[0] + v11[2] * a3->ToFloatPtr()[2] + a3->ToFloatPtr()[3];
-			v12 = *((_DWORD *)v9 - 1) >> 31;
+			float d = a3->Distance(*v11);
+			*v9++ = d; // a4 += 1
+			v12 = FLOATSIGNBITSET(d); // check distance less than 0; v12 = 1 if distance < 0 // *((_DWORD *)v9 - 1) >> 31;
 			v15 &= v12;
 			v14 |= v12;
-			*(_DWORD *)((char *)v9 /*+ (char *)a5 - (char *)a4*/ - 4) = v12;
+			*a5++ = v12; // a5 += 1 // *(_DWORD *)((char *)v9 + ((char *)a5 - (char *)a4) - 4) = v12; // a5 - a4 == align16( (1+numEdges) * sizeof(int/float) )
 			v8 = v16;
+			//Sys_Printf("EEE %d/%d: %f %d | %d %d\n", v6-1,v8->numEdges, d,v12,v15, v14);
 		}
-		while ( v6 < num->numEdges );
+		while ( v6 < v16->numEdges );
 	}
-	a4[*(_DWORD *)(v8 + 4)] = *a4;
-	a5[*(_DWORD *)(v8 + 4)] = *a5;
-	return v15 != v14;
+	a4[v8->numEdges] = *a4;
+	a5[v8->numEdges] = *a5;
+	return v15 != v14; // all distance >= 0; v14 == v15 if has distance < 0
 }
 
 //----- (005EC1D0) --------------------------------------------------------
@@ -1765,8 +1767,8 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
         const idPlane *a5,
         const idPlane *a6) const
 {
-  void *v8; // esp
-  void *v9; // esp
+  float *v8; // esp
+  int *v9; // esp
   bool result; // al
   int v11; // eax
   idPlane *v12; // ebx
@@ -1805,37 +1807,38 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
   a2->point[0] = 0.0;
   a2->point[1] = 0.0;
   a2->point[2] = 0.0;
-  a2->distance = 1.0e30;
   a2->edgeIndex = 0;
+  a2->distance = 1.0e30;
   a3->point[0] = 0.0;
   a3->point[1] = 0.0;
   a3->point[2] = 0.0;
-  a3->distance = -1.0e30;
   a3->edgeIndex = 0;
+  a3->distance = -1.0e30;
   v34 = &this->areas[a4];
-  v35 = 4 * v34->numEdges + 19;
-  v8 = alloca(v35);
-  v9 = alloca(v35);
+  v35 = 4 * (v34->numEdges + 1) + 15;
+  v8 = (float *)alloca(v35);
+  v9 = (int *)alloca(v35);
   v33 = &v21;
-  result = idAASFileLocal::SplitFloorWinding(a4, a5, (float *)&v21, &v21); // 3 = v21-4, 4 = v21
-  if ( result )
+  result = idAASFileLocal::SplitFloorWinding(a4, a5, v8, v9); // (this, a4, a5, (float *)&v21, &v21);
+  if ( result ) // all distance >= 0
   {
     v11 = 0;
     v36 = 0;
     if ( v34->numEdges > 0 )
     {
       v12 = (idPlane *)v22;
-      v13 = 0; // (char *)v33 - (char *)&v21;
+      v13 = (char *)v33 - (char *)&v21; // == sizeof(v8/v9)
       v37 = (idPlane *)v22;
-      for ( i = 0/*(char *)v33 - (char *)&v21*/; ; v13 = i )
+v33 = v9;
+v12 = (idPlane *)v8;
+      for ( i = (char *)v33 - (char *)&v21; ; v13 = i )
       {
         if ( v33[v11] != *(_DWORD *)((char *)&v12->ToFloatPtr()[0] + v13) )
         {
           v14 = this->edgeIndex[v11 + v34->firstEdge];
-		  int side1 = (v14 < 0);
           v15 = &this->edges[abs(v14)];
-          v16 = &this->vertices[v15->vertexNum[!side1]/**(_DWORD *)(v15 + 4 * ((unsigned int)v14 >> 31))*/];
-          v17 = &this->vertices[v15->vertexNum[side1]/**(_DWORD *)(v15 + 4 * (v14 >= 0))*/];
+          v16 = &this->vertices[v15->vertexNum[(unsigned int)v14 >> 31]];
+          v17 = &this->vertices[v15->vertexNum[v14 >= 0]];
           v12 = v37;
           v29 = *v17 - *v16;
           v38 = v37[-1].ToFloatPtr()[3] / (v37[-1].ToFloatPtr()[3] - v37->ToFloatPtr()[0]);
@@ -1847,18 +1850,14 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
           {
             a2->distance = v39;
             a2->edgeIndex = v14;
-            a2->point[0] = v19.x;
-            a2->point[1] = v19.y;
-            a2->point[2] = v19.z;
+            a2->point = v19;
           }
           v11 = v36;
           if ( a3->distance < v39 )
           {
             a3->distance = v39;
             a3->edgeIndex = v14;
-            a3->point[0] = v19.x;
-            a3->point[1] = v19.y;
-            a3->point[2] = v19.z;
+            a3->point = v19;
           }
         }
         ++v11;
