@@ -1771,7 +1771,8 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
   int *v9; // esp
   bool result; // al
   int v11; // eax
-  idPlane *v12; // ebx
+  float *v12; // ebx
+  //idPlane *v12; // ebx
   int v13; // ecx
   int v14; // ecx // edgeIndex
   const aasEdge_t *v15; // edx
@@ -1800,7 +1801,8 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
   const aasArea_t *v34; // [esp+38h] [ebp-4h]
   int v35; // [esp+4Ch] [ebp+10h]
   int v36; // [esp+4Ch] [ebp+10h]
-  idPlane *v37; // [esp+50h] [ebp+14h]
+  float *v37; // [esp+50h] [ebp+14h]
+  //idPlane *v37; // [esp+50h] [ebp+14h]
   float v38; // [esp+50h] [ebp+14h]
   float v39; // [esp+50h] [ebp+14h]
 
@@ -1826,14 +1828,16 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
     v36 = 0;
     if ( v34->numEdges > 0 )
     {
-      v12 = (idPlane *)v22;
-      v13 = (char *)v33 - (char *)&v21; // == sizeof(v8/v9)
-      v37 = (idPlane *)v22;
+      // v12 = (idPlane *)v22;
+      // v13 = (char *)v33 - (char *)&v21; // == sizeof(v8/v9)
+      // v37 = (idPlane *)v22;
 v33 = v9;
-v12 = (idPlane *)v8;
-      for ( i = (char *)v33 - (char *)&v21; ; v13 = i )
+v12 = v8;
+int *_v12 = v9;
+v37 = v8;
+      for ( ; ; /*i = (char *)v33 - (char *)&v21; ; v13 = i*/ )
       {
-        if ( v33[v11] != *(_DWORD *)((char *)&v12->ToFloatPtr()[0] + v13) )
+        if ( v33[v11] != *_v12 /* *(_DWORD *)((char *)&v12->ToFloatPtr()[0] + v13)*/ )
         {
           v14 = this->edgeIndex[v11 + v34->firstEdge];
           v15 = &this->edges[abs(v14)];
@@ -1841,7 +1845,8 @@ v12 = (idPlane *)v8;
           v17 = &this->vertices[v15->vertexNum[v14 >= 0]];
           v12 = v37;
           v29 = *v17 - *v16;
-          v38 = v37[-1].ToFloatPtr()[3] / (v37[-1].ToFloatPtr()[3] - v37->ToFloatPtr()[0]);
+        	float _v37 = *(v37 - 1);
+          v38 = _v37 / (_v37 - *v37);
           v26 = v29 * v38;
           v23 = *v16 + v26;
           v19 = v23;
@@ -1861,7 +1866,8 @@ v12 = (idPlane *)v8;
           }
         }
         ++v11;
-        v12 = (idPlane *)((char *)v12 + 4);
+        v12++;
+      	_v12++;
         v36 = v11;
         v37 = v12;
         if ( v11 >= v34->numEdges )
