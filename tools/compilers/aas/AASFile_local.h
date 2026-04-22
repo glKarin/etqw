@@ -136,6 +136,28 @@ class idAASFileLocal : public idAASFile
 		int							AreaContentsTravelFlags(int areaNum) const;
 		idVec3						AreaReachableGoal(int areaNum) const;
 		int							NumReachabilities(void) const;
+#ifdef _SPLASHDAMAGE
+		struct floorEdgeSplitPoint_t {
+			idVec3 point;
+			float distance;
+			int edgeIndex;
+		};
+
+		bool						SplitFloorWinding(
+		int a2, // areaNum
+		const idPlane *a3,
+		float *a4,
+		int *a5) const;
+		bool GetFloorEdgeSplitPoints(
+				floorEdgeSplitPoint_t *a2,
+				floorEdgeSplitPoint_t *a3,
+				int a4, // areaNum
+				const idPlane *a5,
+				const idPlane *a6) const;
+
+		// 103 * 4 = 412
+		idList<int>					floorIndex; // area index
+#endif
 };
 
 #endif /* !__AASFILELOCAL_H__ */

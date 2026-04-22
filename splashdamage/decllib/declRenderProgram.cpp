@@ -269,8 +269,9 @@ void sdRenderProgramShader::HandleSource(sdStringBuilder_Heap &buf, const sdDecl
 				HandleInclude(buf, program, str.c_str());
 				range_start = src.GetFileOffset();
 			}
-			else
+			else {
 				placeholders.AddUnique(token);
+			}
 		}
 	}
 
@@ -292,7 +293,7 @@ void sdRenderProgramShader::PostParse(const sdDeclRenderProgram *program) {
 	for(int i = 0; i < placeholders.Num(); i++) {
 		decl = declManager->FindType(DECL_RENDERBINDING, placeholders[i], false);
 		if( !decl ) {
-			common->Warning( "sdRenderProgramShader::ParsePost: could't find binding '%s'.", placeholders[i].c_str() );
+			common->Warning( "sdRenderProgramShader::ParsePost: couldn't find binding '%s'.", placeholders[i].c_str() );
 			bindings.Append(NULL);
 		}
 		else

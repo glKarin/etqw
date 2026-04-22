@@ -208,6 +208,9 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE
 #define AAS_MAX_NAME_LENGTH					128
 
+// plane
+typedef idPlane aasPlane_t;
+
 typedef byte aasObstaclePVS_t;
 
 // names
@@ -766,7 +769,11 @@ class idAASFile
 		idStr						name;
 		unsigned int				crc;
 
+#ifdef _SPLASHDAMAGExxx
+		idList<aasPlane_t>			planeList;
+#else
 		idPlaneSet					planeList;
+#endif
 		idList<aasVertex_t>			vertices;
 		idList<aasEdge_t>			edges;
 		idList<aasIndex_t>			edgeIndex;
