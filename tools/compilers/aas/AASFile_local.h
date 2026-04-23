@@ -142,18 +142,44 @@ class idAASFileLocal : public idAASFile
 			float distance;
 			int edgeIndex;
 		};
+		struct bestReachableArea_t {
+			float v0;
+			float v1;
+			int areaFlags;
+			int excludeTravelFlags;
+			int areaNum1;
+			float distance1;
+			int areaNum2;
+			float distance2;
+		};
 
 		bool						SplitFloorWinding(
-		int a2, // areaNum
-		const idPlane *a3,
-		float *a4,
-		int *a5) const;
+			int areaNum, // areaNum
+			const idPlane *a3,
+			float *a4, // array
+			int *a5 // array
+		) const;
 		bool GetFloorEdgeSplitPoints(
 				floorEdgeSplitPoint_t *a2,
 				floorEdgeSplitPoint_t *a3,
-				int a4, // areaNum
+				int areaNum,
 				const idPlane *a5,
 				const idPlane *a6) const;
+	float GetFloorDistance(
+        int a2,
+        const idPlane *a3,
+        const idVec3 *a4,
+        float a5,
+        float a6) const;
+	void BoundsBestReachableAreaNum(
+		idBounds *a2,
+		const idVec3 *a3,
+		int a4,
+		const idPlane *a5,
+		bestReachableArea_t *a6) const;
+	void PointBestReachableAreaNum(
+		const idVec3 *a2,
+		bestReachableArea_t *a3) const;
 
 		// 103 * 4 = 412
 		idList<int>					floorIndex; // area index

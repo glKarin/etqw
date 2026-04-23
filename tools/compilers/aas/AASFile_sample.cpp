@@ -302,6 +302,63 @@ idAASFileLocal::PointReachableAreaNum
 */
 int idAASFileLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &searchBounds, const int areaFlags, const int excludeTravelFlags) const
 {
+#ifdef _SPLASHDAMAGE
+	int result; // eax
+	int v7; // ebx
+	idVec3 v8;
+	//float v8; // [esp+8h] [ebp-50h]
+	//float v9; // [esp+Ch] [ebp-4Ch]
+	//float v10; // [esp+10h] [ebp-48h]
+	idVec3 v11; // [esp+14h] [ebp-44h] BYREF
+	idBounds v12; // [esp+20h] [ebp-38h] BYREF
+	idAASFileLocal::bestReachableArea_t v13; // [esp+38h] [ebp-20h] BYREF
+	float maxStepHeight; // [esp+64h] [ebp+Ch]
+
+	v13.v0 = this->settings.boundingBox[1].z - this->settings.boundingBox[0].z;
+	v13.excludeTravelFlags = excludeTravelFlags;
+	v13.v1 = 24.0;
+	v13.distance1 = 1.0e30;
+	v13.areaFlags = areaFlags;
+	v13.distance2 = 1.0e30;
+	v13.areaNum1 = 0;
+	v13.areaNum2 = 0;
+	idAASFileLocal::PointBestReachableAreaNum(&origin, &v13);
+	if ( !v13.areaNum1 )
+	{
+		maxStepHeight = this->settings.maxStepHeight;
+		v8.x = maxStepHeight * this->settings.invGravityDir.x;
+		v8.y = this->settings.invGravityDir.y * maxStepHeight;
+		v8.z = maxStepHeight * this->settings.invGravityDir.z;
+		v11 = origin + v8;
+		idAASFileLocal::PointBestReachableAreaNum(&v11, &v13);
+	}
+	if ( v13.v0 > (double)v13.distance1 )
+		return v13.areaNum1;
+	v7 = 0;
+	v12[0].x = origin.x - 4.0;
+	v12[0].y = origin.y - 4.0;
+	v12[1].x = origin.x + 4.0;
+	v12[1].y = origin.y + 4.0;
+	v12[1].z = origin.z;
+	v12[0].z = v12[1].z;
+	while ( 1 )
+	{
+		result = v13.areaNum2;
+		if ( v13.areaNum2 )
+			break;
+		idAASFileLocal::BoundsBestReachableAreaNum(&v12, &origin, 1, 0, &v13);
+		++v7;
+		v12.ExpandSelf(4.0f);
+		if ( v7 >= 4 )
+		{
+			result = v13.areaNum2;
+			if ( !v13.areaNum2 )
+				return v13.areaNum1;
+			return result;
+		}
+	}
+	return result;
+#else
 	int areaList[32], areaNum, i;
 	idVec3 start, end, pointList[32];
 	aasTrace_t trace;
@@ -363,6 +420,7 @@ int idAASFileLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &
 	}
 
 	return 0;
+#endif
 }
 
 /*
@@ -722,6 +780,12 @@ int idAASFileLocal::MaxTreeDepth(void) const
 
 #ifdef _SPLASHDAMAGE
 
+typedef unsigned int _DWORD;
+#define __int16 short
+typedef unsigned short _WORD;
+typedef unsigned char _BYTE;
+#define LODWORD(x) ((DWORD)(*(uint64_t *)&(x)))
+
 bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
   bool v4; // bl
   const aasArea_t *v5; // esi
@@ -998,12 +1062,6 @@ LABEL_53:
     point = v81;
   return result;
 }
-
-
-typedef unsigned int _DWORD;
-typedef unsigned short _WORD;
-typedef unsigned char _BYTE;
-#define LODWORD(x) ((DWORD)(*(uint64_t *)&(x)))
 
 bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const {
   float *v4; // edx
@@ -1878,5 +1936,612 @@ v37 = v8;
   }
   return result;
 }
+
+float idAASFileLocal::GetFloorDistance(
+        int a2,
+        const idPlane *a3,
+        const idVec3 *a4,
+        float a5,
+        float a6) const
+{
+  const aasArea_t *v6; // edx
+  double v8; // st7
+  double result; // st7
+  const aasEdge_t *list; // ebx
+  const idVec3 *v11; // esi
+  const int *v12; // edi
+  unsigned int v13; // eax
+  int v14; // edx
+  const idVec3 *p_x; // eax
+  const idVec3 *v16; // edx
+  double v17; // st7
+  double v18; // st5
+  double v19; // st6
+  double v20; // st2
+  float v21; // [esp+4h] [ebp-40h]
+	idVec3 v22;
+  //float v22; // [esp+8h] [ebp-3Ch]
+  //float v23; // [esp+Ch] [ebp-38h]
+  //float v24; // [esp+10h] [ebp-34h]
+  idVec3 v25; // [esp+14h] [ebp-30h]
+  //float v25; // [esp+14h] [ebp-30h]
+  //float v26; // [esp+18h] [ebp-2Ch]
+  //float v27; // [esp+1Ch] [ebp-28h]
+  idVec3 v28; // [esp+20h] [ebp-24h]
+  //float v28; // [esp+20h] [ebp-24h]
+  //float v29; // [esp+24h] [ebp-20h]
+  //float v30; // [esp+28h] [ebp-1Ch]
+  idVec3 v31; // [esp+2Ch] [ebp-18h]
+  //float v31; // [esp+2Ch] [ebp-18h]
+  //float v32; // [esp+30h] [ebp-14h]
+  //float v33; // [esp+34h] [ebp-10h]
+  idVec3 v34; // [esp+2Ch] [ebp-18h]
+  //float v34; // [esp+38h] [ebp-Ch]
+  //float v35; // [esp+3Ch] [ebp-8h]
+  //float v36; // [esp+40h] [ebp-4h]
+  float v37; // [esp+48h] [ebp+4h]
+  float v38; // [esp+48h] [ebp+4h]
+  float v39; // [esp+48h] [ebp+4h]
+  int v40; // [esp+48h] [ebp+4h]
+  int v41; // [esp+48h] [ebp+4h]
+  float v42; // [esp+48h] [ebp+4h]
+  float v43; // [esp+48h] [ebp+4h]
+  float v44; // [esp+48h] [ebp+4h]
+  int v45; // [esp+48h] [ebp+4h]
+  float v46; // [esp+4Ch] [ebp+8h]
+  float v47; // [esp+50h] [ebp+Ch]
+  int numEdges; // [esp+54h] [ebp+10h]
+
+  v6 = &this->areas[a2];
+  v37 = a3->Distance(*a4);
+  v38 = fabs(v37);
+  v8 = v38;
+  v39 = this->settings.invGravityDir * a3->Normal();
+  v46 = v8 / v39;
+  result = v46;
+  if ( a5 <= (double)v46 )
+  {
+    v47 = 1.0e30;
+    if ( v6->numEdges > 0 )
+    {
+      list = this->edges.Ptr();
+      v11 = this->vertices.Ptr();
+      v12 = &this->edgeIndex[v6->firstEdge];
+      numEdges = v6->numEdges;
+      do
+      {
+        v13 = abs(*v12);
+        v14 = list[v13].vertexNum[0];
+        p_x = &v11[list[v13].vertexNum[1]];
+        v16 = &v11[v14];
+        v25 = *p_x - *v16;
+        v17 = v25.y;
+        v18 = v25.x;
+        v19 = v25.z;
+        *(float *)&v40 = v25.LengthSqr();
+        if ( *(float *)&v40 >= 0.1000000014901161 )
+        {
+          v22 = *a4 - *v16;
+          v21 = v22.y * v17 + v22.x * v18 + v22.z * v19;
+          *(float *)&v41 = v21 / *(float *)&v40;
+          if ( *(float *)&v41 >= 0.0 )
+          {
+            v20 = *(float *)&v41;
+            if ( *(float *)&v41 > 1.0 )
+              v20 = (float)1.0;
+          }
+          else
+          {
+            v20 = (float)0.0;
+          }
+          v28.x = v18 * v20;
+          v28.y = v17 * v20;
+          v28.z = v20 * v19;
+          v31 = v22 - v28;
+          v42 = v31.LengthSqr();
+          if ( v47 > (double)v42 )
+          {
+            v47 = v31.LengthSqr();
+            v34 = v22 - v28;
+          }
+        }
+        ++v12;
+        --numEdges;
+      }
+      while ( numEdges );
+      result = v46;
+    }
+    v43 = a6 * a6;
+    if ( v43 <= (double)v47 )
+      return v46;
+    v44 = this->settings.invGravityDir * v34;
+    *(float *)&v45 = fabs(v44);
+    if ( *(float *)&v45 >= result )
+      return v46;
+    else
+      return *(float *)&v45;
+  }
+  return result;
+}
+
+void idAASFileLocal::BoundsBestReachableAreaNum(
+		idBounds *a2,
+		const idVec3 *a3,
+		int a4,
+		const idPlane *a5,
+		idAASFileLocal::bestReachableArea_t *a6) const
+{
+	int v6; // esi
+	bool v7; // sf
+	const aasNode_t *v10; // esi
+	int v11; // eax
+	const aasArea_t *v12; // eax
+	int v13; // esi
+	float FloorDistance; // [esp+1Ch] [ebp+4h]
+
+	v6 = a4;
+	v7 = a4 < 0;
+	if ( !a4 )
+		return;
+	while ( !v7 )
+	{
+		v10 = &this->nodes[v6];
+		v11 = a2->PlaneSide(this->planeList[v10->planeNum], 0.1);
+		if ( !v11 )
+			goto LABEL_7;
+		if ( v11 != 1 )
+		{
+			idAASFileLocal::BoundsBestReachableAreaNum(a2, a3, v10->children[1], a5, a6);
+			LABEL_7:
+				  if ( (v10->flags & 1) != 0 )
+				  	a5 = &this->planeList[v10->planeNum];
+			v6 = v10->children[0];
+			goto LABEL_10;
+		}
+		v6 = v10->children[1];
+		LABEL_10:
+			v7 = v6 < 0;
+		if ( !v6 )
+			return;
+	}
+	v12 = &this->areas[-v6];
+	if ( (v12->flags & a6->areaFlags) != 0 && (v12->travelFlags & a6->excludeTravelFlags) == 0 )
+	{
+		v13 = -v6;
+		FloorDistance = idAASFileLocal::GetFloorDistance(v13, a5, a3, a6->v0, a6->v1);
+		if ( a6->distance1 - a6->v0 > FloorDistance && a6->distance2 > (double)FloorDistance )
+		{
+			a6->distance2 = FloorDistance;
+			a6->areaNum2 = v13;
+		}
+	}
+}
+
+void idAASFileLocal::PointBestReachableAreaNum(
+		const idVec3 *a2,
+		idAASFileLocal::bestReachableArea_t *a3) const
+{
+	const idPlane *list; // ebp
+	int v5; // eax
+	const aasNode_t *v6; // esi
+	const idPlane *p_a; // edx
+	const aasArea_t *v8; // edx
+	int v9; // ebx
+	const idPlane *v10; // [esp+18h] [ebp-4h]
+	float v11; // [esp+20h] [ebp+4h]
+
+	list = this->planeList.Ptr();
+	v10 = 0;
+	v5 = 1;
+	while ( 1 )
+	{
+		v6 = &this->nodes[v5];
+		p_a = &list[v6->planeNum];
+		v11 = p_a->Distance(*a2);
+		if ( v11 <= 0.0 )
+		{
+			v5 = v6->children[1];
+		}
+		else
+		{
+			v5 = v6->children[0];
+			if ( (v6->flags & 1) != 0 )
+				v10 = &list[v6->planeNum];
+		}
+		if ( v5 < 0 )
+			break;
+		if ( !v5 )
+			return;
+	}
+	v8 = &this->areas[-v5];
+	if ( (v8->flags & a3->areaFlags) != 0 && (v8->travelFlags & a3->excludeTravelFlags) == 0 )
+	{
+		v9 = -v5;
+		a3->distance1 = idAASFileLocal::GetFloorDistance(-v5, v10, a2, a3->v0, a3->v1);
+		a3->areaNum1 = v9;
+	}
+}
+
+
+#if 0
+int idAASFileLocal::BoundsReachableAreaNum_r(
+		idBounds *a2,
+		int a3,
+		int a4,
+		int a5) const
+{
+	int v5; // eax
+	bool v6; // sf
+	const aasNode_t *v8; // esi
+	int v9; // eax
+	int result; // eax
+	const aasArea_t *v11; // edi
+
+	v5 = a3;
+	v6 = a3 < 0;
+	if ( !a3 )
+		return 0;
+	while ( !v6 )
+	{
+		v8 = &this->nodes[v5];
+		v9 = a2->PlaneSide(this->planeList[v8->planeNum], 0.1);
+		if ( v9 == 1 )
+		{
+			v5 = v8->children[1];
+		}
+		else
+		{
+			if ( v9 )
+			{
+				result = idAASFileLocal::BoundsReachableAreaNum_r(a2, v8->children[1], a4, a5);
+				if ( result )
+					return result;
+			}
+			v5 = v8->children[0];
+		}
+		v6 = v5 < 0;
+		if ( !v5 )
+			return 0;
+	}
+	v11 = &this->areas[-v5];
+	if ( (v11->flags & (unsigned __int16)a4) != 0 && (v11->travelFlags & (unsigned __int16)a5) == 0 )
+		return -v5;
+	else
+		return 0;
+}
+#endif
+
+#if 0
+bool idAASFileLocal::Trace(
+        aasTrace_t *a2,
+        const idVec3 *a3,
+        const idVec3 *a4) const
+{
+  const idVec3 *v4; // edx
+  const idVec3 *v5; // ecx
+  float *v6; // esi
+  double z; // st7
+  int v8; // ebx
+  const aasArea_t *v9; // eax
+  int numAreas; // eax
+  int v11; // ebx
+  bool v12; // cc
+  int *areas; // ecx
+  const idVec3 *points; // ecx
+  float *p_x; // eax
+  int v16; // ebx
+  const aasNode_t *v17; // ebx
+  const idPlane *v18; // eax
+  double v19; // st6
+  double v20; // st5
+  double v21; // st7
+  double v22; // st4
+  double v23; // st3
+  double v24; // st2
+  bool v25; // cf
+  double v26; // st1
+  double v27; // st2
+  double v28; // st2
+  double v29; // st1
+  float *v30; // esi
+  int v31; // eax
+  bool result; // al
+  double v33; // st7
+  double v34; // st6
+  double v35; // st5
+  double v36; // st7
+  int v37; // esi
+  float v38; // [esp+Ch] [ebp-108Ch]
+  float v39; // [esp+Ch] [ebp-108Ch]
+  float v40; // [esp+Ch] [ebp-108Ch]
+  float v41; // [esp+Ch] [ebp-108Ch]
+  float v42; // [esp+Ch] [ebp-108Ch]
+  float v43; // [esp+Ch] [ebp-108Ch]
+  float v44; // [esp+Ch] [ebp-108Ch]
+  float v45; // [esp+Ch] [ebp-108Ch]
+  float v46; // [esp+Ch] [ebp-108Ch]
+  float v47; // [esp+Ch] [ebp-108Ch]
+  float v48; // [esp+10h] [ebp-1088h]
+  float v49; // [esp+10h] [ebp-1088h]
+  float v50; // [esp+10h] [ebp-1088h]
+  float v51; // [esp+10h] [ebp-1088h]
+  int v52; // [esp+10h] [ebp-1088h]
+  float v53; // [esp+10h] [ebp-1088h]
+  float v54; // [esp+14h] [ebp-1084h]
+  float v55; // [esp+14h] [ebp-1084h]
+  float v56; // [esp+14h] [ebp-1084h]
+  float v57; // [esp+18h] [ebp-1080h]
+  float v58; // [esp+18h] [ebp-1080h]
+  float v59; // [esp+18h] [ebp-1080h]
+  float v60; // [esp+1Ch] [ebp-107Ch]
+  float v61; // [esp+1Ch] [ebp-107Ch]
+  float v62; // [esp+1Ch] [ebp-107Ch]
+  float x; // [esp+20h] [ebp-1078h]
+  float v64; // [esp+20h] [ebp-1078h]
+  float y; // [esp+24h] [ebp-1074h]
+  float v66; // [esp+24h] [ebp-1074h]
+  float v67; // [esp+28h] [ebp-1070h]
+  float v68; // [esp+28h] [ebp-1070h]
+  float v70; // [esp+34h] [ebp-1064h]
+  float v71; // [esp+38h] [ebp-1060h]
+  float v72; // [esp+54h] [ebp-1044h]
+  float v73; // [esp+58h] [ebp-1040h]
+  float v74; // [esp+5Ch] [ebp-103Ch]
+  float v75; // [esp+60h] [ebp-1038h]
+  float v76; // [esp+64h] [ebp-1034h]
+  float v77; // [esp+68h] [ebp-1030h]
+  float v78; // [esp+6Ch] [ebp-102Ch]
+  float v79; // [esp+70h] [ebp-1028h]
+  float v80; // [esp+74h] [ebp-1024h]
+  double v81; // [esp+78h] [ebp-1020h]
+  double v82; // [esp+80h] [ebp-1018h]
+  float v83; // [esp+8Ch] [ebp-100Ch]
+  float v84; // [esp+90h] [ebp-1008h]
+  float v85; // [esp+94h] [ebp-1004h]
+  float v86[1024]; // [esp+98h] [ebp-1000h] BYREF
+  char vars0; // [esp+1098h] [ebp+0h] BYREF
+
+  v4 = a3;
+  a2->numAreas = 0;
+  a2->lastAreaNum = 0;
+  a2->blockingAreaNum = 0;
+  v86[0] = a3->x;
+  v5 = a4;
+  v86[1] = a3->y;
+  v6 = v86;
+  z = a3->z;
+  v86[6] = 0.0;
+  v86[2] = z;
+  LODWORD(v86[7]) = 1;
+  v86[3] = a4->x;
+  v86[4] = a4->y;
+  v86[5] = a4->z;
+  while ( 1 )
+  {
+    v8 = *((_DWORD *)v6 + 7);
+    if ( v8 >= 0 )
+    {
+      if ( v8 )
+      {
+        v17 = &this->nodes[v8];
+        v18 = &this->planeList[v17->planeNum];
+        v70 = v6[4];
+        v71 = v6[5];
+        v19 = *v6;
+        v20 = v6[1];
+        v21 = v6[2];
+        v40 = v18->Distance(idVec3(v19, v20, v21));
+        v22 = v40;
+        v23 = v6[3];
+        v41 = v18->Distance(idVec3(v6[3], v6[4], v6[5]));
+        v24 = v41;
+        if ( v22 < -0.1000000014901161 || v24 < -0.1000000014901161 )
+        {
+          if ( v22 >= 0.1000000014901161 || v24 >= 0.1000000014901161 )
+          {
+            v52 = *((_DWORD *)v6 + 6);
+            if ( v22 >= 0.0 )
+              v26 = v22 - 0.125;
+            else
+              v26 = v22 + 0.125;
+            v27 = v26 / (v22 - v24);
+            if ( v27 >= 0.0 )
+            {
+              if ( v27 <= 1.0 )
+              {
+                v29 = v27;
+                v28 = 0.0;
+              }
+              else
+              {
+                v28 = 0.0;
+                v29 = 0.9990000128746033;
+              }
+            }
+            else
+            {
+              v28 = 0.0;
+              v29 = 0.001000000047497451;
+            }
+            v72 = v23 - v19;
+            v73 = v70 - v20;
+            v74 = v71 - v21;
+            v42 = v29;
+            v78 = v72 * v42;
+            v79 = v73 * v42;
+            v80 = v42 * v74;
+            v54 = v78 + v19;
+            v57 = v79 + v20;
+            v60 = v80 + v21;
+            *((_DWORD *)v6 + 6) = v17->planeNum;
+            *v6 = v54;
+            v6[1] = v57;
+            v6[2] = v60;
+            v30 = v6 + 8;
+            *(v30 - 1) = *(float *)&v17->children[v28 <= v22];
+            if ( v30 >= (float *)&vars0 )
+            {
+LABEL_50:
+			  common->Warning("idAASFileLocal::Trace: stack overflow");
+              return false;
+            }
+            v31 = v17->children[v28 > v22];
+            *v30 = v19;
+            v6 = v30 + 8;
+            *(v6 - 7) = v20;
+            *(v6 - 6) = v21;
+            *(v6 - 5) = v54;
+            *(v6 - 4) = v57;
+            *(v6 - 3) = v60;
+            *((_DWORD *)v6 - 2) = v52;
+            *((_DWORD *)v6 - 1) = v31;
+            v25 = v6 < (float *)&vars0;
+          }
+          else
+          {
+            v6[7] = *(float *)&v17->children[1];
+            v6 += 8;
+            v25 = v6 < (float *)&vars0;
+          }
+          if ( !v25 )
+            goto LABEL_50;
+        }
+        else
+        {
+          v6[7] = *(float *)v17->children;
+          v6 += 8;
+          if ( v6 >= (float *)&vars0 )
+            goto LABEL_50;
+        }
+      }
+      else
+      {
+        if ( a2->lastAreaNum )
+        {
+          v75 = v5->x - v4->x;
+          v76 = v5->y - v4->y;
+          v77 = v5->z - v4->z;
+          x = v75;
+          y = v76;
+          v67 = v77;
+          v83 = *v6 - v4->x;
+          v84 = v6[1] - v4->y;
+          v85 = v6[2] - v4->z;
+          v81 = v76;
+          v82 = v77;
+          v48 = v83 * v83 + v84 * v84 + v85 * v85;
+          v49 = sqrt(v48);
+          v38 = v49;
+          v50 = v75 * v75 + v76 * v76 + v77 * v77;
+          v51 = sqrt(v50);
+          v4 = a3;
+          a2->fraction = v38 / v51;
+        }
+        else
+        {
+          a2->fraction = 0.0;
+          x = byte_F464D4.x;
+          y = byte_F464D4.y;
+          v67 = byte_F464D4.z;
+        }
+        v16 = *((_DWORD *)v6 + 6);
+        a2->endpos = *(idVec3 *)v6;
+        a2->blockingAreaNum = 0;
+        a2->planeNum = v16;
+        v39 = this->planeList[v16].b * y + this->planeList[v16].a * x + this->planeList[v16].c * v67;
+        if ( v39 > 0.0 )
+          a2->planeNum = v16 ^ 1;
+        if ( a2->lastAreaNum || !a2->getOutOfSolid )
+          return 1;
+      }
+    }
+    else
+    {
+      v9 = &this->areas[-v8];
+      if ( (v9->flags & a2->flags) != 0 || (v9->travelFlags & a2->travelFlags) != 0 )
+      {
+        if ( a2->lastAreaNum )
+        {
+          v55 = a4->x - v4->x;
+          v58 = a4->y - v4->y;
+          v61 = a4->z - v4->z;
+          v33 = v55;
+          v64 = v55;
+          v34 = v58;
+          v66 = v58;
+          v35 = v61;
+          v68 = v61;
+          v56 = *v6 - v4->x;
+          v59 = v6[1] - v4->y;
+          v62 = v6[2] - v4->z;
+          v81 = v34;
+          v82 = v33;
+          v43 = v56 * v56 + v59 * v59 + v62 * v62;
+          v44 = sqrt(v43);
+          v53 = v44;
+          v45 = v82 * v82 + v34 * v34 + v35 * v35;
+          v46 = sqrt(v45);
+          a2->fraction = v53 / v46;
+        }
+        else
+        {
+          a2->fraction = 0.0;
+          v64 = byte_F464D4.x;
+          v66 = byte_F464D4.y;
+          v68 = byte_F464D4.z;
+        }
+        a2->endpos.x = *v6;
+        a2->endpos.y = v6[1];
+        v36 = v6[2];
+        v37 = *((_DWORD *)v6 + 6);
+        a2->endpos.z = v36;
+        a2->blockingAreaNum = -v8;
+        a2->planeNum = v37;
+        v47 = this->planeList[v37].b * v66 + this->planeList[v37].a * v64 + this->planeList[v37].c * v68;
+        if ( v47 > 0.0 )
+          a2->planeNum = v37 ^ 1;
+        return true;
+      }
+      numAreas = a2->numAreas;
+      v11 = -v8;
+      v12 = numAreas < a2->maxAreas;
+      a2->lastAreaNum = v11;
+      if ( v12 )
+      {
+        areas = a2->areas;
+        if ( areas )
+          areas[numAreas] = v11;
+        points = a2->points;
+        if ( points )
+        {
+          p_x = &points[a2->numAreas].x;
+          *p_x = *v6;
+          p_x[1] = v6[1];
+          p_x[2] = v6[2];
+        }
+        ++a2->numAreas;
+      }
+    }
+    v6 -= 8;
+    if ( v6 < v86 )
+      break;
+    v5 = a4;
+  }
+  if ( a2->lastAreaNum )
+  {
+    a2->fraction = 1.0;
+    a2->endpos = *a4;
+    result = false;
+  }
+  else
+  {
+    result = false;
+    a2->fraction = 0.0;
+    a2->endpos = *v4;
+  }
+  a2->planeNum = 0;
+  return result;
+}
+#endif
 
 #endif
