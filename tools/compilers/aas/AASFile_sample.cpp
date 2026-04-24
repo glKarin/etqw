@@ -523,6 +523,9 @@ typedef struct aasTraceStack_s {
 
 bool idAASFileLocal::Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 &end) const
 {
+#ifdef _SPLASHDAMAGE
+	return Trace(&trace, &start, &end);
+#else
 	int side, nodeNum, tmpPlaneNum;
 	double front, back, frac;
 	idVec3 cur_start, cur_end, cur_mid, v1, v2;
@@ -722,6 +725,7 @@ bool idAASFileLocal::Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 
 	}
 
 	return false;
+#endif
 }
 
 /*
@@ -795,8 +799,8 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
   bool v9; // zf
   const aasEdge_t *v10; // eax
   const idVec3 *v11; // edx
-  const float *p_x; // esi
-  const float *v13; // ebx
+  const idVec3 *p_x; // esi
+  const idVec3 *v13; // ebx
   double v14; // st7
   double v15; // st7
   long double v16; // st6
@@ -827,11 +831,12 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
   float v41; // [esp+10h] [ebp-90h]
   float v42; // [esp+10h] [ebp-90h]
   char v43; // [esp+17h] [ebp-89h]
-  float v44; // [esp+18h] [ebp-88h]
-  float v45; // [esp+1Ch] [ebp-84h]
+	idVec3 v44; // v44 v45 v48
+  //float v44; // [esp+18h] [ebp-88h]
+  //float v45; // [esp+1Ch] [ebp-84h]
   float v46; // [esp+1Ch] [ebp-84h]
   float v47; // [esp+1Ch] [ebp-84h]
-  float v48; // [esp+20h] [ebp-80h]
+  //float v48; // [esp+20h] [ebp-80h]
   float v49; // [esp+20h] [ebp-80h]
   float v50; // [esp+20h] [ebp-80h]
   float v51; // [esp+20h] [ebp-80h]
@@ -839,27 +844,34 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
   int v53; // [esp+28h] [ebp-78h]
   const aasArea_t *v56; // [esp+38h] [ebp-68h]
   float v57; // [esp+3Ch] [ebp-64h]
-  float v58; // [esp+40h] [ebp-60h]
-  float v59; // [esp+44h] [ebp-5Ch]
-  float v60; // [esp+48h] [ebp-58h]
-  float v61; // [esp+4Ch] [ebp-54h]
-  float v62; // [esp+50h] [ebp-50h]
-  float v63; // [esp+54h] [ebp-4Ch]
-  float v64; // [esp+58h] [ebp-48h]
-  float v65; // [esp+5Ch] [ebp-44h]
-  float v66; // [esp+60h] [ebp-40h]
-  float v67; // [esp+64h] [ebp-3Ch]
-  float v68; // [esp+68h] [ebp-38h]
-  float v69; // [esp+6Ch] [ebp-34h]
-  float v70; // [esp+70h] [ebp-30h]
-  float v71; // [esp+74h] [ebp-2Ch]
-  float v72; // [esp+78h] [ebp-28h]
-  float v73; // [esp+7Ch] [ebp-24h]
-  float v74; // [esp+80h] [ebp-20h]
-  float v75; // [esp+84h] [ebp-1Ch]
-  float v78; // [esp+94h] [ebp-Ch]
-  float v79; // [esp+98h] [ebp-8h]
-  float v80; // [esp+9Ch] [ebp-4h]
+	idVec3 v58; // v58 v59 v60
+  //float v58; // [esp+40h] [ebp-60h]
+  //float v59; // [esp+44h] [ebp-5Ch]
+  //float v60; // [esp+48h] [ebp-58h]
+	idVec3 v61; // v61 v62 v63
+  //float v61; // [esp+4Ch] [ebp-54h]
+  //float v62; // [esp+50h] [ebp-50h]
+  //float v63; // [esp+54h] [ebp-4Ch]
+	idVec3 v64; // v64 v65 v66
+  //float v64; // [esp+58h] [ebp-48h]
+  //float v65; // [esp+5Ch] [ebp-44h]
+  //float v66; // [esp+60h] [ebp-40h]
+	idVec3 v67; // v67 v68 v69
+  //float v67; // [esp+64h] [ebp-3Ch]
+  //float v68; // [esp+68h] [ebp-38h]
+  //float v69; // [esp+6Ch] [ebp-34h]
+	idVec3 v70; // v70 v71 v72
+  //float v70; // [esp+70h] [ebp-30h]
+  //float v71; // [esp+74h] [ebp-2Ch]
+  //float v72; // [esp+78h] [ebp-28h]
+	idVec3 v73; // v73 v74 v75
+  //float v73; // [esp+7Ch] [ebp-24h]
+  //float v74; // [esp+80h] [ebp-20h]
+  //float v75; // [esp+84h] [ebp-1Ch]
+	idVec3 v78; // v78 v79 v80
+  //float v78; // [esp+94h] [ebp-Ch]
+  //float v79; // [esp+98h] [ebp-8h]
+  //float v80; // [esp+9Ch] [ebp-4h]
   idVec3 v81; // 0:^34.12
   idVec3 v82; // 0:^90.12
 
@@ -879,42 +891,30 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
     v6 = this->edgeIndex[v53 + v5->firstEdge];
     v7 = abs(v6);
     list = this->edges.Ptr();
-    v9 = (list[v7].flags & 0x40) == 0;
+    v9 = (list[v7].flags & AAS_EDGE_VERTICAL/* 0x40 */) == 0;
     v10 = &list[v7];
     if ( !v9 )
       goto LABEL_53;
     v11 = this->vertices.Ptr();
-    p_x = &v11[v10->vertexNum[(unsigned int)v6 >> 31]].x;
-    v78 = *p_x - v82.x;
-    v13 = &v11[v10->vertexNum[v6 >= 0]].x;
-    v79 = p_x[1] - v82.y;
-    v80 = p_x[2] - v82.z;
-    v29 = v79 * v79 + v78 * v78 + v80 * v80;
+    p_x = &v11[v10->vertexNum[(unsigned int)v6 >> 31]];
+    v78 = *p_x - v82;
+    v13 = &v11[v10->vertexNum[v6 >= 0]];
+    v29 = v78.LengthSqr();
     if ( v57 > (double)v29 )
     {
-      v57 = v79 * v79 + v78 * v78 + v80 * v80;
-      v81.x = *p_x;
-      v81.y = p_x[1];
-      v81.z = p_x[2];
+      v57 = v78.LengthSqr();
+      v81 = *p_x;
     }
     v61 = *v13 - *p_x;
-    v62 = v13[1] - p_x[1];
-    v63 = v13[2] - p_x[2];
-    v58 = v62 * this->settings.invGravityDir.z - this->settings.invGravityDir.y * v63;
-    v59 = v63 * this->settings.invGravityDir.x - this->settings.invGravityDir.z * v61;
-    v60 = v61 * this->settings.invGravityDir.y - v62 * this->settings.invGravityDir.x;
+  	v58 = v61.Cross(this->settings.invGravityDir);
     v44 = v58;
-    v45 = v59;
-    v48 = v60;
-    v30 = v60 * v60 + v59 * v59 + v58 * v58;
+    v30 = v58.LengthSqr();
     v31 = sqrt(v30);
     v14 = v31;
     if ( v31 >= 0.00000011920929 )
     {
       v33 = 1.0 / v14;
       v44 = v33 * v58;
-      v45 = v59 * v33;
-      v48 = v33 * v60;
       v32 = v14;
       v15 = 0.0;
     }
@@ -923,16 +923,16 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
       v15 = 0.0;
       v32 = 0.0;
     }
-    v16 = v44;
-    v17 = v48;
-    v18 = v45;
-    if ( v44 == v15 )
+    v16 = v44.x;
+    v17 = v44.z;
+    v18 = v44.y;
+    if ( v44.x == v15 )
     {
-      if ( v45 == v15 )
+      if ( v44.y == v15 )
       {
-        v19 = v45;
-        v20 = v48;
-        if ( v48 <= v15 )
+        v19 = v44.y;
+        v20 = v44.z;
+        if ( v44.z <= v15 )
           v21 = -1.0;
         else
           v21 = 1.0;
@@ -957,11 +957,11 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
         goto LABEL_43;
       }
     }
-    else if ( v45 == v15 && v15 == v17 )
+    else if ( v44.y == v15 && v15 == v17 )
     {
-      v23 = v44;
-      v24 = v45;
-      if ( v44 <= v15 )
+      v23 = v44.x;
+      v24 = v44.y;
+      if ( v44.x <= v15 )
       {
         if ( -1.0 != v23 )
           v23 = (float)-1.0;
@@ -980,7 +980,7 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
       v50 = v15;
       v17 = v50;
       v24 = v50;
-      v23 = v44;
+      v23 = v44.x;
 LABEL_42:
       v25 = v23;
       v18 = v24;
@@ -999,7 +999,7 @@ LABEL_43:
         v51 = v15;
         v17 = v51;
         v16 = v51;
-        v18 = v45;
+        v18 = v44.y;
       }
       goto LABEL_43;
     }
@@ -1009,11 +1009,11 @@ LABEL_43:
     v47 = v15;
     v19 = v47;
     v16 = v47;
-    v20 = v48;
+    v20 = v44.z;
 LABEL_44:
     if ( v15 != v32 )
     {
-      v39 = v19 * v13[1] + *v13 * v16 + v13[2] * v20;
+      v39 = v19 * v13->y + v13->x * v16 + v13->z * v20;
       v52 = -v39;
     }
     v34 = point.x * v16 + point.y * v19 + v20 * point.z + v52;
@@ -1021,30 +1021,22 @@ LABEL_44:
     if ( v34 < v15 )
     {
       v35 = 1;
-      v70 = v16 * v27;
-      v71 = v19 * v27;
-      v72 = v27 * v20;
-      point.x = point.x - v70;
-      point.y = point.y - v71;
-      point.z = point.z - v72;
+      v70.x = v16 * v27;
+      v70.y = v19 * v27;
+      v70.z = v27 * v20;
+      point = point - v70;
       v34 = v15;
     }
     v40 = fabs(v34);
     if ( v40 < 0.1000000014901161 )
     {
       v67 = *v13 - *p_x;
-      v68 = v13[1] - p_x[1];
-      v69 = v13[2] - p_x[2];
-      v64 = point.x - *p_x;
-      v65 = point.y - p_x[1];
-      v66 = point.z - p_x[2];
-      v41 = v66 * v69 + v64 * v67 + v65 * v68;
+      v64 = point - *p_x;
+      v41 = v64 * v67;
       if ( v41 >= v15 )
       {
-        v73 = point.x - *v13;
-        v74 = point.y - v13[1];
-        v75 = point.z - v13[2];
-        v42 = v67 * v73 + v68 * v74 + v69 * v75;
+        v73 = point - *v13;
+        v42 = v67 * v73;
         if ( v15 >= v42 )
           v43 = 1;
       }
@@ -1091,23 +1083,23 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
   float v29; // [esp+10h] [ebp-1040h]
   float v30; // [esp+10h] [ebp-1040h]
   float v31; // [esp+10h] [ebp-1040h]
-  idVec3 v32; // [esp+14h] [ebp-103Ch]
+  idVec3 v32; // v32 v33 v34
   //float v32; // [esp+14h] [ebp-103Ch]
   //float v33; // [esp+18h] [ebp-1038h]
   //float v34; // [esp+1Ch] [ebp-1034h]
-  idVec3 v35; // [esp+20h] [ebp-1030h]
+  idVec3 v35; // v35 v36 v37
   //float v35; // [esp+20h] [ebp-1030h]
   //float v36; // [esp+24h] [ebp-102Ch]
   //float v37; // [esp+28h] [ebp-1028h]
-  idVec3 v38; // [esp+2Ch] [ebp-1024h]
+  idVec3 v38; // v38 v39 v40
   //float v38; // [esp+2Ch] [ebp-1024h]
   //float v39; // [esp+30h] [ebp-1020h]
   //float v40; // [esp+34h] [ebp-101Ch]
-  idVec3 v41; // [esp+38h] [ebp-1018h]
+  idVec3 v41; // v41 v42 v43
   //float v41; // [esp+38h] [ebp-1018h]
   //float v42; // [esp+3Ch] [ebp-1014h]
   //float v43; // [esp+40h] [ebp-1010h]
-  idVec3 v44; // [esp+44h] [ebp-100Ch]
+  idVec3 v44; // v44 v45 v46
   //float v44; // [esp+44h] [ebp-100Ch]
   //float v45; // [esp+48h] [ebp-1008h]
   //float v46; // [esp+4Ch] [ebp-1004h]
@@ -1115,6 +1107,7 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
   // float v47[1024]; // [esp+50h] [ebp-1000h] BYREF
   aasTraceStack_t *retaddr = &v47[MAX_AAS_TREE_DEPTH]; // (v47 + 1024) - 32; // [esp+1050h] [ebp+0h] BYREF // aasTraceStack_t
 
+	idVec3 _v17; // v17 v18 v19
 	v4 = v47;
   trace.numPoints = 0;
   v4->start = start;
@@ -1148,9 +1141,7 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
     v44 = v4->start;
     v16 = &this->planeList[planeNum];
     v32 = v4->end;
-    v17 = v44.x;
-    v18 = v44.y;
-    v19 = v44.z;
+    _v17 = v44;
     v29 = v16->Distance(v44);
     v20 = v29;
     v30 = v16->Distance(v32);
@@ -1186,14 +1177,10 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
       v26 = 0.0;
       v27 = 0.001f;
     }
-    v35.x = v32.x - v17;
-    v35.y = v32.y - v18;
-    v35.z = v32.z - v19;
+    v35 = v32 - _v17;
     v31 = v27;
     v38 = v35 * v31;
-    v41.x = v38.x + v17;
-    v41.y = v38.y + v18;
-    v41.z = v38.z + v19;
+    v41 = v38 + _v17;
     v4->planeNum = planeNum;
     v4->start = v41;
     v4->nodeNum = v10->children[v26 <= v20];
@@ -1206,11 +1193,11 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
     v4->planeNum = v23;
 LABEL_22:
     v4->nodeNum = v22;
-    v4 += 8;
+    v4 += 1;
     if ( v4 >= retaddr )
       break;
 LABEL_23:
-    v4 -= 8;
+    v4 -= 1;
     if ( v4 < v47 )
       return true;
   }
@@ -1308,36 +1295,39 @@ bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, in
   float v92; // [esp+Ch] [ebp-80h]
   float v93; // [esp+Ch] [ebp-80h]
   float v94; // [esp+10h] [ebp-7Ch]
-  float v95; // [esp+10h] [ebp-7Ch]
-  float v96; // [esp+10h] [ebp-7Ch]
-  float v97; // [esp+10h] [ebp-7Ch]
+	idVec3 v95; // v95 v100 v105
+  //float v95; // [esp+10h] [ebp-7Ch]
+	idVec3 v96; // v96 v101 v106
+  //float v96; // [esp+10h] [ebp-7Ch]
+	idVec3 v97; // v97 v102 v107
+  //float v97; // [esp+10h] [ebp-7Ch]
   float v98; // [esp+10h] [ebp-7Ch]
   float v99; // [esp+14h] [ebp-78h]
-  float v100; // [esp+14h] [ebp-78h]
-  float v101; // [esp+14h] [ebp-78h]
-  float v102; // [esp+14h] [ebp-78h]
+  //float v100; // [esp+14h] [ebp-78h]
+  //float v101; // [esp+14h] [ebp-78h]
+  //float v102; // [esp+14h] [ebp-78h]
   float v103; // [esp+14h] [ebp-78h]
   float v104; // [esp+18h] [ebp-74h]
-  float v105; // [esp+18h] [ebp-74h]
-  float v106; // [esp+18h] [ebp-74h]
-  float v107; // [esp+18h] [ebp-74h]
+  //float v105; // [esp+18h] [ebp-74h]
+  //float v106; // [esp+18h] [ebp-74h]
+  //float v107; // [esp+18h] [ebp-74h]
   float v108; // [esp+18h] [ebp-74h]
   idPlane v109; // [esp+1Ch] [ebp-70h] BYREF
   int v110; // [esp+2Ch] [ebp-60h]
   idPlane v111; // [esp+30h] [ebp-5Ch] BYREF
   float v112; // [esp+40h] [ebp-4Ch]
-	idVec3 v113;
+	idVec3 v113; // v113 v114 v115
   //float v113; // [esp+44h] [ebp-48h]
   //float v114; // [esp+48h] [ebp-44h]
   //float v115; // [esp+4Ch] [ebp-40h]
   int v116; // [esp+50h] [ebp-3Ch]
-	floorEdgeSplitPoint_t v117;
+	floorEdgeSplitPoint_t v117; // v117 y z v120 v121
   //float v117; // [esp+54h] [ebp-38h] BYREF
   //float y; // [esp+58h] [ebp-34h]
   //float z; // [esp+5Ch] [ebp-30h]
   //float v120; // [esp+60h] [ebp-2Ch]
   //int v121; // [esp+64h] [ebp-28h]
-	floorEdgeSplitPoint_t v122;
+	floorEdgeSplitPoint_t v122; // v122 v123 v124 v125 v126
   //float v122; // [esp+68h] [ebp-24h] BYREF
   //float v123; // [esp+6Ch] [ebp-20h]
   //float v124; // [esp+70h] [ebp-1Ch]
@@ -1494,21 +1484,11 @@ LABEL_23:
 LABEL_24:
   v75 = v14 * start.y + start.x * a + v13 * start.z;
   v111[3] = -v75;
-  v95 = v13 * this->settings.gravityDir.y - this->settings.gravityDir.z * v14;
-  v100 = this->settings.gravityDir.z * a - v13 * this->settings.gravityDir.x;
-  v105 = v14 * this->settings.gravityDir.x - a * this->settings.gravityDir.y;
-  v109[0] = v95;
-  v109[1] = v100;
-  v109[2] = v105;
-  v76 = v105 * v105 + v100 * v100 + v95 * v95;
-  v77 = sqrt(v76);
-  if ( v77 >= 0.00000011920929 )
-  {
-    v78 = 1.0 / v77;
-    v109[0] = v78 * v95;
-    v109[1] = v100 * v78;
-    v109[2] = v78 * v105;
-  }
+  v95.x = v13 * this->settings.gravityDir.y - this->settings.gravityDir.z * v14;
+  v95.y = this->settings.gravityDir.z * a - v13 * this->settings.gravityDir.x;
+  v95.z = v14 * this->settings.gravityDir.x - a * this->settings.gravityDir.y;
+  v109.SetNormal(v95);
+	v109.Normalize();
   v21 = v109[0];
   v22 = v109[2];
   v23 = v109[1];
@@ -1621,10 +1601,8 @@ LABEL_67:
   {
     x = start.x;
     v117.edgeIndex = 0;
-    v117.point[0] = x;
+    v117.point = start;
     v122.edgeIndex = 0;
-    v117.point[1] = start.y;
-    v117.point[2] = start.z;
     v122.point = v117.point;
     v117.distance = 0.0;
     v122.distance = 0.0;
@@ -1632,7 +1610,7 @@ LABEL_67:
   for ( i = 0; i < this->floorIndex.Num(); ++i )
   {
     v36 = this->floorIndex[i];
-    areas[v36].flags &= ~0x8000u;
+    areas[v36].flags &= ~AAS_AREA_FLOOD_VISITED /* 0x8000u */;
   }
   floorIndex.SetNum(0);
   while ( 1 )
@@ -1640,22 +1618,20 @@ LABEL_67:
     v44 = v117.point[0];
     v45 = v116;
     floorIndex.Append(v116);
-    areas[v45].flags |= 0x8000u;
-    v7->endpos.x = v117.point[0];
-    v7->endpos.y = v117.point[1];
+    areas[v45].flags |= AAS_AREA_FLOOD_VISITED /* 0x8000u */;
+    v7->endpos = v117.point;
     v46 = v117.edgeIndex;
-    v7->endpos.z = v117.point[2];
     v7->lastEdgeNum = v46;
     if ( v45 == endAreaNum )
       break;
-    v112 = v7->endpos.z * v109[2] + v7->endpos.y * v109[1] + v109[0] * v7->endpos.x + v127;
+    v112 = v109.Normal() * v7->endpos + v127;
     if ( v112 > 0.1000000014901161 )
       break;
     v47 = v7->endpos.y;
     v48 = this->areas[v45].reach;
     v49 = v109[0] * v7->endpos.x;
     v110 = this->floorIndex.Num();
-    v112 = v109[2] * v7->endpos.z + v109[1] * v47 + v49;
+  	v112 = v109.Normal() * v7->endpos;
     v50 = v112;
     const aasReachability_t *_v112 = v48;
     v109[3] = -v50;
@@ -1678,10 +1654,10 @@ LABEL_150:
       {
         v51 = v48->travelFlags;
         v52 = &this->areas[v51];
-        if ( (v52->travelFlags & (unsigned __int16)~travelFlags) == 0 && (v52->flags & 0x8000u) == 0 )
+        if ( (v52->travelFlags & (unsigned __int16)~travelFlags) == 0 && (v52->flags & AAS_AREA_FLOOD_VISITED /* 0x8000u */) == 0 )
         {
           floorIndex.Append(v51);
-          areas[v51].flags |= 0x8000u;
+          areas[v51].flags |= AAS_AREA_FLOOD_VISITED/* 0x8000u */;
           idAASFileLocal::GetFloorEdgeSplitPoints(
             (struct idAASFileLocal::floorEdgeSplitPoint_t *)&v122,
             (struct idAASFileLocal::floorEdgeSplitPoint_t *)&v117,
@@ -1690,32 +1666,28 @@ LABEL_150:
             &v109);
           if ( v122.distance < 1.0e30 && v117.distance >= 0.1000000014901161 )
           {
-            v96 = trace.endpos.x - v122.point[0];
-            v101 = trace.endpos.y - v122.point[1];
-            v106 = trace.endpos.z - v122.point[2];
-            v87 = fabs(v96);
+            v96 = trace.endpos - v122.point;
+            v87 = fabs(v96.x);
             if ( v87 < 0.00000011920929 )
               v96 = 0.0;
-            v88 = fabs(v101);
+            v88 = fabs(v96.y);
             if ( v88 < 0.00000011920929 )
-              v101 = 0.0;
-            v89 = fabs(v106);
-            v59 = v106;
-            if ( v89 < 0.00000011920929 )
-              v59 = (float)0.0;
-            v90 = this->settings.gravityDir.y * v101
-                + v96 * this->settings.gravityDir.x
-                + this->settings.gravityDir.z * v59;
+              v96.y = 0.0;
+            v89 = fabs(v96.z);
+            v59 = v96.z;
+            if ( v89 < 0.00000011920929 ) {
+            	v59 = (float)0.0;
+            	v96.z = v59;
+            }
+            v90 = this->settings.gravityDir * v96;
             v113 = v90 * this->settings.gravityDir;
             v91 = v113.LengthSqr();
             v60 = v91;
             v92 = this->settings.maxStepHeight * this->settings.maxStepHeight;
             if ( v92 >= v60 )
             {
-              v97 = v96 - v113.x;
-              v102 = v101 - v113.y;
-              v107 = v59 - v113.z;
-              v93 = v107 * v107 + v102 * v102 + v97 * v97;
+              v97 = v96 - v113;
+              v93 = v97.LengthSqr();
               if ( v93 <= 0.040000003 )
                 break;
             }
@@ -1735,7 +1707,7 @@ LABEL_150:
     for ( m = v110; m < this->floorIndex.Num(); ++m )
     {
       v63 = this->floorIndex[m];
-      areas[v63].flags &= ~0x8000u;
+      areas[v63].flags &= ~AAS_AREA_FLOOD_VISITED/* 0x8000u */;
     }
     v68 = _v112;
     floorIndex.SetNum(v61);
@@ -1750,7 +1722,7 @@ LABEL_159:
   for ( ii = 0; ii < this->floorIndex.Num(); ++ii )
   {
     v70 = this->floorIndex[ii];
-    areas[v70].flags &= ~0x8000u;
+    areas[v70].flags &= ~AAS_AREA_FLOOD_VISITED/* 0x8000u */;
   }
   floorIndex.Clear();
   return true;
@@ -1824,21 +1796,20 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
   const aasEdge_t *v15; // edx
   const idVec3 *v16; // eax
   const idVec3 *v17; // edx
-  idVec3 v19;
-  //double v18; // st6
-  //double v19; // st7
-  //double v20; // st5
+  double v18; // st6
+  double v19; // st7
+  double v20; // st5
   int v21; // [esp+0h] [ebp-3Ch] BYREF
   _BYTE v22[8]; // [esp+4h] [ebp-38h] BYREF
-  idVec3 v23;
+  idVec3 v23; // v23 v24 v25
   //float v23; // [esp+Ch] [ebp-30h]
   //float v24; // [esp+10h] [ebp-2Ch]
   //float v25; // [esp+14h] [ebp-28h]
-  idVec3 v26;
+  idVec3 v26; // v26 v27 v28
   //float v26; // [esp+18h] [ebp-24h]
   //float v27; // [esp+1Ch] [ebp-20h]
   //float v28; // [esp+20h] [ebp-1Ch]
-  idVec3 v29; // edgeVec
+  idVec3 v29; // edgeVec // v29 v30 v31
   //float v29; // [esp+24h] [ebp-18h]
   //float v30; // [esp+28h] [ebp-14h]
   //float v31; // [esp+2Ch] [ebp-10h]
@@ -1852,14 +1823,11 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
   float v38; // [esp+50h] [ebp+14h]
   float v39; // [esp+50h] [ebp+14h]
 
-  a2->point[0] = 0.0;
-  a2->point[1] = 0.0;
-  a2->point[2] = 0.0;
+	idVec3 _v19;
+  a2->point = vec3_origin;
   a2->edgeIndex = 0;
   a2->distance = 1.0e30;
-  a3->point[0] = 0.0;
-  a3->point[1] = 0.0;
-  a3->point[2] = 0.0;
+  a3->point = vec3_origin;
   a3->edgeIndex = 0;
   a3->distance = -1.0e30;
   v34 = &this->areas[a4];
@@ -1895,20 +1863,20 @@ v37 = v8;
           v38 = _v37 / (_v37 - *v37);
           v26 = v29 * v38;
           v23 = *v16 + v26;
-          v19 = v23;
+          _v19 = v23;
           v39 = a6->Distance(v23);
           if ( a2->distance > v39 )
           {
             a2->distance = v39;
             a2->edgeIndex = v14;
-            a2->point = v19;
+            a2->point = _v19;
           }
           v11 = v36;
           if ( a3->distance < v39 )
           {
             a3->distance = v39;
             a3->edgeIndex = v14;
-            a3->point = v19;
+            a3->point = _v19;
           }
         }
         ++v11;
@@ -1947,38 +1915,40 @@ float idAASFileLocal::GetFloorDistance(
   double v19; // st6
   double v20; // st2
   float v21; // [esp+4h] [ebp-40h]
-	idVec3 v22;
+	idVec3 v22; // v22 v23 v24
   //float v22; // [esp+8h] [ebp-3Ch]
   //float v23; // [esp+Ch] [ebp-38h]
   //float v24; // [esp+10h] [ebp-34h]
-  idVec3 v25; // [esp+14h] [ebp-30h]
+  idVec3 v25; // v25 v26 v27
   //float v25; // [esp+14h] [ebp-30h]
   //float v26; // [esp+18h] [ebp-2Ch]
   //float v27; // [esp+1Ch] [ebp-28h]
-  idVec3 v28; // [esp+20h] [ebp-24h]
+  idVec3 v28; // v28 v29 v30
   //float v28; // [esp+20h] [ebp-24h]
   //float v29; // [esp+24h] [ebp-20h]
   //float v30; // [esp+28h] [ebp-1Ch]
-  idVec3 v31; // [esp+2Ch] [ebp-18h]
+  idVec3 v31; // v31 v32 v33
   //float v31; // [esp+2Ch] [ebp-18h]
   //float v32; // [esp+30h] [ebp-14h]
   //float v33; // [esp+34h] [ebp-10h]
-  idVec3 v34; // [esp+2Ch] [ebp-18h]
+  idVec3 v34; // v34 v35 v36
   //float v34; // [esp+38h] [ebp-Ch]
   //float v35; // [esp+3Ch] [ebp-8h]
   //float v36; // [esp+40h] [ebp-4h]
   float v37; // [esp+48h] [ebp+4h]
   float v38; // [esp+48h] [ebp+4h]
   float v39; // [esp+48h] [ebp+4h]
-  int v40; // [esp+48h] [ebp+4h]
-  int v41; // [esp+48h] [ebp+4h]
+  float v40; // [esp+48h] [ebp+4h]
+  float v41; // [esp+48h] [ebp+4h]
   float v42; // [esp+48h] [ebp+4h]
   float v43; // [esp+48h] [ebp+4h]
   float v44; // [esp+48h] [ebp+4h]
-  int v45; // [esp+48h] [ebp+4h]
+  float v45; // [esp+48h] [ebp+4h]
   float v46; // [esp+4Ch] [ebp+8h]
   float v47; // [esp+50h] [ebp+Ch]
   int numEdges; // [esp+54h] [ebp+10h]
+
+	idVec3 _v18; // v18 v17 v19
 
   v6 = &this->areas[a2];
   v37 = a3->Distance(*a4);
@@ -2003,28 +1973,24 @@ float idAASFileLocal::GetFloorDistance(
         p_x = &v11[list[v13].vertexNum[1]];
         v16 = &v11[v14];
         v25 = *p_x - *v16;
-        v17 = v25.y;
-        v18 = v25.x;
-        v19 = v25.z;
-        *(float *)&v40 = v25.LengthSqr();
-        if ( *(float *)&v40 >= 0.1000000014901161 )
+        _v18 = v25;
+        v40 = v25.LengthSqr();
+        if ( v40 >= 0.1000000014901161 )
         {
           v22 = *a4 - *v16;
-          v21 = v22.y * v17 + v22.x * v18 + v22.z * v19;
-          *(float *)&v41 = v21 / *(float *)&v40;
-          if ( *(float *)&v41 >= 0.0 )
+          v21 = v22 * _v18;
+          v41 = v21 / v40;
+          if ( v41 >= 0.0 )
           {
-            v20 = *(float *)&v41;
-            if ( *(float *)&v41 > 1.0 )
+            v20 = v41;
+            if ( v41 > 1.0 )
               v20 = (float)1.0;
           }
           else
           {
             v20 = (float)0.0;
           }
-          v28.x = v18 * v20;
-          v28.y = v17 * v20;
-          v28.z = v20 * v19;
+          v28 = _v18 * v20;
           v31 = v22 - v28;
           v42 = v31.LengthSqr();
           if ( v47 > (double)v42 )
@@ -2043,11 +2009,11 @@ float idAASFileLocal::GetFloorDistance(
     if ( v43 <= (double)v47 )
       return v46;
     v44 = this->settings.invGravityDir * v34;
-    *(float *)&v45 = fabs(v44);
-    if ( *(float *)&v45 >= result )
+    v45 = fabs(v44);
+    if ( v45 >= result )
       return v46;
     else
-      return *(float *)&v45;
+      return v45;
   }
   return result;
 }
@@ -2216,7 +2182,7 @@ bool idAASFileLocal::Trace(
   int v11; // ebx
   bool v12; // cc
   int *areas; // ecx
-  const idVec3 *points; // ecx
+  idVec3 *points; // ecx
   idVec3 p_x; // eax
   int v16; // ebx
   const aasNode_t *v17; // ebx
@@ -2256,11 +2222,11 @@ bool idAASFileLocal::Trace(
   float v51; // [esp+10h] [ebp-1088h]
   int v52; // [esp+10h] [ebp-1088h]
   float v53; // [esp+10h] [ebp-1088h]
-  idVec3 v54; // [esp+14h] [ebp-1084h]
-  //float v54; // [esp+14h] [ebp-1084h] // 54 57 60
-  idVec3 v55; // [esp+14h] [ebp-1084h] // 55 58 61
+  idVec3 v54; // v54 v57 v60
+  //float v54; // [esp+14h] [ebp-1084h]
+  idVec3 v55; // v55 v58 v61
   //float v55; // [esp+14h] [ebp-1084h]
-  idVec3 v56; // [esp+14h] [ebp-1084h] // 56 59 62
+  idVec3 v56; // v56 v59 v62
   //float v56; // [esp+14h] [ebp-1084h]
   //float v57; // [esp+18h] [ebp-1080h]
   //float v58; // [esp+18h] [ebp-1080h]
@@ -2278,31 +2244,31 @@ bool idAASFileLocal::Trace(
   //float v68; // [esp+28h] [ebp-1070h]
   float v70; // [esp+34h] [ebp-1064h]
   float v71; // [esp+38h] [ebp-1060h]
-  idVec3 v72; // [esp+54h] [ebp-1044h]
+  idVec3 v72; // v72 v73 v74
   //float v72; // [esp+54h] [ebp-1044h]
   //float v73; // [esp+58h] [ebp-1040h]
   //float v74; // [esp+5Ch] [ebp-103Ch]
-  idVec3 v75; // [esp+54h] [ebp-1044h]
+  idVec3 v75; // v75 v76 v77
   //float v75; // [esp+60h] [ebp-1038h]
   //float v76; // [esp+64h] [ebp-1034h]
   //float v77; // [esp+68h] [ebp-1030h]
-  idVec3 v78; // [esp+6Ch] [ebp-102Ch]
+  idVec3 v78; // v78 v79 v80
   //float v78; // [esp+6Ch] [ebp-102Ch]
   //float v79; // [esp+70h] [ebp-1028h]
   //float v80; // [esp+74h] [ebp-1024h]
   double v81; // [esp+78h] [ebp-1020h]
   double v82; // [esp+80h] [ebp-1018h]
-  idVec3 v83; // [esp+8Ch] [ebp-100Ch]
+  idVec3 v83; // v83 v84 v85
   //float v83; // [esp+8Ch] [ebp-100Ch]
   //float v84; // [esp+90h] [ebp-1008h]
   //float v85; // [esp+94h] [ebp-1004h]
   aasTraceStack_t v86[MAX_AAS_TREE_DEPTH]; // [esp+98h] [ebp-1000h] BYREF
   //float v86[1024]; // [esp+98h] [ebp-1000h] BYREF
-  char vars0; // [esp+1098h] [ebp+0h] BYREF
+  aasTraceStack_t *vars0 = &v86[MAX_AAS_TREE_DEPTH]; // [esp+1098h] [ebp+0h] BYREF
 
 	v6 = &v86[0];
-	idVec3 _v23; // 23 70 71
-	idVec3 _v19; // 19 20 21
+	idVec3 _v23; // v23 v70 v71
+	idVec3 _v19; // v19 v20 v21
 
   v4 = a3;
   a2->numAreas = 0;
@@ -2365,7 +2331,7 @@ bool idAASFileLocal::Trace(
             v6->start = v54;
           	v30 = v6 + 1;
             v6->nodeNum = v17->children[v28 <= v22];
-            if ( v30 >= &v86[MAX_AAS_TREE_DEPTH] )
+            if ( v30 >= vars0 )
             {
 LABEL_50:
 			  common->Warning("idAASFileLocal::Trace: stack overflow");
@@ -2377,13 +2343,13 @@ LABEL_50:
             v6->planeNum = v52;
             v6->nodeNum = v31;
             v6 = v6 + 1;
-            v25 = v6 < &v86[MAX_AAS_TREE_DEPTH];
+            v25 = v6 < vars0;
           }
           else
           {
             v6->nodeNum = v17->children[1];
             v6 = v6 + 1;
-            v25 = v6 < &v86[MAX_AAS_TREE_DEPTH];
+            v25 = v6 < vars0;
           }
           if ( !v25 )
             goto LABEL_50;
@@ -2392,7 +2358,7 @@ LABEL_50:
         {
           v6->nodeNum = v17->children[0];
           v6 = v6 + 1;
-          if ( v6 >= &v86[MAX_AAS_TREE_DEPTH] )
+          if ( v6 >= vars0 )
             goto LABEL_50;
         }
       }
@@ -2467,6 +2433,7 @@ LABEL_50:
         if ( points )
         {
           p_x = v6->start;
+			points[numAreas] = p_x;
         }
         ++a2->numAreas;
       }
