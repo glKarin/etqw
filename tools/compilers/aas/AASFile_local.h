@@ -181,6 +181,11 @@ class idAASFileLocal : public idAASFile
 		const idVec3 *a2,
 		bestReachableArea_t *a3) const;
 
+	bool Trace(
+		aasTrace_t *a2,
+		const idVec3 *a3,
+		const idVec3 *a4) const;
+
 		// 103 * 4 = 412
 		idList<int>					floorIndex; // area index
 #endif

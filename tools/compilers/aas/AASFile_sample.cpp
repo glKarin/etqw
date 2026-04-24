@@ -1064,7 +1064,7 @@ LABEL_53:
 }
 
 bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const {
-  float *v4; // edx
+  aasTraceStack_t *v4; // edx
   double y; // st7
   int v6; // eax
   const aasNode_t *list; // esi
@@ -1091,38 +1091,40 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
   float v29; // [esp+10h] [ebp-1040h]
   float v30; // [esp+10h] [ebp-1040h]
   float v31; // [esp+10h] [ebp-1040h]
-  float v32; // [esp+14h] [ebp-103Ch]
-  float v33; // [esp+18h] [ebp-1038h]
-  float v34; // [esp+1Ch] [ebp-1034h]
-  float v35; // [esp+20h] [ebp-1030h]
-  float v36; // [esp+24h] [ebp-102Ch]
-  float v37; // [esp+28h] [ebp-1028h]
-  float v38; // [esp+2Ch] [ebp-1024h]
-  float v39; // [esp+30h] [ebp-1020h]
-  float v40; // [esp+34h] [ebp-101Ch]
-  float v41; // [esp+38h] [ebp-1018h]
-  float v42; // [esp+3Ch] [ebp-1014h]
-  float v43; // [esp+40h] [ebp-1010h]
-  float v44; // [esp+44h] [ebp-100Ch]
-  float v45; // [esp+48h] [ebp-1008h]
-  float v46; // [esp+4Ch] [ebp-1004h]
-  float v47[1024]; // [esp+50h] [ebp-1000h] BYREF
-  float *retaddr = (v47 + 1024) - 32; // [esp+1050h] [ebp+0h] BYREF // aasTraceStack_t
+  idVec3 v32; // [esp+14h] [ebp-103Ch]
+  //float v32; // [esp+14h] [ebp-103Ch]
+  //float v33; // [esp+18h] [ebp-1038h]
+  //float v34; // [esp+1Ch] [ebp-1034h]
+  idVec3 v35; // [esp+20h] [ebp-1030h]
+  //float v35; // [esp+20h] [ebp-1030h]
+  //float v36; // [esp+24h] [ebp-102Ch]
+  //float v37; // [esp+28h] [ebp-1028h]
+  idVec3 v38; // [esp+2Ch] [ebp-1024h]
+  //float v38; // [esp+2Ch] [ebp-1024h]
+  //float v39; // [esp+30h] [ebp-1020h]
+  //float v40; // [esp+34h] [ebp-101Ch]
+  idVec3 v41; // [esp+38h] [ebp-1018h]
+  //float v41; // [esp+38h] [ebp-1018h]
+  //float v42; // [esp+3Ch] [ebp-1014h]
+  //float v43; // [esp+40h] [ebp-1010h]
+  idVec3 v44; // [esp+44h] [ebp-100Ch]
+  //float v44; // [esp+44h] [ebp-100Ch]
+  //float v45; // [esp+48h] [ebp-1008h]
+  //float v46; // [esp+4Ch] [ebp-1004h]
+  aasTraceStack_t v47[MAX_AAS_TREE_DEPTH];
+  // float v47[1024]; // [esp+50h] [ebp-1000h] BYREF
+  aasTraceStack_t *retaddr = &v47[MAX_AAS_TREE_DEPTH]; // (v47 + 1024) - 32; // [esp+1050h] [ebp+0h] BYREF // aasTraceStack_t
 
+	v4 = v47;
   trace.numPoints = 0;
-  v47[0] = start.x;
-  v4 = v47;
+  v4->start = start;
   y = start.y;
-  v47[6] = 0.0;
-  v47[1] = y;
-  *(int *)&v47[7] = 1; // LODWORD(v47[7]) = 1;
-  v47[2] = start.z;
-  v47[3] = end.x;
-  v47[4] = end.y;
-  v47[5] = end.z;
+  v4->planeNum = 0;
+  v4->nodeNum = 1; // LODWORD(v47[7]) = 1;
+	v4->end = end;
   while ( 1 )
   {
-    v6 = *((_DWORD *)v4 + 7);
+    v6 = v4->nodeNum;
     if ( !v6 )
       goto LABEL_23;
     list = this->nodes.Ptr();
@@ -1136,41 +1138,35 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
       {
         points = trace.points;
         v13 = numPoints;
-        points[v13].x = *v4;
+        points[v13] = v4->start;
         v14 = &points[v13];
-        v14->y = v4[1];
-        v14->z = v4[2];
         trace.points[trace.numPoints++].z = (float)((v10->flags >> 2) - 0x2000);
       }
       goto LABEL_23;
     }
     planeNum = v10->planeNum;
-    v44 = *v4;
-    v45 = v4[1];
+    v44 = v4->start;
     v16 = &this->planeList[planeNum];
-    v46 = v4[2];
-    v32 = v4[3];
-    v33 = v4[4];
-    v34 = v4[5];
-    v17 = v44;
-    v18 = v45;
-    v19 = v46;
-    v29 = v16->ToFloatPtr()[2] * v46 + v16->ToFloatPtr()[1] * v45 + v16->ToFloatPtr()[0] * v44 + v16->ToFloatPtr()[3];
+    v32 = v4->end;
+    v17 = v44.x;
+    v18 = v44.y;
+    v19 = v44.z;
+    v29 = v16->Distance(v44);
     v20 = v29;
-    v30 = v16->ToFloatPtr()[0] * v32 + v16->ToFloatPtr()[1] * v33 + v16->ToFloatPtr()[2] * v34 + v16->ToFloatPtr()[3];
+    v30 = v16->Distance(v32);
     v21 = v30;
-    if ( v20 >= -0.1000000014901161 && v21 >= -0.1000000014901161 )
+    if ( v20 >= -ON_EPSILON && v21 >= -ON_EPSILON )
     {
       v22 = v10->children[0];
       goto LABEL_22;
     }
-    if ( v20 < 0.1000000014901161 && v21 < 0.1000000014901161 )
+    if ( v20 < ON_EPSILON && v21 < ON_EPSILON )
     {
       v22 = v10->children[1];
       goto LABEL_22;
     }
-    v23 = *((_DWORD *)v4 + 6);
-    v24 = v20 >= 0.0 ? v20 - 0.125 : v20 + 0.125;
+    v23 = v4->planeNum;
+    v24 = v20 >= 0.0 ? v20 - TRACEPLANE_EPSILON : v20 + TRACEPLANE_EPSILON;
     v25 = v24 / (v20 - v21);
     if ( v25 >= 0.0 )
     {
@@ -1182,44 +1178,36 @@ bool idAASFileLocal::TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, 
       else
       {
         v26 = 0.0;
-        v27 = 0.9990000128746033;
+        v27 = 0.999f;
       }
     }
     else
     {
       v26 = 0.0;
-      v27 = 0.001000000047497451;
+      v27 = 0.001f;
     }
-    v35 = v32 - v17;
-    v36 = v33 - v18;
-    v37 = v34 - v19;
+    v35.x = v32.x - v17;
+    v35.y = v32.y - v18;
+    v35.z = v32.z - v19;
     v31 = v27;
     v38 = v35 * v31;
-    v39 = v36 * v31;
-    v40 = v31 * v37;
-    v41 = v38 + v17;
-    v42 = v39 + v18;
-    v43 = v40 + v19;
-    *((_DWORD *)v4 + 6) = planeNum;
-    *v4 = v41;
-    v4[1] = v42;
-    v4 += 8;
-    *(v4 - 6) = v43;
-    *(v4 - 1) = *(float *)&v10->children[v26 <= v20];
-    if ( v4 >= (float *)&retaddr )
+    v41.x = v38.x + v17;
+    v41.y = v38.y + v18;
+    v41.z = v38.z + v19;
+    v4->planeNum = planeNum;
+    v4->start = v41;
+    v4->nodeNum = v10->children[v26 <= v20];
+    v4 += 1;
+    if ( v4 >= retaddr )
       break;
     v22 = v10->children[v26 > v20];
-    *v4 = v44;
-    v4[1] = v45;
-    v4[2] = v19;
-    v4[3] = v41;
-    v4[4] = v42;
-    v4[5] = v43;
-    *((_DWORD *)v4 + 6) = v23;
+    v4->start = v44;
+    v4->end = v41;
+    v4->planeNum = v23;
 LABEL_22:
-    *((_DWORD *)v4 + 7) = v22;
+    v4->nodeNum = v22;
     v4 += 8;
-    if ( v4 >= (float *)&retaddr )
+    if ( v4 >= retaddr )
       break;
 LABEL_23:
     v4 -= 8;
@@ -2211,7 +2199,7 @@ int idAASFileLocal::BoundsReachableAreaNum_r(
 }
 #endif
 
-#if 0
+#if 1
 bool idAASFileLocal::Trace(
         aasTrace_t *a2,
         const idVec3 *a3,
@@ -2219,7 +2207,8 @@ bool idAASFileLocal::Trace(
 {
   const idVec3 *v4; // edx
   const idVec3 *v5; // ecx
-  float *v6; // esi
+	aasTraceStack_t * v6;
+  //float *v6; // esi
   double z; // st7
   int v8; // ebx
   const aasArea_t *v9; // eax
@@ -2228,7 +2217,7 @@ bool idAASFileLocal::Trace(
   bool v12; // cc
   int *areas; // ecx
   const idVec3 *points; // ecx
-  float *p_x; // eax
+  idVec3 p_x; // eax
   int v16; // ebx
   const aasNode_t *v17; // ebx
   const idPlane *v18; // eax
@@ -2243,7 +2232,7 @@ bool idAASFileLocal::Trace(
   double v27; // st2
   double v28; // st2
   double v29; // st1
-  float *v30; // esi
+  aasTraceStack_t *v30; // esi
   int v31; // eax
   bool result; // al
   double v33; // st7
@@ -2267,83 +2256,88 @@ bool idAASFileLocal::Trace(
   float v51; // [esp+10h] [ebp-1088h]
   int v52; // [esp+10h] [ebp-1088h]
   float v53; // [esp+10h] [ebp-1088h]
-  float v54; // [esp+14h] [ebp-1084h]
-  float v55; // [esp+14h] [ebp-1084h]
-  float v56; // [esp+14h] [ebp-1084h]
-  float v57; // [esp+18h] [ebp-1080h]
-  float v58; // [esp+18h] [ebp-1080h]
-  float v59; // [esp+18h] [ebp-1080h]
-  float v60; // [esp+1Ch] [ebp-107Ch]
-  float v61; // [esp+1Ch] [ebp-107Ch]
-  float v62; // [esp+1Ch] [ebp-107Ch]
-  float x; // [esp+20h] [ebp-1078h]
-  float v64; // [esp+20h] [ebp-1078h]
-  float y; // [esp+24h] [ebp-1074h]
-  float v66; // [esp+24h] [ebp-1074h]
-  float v67; // [esp+28h] [ebp-1070h]
-  float v68; // [esp+28h] [ebp-1070h]
+  idVec3 v54; // [esp+14h] [ebp-1084h]
+  //float v54; // [esp+14h] [ebp-1084h] // 54 57 60
+  idVec3 v55; // [esp+14h] [ebp-1084h] // 55 58 61
+  //float v55; // [esp+14h] [ebp-1084h]
+  idVec3 v56; // [esp+14h] [ebp-1084h] // 56 59 62
+  //float v56; // [esp+14h] [ebp-1084h]
+  //float v57; // [esp+18h] [ebp-1080h]
+  //float v58; // [esp+18h] [ebp-1080h]
+  //float v59; // [esp+18h] [ebp-1080h]
+  //float v60; // [esp+1Ch] [ebp-107Ch]
+  //float v61; // [esp+1Ch] [ebp-107Ch]
+  //float v62; // [esp+1Ch] [ebp-107Ch]
+  idVec3 x; // [esp+20h] [ebp-1078h] // x y 67
+  //float x; // [esp+20h] [ebp-1078h]
+  idVec3 v64; // [esp+20h] [ebp-1078h] // 64 66 68
+  //float v64; // [esp+20h] [ebp-1078h]
+  //float y; // [esp+24h] [ebp-1074h]
+  //float v66; // [esp+24h] [ebp-1074h]
+  //float v67; // [esp+28h] [ebp-1070h]
+  //float v68; // [esp+28h] [ebp-1070h]
   float v70; // [esp+34h] [ebp-1064h]
   float v71; // [esp+38h] [ebp-1060h]
-  float v72; // [esp+54h] [ebp-1044h]
-  float v73; // [esp+58h] [ebp-1040h]
-  float v74; // [esp+5Ch] [ebp-103Ch]
-  float v75; // [esp+60h] [ebp-1038h]
-  float v76; // [esp+64h] [ebp-1034h]
-  float v77; // [esp+68h] [ebp-1030h]
-  float v78; // [esp+6Ch] [ebp-102Ch]
-  float v79; // [esp+70h] [ebp-1028h]
-  float v80; // [esp+74h] [ebp-1024h]
+  idVec3 v72; // [esp+54h] [ebp-1044h]
+  //float v72; // [esp+54h] [ebp-1044h]
+  //float v73; // [esp+58h] [ebp-1040h]
+  //float v74; // [esp+5Ch] [ebp-103Ch]
+  idVec3 v75; // [esp+54h] [ebp-1044h]
+  //float v75; // [esp+60h] [ebp-1038h]
+  //float v76; // [esp+64h] [ebp-1034h]
+  //float v77; // [esp+68h] [ebp-1030h]
+  idVec3 v78; // [esp+6Ch] [ebp-102Ch]
+  //float v78; // [esp+6Ch] [ebp-102Ch]
+  //float v79; // [esp+70h] [ebp-1028h]
+  //float v80; // [esp+74h] [ebp-1024h]
   double v81; // [esp+78h] [ebp-1020h]
   double v82; // [esp+80h] [ebp-1018h]
-  float v83; // [esp+8Ch] [ebp-100Ch]
-  float v84; // [esp+90h] [ebp-1008h]
-  float v85; // [esp+94h] [ebp-1004h]
-  float v86[1024]; // [esp+98h] [ebp-1000h] BYREF
+  idVec3 v83; // [esp+8Ch] [ebp-100Ch]
+  //float v83; // [esp+8Ch] [ebp-100Ch]
+  //float v84; // [esp+90h] [ebp-1008h]
+  //float v85; // [esp+94h] [ebp-1004h]
+  aasTraceStack_t v86[MAX_AAS_TREE_DEPTH]; // [esp+98h] [ebp-1000h] BYREF
+  //float v86[1024]; // [esp+98h] [ebp-1000h] BYREF
   char vars0; // [esp+1098h] [ebp+0h] BYREF
+
+	v6 = &v86[0];
+	idVec3 _v23; // 23 70 71
+	idVec3 _v19; // 19 20 21
 
   v4 = a3;
   a2->numAreas = 0;
   a2->lastAreaNum = 0;
   a2->blockingAreaNum = 0;
-  v86[0] = a3->x;
+	v6->start = *a3;
+	v6->end = *a4;
+	v6->planeNum = 0;
+	v6->nodeNum = 1;
   v5 = a4;
-  v86[1] = a3->y;
   v6 = v86;
-  z = a3->z;
-  v86[6] = 0.0;
-  v86[2] = z;
-  LODWORD(v86[7]) = 1;
-  v86[3] = a4->x;
-  v86[4] = a4->y;
-  v86[5] = a4->z;
   while ( 1 )
   {
-    v8 = *((_DWORD *)v6 + 7);
+    v8 = v6->nodeNum;
     if ( v8 >= 0 )
     {
       if ( v8 )
       {
         v17 = &this->nodes[v8];
         v18 = &this->planeList[v17->planeNum];
-        v70 = v6[4];
-        v71 = v6[5];
-        v19 = *v6;
-        v20 = v6[1];
-        v21 = v6[2];
-        v40 = v18->Distance(idVec3(v19, v20, v21));
+        _v19 = v6->start;
+        v40 = v18->Distance(_v19);
         v22 = v40;
-        v23 = v6[3];
-        v41 = v18->Distance(idVec3(v6[3], v6[4], v6[5]));
+        _v23 = v6->end;
+        v41 = v18->Distance(v6->end);
         v24 = v41;
-        if ( v22 < -0.1000000014901161 || v24 < -0.1000000014901161 )
+        if ( v22 < -ON_EPSILON || v24 < -ON_EPSILON )
         {
-          if ( v22 >= 0.1000000014901161 || v24 >= 0.1000000014901161 )
+          if ( v22 >= ON_EPSILON || v24 >= ON_EPSILON )
           {
-            v52 = *((_DWORD *)v6 + 6);
+            v52 = v6->planeNum;
             if ( v22 >= 0.0 )
-              v26 = v22 - 0.125;
+              v26 = v22 - TRACEPLANE_EPSILON;
             else
-              v26 = v22 + 0.125;
+              v26 = v22 + TRACEPLANE_EPSILON;
             v27 = v26 / (v22 - v24);
             if ( v27 >= 0.0 )
             {
@@ -2355,62 +2349,50 @@ bool idAASFileLocal::Trace(
               else
               {
                 v28 = 0.0;
-                v29 = 0.9990000128746033;
+                v29 = 0.999f;
               }
             }
             else
             {
               v28 = 0.0;
-              v29 = 0.001000000047497451;
+              v29 = 0.001f;
             }
-            v72 = v23 - v19;
-            v73 = v70 - v20;
-            v74 = v71 - v21;
+            v72 = _v23 - _v19;
             v42 = v29;
             v78 = v72 * v42;
-            v79 = v73 * v42;
-            v80 = v42 * v74;
-            v54 = v78 + v19;
-            v57 = v79 + v20;
-            v60 = v80 + v21;
-            *((_DWORD *)v6 + 6) = v17->planeNum;
-            *v6 = v54;
-            v6[1] = v57;
-            v6[2] = v60;
-            v30 = v6 + 8;
-            *(v30 - 1) = *(float *)&v17->children[v28 <= v22];
-            if ( v30 >= (float *)&vars0 )
+            v54 = v78 + _v19;
+            v6->planeNum = v17->planeNum;
+            v6->start = v54;
+          	v30 = v6 + 1;
+            v6->nodeNum = v17->children[v28 <= v22];
+            if ( v30 >= &v86[MAX_AAS_TREE_DEPTH] )
             {
 LABEL_50:
 			  common->Warning("idAASFileLocal::Trace: stack overflow");
               return false;
             }
             v31 = v17->children[v28 > v22];
-            *v30 = v19;
-            v6 = v30 + 8;
-            *(v6 - 7) = v20;
-            *(v6 - 6) = v21;
-            *(v6 - 5) = v54;
-            *(v6 - 4) = v57;
-            *(v6 - 3) = v60;
-            *((_DWORD *)v6 - 2) = v52;
-            *((_DWORD *)v6 - 1) = v31;
-            v25 = v6 < (float *)&vars0;
+          	v6->start = _v19;
+          	v6->end = v54;
+            v6->planeNum = v52;
+            v6->nodeNum = v31;
+            v6 = v6 + 1;
+            v25 = v6 < &v86[MAX_AAS_TREE_DEPTH];
           }
           else
           {
-            v6[7] = *(float *)&v17->children[1];
-            v6 += 8;
-            v25 = v6 < (float *)&vars0;
+            v6->nodeNum = v17->children[1];
+            v6 = v6 + 1;
+            v25 = v6 < &v86[MAX_AAS_TREE_DEPTH];
           }
           if ( !v25 )
             goto LABEL_50;
         }
         else
         {
-          v6[7] = *(float *)v17->children;
-          v6 += 8;
-          if ( v6 >= (float *)&vars0 )
+          v6->nodeNum = v17->children[0];
+          v6 = v6 + 1;
+          if ( v6 >= &v86[MAX_AAS_TREE_DEPTH] )
             goto LABEL_50;
         }
       }
@@ -2418,41 +2400,29 @@ LABEL_50:
       {
         if ( a2->lastAreaNum )
         {
-          v75 = v5->x - v4->x;
-          v76 = v5->y - v4->y;
-          v77 = v5->z - v4->z;
+          v75 = *v5 - *v4;
           x = v75;
-          y = v76;
-          v67 = v77;
-          v83 = *v6 - v4->x;
-          v84 = v6[1] - v4->y;
-          v85 = v6[2] - v4->z;
-          v81 = v76;
-          v82 = v77;
-          v48 = v83 * v83 + v84 * v84 + v85 * v85;
-          v49 = sqrt(v48);
+          v83 = v6->start - *v4;
+          v49 = v83.Length();
           v38 = v49;
-          v50 = v75 * v75 + v76 * v76 + v77 * v77;
-          v51 = sqrt(v50);
+          v51 = v75.Length();
           v4 = a3;
           a2->fraction = v38 / v51;
         }
         else
         {
           a2->fraction = 0.0;
-          x = byte_F464D4.x;
-          y = byte_F464D4.y;
-          v67 = byte_F464D4.z;
+          x = vec3_origin;
         }
-        v16 = *((_DWORD *)v6 + 6);
-        a2->endpos = *(idVec3 *)v6;
+        v16 = v6->planeNum;
+        a2->endpos = v6->start;
         a2->blockingAreaNum = 0;
         a2->planeNum = v16;
-        v39 = this->planeList[v16].b * y + this->planeList[v16].a * x + this->planeList[v16].c * v67;
+        v39 = x * this->planeList[v16].Normal();
         if ( v39 > 0.0 )
           a2->planeNum = v16 ^ 1;
         if ( a2->lastAreaNum || !a2->getOutOfSolid )
-          return 1;
+          return true;
       }
     }
     else
@@ -2462,42 +2432,24 @@ LABEL_50:
       {
         if ( a2->lastAreaNum )
         {
-          v55 = a4->x - v4->x;
-          v58 = a4->y - v4->y;
-          v61 = a4->z - v4->z;
-          v33 = v55;
-          v64 = v55;
-          v34 = v58;
-          v66 = v58;
-          v35 = v61;
-          v68 = v61;
-          v56 = *v6 - v4->x;
-          v59 = v6[1] - v4->y;
-          v62 = v6[2] - v4->z;
-          v81 = v34;
-          v82 = v33;
-          v43 = v56 * v56 + v59 * v59 + v62 * v62;
-          v44 = sqrt(v43);
+          v55 = *a4 - *v4;
+        	v64 = v55;
+          v56 = v6->start - *v4;
+          v44 = v6->start.Length();
           v53 = v44;
-          v45 = v82 * v82 + v34 * v34 + v35 * v35;
-          v46 = sqrt(v45);
+          v46 = v55.Length();
           a2->fraction = v53 / v46;
         }
         else
         {
           a2->fraction = 0.0;
-          v64 = byte_F464D4.x;
-          v66 = byte_F464D4.y;
-          v68 = byte_F464D4.z;
+          v64 = vec3_origin;
         }
-        a2->endpos.x = *v6;
-        a2->endpos.y = v6[1];
-        v36 = v6[2];
-        v37 = *((_DWORD *)v6 + 6);
-        a2->endpos.z = v36;
+        a2->endpos = v6->start;
+        v37 = v6->planeNum;
         a2->blockingAreaNum = -v8;
         a2->planeNum = v37;
-        v47 = this->planeList[v37].b * v66 + this->planeList[v37].a * v64 + this->planeList[v37].c * v68;
+        v47 = v64 * this->planeList[v37].Normal();
         if ( v47 > 0.0 )
           a2->planeNum = v37 ^ 1;
         return true;
@@ -2514,15 +2466,12 @@ LABEL_50:
         points = a2->points;
         if ( points )
         {
-          p_x = &points[a2->numAreas].x;
-          *p_x = *v6;
-          p_x[1] = v6[1];
-          p_x[2] = v6[2];
+          p_x = v6->start;
         }
         ++a2->numAreas;
       }
     }
-    v6 -= 8;
+    v6 = v6 - 1;
     if ( v6 < v86 )
       break;
     v5 = a4;
