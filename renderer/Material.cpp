@@ -2198,22 +2198,20 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("deformScroll")) { // deformScroll 0, 0
-			ParseExpression(src);
+			deformRegisters[1] = ParseExpression(src);
 			// 1:
 			idToken t;
 			src.ReadToken(&t);
 			if (!t.Cmp(","))
-				ParseExpression(src);
-			else
+				deformRegisters[2] = ParseExpression(src);
+			else {
 				src.UnreadToken(&t);
+				deformRegisters[2] = GetExpressionConstant(0.0f);
+			}
 			continue;
 		}
 		if (!token.Icmp("deformMagnitude")) { // deformMagnitude 1
-			src.ParseFloat();
-			continue;
-		}
-		if (!token.Icmp("deformMagnitude")) { // deformScroll 0
-			src.ParseFloat();
+			deformRegisters[3] = ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("matrix")) { // matrix a, b, c, d, e, f

@@ -275,12 +275,26 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 					src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
 					continue;
 				}
+				if (!token.Cmp("!")) {
+					if(!src.ReadTokenOnLine(&token))
+					{
+						src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
+						continue;
+					}
+				}
 				defines.AddUnique(token);
 			} else if (!token.Icmp("elif")) {
 				if(!src.ReadTokenOnLine(&token))
 				{
 					src.Warning("sdRenderProgramShader::ParsePost: missing elif macro name");
 					continue;
+				}
+				if (!token.Cmp("!")) {
+					if(!src.ReadTokenOnLine(&token))
+					{
+						src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
+						continue;
+					}
 				}
 				defines.AddUnique(token);
 			} else if (!token.Icmp("else")) {

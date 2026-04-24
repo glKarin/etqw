@@ -733,10 +733,25 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindVector("transposedModelMatrix_y", modelMatrix[1].ToFloatPtr());
 	program->BindVector("transposedModelMatrix_z", modelMatrix[2].ToFloatPtr());
 
+	float mat[16];
+	R_TransposeGLMatrix(surf->space->modelViewMatrix, mat);
+	program->BindMat4("u_modelViewMatrix", /*drawSurf->space->*/
+						mat);
+
+	R_TransposeGLMatrix(backEnd.viewDef->projectionMatrix, mat);
+	program->BindMat4("u_projectionMatrix", /*backEnd.viewDef->*/
+						mat);
+
     idVec4 localViewOrigin;
     R_GlobalPointToLocal(surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewOrigin.ToVec3());
     localViewOrigin[3] = 1.0f;
 	program->BindVector("viewOrigin", localViewOrigin.ToFloatPtr());
+
+	parm[0] = backEnd.viewDef->renderView.vieworg[0];
+	parm[1] = backEnd.viewDef->renderView.vieworg[1];
+	parm[2] = backEnd.viewDef->renderView.vieworg[2];
+	parm[3] = 1.0;
+	program->BindVector("viewOriginWorld", parm);
 }
 #endif
 
@@ -939,7 +954,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				continue;
 			}
 
-			if(!renderProgram->Bind(pStage, regs))
+			if(!renderProgram->Bind(pStage, shader, regs))
 				continue;
 
 			if(!materialBuiltinVariablesLoaded) {

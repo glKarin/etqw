@@ -92,7 +92,7 @@ void sdRenderProgram::BindingLocationCallback(struct GLSLShaderProp *prop) {
     self->GetLocations(prop->handle);
 }
 
-void sdRenderProgram::BindUniform(const materialStage_t *stage, const float *regs) const
+void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float *regs) const
 {
     const stageVector_t *vec;
     const stageTextureMatrix_t *mat;
@@ -200,7 +200,26 @@ void sdRenderProgram::BindUniform(const materialStage_t *stage, const float *reg
 	}
 }
 
-bool sdRenderProgram::Bind(const materialStage_t *stage, const float *regs) const
+void sdRenderProgram::BindMaterialUniform(const idMaterial *mat, const float *regs) const {
+	float parms[4];
+	int i1 = mat->GetDeformRegister(1);
+	int i2 = mat->GetDeformRegister(2);
+	int i3 = mat->GetDeformRegister(3);
+
+	parms[0] = regs[i1];
+	parms[1] = regs[i2];
+	parms[2] = 0.0f;
+	parms[3] = 1.0f;
+	BindVector("deformScroll", parms);
+
+	parms[0] = regs[i3];
+	parms[1] = regs[i3];
+	parms[2] = regs[i3];
+	parms[3] = 1.0f;
+	BindVector("deformMagnitude", parms);
+}
+
+bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const
 {
     if(!IsValid())
         return false;
@@ -210,7 +229,8 @@ bool sdRenderProgram::Bind(const materialStage_t *stage, const float *regs) cons
         return false;
     GL_UseProgram((shaderProgram_t *)shader);
 
-    BindUniform(stage, regs);
+    BindStageUniform(stage, regs);
+	BindMaterialUniform(mat, regs);
 
     return true;
 }
@@ -286,7 +306,7 @@ void sdRenderProgram::InsertBinding(sdStringBuilder_Heap &buf, const sdDeclRende
             InsertTextureBinding(buf, binding, rawName);
             break;
         case sdDeclRenderBinding::BT_VECTOR:
-            InsertUniformBinding(buf, binding, rawName);
+            InsertUniformBinding(buf, binding, rawName, "vec4");
             break;
         default:
             common->Warning("sdRenderProgram::InsertBinding: unknown render binding '%s' type: %d", binding->GetName(), binding->GetBindingType());
@@ -294,8 +314,10 @@ void sdRenderProgram::InsertBinding(sdStringBuilder_Heap &buf, const sdDeclRende
     }
 }
 
-void sdRenderProgram::InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
-    buf.Append("uniform vec4 ");
+void sdRenderProgram::InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName, const char *type) const {
+    buf.Append("uniform ");
+    buf.Append(type);
+    buf.Append(" ");
     buf.Append(rawName);
     buf.Append(";\n");
 }
@@ -320,7 +342,7 @@ void sdRenderProgram::InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDe
     buf.Append(rawName);
     buf.Append(";\n");
 	// add texture size to shader for OpenGLES2.0 texRECT
-	InsertUniformBinding(buf, NULL, TEXEL_SIZE_NAME(rawName));
+	InsertUniformBinding(buf, NULL, TEXEL_SIZE_NAME(rawName), "vec4");
 }
 
 void sdRenderProgram::InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
@@ -453,13 +475,31 @@ GLint sdRenderProgram::GetBindingLocation(const sdDeclRenderBinding *binding) co
 }
 
 void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char *rawName) const {
-	if(!idStr::Icmp(rawName, "currentRenderTexelSize"))
-		InsertUniformBinding(buf, NULL, rawName);
-	else
-		common->Warning("sdRenderProgram::InsertBuiltiBinding: unknown render built-in binding '%s'", rawName);
+	const char *Builtin_Variables[] = {
+		"currentRenderTexelSize",
+		"deformMagnitude",
+		"deformScroll",
+	};
+	for (int i = 0; i < sizeof(Builtin_Variables) / sizeof(Builtin_Variables[0]); i++) {
+		if(!idStr::Icmp(rawName, Builtin_Variables[i])) {
+			InsertUniformBinding(buf, NULL, rawName, "vec4");
+			return;
+		}
+	}
+	const char *BuiltinMat4_Variables[] = {
+		"u_projectionMatrix",
+		"u_modelViewMatrix",
+	};
+	for (int i = 0; i < sizeof(BuiltinMat4_Variables) / sizeof(BuiltinMat4_Variables[0]); i++) {
+		if(!idStr::Icmp(rawName, BuiltinMat4_Variables[i])) {
+			InsertUniformBinding(buf, NULL, rawName, "mat4");
+			return;
+		}
+	}
+	common->Warning("sdRenderProgram::InsertBuiltinBinding: unknown render built-in binding '%s'", rawName);
 }
 
-void sdRenderProgram::BindVector(const char *name, const float regs[]) const
+void sdRenderProgram::BindVector(const char *name, const float v4[]) const
 {
 	if(name[0] == '$')
 		name++;
@@ -469,7 +509,20 @@ void sdRenderProgram::BindVector(const char *name, const float regs[]) const
 	if(locations[index] < 0)
 		return;
 
-	qglUniform4fv(locations[index], 1, regs);
+	qglUniform4fv(locations[index], 1, v4);
+}
+
+void sdRenderProgram::BindMat4(const char *name, const float mat4[]) const
+{
+	if(name[0] == '$')
+		name++;
+	int index = bindingNames.FindIndex(name);
+	if(index < 0)
+		return;
+	if(locations[index] < 0)
+		return;
+
+	qglUniformMatrix4fv(locations[index], 1, false, mat4);
 }
 
 void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const {

@@ -1767,7 +1767,7 @@ void idDeclManagerLocal::RegisterDeclFolder(const char *folder, const char *exte
 {
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 	RegisterDeclFolderWrapper(folder, extension, defaultType, false, false);
-	Sys_Printf("RegisterDeclFolder(%s, %s, %d)\n", folder, extension, defaultType);
+	//Sys_Printf("RegisterDeclFolder(%s, %s, %d)\n", folder, extension, defaultType);
 #else
 	int i, j;
 	idStr fileName;
@@ -3866,7 +3866,7 @@ idTokenCache& idDeclManagerLocal::GetGlobalTokenCache() {
 
 void idDeclManagerLocal::RegisterDeclType( idDeclTypeInterface* type ) {
 	qhandle_t h = GetDeclTypeHandle(type->GetName());
-	Sys_Printf("RegisterDeclType(%s, %d, %d)\n", type->GetName(), type->GetHandle(), h);
+	//Sys_Printf("RegisterDeclType(%s, %d, %d)\n", type->GetName(), type->GetHandle(), h);
 	type->type = h;
 	type->ref = type;
 	type->OnRegister(h);
@@ -3885,7 +3885,7 @@ void idDeclManagerLocal::UnregisterDeclType( idDeclTypeInterface* declType ) {
 		return;
 	}
 
-	Sys_Printf("UnregisterDeclType(%s, %d, %d)\n", declType->GetName(), declType->GetHandle(), declType->type);
+	//Sys_Printf("UnregisterDeclType(%s, %d, %d)\n", declType->GetName(), declType->GetHandle(), declType->type);
 	int			i = type, j;
 	idDeclLocal *decl;
 
@@ -3946,7 +3946,7 @@ void idDeclManagerLocal::RegisterDeclFolder( const char *folder, const char *ext
 }
 
 void idDeclManagerLocal::UnregisterDeclFolder( const char *folder, const char *extension ) {
-	Sys_Printf("UnregisterDeclFolder(%s, %s)\n", folder, extension);
+	//Sys_Printf("UnregisterDeclFolder(%s, %s)\n", folder, extension);
 
 	int i, j;
 	idStr fileName;
