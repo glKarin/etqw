@@ -1629,6 +1629,7 @@ void idDeclManagerLocal::Init(void)
 	cmdSystem->AddCommand("parseAllDecls", ParseAllDecls_f, CMD_FL_SYSTEM, "parse all entries of a decl");
 #ifdef _SPLASHDAMAGE
 	cmdSystem->AddCommand("declbToText", DeclbToText_f, CMD_FL_SYSTEM, "convert declb to text files");
+	cmdSystem->AddCommand("exportRenderPrograms", sdDeclRenderProgram::ExportDeclRenderPrograms_f, CMD_FL_SYSTEM, "export all render programs");
 #endif
 
 	common->Printf("------------------------------\n");

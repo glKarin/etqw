@@ -58,10 +58,11 @@ class sdRenderProgramShader
 		const char * GetPlaceholder(int i) const {
 			return i >= 0 && i < placeholders.Num() ? placeholders[i].c_str() : NULL;
 		}
+		void ExportSource(const char *path, const char *filename, const char *name, bool raw = false) const;
 
 	private:
 		void HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName);
-		void HandleSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length);
+		void BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length);
 
 	private:
 		shaderType_t type;
@@ -70,6 +71,7 @@ class sdRenderProgramShader
 		idStrList placeholders;
 		idStr source;
 		idList<const sdDeclRenderBinding *> bindings;
+		idStrList defines;
 
 		friend class sdDeclRenderProgram;
 };
@@ -102,6 +104,9 @@ public:
 	bool							IsInteraction(void) const {
 		return (flags & INTERACTION) != 0;
 	}
+
+	void							ExportSource(const char *path, bool raw = false) const;
+	static void						ExportDeclRenderPrograms_f(const idCmdArgs &args);
 
 private:
 	void							Init(void);

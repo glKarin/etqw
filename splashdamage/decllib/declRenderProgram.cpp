@@ -158,6 +158,7 @@ void sdRenderProgramShader::Init(void)
 	placeholders.Clear();
 	source.Clear();
 	bindings.Clear();
+	defines.Clear();
 }
 
 bool sdRenderProgramShader::IsValid(void) const
@@ -233,7 +234,7 @@ const sdDeclRenderBinding * sdRenderProgramShader::GetBinding(const char *name) 
 	return NULL;
 }
 
-void sdRenderProgramShader::HandleSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length)
+void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length)
 {
 	idLexer src;
 	src.LoadMemory(text, length, "shader");
@@ -268,8 +269,23 @@ void sdRenderProgramShader::HandleSource(sdStringBuilder_Heap &buf, const sdDecl
 					buf.Append(text + range_start, range_end - range_start);
 				HandleInclude(buf, program, str.c_str());
 				range_start = src.GetFileOffset();
-			}
-			else {
+			} else if (!token.Icmp("if")) {
+				if(!src.ReadTokenOnLine(&token))
+				{
+					src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
+					continue;
+				}
+				defines.AddUnique(token);
+			} else if (!token.Icmp("elif")) {
+				if(!src.ReadTokenOnLine(&token))
+				{
+					src.Warning("sdRenderProgramShader::ParsePost: missing elif macro name");
+					continue;
+				}
+				defines.AddUnique(token);
+			} else if (!token.Icmp("else")) {
+			} else if (!token.Icmp("endif")) {
+			} else {
 				placeholders.AddUnique(token);
 			}
 		}
@@ -284,7 +300,7 @@ void sdRenderProgramShader::PostParse(const sdDeclRenderProgram *program) {
 		return;
 
 	sdStringBuilder_Heap buf;
-	HandleSource(buf, program, sourceRaw.c_str(), sourceRaw.Length());
+	BuildSource(buf, program, sourceRaw.c_str(), sourceRaw.Length());
 	source = buf.c_str();
 	source.ReplaceChar('$', ' ');
 
@@ -327,7 +343,7 @@ void sdRenderProgramShader::HandleInclude(sdStringBuilder_Heap &buf, const sdDec
 		return;
 	}
 
-	HandleSource(buf, program, text, length);
+	BuildSource(buf, program, text, length);
 
 	Mem_Free(text);
 }
@@ -400,51 +416,128 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 		}
 	}
 
-//#define RENDERPROGRAM_OUTPUT_TO_FILE 1
-#if RENDERPROGRAM_OUTPUT_TO_FILE
+	if (!isRef)
+		shader->PostParse(this);
+
+	return true;
+}
+
+void sdRenderProgramShader::ExportSource(const char *path, const char *filename, const char *name, bool raw) const {
+	sdStringBuilder_Heap buf;
+
+
+
+	idStr filePath = path;
+	filePath.AppendPath(name);
 	const char *typeName;
-	if(shader->type == sdRenderProgramShader::ST_VERTEX)
+	if(type == sdRenderProgramShader::ST_VERTEX)
 		typeName = "vert";
 	else
 		typeName = "frag";
 	const char *langName;
-	switch(shader->lang)
+	const char *comment;
+	switch(lang)
 	{
 		case sdRenderProgramShader::SL_CG:
 			langName = "cg";
+			comment = "//";
 			break;
 		case sdRenderProgramShader::SL_GLSL:
 			langName = "glsl";
+			comment = "//";
 			break;
 		case sdRenderProgramShader::SL_HLSL:
 			langName = "hlsl";
+			comment = "//";
 			break;
 		case sdRenderProgramShader::SL_ARB:
 		default:
 			langName = "arb";
+			comment = "#";
 			break;
 	}
-	fileSystem->WriteFile(va("progs/%s.%s.%s", GetName(), typeName, langName), shader->sourceRaw.c_str(), shader->sourceRaw.Length());
-#endif
+	filePath.Append(".");
+	filePath.Append(typeName);
+	filePath.Append(".");
+	filePath.Append(langName);
 
-	if (!isRef)
-		shader->PostParse(this);
+	buf.Append(comment);
+	buf.Append(" File: ");
+	buf.Append(filename);
+	buf.Append("\n");
+	buf.Append(comment);
+	buf.Append(" ID: ");
+	buf.Append(name);
+	buf.Append("\n");
+	buf.Append("\n");
 
-#if RENDERPROGRAM_OUTPUT_TO_FILE
-	idStr str;
-	str.Append(shader->source.c_str());
-	str.Append("\n\n");
-	for(int i = 0; i < shader->placeholders.Num(); i++)
-	{
-		str.Append("$");
-		str.Append(shader->placeholders[i]);
-		str.Append(" ");
-		const sdDeclRenderBinding *binding = shader->GetBinding(i);
-		str.Append(va("%d", binding ? (int)binding->GetBindingType() : -1));
-		str.Append("\n");
+	buf.Append(comment);
+	buf.Append(va(" Macros %d\n", defines.Num()));
+	for (int i = 0; i < defines.Num(); ++i) {
+		buf.Append(comment);
+		buf.Append(" ");
+		if (raw)
+			buf.Append("$");
+		buf.Append(defines[i]);
+		buf.Append("\n");
 	}
-	fileSystem->WriteFile(va("progs/%s.%s.post.%s", GetName(), typeName, langName), str.c_str(), str.Length());
-#endif
+	buf.Append("\n");
 
-	return true;
+	buf.Append(comment);
+	buf.Append(va(" Variables %d\n", placeholders.Num()));
+	for (int i = 0; i < placeholders.Num(); ++i) {
+		buf.Append(comment);
+		buf.Append(" ");
+		if (raw)
+			buf.Append("$");
+		buf.Append(placeholders[i]);
+		buf.Append("\n");
+	}
+	buf.Append("\n");
+
+	buf.Append(comment);
+	buf.Append(va(" Source\n"));
+	if (raw)
+		buf.Append(sourceRaw);
+	else
+		buf.Append(source);
+	buf.Append("\n");
+
+	fileSystem->WriteFile(filePath.c_str(), buf.c_str(), buf.Length());
+
+	common->Printf("Export %s::%s %s %s shader to %s\n", filename, name, langName, typeName, filePath.c_str());
+}
+
+void sdDeclRenderProgram::ExportSource(const char *path, bool raw) const {
+	if (vertex.IsValid())
+		vertex.ExportSource(path, GetFileName(), GetName(), raw);
+	if (fragment.IsValid())
+		fragment.ExportSource(path, GetFileName(), GetName(), raw);
+}
+
+void sdDeclRenderProgram::ExportDeclRenderPrograms_f(const idCmdArgs &args)
+{
+	if (args.Argc() < 2) {
+		common->Printf("Usage: %s <path> [<raw>]\n", args.Argv(0));
+		return;
+	}
+	const char *outPath = args.Argv(1);
+	bool raw = args.Argc() > 2;
+	const idDecl *decl;
+	const sdDeclRenderProgram *program;
+
+	int numDecls = declManager->GetNumDecls(DECL_RENDERPROGRAM);
+	common->Printf("Export %d render programs\n", numDecls);
+	soundSystem->SetMute(true);
+
+	for(int m = 0; m < numDecls; m++) {
+		decl = declManager->DeclByIndex(DECL_RENDERPROGRAM, m, true);
+		if (!decl)
+			continue;
+		common->Printf("%3d: export: %s::%s\n", m, decl->GetFileName(), decl->GetName());
+		program = static_cast<const sdDeclRenderProgram *>(decl);
+		program->ExportSource(outPath, raw);
+	}
+
+	soundSystem->SetMute(false);
 }

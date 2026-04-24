@@ -2304,6 +2304,23 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 
+#ifdef _SPLASHDAMAGE //karin: only program and only find from external resource, don't find on program built-in
+		if (!token.Icmp("program")) {
+			if (src.ReadTokenOnLine(&token)) {
+				newStage.vertexProgram = -1;
+				newStage.fragmentProgram = -1;
+				spd.declRenderProgram = static_cast<const sdDeclRenderProgram *>(declManager->FindType(DECL_RENDERPROGRAM, token.c_str(), false));
+				if(!isInteractionProgram) {
+					if(spd.declRenderProgram)
+						isInteractionProgram = spd.declRenderProgram->IsInteraction();
+					else
+						isInteractionProgram = !token.IcmpPrefix("interaction");
+				}
+			}
+
+			continue;
+		}
+#else
 		if (!token.Icmp("program")) {
 			if (src.ReadTokenOnLine(&token)) {
 #if !defined(GL_ES_VERSION_2_0)
@@ -2313,15 +2330,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				newStage.vertexProgram = -1;
 				newStage.fragmentProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
-#ifdef _SPLASHDAMAGE //karin: record shader program name
-				spd.declRenderProgram = static_cast<const sdDeclRenderProgram *>(declManager->FindType(DECL_RENDERPROGRAM, token.c_str(), false));
-				if(!isInteractionProgram) {
-					if(spd.declRenderProgram)
-						isInteractionProgram = spd.declRenderProgram->IsInteraction();
-					else
-						isInteractionProgram = !token.IcmpPrefix("interaction");
-				}
-#endif
 				{
                     token.StripFileExtension();
                     const shaderProgram_t *shaderProgram = shaderManager->Find(token.c_str());
@@ -2384,6 +2392,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 
 			continue;
 		}
+#endif
 
 		if (!token.Icmp("megaTexture")) {
 			if (src.ReadTokenOnLine(&token)) {
