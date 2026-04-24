@@ -91,7 +91,7 @@ const int BUTTON_SPRINT			= BIT(4);
 const int BUTTON_ACTIVATE		= BIT(5);
 const int BUTTON_ALTATTACK		= BIT(6);
 const int BUTTON_LEANLEFT		= BIT(7);
-const int BUTTON_LEAN_RIGHT		= BIT(8);
+const int BUTTON_LEANRIGHT		= BIT(8);
 const int BUTTON_TOP_HAT		= BIT(9);
 #define BUTTON_ZOOM BUTTON_MODE_SWITCH
 #else

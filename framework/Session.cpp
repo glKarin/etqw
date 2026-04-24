@@ -2891,7 +2891,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	{
 		console->Close();
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: escape key in game
 		if (game) {
 			idUserInterface	*gui = NULL;
 			escReply_t		op;
@@ -2904,10 +2904,15 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 				return true;
 			}
 		}
-#endif
 
 		StartMenu();
 		return true;
+#else
+		if(!mapSpawned) {
+			StartMenu();
+			return true;
+		}
+#endif
 	}
 
 	// let the pull-down console take it if desired
@@ -2942,11 +2947,6 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	if (guiActive)
 #endif
 	{
-#ifdef _SPLASHDAMAGExxx //karin: send UI event to game
-		if (event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE) 
-			game->HideMainMenu();
-		else
-#endif
 		MenuEvent(event);
 		return true;
 	}
@@ -3514,7 +3514,12 @@ void idSessionLocal::Frame()
 
 	//------------ single player game tics --------------
 
-	if (!mapSpawned || guiActive) {
+#ifdef _SPLASHDAMAGE //karin: main menu gui event
+	if (!mapSpawned || game->IsMainMenuActive()) 
+#else
+	if (!mapSpawned || guiActive) 
+#endif
+	{
 		if (!com_asyncInput.GetBool()) {
 			// early exit, won't do RunGameTic .. but still need to update mouse position for GUIs
 			usercmdGen->GetDirectUsercmd();

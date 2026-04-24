@@ -48,16 +48,17 @@ void usercmd_t::ByteSwap(void)
 #include "splashdamage/framework/KeyInputManager_Local.h"
 
 bool operator==(const userButtons_t &a, const userButtons_t &b) {
-	return a.activate == b.activate
-	&& a.altAttack == b.altAttack
-	&& a.attack == b.attack
+	return 
+	a.attack == b.attack
 	&& a.run == b.run
 	&& a.modeSwitch == b.modeSwitch
 	&& a.mLookOff == b.mLookOff
 	&& a.sprint == b.sprint
+	&& a.activate == b.activate
+	&& a.altAttack == b.altAttack
 	&& a.leanLeft == b.leanLeft
 	&& a.leanRight == b.leanRight
-	&& a.tophat && b.tophat
+	&& a.tophat == b.tophat
 	;
 };
 
@@ -221,12 +222,6 @@ userCmdString_t	userCmdStrings[] = {
 
 	{ "_attack",		UB_ATTACK },
 	{ "_speed",			UB_SPEED },
-#if !defined(_SPLASHDAMAGE) //karin: sync with usercmdButton_t and Game_local.cpp::userCmdStrings
-	{ "_zoom",			UB_ZOOM },
-#endif
-	{ "_showScores",	UB_SHOWSCORES },
-	{ "_mlook",			UB_MLOOK },
-
 #ifdef _SPLASHDAMAGE //karin: sync with usercmdButton_t and Game_local.cpp::userCmdStrings
 	{ "_modeswitch",	UB_MODESWITCH },
 	{ "_sprint",		UB_SPRINT },
@@ -241,6 +236,10 @@ userCmdString_t	userCmdStrings[] = {
 	{ "_leanLeft",		UB_LEANLEFT },
 	{ "_leanRight",		UB_LEANRIGHT },
 #else
+	{ "_zoom",			UB_ZOOM },
+	{ "_showScores",	UB_SHOWSCORES },
+	{ "_mlook",			UB_MLOOK },
+
 	{ "_button0",		UB_BUTTON0 },
 	{ "_button1",		UB_BUTTON1 },
 	{ "_button2",		UB_BUTTON2 },
@@ -414,6 +413,9 @@ class idUsercmdGenLocal : public idUsercmdGen
 		void			JoystickMove(void);
 		void			MouseMove(void);
 		void			CmdButtons(void);
+#ifdef _SPLASHDAMAGE //karin: client cmd buttons
+		void			ClientCmdButtons(void);
+#endif
 
 		void			Mouse(void);
 		void			Keyboard(void);
@@ -818,6 +820,16 @@ void idUsercmdGenLocal::JoystickMove(void)
 	cmd.upmove = idMath::ClampChar(cmd.upmove + joystickAxis[AXIS_UP]);
 }
 
+#ifdef _SPLASHDAMAGE //karin: client cmd buttons
+void idUsercmdGenLocal::ClientCmdButtons(void)
+{
+	cmd.clientButtons.showScores = ButtonState(UB_SHOWSCORES);
+	cmd.clientButtons.voice = ButtonState(UB_VOICE);
+	cmd.clientButtons.teamVoice = ButtonState(UB_TEAMVOICE);
+	cmd.clientButtons.fireteamVoice = ButtonState(UB_FIRETEAMVOICE);
+}
+#endif
+
 /*
 ==============
 idUsercmdGenLocal::CmdButtons
@@ -844,6 +856,12 @@ void idUsercmdGenLocal::CmdButtons(void)
 	}
 	if (ButtonState(UB_TOPHAT)) {
 		cmd.buttons |= BUTTON_TOP_HAT;
+	}
+	if (ButtonState(UB_LEANLEFT)) {
+		cmd.buttons |= BUTTON_LEANLEFT;
+	}
+	if (ButtonState(UB_LEANRIGHT)) {
+		cmd.buttons |= BUTTON_LEANRIGHT;
 	}
 #else //karin: no impulse buttons
 	// figure button bits
@@ -874,7 +892,7 @@ void idUsercmdGenLocal::CmdButtons(void)
 		cmd.buttons |= BUTTON_ZOOM;
 	}
 
-#if !defined(_SPLASHDAMAGE) //karin: tab show scores
+#if !defined(_SPLASHDAMAGE) //karin: show scores with tab
 	// check the scoreboard button
 	if (ButtonState(UB_SHOWSCORES) || ButtonState(UB_IMPULSE19)) {
 		// the button is toggled in SP mode as well but without effect
@@ -954,6 +972,9 @@ void idUsercmdGenLocal::MakeCurrent(void)
 
 		// set button bits
 		CmdButtons();
+#ifdef _SPLASHDAMAGE //karin: client cmd buttons
+		ClientCmdButtons();
+#endif
 
 		// get basic movement from keyboard
 		KeyMove();
@@ -1123,17 +1144,22 @@ void idUsercmdGenLocal::Key(int keyNum, bool down)
 
 	int action = idKeyInput::GetUsercmdAction(keyNum);
 
-#ifdef _SPLASHDAMAGE //karin: check button action
+#ifdef _SPLASHDAMAGE //karin: check button action type
 	if (action < 0)
+		return;
+	const idKey &key = inputManagerLocal.GetKeyByNum(keyNum);
+	if (key.type == B_LOCAL_IMPULSE)
 		return;
 #endif
 	if (down) {
 
+#ifdef _SPLASHDAMAGE //karin: only type is button can update buttonState
+		if(key.type == B_BUTTON)
+#endif
 		buttonState[ action ]++;
 
 #ifdef _SPLASHDAMAGE //karin: impulse buttons
 		if (!Inhibited()) {
-			const idKey &key = inputManagerLocal.GetKeyByNum(keyNum);
 			if (key.type == B_IMPULSE) {
 				cmd.impulse = action;
 				cmd.flags ^= UCF_IMPULSE_SEQUENCE;
@@ -1148,12 +1174,19 @@ void idUsercmdGenLocal::Key(int keyNum, bool down)
 		}
 #endif
 	} else {
+#ifdef _SPLASHDAMAGE //karin: only type is button can update buttonState
+		if(key.type == B_BUTTON)
+		{
+#endif
 		buttonState[ action ]--;
 
 		// we might have one held down across an app active transition
 		if (buttonState[ action ] < 0) {
 			buttonState[ action ] = 0;
 		}
+#ifdef _SPLASHDAMAGE //karin: only type is button can update buttonState
+		}
+#endif
 	}
 }
 
