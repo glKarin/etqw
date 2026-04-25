@@ -477,6 +477,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
+	tHeight = lineSkip;
 	textPtr = text;
 
 	y = lineSkip + rectDraw.GetTop();
@@ -974,6 +975,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
 
+	tHeight = lineSkip;
 	textPtr = text;
 
 	y = lineSkip + rectDraw.GetTop();
