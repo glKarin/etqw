@@ -3502,9 +3502,6 @@ void idSessionLocal::Frame()
 
 	// send frame and mouse events to active guis
 	GuiFrameEvents();
-#ifdef _SPLASHDAMAGE //karin: update GUI
-	game->GuiFrameEvents(false);
-#endif
 
 	// advance demos
 	if (readDemo) {

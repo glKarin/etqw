@@ -1513,6 +1513,9 @@ void idSessionLocal::GuiFrameEvents()
 		usercmdGen->InhibitUsercmd(INHIBIT_SESSION, false);
 	}
 
+#ifdef _SPLASHDAMAGE //karin: update GUI
+	game->GuiFrameEvents(false);
+#else
 	if (guiTest) {
 		gui = guiTest;
 	} else if (guiActive) {
@@ -1529,6 +1532,7 @@ void idSessionLocal::GuiFrameEvents()
 	if (cmd && cmd[0]) {
 		DispatchCommand(guiActive, cmd);
 	}
+#endif
 }
 
 /*
