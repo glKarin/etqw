@@ -19,6 +19,7 @@ public:
     bool Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const;
     void Unbind(const materialStage_t *stage) const;
 	void BindVector(const char *name, const float v4[]) const;
+	void BindVector(const char *name, float f) const;
 	void BindMat4(const char *name, const float mat4[]) const;
 
     // state
@@ -52,6 +53,7 @@ private:
     void UnbindUniform(const materialStage_t *stage) const;
     GLint GetBindingLocation(const sdDeclRenderBinding *binding) const;
 	void BindTexelSize(const char *name, const idImage *img) const;
+	GLint GetUniformLocation(const char *name) const;
 
 
     shaderHandle_t 				                    shaderProgram;

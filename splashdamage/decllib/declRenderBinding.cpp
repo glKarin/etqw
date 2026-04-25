@@ -119,6 +119,12 @@ bool sdDeclRenderBinding::ParseVector( idParser& src ) {
 		src.UnreadToken(&token);
 		defaults.vector[i++] = src.ParseFloat();
 	}
+	float last = i > 0 ? defaults.vector[i - 1] : 0.0f;
+	while(i < 4)
+	{
+		defaults.vector[i] = last;
+		i++;
+	}
 
 	return true;
 }

@@ -213,8 +213,8 @@ void sdRenderProgram::BindMaterialUniform(const idMaterial *mat, const float *re
 	BindVector("deformScroll", parms);
 
 	parms[0] = regs[i3];
-	parms[1] = regs[i3];
-	parms[2] = regs[i3];
+	parms[1] = 0.0f;
+	parms[2] = 0.0f;
 	parms[3] = 1.0f;
 	BindVector("deformMagnitude", parms);
 }
@@ -499,30 +499,40 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 	common->Warning("sdRenderProgram::InsertBuiltinBinding: unknown render built-in binding '%s'", rawName);
 }
 
-void sdRenderProgram::BindVector(const char *name, const float v4[]) const
-{
+GLint sdRenderProgram::GetUniformLocation(const char *name) const {
 	if(name[0] == '$')
 		name++;
 	int index = bindingNames.FindIndex(name);
 	if(index < 0)
-		return;
-	if(locations[index] < 0)
+		return -1;
+	return locations[index];
+}
+
+void sdRenderProgram::BindVector(const char *name, const float v4[]) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
 		return;
 
-	qglUniform4fv(locations[index], 1, v4);
+	qglUniform4fv(location, 1, v4);
+}
+
+void sdRenderProgram::BindVector(const char *name, float f) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniform4f(location, f, f, f, f);
 }
 
 void sdRenderProgram::BindMat4(const char *name, const float mat4[]) const
 {
-	if(name[0] == '$')
-		name++;
-	int index = bindingNames.FindIndex(name);
-	if(index < 0)
-		return;
-	if(locations[index] < 0)
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
 		return;
 
-	qglUniformMatrix4fv(locations[index], 1, false, mat4);
+	qglUniformMatrix4fv(location, 1, false, mat4);
 }
 
 void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const {

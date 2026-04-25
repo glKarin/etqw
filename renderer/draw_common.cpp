@@ -712,17 +712,17 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 
 	switch (pStage->vertexColor) {
 		case SVC_MODULATE:
-			program->BindVector("colorModulate", oneModulate);
-			program->BindVector("colorAdd", zero);
+			program->BindVector("colorModulate", oneModulate[0]);
+			program->BindVector("colorAdd", zero[0]);
 			break;
 		case SVC_INVERSE_MODULATE:
-			program->BindVector("colorModulate", negOneModulate);
-			program->BindVector("colorAdd", one);
+			program->BindVector("colorModulate", negOneModulate[0]);
+			program->BindVector("colorAdd", one[0]);
 			break;
 		case SVC_IGNORE:
 		default:
-			program->BindVector("colorModulate", zero);
-			program->BindVector("colorAdd", one);
+			program->BindVector("colorModulate", zero[0]);
+			program->BindVector("colorAdd", one[0]);
 			break;
 	}
 

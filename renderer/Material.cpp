@@ -2246,6 +2246,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			|| !token.Icmp("diffuseDetailMap")
 			|| !token.Icmp("selfIllumMap")
 			|| !token.Icmp("cinematicY")
+			|| !token.Icmp("environmentCubeMap")
 			)
 		{
 			src.UnreadToken(&token);
@@ -2346,6 +2347,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 
 			continue;
 		}
+#endif
 
 		if (!token.Icmp("fragmentProgram")) {
 			if (src.ReadTokenOnLine(&token)) {
@@ -2390,7 +2392,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 
 			continue;
 		}
-#endif
 
 		if (!token.Icmp("megaTexture")) {
 			if (src.ReadTokenOnLine(&token)) {
