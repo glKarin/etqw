@@ -1101,6 +1101,12 @@ void idRenderModelMD5::TouchData()
 	idMD5Mesh	*mesh;
 	int			i;
 
+#ifdef _SPLASHDAMAGE //karin: game not call idRenderModelManager::FindModel and only call TouchData if md5 model has loaded, although md5 model is purged, so reload md5 model here. see idGameEdit::ParseSpawnArgsToRenderEntity in Entity.cpp and idGameEdit::ANIM_CreateAnimFrame in anim/Anim_Blend.cpp, it caused joints num is different error.
+	if (IsLevelLoadReferenced() && !IsLoaded() && IsReloadable()) {
+		LoadModel();
+	}
+#endif
+
 	for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++) {
 		declManager->FindMaterial(mesh->shader->GetName());
 	}
