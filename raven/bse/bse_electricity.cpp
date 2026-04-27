@@ -255,13 +255,13 @@ void rvElectricityParticle::RenderBranch(const rvBSE* effect,
         old = current;
         fraction = fraction + work->step;
 
-        if ( !eval )
+        if ( !eval || count >= BSE_ELEC_MAX_BOLTS )
             break;
         coords = v45;
     }
 
     srfTriangles_s *tri;
-    if ( numVerts != work->tri->numVerts )
+    if ( numVerts != work->tri->numVerts && count < BSE_ELEC_MAX_BOLTS )
     {
         idVec3 *v17 = &work->coords[count];
         v17->y = current.y;
