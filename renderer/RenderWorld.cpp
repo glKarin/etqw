@@ -3658,14 +3658,75 @@ int idRenderWorldLocal::CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) 
 	return 0;
 }
 
-idRenderModel* idRenderWorldLocal::CreateDecalModel() {
-	return NULL;
+idRenderModelDecal * idRenderModel_decal::Create(void) {
+	return idRenderModelDecal::Alloc();
 }
 
-void idRenderWorldLocal::AddToProjectedDecal( const idFixedWinding& winding, const idVec3 &projectionOrigin, const bool parallel, const idVec4& color, idRenderModel* model, int entityNum, const idMaterial** onlyMaterials, const int numOnlyMaterials ) {
+idRenderModel* idRenderWorldLocal::CreateDecalModel() {
+	//karin: must return new idRenderModelStatic, it will be call idRenderWorld::UpdateEntityDef and cause NULL hModel error
+	// it will free by idRenderModelManager::FreeModel when game shutdown
+	return new idRenderModel_decal;
+}
+
+void idRenderWorldLocal::AddToProjectedDecal( const idFixedWinding& winding, const idVec3 &projectionOrigin, const bool parallel, const idVec4& color, idRenderModel* decalModel, int entityNum, const idMaterial** onlyMaterials, const int numOnlyMaterials ) {
+	if (!decalModel) {
+		common->Warning("idRenderWorld::AddToProjectedDecal: NULL decal model");
+		return;
+	}
+
+	if (entityNum < 0 || entityNum >= entityDefs.Num()) {
+		common->Warning("idRenderWorld::AddToProjectedDecal: index = %i", entityNum);
+		return;
+	}
+
+	idRenderEntityLocal	*def = entityDefs[ entityNum ];
+	if(!def) {
+		return;
+	}
+
+	const idRenderModel *model = def->parms.hModel;
+	if (model == NULL || model->IsDynamicModel() != DM_STATIC || def->parms.callback) {
+		return;
+	}
+
+	idBounds bounds;
+	bounds.FromTransformedBounds(model->Bounds(&def->parms), def->parms.origin, def->parms.axis);
+
+	idRenderModel_decal *decal = static_cast<idRenderModel_decal *>(decalModel);
+
+	int startTime = idMath::Ftoi(tr.frameShaderTime * 1000.0f);
+	for(int i = 0; i < numOnlyMaterials; i++) {
+		const idMaterial *material = onlyMaterials[i];
+		if(!material)
+			continue;
+
+		decalProjectionInfo_t info, localInfo;
+
+		if (!idRenderModelDecal::CreateProjectionInfo(info, winding, projectionOrigin, parallel, false, material, startTime)) {
+			continue;
+		}
+
+		// if the model bounds do not overlap with the projection bounds
+		if (!info.projectionBounds.IntersectsBounds(bounds)) {
+			continue;
+		}
+
+		// transform the bounding planes, fade planes and texture axis into local space
+		idRenderModelDecal::GlobalProjectionInfoToLocal(localInfo, info, def->parms.origin, def->parms.axis);
+		localInfo.force = (def->parms.customShader != NULL);
+
+		if(!def->decals)
+			def->decals = decal->Create();
+		def->decals->CreateDecal(model, localInfo);
+	}
 }
 
 void idRenderWorldLocal::ResetDecalModel( idRenderModel* model ) {
+	if(!model)
+		return;
+
+	idRenderModel_decal *decal = static_cast<idRenderModel_decal *>(model);
+	decal->Reset();
 }
 
 void idRenderWorldLocal::ProjectDecalOntoWorld( const idFixedWinding &winding, const idVec3 &projectionOrigin, const bool parallel, const float fadeDepth, const idMaterial *material, const int startTime, const int currentTime ) {
