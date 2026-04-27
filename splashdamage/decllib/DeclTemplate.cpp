@@ -403,7 +403,7 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
     idToken	token, token2;
 
     src.LoadMemory(_text, textLength, "useTemplate", 0);
-    src.SetFlags(DECL_LEXER_FLAGS | ~LEXFL_ALLOWRAWSTRINGBLOCKS);
+    src.SetFlags(DECL_LEXER_FLAGS | ~LEXFL_ALLOWRAWSTRINGBLOCKS | LEXFL_NOFATALERRORS);
 
 	int range_start = 0;
 	int range_end = 0;

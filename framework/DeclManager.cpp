@@ -462,6 +462,9 @@ public:
 
 private:
 		static void					DeclbToText_f(const idCmdArgs &args);
+		static void					ExportDeclSource_f(const idCmdArgs &args);
+		static void					ExportDeclExpandSource_f(const idCmdArgs &args);
+		void						ExportDeclSource(const char *savePath, const char *filePath = NULL, bool expand = false);
 #endif
 
 	private:
@@ -1629,6 +1632,8 @@ void idDeclManagerLocal::Init(void)
 	cmdSystem->AddCommand("parseAllDecls", ParseAllDecls_f, CMD_FL_SYSTEM, "parse all entries of a decl");
 #ifdef _SPLASHDAMAGE
 	cmdSystem->AddCommand("declbToText", DeclbToText_f, CMD_FL_SYSTEM, "convert declb to text files");
+	cmdSystem->AddCommand("exportDeclSource", ExportDeclSource_f, CMD_FL_SYSTEM, "export decl source text files");
+	cmdSystem->AddCommand("exportDeclExpandSource", ExportDeclExpandSource_f, CMD_FL_SYSTEM, "export decl expand source text files");
 	cmdSystem->AddCommand("exportRenderPrograms", sdDeclRenderProgram::ExportDeclRenderPrograms_f, CMD_FL_SYSTEM, "export all render programs");
 #endif
 
@@ -3109,7 +3114,8 @@ void idDeclLocal::ParseLocal(void)
 	idStr finalPreprocessedBuffer;
 	//Sys_Printf("rrr|%s|%s|\n\n", GetFileName(), GetName()/*,idStr(declText,0,GetTextLength()).c_str()*/ );
 	//karin: 1. expand template if has useTemplate keyword
-	if (!sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
+	// NOTE: template should not expand template when parse, because some template use other template as parameter into this template - karin
+	if (type == DECL_TEMPLATE || !sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
 		finalPreprocessedBuffer.Append(declText, GetTextLength());
 	//karin: include depences
 	const idStrList &includeDependencies = GetIncludeDependencies();
@@ -3119,7 +3125,7 @@ void idDeclLocal::ParseLocal(void)
 		for(int i = 0; i < includeDependencies.Num(); i++)
 		{
 			buf.Append("#include \"");
-			buf.Append(GetIncludeDependencies()[i]);
+			buf.Append(includeDependencies[i]);
 			buf.Append("\"\n");
 		}
 		buf.Append(finalPreprocessedBuffer.c_str());
@@ -4233,6 +4239,7 @@ void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
 			{
 				idParser src;
 				src.LoadMemoryBinary(&out[0], entry.uncompressedLength, "declbToText", &declManagerLocal.globalTokencache);
+				src.SetFlags(DECL_LEXER_FLAGS);
 				OutputTextSource(src, buf);
 				buf.Append("\n");
 			}
@@ -4255,6 +4262,95 @@ void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
 
 	fileSystem->FreeFileList(list);
 	soundSystem->SetMute(false);
+}
+
+void idDeclManagerLocal::ExportDeclSource(const char *savePath, const char *target, bool expand) {
+	idFile *file;
+	idStr outPath;
+	if (savePath && savePath[0]) {
+		outPath.Append(savePath);
+	}
+
+	soundSystem->SetMute(true);
+
+	const idDeclFile *df;
+	for (int d = 0; d < declManagerLocal.loadedFiles.Num(); d++)
+	{
+		df = declManagerLocal.loadedFiles[d];
+		if(target && df->fileName.Icmp(target))
+			continue;
+
+		idStr out = outPath;
+		out.AppendPath(df->fileName);
+		idFile *file = fileSystem->OpenFileWrite(out);
+
+		int c = 0;
+		for (idDeclLocal *decl = df->decls; decl; decl = decl->nextInFile) {
+			char *declText = (char *) _alloca((decl->GetTextLength() + 1) * sizeof(char));
+			decl->GetText(declText);
+			idStr finalPreprocessedBuffer;
+			if (!expand || decl->type == DECL_TEMPLATE || !sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, decl->GetTextLength()))
+				finalPreprocessedBuffer.Append(declText, decl->GetTextLength());
+			const idStrList &includeDependencies = decl->GetIncludeDependencies();
+			if(includeDependencies.Num() > 0)
+			{
+				sdStringBuilder_Heap buf;
+				for(int i = 0; i < includeDependencies.Num(); i++)
+				{
+					buf.Append("#include \"");
+					buf.Append(includeDependencies[i]);
+					buf.Append("\"\n");
+				}
+				buf.Append(finalPreprocessedBuffer.c_str());
+				finalPreprocessedBuffer = buf.c_str();
+			}
+
+			sdStringBuilder_Heap buf;
+			if(expand)
+			{
+				idParser src;
+				src.LoadMemory(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length(), "exportDeclSource");
+				src.SetFlags(DECL_LEXER_FLAGS);
+				src.SkipUntilString("{");
+				idToken token;
+				token = "{";
+				src.UnreadToken(&token);
+
+				buf.Append(declManager->GetDeclNameFromType(decl->type));
+				buf.Append(" ");
+				buf.Append(decl->GetName());
+				buf.Append(" ");
+				OutputTextSource(src, buf);
+			}
+			else
+			{
+				buf.Append("// ");
+				buf.Append(va("%d ", c));
+				buf.Append(decl->GetName());
+				buf.Append(": BEGIN\n");
+				buf.Append(finalPreprocessedBuffer);
+				buf.Append("\n// ");
+				buf.Append(decl->GetName());
+				buf.Append(": END\n");
+			}
+
+			buf.Append("\n\n");
+			file->Write(buf.c_str(), buf.Length());
+			c++;
+		}
+		common->Printf("Output %d decl source to file: %s\n", c, out.c_str());
+		fileSystem->CloseFile(file);
+	}
+
+	soundSystem->SetMute(false);
+}
+
+void idDeclManagerLocal::ExportDeclSource_f(const idCmdArgs &args) {
+	declManagerLocal.ExportDeclSource(args.Argc() > 1 ? args.Argv(1) : NULL, args.Argc() > 2 ? args.Argv(2) : NULL, false);
+}
+
+void idDeclManagerLocal::ExportDeclExpandSource_f(const idCmdArgs &args) {
+	declManagerLocal.ExportDeclSource(args.Argc() > 1 ? args.Argv(1) : NULL, args.Argc() > 2 ? args.Argv(2) : NULL, true);
 }
 
 #endif
