@@ -128,6 +128,8 @@ private:
     void DP3_SAT(void);
     void DP4_SAT(void);
     void MUL_SAT(void);
+    void RCP_SAT(void);
+    void MOV_SAT(void);
     void OUTPUT(void);
     void ALIAS(void);
     void ATTRIB(void);
@@ -247,6 +249,8 @@ void idARBProgram::Command(const char *cmd)
     else ARB_HANDLE_CMD(DP3_SAT)
     else ARB_HANDLE_CMD(DP4_SAT)
     else ARB_HANDLE_CMD(MUL_SAT)
+    else ARB_HANDLE_CMD(RCP_SAT)
+    else ARB_HANDLE_CMD(MOV_SAT)
     else ARB_HANDLE_CMD(OUTPUT)
     else ARB_HANDLE_CMD(ATTRIB)
     else ARB_HANDLE_CMD(ADDRESS)
@@ -395,6 +399,36 @@ void idARBProgram::ADD_SAT(void)
     parser.ExpectTokenString(";");
 }
 
+// MOV_SAT T, A -> T = clamp(A, 0.0, 1.0)
+void idARBProgram::MOV_SAT(void)
+{
+    ExpectTokenString("MOV_SAT");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    _SAT_Start();
+    ParseValue();
+    _SAT_End();
+    parser.ExpectTokenString(";");
+}
+
+// RCP_SAT T, A -> T = clamp(1.0 / A, 0.0, 1.0)
+void idARBProgram::RCP_SAT(void)
+{
+    ExpectTokenString("RCP_SAT");
+
+    ParseValue();
+    parser.ExpectTokenString(",");
+    AddToken("=");
+    _SAT_Start();
+    AddToken("1.0");
+    AddToken("/");
+    ParseValue();
+    _SAT_End();
+    parser.ExpectTokenString(";");
+}
+
 // MUL_SAT T, A, B -> T = clamp(A * B, 0.0, 1.0)
 void idARBProgram::MUL_SAT(void)
 {
@@ -427,6 +461,7 @@ void idARBProgram::DP4_SAT(void)
 void idARBProgram::Dot_SAT(const char *t)
 {
     ExpectTokenString(t);
+	bool isDp3 = !idStr::Icmpn(t, "dp3", 3);
 
     ParseValue();
     parser.ExpectTokenString(",");
@@ -435,9 +470,14 @@ void idARBProgram::Dot_SAT(const char *t)
     AddToken("dot");
     AddToken("(");
     ParseValue();
+	if(isDp3)
+		AddToken(".xyz");
     parser.ExpectTokenString(",");
     AddToken(",");
     ParseValue();
+	if(isDp3)
+		AddToken(".xyz");
+    AddToken(")");
     _SAT_End();
     parser.ExpectTokenString(";");
 }
@@ -1318,6 +1358,7 @@ void idARBProgram::KIL(void)
 void idARBProgram::Dot(const char *t)
 {
     ExpectTokenString(t);
+	bool isDp3 = !idStr::Icmpn(t, "dp3", 3);
 
     ParseValue();
     parser.ExpectTokenString(",");
@@ -1325,9 +1366,13 @@ void idARBProgram::Dot(const char *t)
     AddToken("dot");
     AddToken("(");
     ParseValue();
+	if(isDp3)
+		AddToken(".xyz");
     parser.ExpectTokenString(",");
     AddToken(",");
     ParseValue();
+	if(isDp3)
+		AddToken(".xyz");
     AddToken(")");
     AddEnding();
     parser.ExpectTokenString(";");
@@ -1461,16 +1506,14 @@ void idARBProgram::SLT(void)
     ParseValue();
     parser.ExpectTokenString(",");
     AddToken("=");
-    AddToken("vec4");
-    AddToken("(");
-    AddToken("lessThan");
-    AddToken("(");
     ParseValue();
+    AddToken("<");
     parser.ExpectTokenString(",");
-    AddToken(",");
     ParseValue();
-    AddToken(")");
-    AddToken(")");
+    AddToken("?");
+    AddToken("1.0");
+    AddToken(":");
+    AddToken("0.0");
     AddEnding();
     parser.ExpectTokenString(";");
 }
