@@ -7,16 +7,19 @@ renderProgram filterCoverage {
 
 	program vertex reference trivial
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		MUL R0, R0, fragment.color;
-		
-		SUB R0, R0, 1;
-		MAD result.color.rgb, R0, $coverage, 1;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R0 * var_Color;
+			R0 = R0 - 1.0;
+			gl_FragColor.rgb = (R0 * $coverage + 1.0).rgb;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 
@@ -41,15 +44,18 @@ renderProgram filterVertexColor {
 
 	program vertex reference trivial
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		SUB R0, R0, 1;
-		MAD result.color.rgb, R0, fragment.color, 1;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R0 - 1.0;
+			gl_FragColor.rgb = (R0 * var_Color + 1.0).rgb;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 
@@ -64,15 +70,18 @@ renderProgram filterVertexColorAlpha {
 
 	program vertex reference trivial
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		SUB R0, R0, 1;
-		MAD result.color.rgb, R0, fragment.color.a, 1;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R0 - 1.0;
+			gl_FragColor.rgb = R0.rgb * var_Color.a + 1.0;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 
@@ -81,18 +90,20 @@ renderProgram filterAlpha {
 
 	program vertex reference trivial
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		TEMP R1;
-		MUL R1, fragment.color, R0;
-		
-		SUB R0, R0, 1;
-		MAD result.color.rgb, R0, R1.a, 1;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			vec4 R1;
+			R1 = var_Color * R0;
+			R0 = R0 - 1.0;
+			gl_FragColor.rgb = R0.rgb * R1.a + 1.0;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 
@@ -118,16 +129,19 @@ renderProgram filterVertexColorCoverage {
 
 	program vertex reference trivial
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		SUB R0, R0, 1;
-		MUL R0, R0, fragment.color;
-		MAD result.color.rgb, R0, $coverage, 1;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R0 - 1.0;
+			R0 = R0 * var_Color;
+			gl_FragColor.rgb = (R0 * $coverage + 1.0).rgb;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 
@@ -189,15 +203,18 @@ renderProgram addVertexColorCoverage {
 
 	program vertex reference trivial
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		MUL R0, R0, fragment.color;
-		MUL result.color.rgb, R0, $coverage;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R0 * var_Color;
+			gl_FragColor.rgb = R0.rgb * $coverage.xyz;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 

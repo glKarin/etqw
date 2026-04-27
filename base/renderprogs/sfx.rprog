@@ -15,26 +15,26 @@ renderProgram sfx/desecratorEffect {
 	program vertex cg { <%
 	
 		struct VsInputs {
-			float3 pos : $positionAttrib;
-			float2 tex : $texCoordAttrib;
-			float3 normal : $normalAttrib;
-			float4 tangent : $tangentAttrib;			
+			vec3 pos : $positionAttrib;
+			vec2 tex : $texCoordAttrib;
+			vec3 normal : $normalAttrib;
+			vec4 tangent : $tangentAttrib;			
 			$if r_32ByteVtx
-			float4 signs : $signAttrib;
+			vec4 signs : $signAttrib;
 			$endif			
 		};
 	
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 toEye	: TEXCOORD1;
-			float3 pos	: TEXCOORD2;
-			float3 toLight	: TEXCOORD3;
+			vec2 tex	: TEXCOORD0;
+			vec3 toEye	: TEXCOORD1;
+			vec3 pos	: TEXCOORD2;
+			vec3 toLight	: TEXCOORD3;
 		};
 		
-		uniform float3 viewOrigin : $viewOrigin;
-		uniform float3 sunDirection : $sunDirection;
+		uniform vec3 viewOrigin : $viewOrigin;
+		uniform vec3 sunDirection : $sunDirection;
 		
-		float GetZ( float2 value, float sign ) {
+		float GetZ( vec2 value, float sign ) {
 			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.f ) );
 		}
 
@@ -51,10 +51,10 @@ renderProgram sfx/desecratorEffect {
 			indata.tangent.w = ( indata.signs.z - 1.f );
 			$endif
 
-			float3 tangent = indata.tangent.xyz;
-			float3 biTangent = cross( indata.normal, tangent ) * indata.tangent.w;
+			vec3 tangent = indata.tangent.xyz;
+			vec3 biTangent = cross( indata.normal, tangent ) * indata.tangent.w;
 
-			float3 toEye = indata.pos - viewOrigin;
+			vec3 toEye = indata.pos - viewOrigin;
 			outData.toEye.x = dot( tangent, toEye );
 			outData.toEye.y = dot( biTangent, toEye );
 			outData.toEye.z = dot( indata.normal, toEye );
@@ -73,10 +73,10 @@ renderProgram sfx/desecratorEffect {
 
 	program fragment cg { <%
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 toEye	: TEXCOORD1;
-			float3 pos	: TEXCOORD2;
-			float3 toLight	: TEXCOORD3;
+			vec2 tex	: TEXCOORD0;
+			vec3 toEye	: TEXCOORD1;
+			vec3 pos	: TEXCOORD2;
+			vec3 toLight	: TEXCOORD3;
 		};
 		
 		sampler2D rainbowMap : $map;
@@ -84,10 +84,10 @@ renderProgram sfx/desecratorEffect {
 		sampler2D specularMap : $specularMap;
 		samplerCUBE skyMap : $skyGradientCubeMap;
 		
-		float4 fragment( VsOutputs indata ) : COLOR {
-			float4 normal = tex2D( bumpMap, indata.tex );
-			float4 gloss = tex2D( specularMap, indata.tex ) * 1.8 + 0.05;
-			float4 skyColor = texCUBE( skyMap , float3( 1.0, 1.0, 1.0 ) );
+		vec4 fragment( VsOutputs indata ) : COLOR {
+			vec4 normal = tex2D( bumpMap, indata.tex );
+			vec4 gloss = tex2D( specularMap, indata.tex ) * 1.8 + 0.05;
+			vec4 skyColor = texCUBE( skyMap , vec3( 1.0, 1.0, 1.0 ) );
 
 			$if !r_dxnNormalMaps
 			normal.x = normal.a;
@@ -99,7 +99,7 @@ renderProgram sfx/desecratorEffect {
 			float dotp = dot( normal.rgb, -indata.toEye );
 			float lookup = dotp;
 
-			return tex2D( rainbowMap, float2( lookup, 0) ) * gloss * skyColor * 1.5;
+			return tex2D( rainbowMap, vec2( lookup, 0) ) * gloss * skyColor * 1.5;
 		}
 	%> }
 }
@@ -110,24 +110,31 @@ renderProgram sfx/desecratorEffect {
 */
 renderProgram sfx/desaturate {
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		MOV	result.texcoord[0], $texCoordAttrib;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord0;
+
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			var_TexCoord0 = $texCoordAttrib;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 	
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		PARAM	scale = {0.20, 0.11, 0.69, 1.0};
-		TEMP	colorSource, R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
 
-		TEX		colorSource, fragment.texcoord[0], $map, 2D;
-		MOV		R0.a, colorSource.a;
-
-		# greyscale factor
-		DP3		R0.rgb, colorSource, scale;
-		LRP		R0.rgb, $parameters.x, colorSource, R0;
-
-		MUL		result.color, $diffuseColor, R0;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 scale = vec4(0.2,0.11,0.69,1.0);
+			vec4 colorSource;
+			vec4 R0;
+			colorSource = texture2D ( $map , var_TexCoord0.xy );
+			R0.a = colorSource.a;
+			// greyscale factor 
+			R0.rgb = vec3( dot ( colorSource.xyz , scale.xyz ) );
+			R0.rgb = mix ( R0.rgb , colorSource.rgb , $parameters.x );
+			gl_FragColor = $diffuseColor * R0;
+		} 
 	%> }
 	
 }
@@ -174,85 +181,92 @@ renderProgram sfx/visor {
 
 	hwSkinningVersion sfx/visor_skinned sfx/visor_hardskinned
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP R1, bitangent;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord2;
+		varying vec4 var_TexCoord3;
+		varying vec4 var_TexCoord4;
+		varying vec4 var_TexCoord5;
 
-		XPD		bitangent,  $normalAttrib, $tangentAttrib;
-		MUL		bitangent, bitangent, $tangentAttrib.w;
-
-		# texture coords
-		DP4		result.texcoord[0].x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4		result.texcoord[0].y, $texCoordAttrib, $diffuseMatrix_t;
-		
-		# vector to eye
-		SUB		R1, $positionAttrib, $viewOrigin;
-		DP3		result.texcoord[2].x, R1, $transposedModelMatrix_x;
-		DP3		result.texcoord[2].y, R1, $transposedModelMatrix_y;
-		DP3		result.texcoord[2].z, R1, $transposedModelMatrix_z;
-
-		# tangent->world matrix
-		DP3		result.texcoord[3].x, $tangentAttrib, $transposedModelMatrix_x;
-		DP3		result.texcoord[3].y, bitangent, $transposedModelMatrix_x;
-		DP3		result.texcoord[3].z, $normalAttrib, $transposedModelMatrix_x;
-
-		DP3		result.texcoord[4].x, $tangentAttrib, $transposedModelMatrix_y;
-		DP3		result.texcoord[4].y, bitangent, $transposedModelMatrix_y;
-		DP3		result.texcoord[4].z, $normalAttrib, $transposedModelMatrix_y;
-
-		DP3		result.texcoord[5].x, $tangentAttrib, $transposedModelMatrix_z;
-		DP3		result.texcoord[5].y, bitangent, $transposedModelMatrix_z;
-		DP3		result.texcoord[5].z, $normalAttrib, $transposedModelMatrix_z;	
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 R1;
+			vec4 bitangent = vec4( attr_Bitangent, 1.0 );
+			// texture coords 
+			var_TexCoord0.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			var_TexCoord0.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			// vector to eye 
+			R1 = $positionAttrib - $viewOrigin;
+			var_TexCoord2.x = dot ( R1.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord2.y = dot ( R1.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord2.z = dot ( R1.xyz , $transposedModelMatrix_z.xyz );
+			// tangent->world matrix 
+			var_TexCoord3.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord3.y = dot ( bitangent.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord3.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord4.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord4.y = dot ( bitangent.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord4.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord5.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_z.xyz );
+			var_TexCoord5.y = dot ( bitangent.xyz , $transposedModelMatrix_z.xyz );
+			var_TexCoord5.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_z.xyz );
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 	
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R1, R2, R3, R4, eye, mix;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord3;
+		varying vec4 var_TexCoord4;
+		varying vec4 var_TexCoord5;
+		varying vec4 var_TexCoord2;
 
-		# get normal from normal map
-		TEX		R1, fragment.texcoord[0], $bumpMap, 2D;
-		$if !r_dxnNormalMaps
-		MOV		R1.x, R1.a;
-		$endif
-		MAD		R2, R1, 2, -1;
-		
-		$if r_normalizeNormalMaps		
-		MOV		R2.z, 0;
-		DP3		R1.x, R2,R2;
-		ADD		R1.x, 1, -R1.x;
-		RSQ		R1.x, R1.x;
-		RCP		R2.z, R1.x;
-		$endif
-		
-
-		# put in world space
-		DP3		R1.x, R2, fragment.texcoord[3];
-		DP3		R1.y, R2, fragment.texcoord[4];
-		DP3		R1.z, R2, fragment.texcoord[5];
-
-		# normalize to eye
-		DP3		eye.w, fragment.texcoord[2], fragment.texcoord[2];
-		RSQ		eye.w, eye.w;
-		MUL		eye, fragment.texcoord[2], eye.w;
-
-		# calc reflection vector: i - 2 * dot(i, n) * n
-		DP3		R2, eye, R1;
-		MUL		R2, R2, 2;
-		MAD		R4, -R1, R2.x, eye;
-
-		# reflect refract mixing (sorta fresnel)
-		DP3_SAT		R1, -eye, R1;
-		SUB		R1, 1, R1;
-		POW		mix, R1.x, $parameters.x;
-
-		# lookup textures and interpolate
-		TEX		R4, R4, $environmentCubeMap, CUBE;
-		MUL		R4, R4, R4;
-		MUL		result.color, R4, $parameters.y;
-		#MOV		result.color, R4;
-		ADD		mix.a, mix, $parameters.z;
-		MUL		result.color.a, $diffuseColor.a, mix.a;
-		#MOV		result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R1;
+			vec4 R2;
+			vec4 R3;
+			vec4 R4;
+			vec4 eye;
+			vec4 mix;
+			// get normal from normal map 
+			R1 = texture2D ( $bumpMap , var_TexCoord0.xy );
+		#if !r_dxnNormalMaps 
+			R1.x = R1.a;
+		#endif 
+			R2 = R1 * 2.0 + -1.0;
+		#if r_normalizeNormalMaps 
+			R2.z = 0.0;
+			R1.x = dot ( R2.xyz , R2.xyz );
+			R1.x = 1.0 + -R1.x;
+			R1.x = 1.0 / sqrt ( R1.x );
+			R2.z = 1.0 / R1.x;
+		#endif 
+			// put in world space 
+			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
+			R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
+			R1.z = dot ( R2.xyz , var_TexCoord5.xyz );
+			// normalize to eye 
+			eye.w = dot ( var_TexCoord2.xyz , var_TexCoord2.xyz );
+			eye.w = 1.0 / sqrt ( eye.w );
+			eye = var_TexCoord2 * eye.w;
+			// calc reflection vector: i - 2 * dot(i, n) * n 
+			R2 = vec4 ( dot ( eye.xyz , R1.xyz ) );
+			R2 = R2 * 2.0;
+			R4 = -R1 * R2.x + eye;
+			// reflect refract mixing (sorta fresnel) 
+			R1 = vec4 ( clamp ( dot ( -eye.xyz , R1.xyz ) , 0.0 , 1.0 ) );
+			R1 = 1.0 - R1;
+			mix = vec4 ( pow ( R1.x , $parameters.x ) );
+			// lookup textures and interpolate 
+			R4 = textureCube ( $environmentCubeMap , R4.xyz );
+			R4 = R4 * R4;
+			gl_FragColor = R4 * $parameters.y;
+			// MOV  result.color, R4; 
+			mix.a = mix.a + $parameters.z;
+			gl_FragColor.a = $diffuseColor.a * mix.a;
+			// MOV  result.color.a, 1; 
+		} 
 	%> }
 }
 
@@ -348,94 +362,98 @@ renderProgram sfx/windowglass {
 
 	instanceVersion sfx/windowglass_instance
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP R1, bitangent;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord2;
+		varying vec4 var_TexCoord3;
+		varying vec4 var_TexCoord4;
+		varying vec4 var_TexCoord5;
+		varying vec4 var_Color;
 
-		XPD		bitangent,  $normalAttrib, $tangentAttrib;
-		MUL		bitangent, bitangent, $tangentAttrib.w;
-
-		# texture coords
-		MOV		result.texcoord[0], $texCoordAttrib;
-		DP4		result.texcoord[0].x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4		result.texcoord[0].y, $texCoordAttrib, $diffuseMatrix_t;
-		
-
-		# vector to eye in worldspace
-		SUB		R1, $positionAttrib, $viewOrigin;
-		DP3		result.texcoord[2].x, R1, $transposedModelMatrix_x;
-		DP3		result.texcoord[2].y, R1, $transposedModelMatrix_y;
-		DP3		result.texcoord[2].z, R1, $transposedModelMatrix_z;
-
-		# tangent->world matrix
-		DP3		result.texcoord[3].x, $tangentAttrib, $transposedModelMatrix_x;
-		DP3		result.texcoord[3].y, bitangent, $transposedModelMatrix_x;
-		DP3		result.texcoord[3].z, $normalAttrib, $transposedModelMatrix_x;
-
-		DP3		result.texcoord[4].x, $tangentAttrib, $transposedModelMatrix_y;
-		DP3		result.texcoord[4].y, bitangent, $transposedModelMatrix_y;
-		DP3		result.texcoord[4].z, $normalAttrib, $transposedModelMatrix_y;
-
-		DP3		result.texcoord[5].x, $tangentAttrib, $transposedModelMatrix_z;
-		DP3		result.texcoord[5].y, bitangent, $transposedModelMatrix_z;
-		DP3		result.texcoord[5].z, $normalAttrib, $transposedModelMatrix_z;	
-		
-		TEMP R0;
-		MAD	R0, $colorAttrib, $colorModulate, $colorAdd;
-		MUL result.color, $diffuseColor, R0;
-		
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 R1;
+			vec4 bitangent = vec4( attr_Bitangent, 1.0 );
+			// texture coords 
+			var_TexCoord0 = $texCoordAttrib;
+			var_TexCoord0.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			var_TexCoord0.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			// vector to eye in worldspace 
+			R1 = $positionAttrib - $viewOrigin;
+			var_TexCoord2.x = dot ( R1.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord2.y = dot ( R1.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord2.z = dot ( R1.xyz , $transposedModelMatrix_z.xyz );
+			// tangent->world matrix 
+			var_TexCoord3.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord3.y = dot ( bitangent.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord3.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_x.xyz );
+			var_TexCoord4.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord4.y = dot ( bitangent.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord4.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_y.xyz );
+			var_TexCoord5.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_z.xyz );
+			var_TexCoord5.y = dot ( bitangent.xyz , $transposedModelMatrix_z.xyz );
+			var_TexCoord5.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_z.xyz );
+			vec4 R0;
+			R0 = $colorAttrib * $colorModulate + $colorAdd;
+			var_Color = $diffuseColor * R0;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 	
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R1, R2, R3, R4, eye, mix;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord3;
+		varying vec4 var_TexCoord4;
+		varying vec4 var_TexCoord5;
+		varying vec4 var_TexCoord2;
+		varying vec4 var_Color;
 
-		# get normal from normal map
-		TEX		R1, fragment.texcoord[0], $bumpMap, 2D;
-		$if !r_dxnNormalMaps
-		MOV		R1.x, R1.a;
-		$endif
-		MAD		R2, R1, 2, -1;
-		
-		$if r_normalizeNormalMaps
-		MOV		R2.z, 0;
-		DP3		R1.x, R2,R2;
-		ADD		R1.x, 1, -R1.x;
-		RSQ		R1.x, R1.x;
-		RCP		R2.z, R1.x;
-		$endif
-		
-
-		# put in world space
-		DP3		R1.x, R2, fragment.texcoord[3];
-		DP3		R1.y, R2, fragment.texcoord[4];
-		DP3		R1.z, R2, fragment.texcoord[5];
-
-		# normalize to eye
-		DP3		eye.w, fragment.texcoord[2], fragment.texcoord[2];
-		RSQ		eye.w, eye.w;
-		MUL		eye, fragment.texcoord[2], eye.w;
-
-		# calc reflection vector: i - 2 * dot(i, n) * n
-		DP3		R2, eye, R1;
-		MUL		R2, R2, 2;
-		MAD		R4, -R1, R2.x, eye;
-
-		# reflect refract mixing (sorta fresnel)
-		DP3_SAT	R1, -eye, R1;
-		SUB		R1, 1, R1;
-		POW		mix, R1.x, $parameters.x;
-
-		# lookup textures and interpolate
-		TEX		R4, R4, $environmentCubeMap, CUBE;
-		TEX		R2, fragment.texcoord[0], $diffuseMap, 2D;
-		
-		TEMP	col;
-		MUL		col.rgb, R4, $parameters.y;
-		ADD		mix, mix, $parameters.z;
-		MUL		col.a, R2.a, mix;
-		
-		MUL		result.color, col, fragment.color;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R1;
+			vec4 R2;
+			vec4 R3;
+			vec4 R4;
+			vec4 eye;
+			vec4 mix;
+			// get normal from normal map 
+			R1 = texture2D ( $bumpMap , var_TexCoord0.xy );
+			#if !r_dxnNormalMaps 
+			R1.x = R1.a;
+			#endif 
+			R2 = R1 * 2.0 + -1.0;
+			#if r_normalizeNormalMaps 
+			R2.z = 0.0;
+			R1.x = dot ( R2 , R2 );
+			R1.x = 1.0 + -R1.x;
+			R1.x = 1.0 / sqrt ( R1.x );
+			R2.z = 1.0 / R1.x;
+			#endif 
+			// put in world space 
+			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
+			R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
+			R1.z = dot ( R2.xyz , var_TexCoord5.xyz );
+			// normalize to eye 
+			eye.w = dot ( var_TexCoord2.xyz , var_TexCoord2.xyz );
+			eye.w = 1.0 / sqrt ( eye.w );
+			eye = var_TexCoord2 * eye.w;
+			// calc reflection vector: i - 2 * dot(i, n) * n 
+			R2 = vec4( dot ( eye.xyz , R1.xyz ) );
+			R2 = R2 * 2.0;
+			R4 = -R1 * R2.x + eye;
+			// reflect refract mixing (sorta fresnel) 
+			R1 = vec4( clamp ( dot ( -eye.xyz , R1.xyz ) , 0.0 , 1.0 ) );
+			R1 = 1.0 - R1;
+			mix = vec4( pow ( R1.x , $parameters.x ) );
+			// lookup textures and interpolate 
+			R4 = textureCube ( $environmentCubeMap , R4.xyz );
+			R2 = texture2D ( $diffuseMap , var_TexCoord0.xy );
+			vec4 col;
+			col.rgb = R4.rgb * $parameters.y;
+			mix = mix + $parameters.z;
+			col.a = R2.a * mix.a;
+			gl_FragColor = col * var_Color;
+		} 
 	%> }
 }
 
@@ -523,55 +541,59 @@ renderProgram sfx/windowglass_mask {
 		depthFunc less
 	}
 	
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R1, R2, R3, R4, eye, mix;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord3;
+		varying vec4 var_TexCoord4;
+		varying vec4 var_TexCoord5;
+		varying vec4 var_TexCoord2;
 
-		# get normal from normal map
-		TEX		R1, fragment.texcoord[0], $bumpMap, 2D;
-		$if !r_dxnNormalMaps
-		MOV		R1.x, R1.a;
-		$endif
-		MAD		R2, R1, 2, -1;
-
-		$if r_normalizeNormalMaps
-		MOV		R2.z, 0;
-		DP3		R1.x, R2,R2;
-		ADD		R1.x, 1, -R1.x;
-		RSQ		R1.x, R1.x;
-		RCP		R2.z, R1.x;
-		$endif
-
-		# put in world space
-		DP3		R1.x, R2, fragment.texcoord[3];
-		DP3		R1.y, R2, fragment.texcoord[4];
-		DP3		R1.z, R2, fragment.texcoord[5];
-
-		# normalize to eye
-		DP3		eye.w, fragment.texcoord[2], fragment.texcoord[2];
-		RSQ		eye.w, eye.w;
-		MUL		eye, fragment.texcoord[2], eye.w;
-
-		# calc reflection vector: i - 2 * dot(i, n) * n
-		DP3		R2, eye, R1;
-		MUL		R2, R2, 2;
-		MAD		R4, -R1, R2.x, eye;
-
-		# reflect refract mixing (sorta fresnel)
-		DP3_SAT	R1, -eye, R1;
-		SUB		R1, 1, R1;
-		POW		mix, R1.x, $parameters.x;
-
-		# lookup textures and interpolate
-		TEX		R4, R4, $environmentCubeMap, CUBE;
-		TEX		R2, fragment.texcoord[0], $mask, 2D;
-		
-		MUL		result.color.rgb, R4, $parameters.y;
-		ADD		mix, mix, $parameters.z;
-		MUL		result.color.a, R2.x, mix;
-		
-		##MOV	result.color, R2.x;
-		##MOV	result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R1;
+			vec4 R2;
+			vec4 R3;
+			vec4 R4;
+			vec4 eye;
+			vec4 mix;
+			// get normal from normal map 
+			R1 = texture2D ( $bumpMap , var_TexCoord0.xy );
+			#if !r_dxnNormalMaps 
+			R1.x = R1.a;
+			#endif 
+			R2 = R1 * 2.0 + -1.0;
+			#if r_normalizeNormalMaps 
+			R2.z = 0.0;
+			R1.x = dot ( R2 , R2 );
+			R1.x = 1.0 + -R1.x;
+			R1.x = 1.0 / sqrt ( R1.x );
+			R2.z = 1.0 / R1.x;
+			#endif 
+			// put in world space 
+			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
+			R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
+			R1.z = dot ( R2.xyz , var_TexCoord5.xyz );
+			// normalize to eye 
+			eye.w = dot ( var_TexCoord2.xyz , var_TexCoord2.xyz );
+			eye.w = 1.0 / sqrt ( eye.w );
+			eye = var_TexCoord2 * eye.w;
+			// calc reflection vector: i - 2 * dot(i, n) * n 
+			R2 = vec4( dot ( eye.xyz , R1.xyz ) );
+			R2 = R2 * 2.0;
+			R4 = -R1 * R2.x + eye;
+			// reflect refract mixing (sorta fresnel) 
+			R1 = vec4( clamp ( dot ( -eye.xyz , R1.xyz ) , 0.0 , 1.0 ) );
+			R1 = 1.0 - R1;
+			mix = vec4( pow ( R1.x , $parameters.x ) );
+			// lookup textures and interpolate 
+			R4 = textureCube ( $environmentCubeMap , R4.xyz );
+			R2 = texture2D ( $mask , var_TexCoord0.xy );
+			gl_FragColor.rgb = R4.rgb * $parameters.y;
+			mix = mix + $parameters.z;
+			gl_FragColor.a = (R2.x * mix).a;
+			// MOV result.color, R2.x; 
+			// MOV result.color.a, 1; 
+		} 
 	%> }
 }
 
@@ -593,40 +615,49 @@ renderProgram sfx/windowglass_mask_instance {
 renderProgram sfx/cubemap {
 	hwSkinningVersion sfx/cubeMapSkinningMatrix sfx/cubeMapHardSkinningMatrix
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP	R0;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord1;
+		varying vec4 var_Color;
 
-		MOV	result.texcoord[0], $normalAttrib;
-		SUB	result.texcoord[1], $viewOrigin, $positionAttrib;
-		
-		#support vertex colors and shader red,green,blue keywords
-		MAD	R0, $colorAttrib, $colorModulate, $colorAdd;
-		MUL	result.color, R0, $diffuseColor;
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 R0;
+			var_TexCoord0 = vec4 ( $normalAttrib, 1.0 );
+			var_TexCoord1 = $viewOrigin - $positionAttrib;
+			// support vertex colors and shader red,green,blue keywords 
+			R0 = $colorAttrib * $colorModulate + $colorAdd;
+			var_Color = R0 * $diffuseColor;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 	
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP	toEye, normal, R0;
-		PARAM	scaleTwo = { 2, 2, 2, 2 };
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord1;
+		varying vec4 var_Color;
 
-		# normalize surface normal
-		DP3	R0, fragment.texcoord[0], fragment.texcoord[0];
-		RSQ	R0, R0.x;
-		MUL	normal, fragment.texcoord[0], R0;
-
-		# normalize vector to eye
-		DP3	R0, fragment.texcoord[1], fragment.texcoord[1];
-		RSQ	R0, R0.x;
-		MUL	toEye, fragment.texcoord[1], R0;
-
-		# calculate reflection vector
-		DP3	R0, toEye, normal;
-		MUL	R0, R0, normal;
-		MAD	R0, R0, scaleTwo, -toEye;
-
-		TEX	R0, R0, $environmentCubeMap, CUBE;
-		MUL	result.color, R0, fragment.color;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 toEye;
+			vec4 normal;
+			vec4 R0;
+			vec4 scaleTwo = vec4(2.0,2.0,2.0,2.0);
+			// normalize surface normal 
+			R0 = vec4( dot ( var_TexCoord0.xyz , var_TexCoord0.xyz ) );
+			R0 = vec4 ( 1.0 / sqrt ( R0.x ) );
+			normal = var_TexCoord0 * R0;
+			// normalize vector to eye 
+			R0 = vec4 ( dot ( var_TexCoord1.xyz , var_TexCoord1.xyz ) );
+			R0 = vec4( 1.0 / sqrt ( R0.x ) );
+			toEye = var_TexCoord1 * R0;
+			// calculate reflection vector 
+			R0 = vec4 ( dot ( toEye , normal ) );
+			R0 = R0 * normal;
+			R0 = R0 * scaleTwo + -toEye;
+			R0 = textureCube ( $environmentCubeMap , R0.xyz );
+			gl_FragColor = R0 * var_Color;
+		} 
 	%> }
 }
 
@@ -719,47 +750,31 @@ renderProgram sfx/littrail {
 */
 renderProgram sfx/deploy {
 
-	program vertex cg { <%
-	
-		struct VsInputs {
-			float3 pos	: $positionAttrib;
-			float2 tex	: $texCoordAttrib;
-			float4 tang 	: $tangentAttrib;
-			float3 norm	: $normalAttrib;
-			float4 color	: $colorAttrib;
-		};
+	program vertex glsl { <%
+		varying vec3 pos;
 
-		struct VsOutputs {
-			float3 pos	: TEXCOORD2;
-		};
-
-		VsOutputs vertex(VsInputs indata) {
-			VsOutputs outData;
-			outData.pos = indata.pos;
-			return outData;
+		void main() {
+			pos = $positionAttrib.xyz;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
 
-	program fragment cg { <%
+	program fragment glsl { <%
+		varying vec3 pos;
 
-		struct VsOutputs {
-			float3 pos		: TEXCOORD2;
-		};
+		#define color $diffuseColor	//Fragment
 
-		uniform float4 color : $diffuseColor;	//Fragment
-		sampler2D texture : $map;
-
-		float pattern( float3 pos, float freq) {
+		float pattern( vec3 pos, float freq) {
 		   pos = pos*freq;
-		   float a = tex2D( texture , pos.xy ).r;
-		   a *= tex2D( texture , float2( 0.5, pos.z ) ).r;
-		   a = 1-a;
+		   float a = texture2D( $map , pos.xy ).r;
+		   a *= texture2D( $map , vec2( 0.5, pos.z ) ).r;
+		   a = 1.0-a;
 		   return 0.1 + a;
 
 		}
 
-		float4 fragment(VsOutputs  indata) : COLOR {
-			return color * pattern( indata.pos + 1.46, 0.058 );
+		void main() {
+			gl_FragColor = color * pattern( pos + 1.46, 0.058 );
 		}
 	%> }
 }
@@ -768,28 +783,28 @@ renderProgram sfx/horizon {
 
 	program vertex cg { <%
 		struct VsInputs {
-			float3 pos	: $positionAttrib;
-			float2 tex	: $texCoordAttrib;
-			float4 tang	: $tangentAttrib;
-			float3 norm	: $normalAttrib;
-			float4 color: COLOR0;
+			vec3 pos	: $positionAttrib;
+			vec2 tex	: $texCoordAttrib;
+			vec4 tang	: $tangentAttrib;
+			vec3 norm	: $normalAttrib;
+			vec4 color: COLOR0;
 			$if r_32ByteVtx
-			float4 signs : $signAttrib;
+			vec4 signs : $signAttrib;
 			$endif
 		};
 
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 toLight	: TEXCOORD1;
-			float3 tang	: TEXCOORD2;
-			float3 bino	: TEXCOORD3;
-			float3 norm	: TEXCOORD4;
-			float4 color	: COLOR0;
+			vec2 tex	: TEXCOORD0;
+			vec3 toLight	: TEXCOORD1;
+			vec3 tang	: TEXCOORD2;
+			vec3 bino	: TEXCOORD3;
+			vec3 norm	: TEXCOORD4;
+			vec4 color	: COLOR0;
 		};
 
-		uniform float3 toSun 	: $sunDirection;
+		uniform vec3 toSun 	: $sunDirection;
 		
-		float GetZ( float2 value, float sign ) {
+		float GetZ( vec2 value, float sign ) {
 			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.f ) );
 		}
 
@@ -807,8 +822,8 @@ renderProgram sfx/horizon {
 
 			outData.tex = indata.tex;
 
-			float3 tangent = indata.tang.xyz;
-			float3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
+			vec3 tangent = indata.tang.xyz;
+			vec3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
 
 			outData.toLight.x = dot( tangent, toSun );
 			outData.toLight.y = dot( biTangent, toSun );
@@ -835,12 +850,12 @@ renderProgram sfx/horizon {
 
 	program fragment cg { <%
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 toLight	: TEXCOORD1;
-			float3 tang	: TEXCOORD2;
-			float3 bino	: TEXCOORD3;
-			float3 norm	: TEXCOORD4;
-			float4 color	: COLOR0;
+			vec2 tex	: TEXCOORD0;
+			vec3 toLight	: TEXCOORD1;
+			vec3 tang	: TEXCOORD2;
+			vec3 bino	: TEXCOORD3;
+			vec3 norm	: TEXCOORD4;
+			vec4 color	: COLOR0;
 		};
 
 		sampler2D diffuseMap : $diffuseMap;
@@ -848,31 +863,31 @@ renderProgram sfx/horizon {
 		samplerCUBE ambientCubemap : $ambientCubeMap;
 		uniform float ambientBrightness : $ambientBrightness;
 
-		uniform float4 sunColor	: $sunColor;
+		uniform vec4 sunColor	: $sunColor;
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		vec4 fragment(VsOutputs  indata) : COLOR {
 
 			// Load diffuse
-			float4 diffuse = tex2D( diffuseMap, indata.tex );
+			vec4 diffuse = tex2D( diffuseMap, indata.tex );
 			if( diffuse.a < 0.5f ) discard;
 
 			// Decode normal
-			float4 normal = tex2D( normalMap, indata.tex ) * 2.0f - 1.0f;
+			vec4 normal = tex2D( normalMap, indata.tex ) * 2.0f - 1.0f;
 			normal.x = normal.w;
 			normal.z = sqrt( 1.f - dot( normal.xy, normal.xy ) );
 
 			// Sunlight
-			float3 sunLight = max( dot( normal.xyz, indata.toLight ), 0) * sunColor.rgb;
+			vec3 sunLight = max( dot( normal.xyz, indata.toLight ), 0) * sunColor.rgb;
 
 			// Ambient
-			float3 localNormal;
+			vec3 localNormal;
 			localNormal.x = dot( normal.xyz, indata.tang );
 			localNormal.y = dot( normal.xyz, indata.bino );
 			localNormal.z = dot( normal.xyz, indata.norm );
-			float3 ambLight = texCUBE( ambientCubemap, localNormal ).rgb * ambientBrightness;
+			vec3 ambLight = texCUBE( ambientCubemap, localNormal ).rgb * ambientBrightness;
 
 			// Result
-			return float4( diffuse.rgb * ( sunLight + ambLight ), diffuse.a );
+			return vec4( diffuse.rgb * ( sunLight + ambLight ), diffuse.a );
 
 		}
 	%> }
@@ -891,38 +906,44 @@ renderProgram sfx/fadeedge {
 		depthFunc less
 	}
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
+	program vertex glsl { <%
+		varying vec4 var_Color;
+		varying vec4 var_TexCoord0;
 
-		MOV	result.color, $colorAttrib;
-		DP4 result.texcoord[0].x, $texCoordAttrib, $maskMatrix_s;
-		DP4 result.texcoord[0].y, $texCoordAttrib, $maskMatrix_t;		
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			var_Color = $colorAttrib;
+			var_TexCoord0.x = dot ( $texCoordAttrib , $maskMatrix_s );
+			var_TexCoord0.y = dot ( $texCoordAttrib , $maskMatrix_t );
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 	
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0, R1, mask;
-		
-		# lookup mask texture
-		TEX		mask, fragment.texcoord[0], $mask, 2D;
-		SUB		R1, mask.a, $parameters.x;
-		#MUL		R1, -1, R1;
-		#KIL		R1;
-		ABS		R1, R1;
-		
-		MUL_SAT	R1, $parameters.y, R1;
-		SUB		R1, 1, R1;		
-		#MUL		mask, R1, mask;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
 
-		SUB		R0, R1, 0.05;
-		KIL		R0;
-		
-		#MUL		R1.x, 0.5, R1;
-		TEX		result.color, R1.x, $map, 2D;
-	
-		#MOV		result.color, mask;
-		MOV		result.color.a, R1.a;
-		#MOV		result.color.gb, 0;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			vec4 R1;
+			vec4 _mask;
+			// lookup mask texture 
+			_mask = texture2D ( $mask , var_TexCoord0.xy );
+			R1 = vec4 ( _mask.a - $parameters.x );
+			// MUL  R1, -1, R1; 
+			// KIL  R1; 
+			R1 = abs ( R1 );
+			R1 = clamp ( $parameters.y * R1 , 0.0 , 1.0 );
+			R1 = 1.0 - R1;
+			// MUL  mask, R1, mask; 
+			R0 = R1 - vec4 ( 0.05 );
+			if ( R0.x < 0.0 || R0.y < 0.0 || R0.z < 0.0 || R0.w < 0.0 ) discard;
+			// MUL  R1.x, 0.5, R1; 
+			gl_FragColor = texture2D ( $map , R1.xx );
+			// MOV  result.color, mask; 
+			gl_FragColor.a = R1.a;
+			// MOV  result.color.gb, 0; 
+		} 
 	%> }
 }
 
@@ -967,36 +988,36 @@ renderProgram sfx/stroggForceField {
 	hwSkinningVersion sfx/stroggForceFieldSkinningMatrix sfx/stroggForceFieldHardSkinningMatrix
 
 	program vertex glsl { <%
-varying vec3 noisePos;
-varying vec2 tex;
-varying vec4 color;
-varying vec4 color1;
+		varying vec3 noisePos;
+		varying vec2 tex;
+		varying vec4 color;
+		varying vec4 color1;
 
-void main ( void ) {
-// ARB_position_invariant;
-vec4 R1;
-noisePos.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
-noisePos.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
-noisePos.z = $parameters.x;
-tex.x = dot ( $texCoordAttrib , $maskMatrix_s );
-tex.y = dot ( $texCoordAttrib , $maskMatrix_t );
-R1 = $colorAttrib * $colorModulate + $colorAdd;
-R1 = R1 * $diffuseColor;
-R1 = 1.0 - R1;
-color = R1 + R1;
-color.w = $colorAttrib.w;
-R1 = $colorAttrib * $colorModulate + $colorAdd;
-color.w = ($diffuseColor * R1).w;
-vec4 _F1;
-vec4 _F2;
-_F2 = $positionAttrib - $viewOrigin;
-_F1.x = dot ( _F2.xyz , _F2.xyz );
-_F1.y = 1.0 / sqrt ( _F1.x );
-_F1.x = _F1.y * _F1.x;
-_F2.x = $fogDepths.z * 0.5;
-color1 = vec4( _F1.x * _F2.x + $fogDepths.w );
-gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
-}
+		void main ( void ) {
+			// ARB_position_invariant;
+			vec4 R1;
+			noisePos.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			noisePos.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			noisePos.z = $parameters.x;
+			tex.x = dot ( $texCoordAttrib , $maskMatrix_s );
+			tex.y = dot ( $texCoordAttrib , $maskMatrix_t );
+			R1 = $colorAttrib * $colorModulate + $colorAdd;
+			R1 = R1 * $diffuseColor;
+			R1 = 1.0 - R1;
+			color = R1 + R1;
+			color.w = $colorAttrib.w;
+			R1 = $colorAttrib * $colorModulate + $colorAdd;
+			color.w = ($diffuseColor * R1).w;
+			vec4 _F1;
+			vec4 _F2;
+			_F2 = $positionAttrib - $viewOrigin;
+			_F1.x = dot ( _F2.xyz , _F2.xyz );
+			_F1.y = 1.0 / sqrt ( _F1.x );
+			_F1.x = _F1.y * _F1.x;
+			_F2.x = $fogDepths.z * 0.5;
+			color1 = vec4( _F1.x * _F2.x + $fogDepths.w );
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		}
 	%> }
 
 	program fragment glsl { <%
@@ -1091,32 +1112,32 @@ renderProgram sfx/stroggForceFieldLarge {
 	program vertex cg { <%
 	
 		struct VsInputs {
-			float3 pos : $positionAttrib;
-			float4 tex : $texCoordAttrib;
-			float4 color : $colorAttrib;
-			float3 normal: $normalAttrib;
+			vec3 pos : $positionAttrib;
+			vec4 tex : $texCoordAttrib;
+			vec4 color : $colorAttrib;
+			vec3 normal: $normalAttrib;
 			$if r_32ByteVtx
-			float4 signs : $signAttrib;
+			vec4 signs : $signAttrib;
 			$endif
 		};
 	
 		struct VsOutputs {
-			float2 tex		: TEXCOORD0;
-			float3 noisePos	: TEXCOORD1;
-			float4 color	: TEXCOORD2; // may go over 1
+			vec2 tex		: TEXCOORD0;
+			vec3 noisePos	: TEXCOORD1;
+			vec4 color	: TEXCOORD2; // may go over 1
 		};
 		
-		uniform float4 matrixS : $diffuseMatrix_s;
-		uniform float4 matrixT : $diffuseMatrix_t;
+		uniform vec4 matrixS : $diffuseMatrix_s;
+		uniform vec4 matrixT : $diffuseMatrix_t;
 		
-		uniform float4 matrix2S : $maskMatrix_s;
-		uniform float4 matrix2T : $maskMatrix_t;		
-		uniform float3 time : $parameters;
-		uniform float4 colorModulate : $colorModulate;
-		uniform float4 colorAdd : $colorAdd;	
-		uniform float3 eyePos : $viewOrigin;
+		uniform vec4 matrix2S : $maskMatrix_s;
+		uniform vec4 matrix2T : $maskMatrix_t;		
+		uniform vec3 time : $parameters;
+		uniform vec4 colorModulate : $colorModulate;
+		uniform vec4 colorAdd : $colorAdd;	
+		uniform vec3 eyePos : $viewOrigin;
 
-		float GetZ( float2 value, float sign ) {
+		float GetZ( vec2 value, float sign ) {
 			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.f ) );
 		}
 		
@@ -1137,11 +1158,11 @@ renderProgram sfx/stroggForceFieldLarge {
 			outData.tex.x = dot( indata.tex, matrix2S );
 			outData.tex.y = dot( indata.tex, matrix2T );
 			
-			//float4 color =  indata.color * colorModulate + colorAdd;
+			//vec4 color =  indata.color * colorModulate + colorAdd;
 			//outData.color = 1.0f - color; //works substractive so flip it here
 			//outData.color *= 2;
 			
-			float3 toEye = indata.pos - eyePos;
+			vec3 toEye = indata.pos - eyePos;
 			float color = pow( 1.0f - abs( dot ( indata.normal, normalize( toEye ) ) ), 8.0f );
 			
 			outData.color = color; //works substractive so flip it here
@@ -1155,25 +1176,25 @@ renderProgram sfx/stroggForceFieldLarge {
 		$include "noise.hg"
 		
 		struct VsOutputs {
-			float2 tex		: TEXCOORD0;
-			float3 noisePos	: TEXCOORD1;
-			float4 color	: TEXCOORD2;
+			vec2 tex		: TEXCOORD0;
+			vec3 noisePos	: TEXCOORD1;
+			vec4 color	: TEXCOORD2;
 		};
 		
 		sampler2D rainbowMap : $map;
 		sampler2D refreshMap : $mask;
 		sampler2D diffuseMap : $diffuseMap;
 	
-		uniform float2 noiseScale : $parameters2;
+		uniform vec2 noiseScale : $parameters2;
 
 		
-		float4 fragment( VsOutputs indata ) : COLOR {
+		vec4 fragment( VsOutputs indata ) : COLOR {
 		
 			// Do a traditional perlin noise lookup
 			float noise = perlin( indata.noisePos );		
 			
 			// Make bands in this noise (marble style)
-			float bands = tex2D( rainbowMap, float2( noise, 0 ) ).x;
+			float bands = tex2D( rainbowMap, vec2( noise, 0 ) ).x;
 			
 			// The refresh map is where the field is "fresh" or "old" it allows the field to be nonuniform this is a "signed" texture (+1 is fresh -1 is old )
 			//float refresh = tex2D( refreshMap, indata.tex + noise * noiseScale ).x * 2 - 1;
@@ -1184,7 +1205,7 @@ renderProgram sfx/stroggForceFieldLarge {
 			
 			// Map the grayscale "field density" value to a nice color gradient
 			bands *= indata.color.x;
-			return tex2D( diffuseMap, float2( bands, 0 ) );
+			return tex2D( diffuseMap, vec2( bands, 0 ) );
 		}
 	%> }
 }
@@ -1194,13 +1215,13 @@ renderProgram sfx/slipgate {
 	program vertex cg { <%
 	
 		struct VsInputs {
-			float3 pos : $positionAttrib;
-			float2 tex : $texCoordAttrib;
-			float4 color : $colorAttrib;
+			vec3 pos : $positionAttrib;
+			vec2 tex : $texCoordAttrib;
+			vec4 color : $colorAttrib;
 		};
 	
 		struct VsOutputs {
-			float2 tex		: TEXCOORD0;
+			vec2 tex		: TEXCOORD0;
 		};
 		
 			
@@ -1218,33 +1239,33 @@ renderProgram sfx/slipgate {
 	program fragment cg { <%
 		
 		struct VsOutputs {
-			float2 tex		: TEXCOORD0;
+			vec2 tex		: TEXCOORD0;
 		};
 		
 		sampler2D starMap : $map;
 		sampler2D diffuseMap : $diffuseMap;
 		sampler2D rainbowMap : $mask;		
-		float4 diffuseColor : $diffuseColor;
+		vec4 diffuseColor : $diffuseColor;
 		
 		float time : $parameters;
 
 		$include "noise.hg"
 
-		float4 fragment( VsOutputs indata ) : COLOR {
+		vec4 fragment( VsOutputs indata ) : COLOR {
 		
 			
-			float2 center = indata.tex - float2( 0.5, 0.5 );
+			vec2 center = indata.tex - vec2( 0.5, 0.5 );
 			
 			float len = length( center );
-			float2 dir = center * ( 1.0f / len );
+			vec2 dir = center * ( 1.0f / len );
 			
 			float angle = atan2( center.y, center.x ) / 3.14159265;
 			
-			float2 texCoord;
+			vec2 texCoord;
 			texCoord.y = ( (1.0f / len ) - time * 0.3 ) * 0.5;
 			texCoord.x = (angle + time * 0.002 * ( len * 10 ) );
 			
-			float4 color = tex2D( starMap, texCoord );
+			vec4 color = tex2D( starMap, texCoord );
 			color.a = (1.0f - (len * 2) * (len * 2) * (len * 2)) * color.r + (1.0f - (len * 2));//color.r + 0.5 * ( 0.5f - len );
 			color.rgb += (1.0f - (len * 2)) * 0.5;	//Make centre brighter
 			
@@ -1260,18 +1281,18 @@ renderProgram sfx/blendFilterFade {
 
 	program vertex cg { <%
 		struct VsInputs {
-			float3 pos	: POSITION;
-			float4 tex	: $texCoordAttrib;
-			float4 col	: $colorAttrib;
+			vec3 pos	: POSITION;
+			vec4 tex	: $texCoordAttrib;
+			vec4 col	: $colorAttrib;
 		};
 
 		struct VsOutputs {
-			float4 col  : COLOR0;
-			float2 tex	: TEXCOORD0;
+			vec4 col  : COLOR0;
+			vec2 tex	: TEXCOORD0;
 		};
 
-		float4 diffuse_s : $diffuseMatrix_s;
-		float4 diffuse_t : $diffuseMatrix_t;
+		vec4 diffuse_s : $diffuseMatrix_s;
+		vec4 diffuse_t : $diffuseMatrix_t;
 		
 		VsOutputs vertex(VsInputs indata) {
 			VsOutputs outdata;
@@ -1304,58 +1325,52 @@ renderProgram sfx/blendDecalBlendFade {
 
 	hwSkinningVersion 	sfx/blendDecalBlendFade_HardSkin sfx/blendDecalBlendFade_HardSkin
 
-	program vertex cg { <%
-		struct VsInputs {
-			float3 pos	: POSITION;
-			float4 tex	: $texCoordAttrib;
-			float4 col	: $colorAttrib;
-			float4 tangent: $tangentAttrib;
-			$if r_32ByteVtx
-			float4 signs : $signAttrib;
-			$endif
-		};
+	program vertex glsl { <%
+		#define col BYTE_COLOR($colorAttrib)
+		#define diffuse_s $diffuseMatrix_s
+		#define diffuse_t $diffuseMatrix_t
+		#define timeParms $parameters.xyz // Current time, 1 / length of time to fade
 
-		struct VsOutputs {
-			float4 col  : COLOR0;
-			float2 tex	: TEXCOORD0;
-		};
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		float4 diffuse_s : $diffuseMatrix_s;
-		float4 diffuse_t : $diffuseMatrix_t;
-		float3 timeParms : $parameters; // Current time, 1 / length of time to fade
-
-		float GetZ( float2 value, float sign ) {
-			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * (  sign - 1.f ) );
+		float GetZ( vec2 value, float sign ) {
+			return ( sqrt( 1.0 - ( dot( value.xy, value.xy ) ) ) * (  sign - 1.0 ) );
 		}
 		
-		VsOutputs vertex(VsInputs indata) {
-			VsOutputs outdata;
-			$if r_32ByteVtx
-			indata.tex.xy *= 1.f/4096.f;
-			indata.tex.zw = 1.f;
+		void main() {
+			vec4 tex = $texCoordAttrib;
+			vec4 tangent = vec4($tangentAttrib, 1.0);
+			#if r_32ByteVtx
+			tex.xy *= 1.0/4096.0;
+			tex.zw = 1.0;
 			// I feel dirty
-			indata.tangent.w = indata.tangent.x * 32767 + indata.tangent.y;
-			$endif
+			tangent.w = tangent.x * 32767 + tangent.y;
+			#endif
 
-			outdata.tex.x = dot( indata.tex, diffuse_s);
-			outdata.tex.y = dot( indata.tex, diffuse_t );
-			outdata.col = indata.col;
+			var_TexCoord.x = dot( tex, diffuse_s);
+			var_TexCoord.y = dot( tex, diffuse_t );
+			var_Color = col;
 			
 			// Tangent .w has the time of death, timeParms.x has current time, normalize the time delta
 			// if the delta is larger than time to fade we use full opacity (i.e. alpha gets clamped to 1)
-			outdata.col.a = (indata.tangent.w - timeParms.x) * timeParms.y;
-	
-			return outdata;
+			var_Color.a = (tangent.w - timeParms.x) * timeParms.y;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0, R1;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R1, fragment.texcoord, $map, 2D;
-		MOV	result.color.xyz, R1;
-		MUL result.color.w, R1, fragment.color.a;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			vec4 R1;
+			R1 = texture2D ( $map , var_TexCoord.xy );
+			gl_FragColor.xyz = R1.xyz;
+			gl_FragColor.w = R1.a * var_Color.a;
+		} 
 	%> }
 }
 
@@ -1436,16 +1451,16 @@ renderProgram sfx/beam {
 	program vertex cg { <%
 	
 		struct VsInputs {
-			float3 pos : $positionAttrib;
-			float2 tex : $texCoordAttrib;
+			vec3 pos : $positionAttrib;
+			vec2 tex : $texCoordAttrib;
 		};
 	
 		struct VsOutputs {
-			float2 tex	 : TEXCOORD0;
+			vec2 tex	 : TEXCOORD0;
 			float1 toEye : TEXCOORD1;
 		};
 		
-		uniform float3 viewOrigin : $viewOrigin;
+		uniform vec3 viewOrigin : $viewOrigin;
 		
 		VsOutputs vertex( VsInputs indata ) {
 			VsOutputs outData;
@@ -1454,7 +1469,7 @@ renderProgram sfx/beam {
 			indata.tex *= 1.f/4096.f;
 			$endif
 
-			float3 toEye = indata.pos - viewOrigin;
+			vec3 toEye = indata.pos - viewOrigin;
 			outData.toEye = sqrt( dot( toEye, toEye ) );
 			outData.tex = indata.tex;
 
@@ -1464,15 +1479,15 @@ renderProgram sfx/beam {
 
 	program fragment cg { <%
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
+			vec2 tex	: TEXCOORD0;
 			float toEye	: TEXCOORD1;
 		};
 		
 		sampler2D baseMap : $map;
-		uniform float4 parameters : $parameters;
+		uniform vec4 parameters : $parameters;
 		
-		float4 fragment( VsOutputs indata ) : COLOR {
-			float4 base = tex2D( baseMap, indata.tex );
+		vec4 fragment( VsOutputs indata ) : COLOR {
+			vec4 base = tex2D( baseMap, indata.tex );
 			
 			float distance = saturate( (indata.toEye - parameters.x) / parameters.y );
 			base *= distance;
@@ -1486,33 +1501,41 @@ renderProgram sfx/beam {
 
 renderProgram sfx/displace {
 
-	program vertex arb { <%
-		TEMP R0;
-		TEMP _pos;
-		MAD _pos.xyz, $normalAttrib, $parameters.x, $positionAttrib;
-		MOV _pos.w, $positionAttrib.w;
-		
-		PARAM  mvp[4]       = { state.matrix.mvp };
-		OUTPUT oPos         = result.position;
-		# Transform the vertex to clip coordinates. 
-		DP4   oPos.x, mvp[0], _pos;
-		DP4   oPos.y, mvp[1], _pos;
-		DP4   oPos.z, mvp[2], _pos;
-		DP4   oPos.w, mvp[3], _pos;
+	program vertex glsl { <%
+		#define mvp u_modelViewProjectionMatrix
+		varying vec4 oPos;
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		DP4	result.texcoord.x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4	result.texcoord.y, $texCoordAttrib, $diffuseMatrix_t;
-		
-		MAD	R0, $colorAttrib, $colorModulate, $colorAdd;
-		MUL result.color, $diffuseColor, R0;	
+		void main ( void ) { 
+			vec4 R0;
+			vec4 _pos;
+			_pos.xyz = $normalAttrib.xyz * $parameters.x + $positionAttrib.xyz;
+			_pos.w = $positionAttrib.w;
+			oPos = gl_Position;
+			// Transform the vertex to clip coordinates. 
+			oPos.x = dot ( mvp[0], _pos );
+			oPos.y = dot ( mvp[1], _pos );
+			oPos.z = dot ( mvp[2], _pos );
+			oPos.w = dot ( mvp[3], _pos );
+			var_TexCoord.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			var_TexCoord.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			R0 = $colorAttrib * $colorModulate + $colorAdd;
+			var_Color = $diffuseColor * R0;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		MUL result.color, R0, fragment.color;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			gl_FragColor = R0 * var_Color;
+		} 
 	%> }
 }
 

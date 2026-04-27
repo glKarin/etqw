@@ -4,7 +4,7 @@ renderProgram guiBlur {
 		varying vec4 col;
 		void main() {
 			vec4 tex = $texCoordAttrib;
-#ifdef r_32ByteVtx
+#if r_32ByteVtx
 			tex *= 1.0 / 4096.0;
 #endif
 
@@ -58,7 +58,7 @@ renderProgram guiBlur_4x4 {
 		void main() {
 			vec4 tex = $texCoordAttrib;
 
-#ifdef r_32ByteVtx
+#if r_32ByteVtx
 			ex *= 1.0f / 4096.0f;
 #endif
 

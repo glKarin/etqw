@@ -62,6 +62,61 @@ template atmosphere_ARB {
 	%> }
 }
 
+template atmosphere_GLSL {
+	parameters < InPositionParm, OutResultParm >
+
+	text { <%
+		vec4 _ATM_fogParams = $fogParams;
+		vec4 _ATM_fogMatrix_x = $transposedModelMatrix_x;
+		vec4 _ATM_fogMatrix_y = $transposedModelMatrix_y;
+		vec4 _ATM_fogMatrix_z = $transposedModelMatrix_z;
+		vec4 _ATM_UP = vec4(0.0,0.0,1.0,0.0);
+		vec4 _ATM_POWER = vec4(0.5,0.5,0.5,0.0);
+		vec4 _ATM_R0;
+		vec4 _ATM_R1;
+		vec4 _ATM_R2;
+		vec4 _ATM_Z;
+		vec4 _ATM_eye;
+		_ATM_eye = $viewOriginWorld;
+		// vertex in world space 
+		_ATM_R0.x = dot ( _ATM_fogMatrix_x , InPositionParm );
+		_ATM_R0.y = dot ( _ATM_fogMatrix_y , InPositionParm );
+		_ATM_R0.z = dot ( _ATM_fogMatrix_z , InPositionParm );
+		// clutch for horizontal rays 
+		_ATM_R1.x = _ATM_eye.z - _ATM_R0.z;
+		_ATM_R1.y = abs ( _ATM_R1.x );
+		_ATM_R1.z = _ATM_R1.y < 5.0 ? 1.0 : 0.0;
+		// R1.z to one if difference was smaller than 5 else 0 
+		_ATM_eye.z = _ATM_R1.z * 5.0 + _ATM_eye.z;
+		// normalize ray to eye in R1 
+		_ATM_R1 = _ATM_R0 - _ATM_eye;
+		_ATM_R1.w = dot ( _ATM_R1.xyz , _ATM_R1.xyz );
+		_ATM_R1.w = 1.0 / sqrt ( _ATM_R1.w );
+		_ATM_R1.xyz = _ATM_R1.xyz * _ATM_R1.w;
+		_ATM_R1.w = 1.0 / _ATM_R1.w;
+		// R1.w is ray length now 
+		// deviation from ray to eye with up direction 
+		_ATM_R2.x = dot ( _ATM_R1.xyz , _ATM_UP.xyz );
+		// parameter setup 
+		_ATM_Z.x = _ATM_R0.z + _ATM_fogParams.z;
+		_ATM_Z.x = max ( _ATM_Z.x , 0.0 );
+		_ATM_Z.y = _ATM_eye.z + _ATM_fogParams.z;
+		_ATM_Z.y = max ( _ATM_Z.y , 0.0 );
+		// Integrate along vertical ray 
+		_ATM_Z.xy = _ATM_Z.xy * _ATM_fogParams.y;
+		_ATM_Z.x = pow ( _ATM_POWER.x , _ATM_Z.x );
+		_ATM_Z.y = pow ( _ATM_POWER.x , _ATM_Z.y );
+		_ATM_Z.z = _ATM_Z.y - _ATM_Z.x;
+		// Correct for horizontal rays 
+		_ATM_R2.x = 1.0 / _ATM_R2.x;
+		_ATM_Z.z = _ATM_Z.z * _ATM_R2.x;
+		// Multiply with distance 
+		_ATM_Z.z = _ATM_Z.z * _ATM_R1.w;
+		_ATM_Z.z = _ATM_Z.z * _ATM_fogParams.x;
+		OutResultParm = vec4( pow ( _ATM_POWER.x , _ATM_Z.z ) );
+	%> }
+}
+
 /**
 	The atmosphere does a pass with this shader
 */
@@ -76,44 +131,49 @@ renderProgram atmosphere {
 		maskDepth
 	}
 	
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP ray, extinct;
-		useTemplate atmosphere_ARB< "$positionAttrib", "extinct" >
+	program vertex glsl { <%
+		varying vec4 var_Color;
+		varying vec4 var_TexCoord1;
+		varying vec4 var_TexCoord0;
 
-		SUB result.color, 1, extinct.x;
-		
-		SUB ray, $positionAttrib, $viewOrigin;
-		
-		# normalized object space ray in texcoord 1
-		DP3 ray.w, ray, ray;
-		RSQ ray.w, ray.w;
-		MUL result.texcoord[1], ray, ray.w;
-		
-		# unnormalized worldspace ray
-		DP3 result.texcoord[0].x, ray, $fogRotation_x;
-		DP3 result.texcoord[0].y, ray, $fogRotation_y;		
-		DP3 result.texcoord[0].z, ray, $fogRotation_z;	
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 ray;
+			vec4 extinct;
+			useTemplate atmosphere_GLSL< "$positionAttrib", "extinct" >
+			var_Color = vec4( 1.0 - extinct.x );
+			ray = $positionAttrib - $viewOrigin;
+			// normalized object space ray in texcoord 1 
+			ray.w = dot ( ray.xyz , ray.xyz );
+			ray.w = 1.0 / sqrt ( ray.w );
+			var_TexCoord1 = ray * ray.w;
+			// unnormalized worldspace ray 
+			var_TexCoord0.x = dot ( ray.xyz , $fogRotation_x.xyz );
+			var_TexCoord0.y = dot ( ray.xyz , $fogRotation_y.xyz );
+			var_TexCoord0.z = dot ( ray.xyz , $fogRotation_z.xyz );
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 
-	program fragment cg { <%
-		struct VsOutputs {
-			float3 extinction   : COLOR0;
-			float3 tex	: TEXCOORD0;
-			float3 pos	: TEXCOORD1;
+	program fragment glsl { <%
+		varying vec4 var_Color;
+		varying vec4 var_TexCoord1;
+		varying vec4 var_TexCoord0;
 
-		};
+		#define extinction var_Color.xyz
+		#define tex var_TexCoord0.xyz
+		#define pos var_TexCoord1.xyz
 
-		uniform float4 colorParams 	: $sunHaloParameters;
-		uniform float3 sunDir 		: $sunDirection;
+		#define colorParams $sunHaloParameters
+		#define sunDir $sunDirection.xyz
 
-		samplerCUBE image : $skyGradientCubeMap;
+		#define image $skyGradientCubeMap
 
-		float4 fragment(VsOutputs indata) : COLOR {
-			float scale = dot(normalize(indata.pos), sunDir);
-			float halo = max(scale*colorParams.x+colorParams.y, 0);
-			float4 look = (texCUBE(image, indata.tex)+halo)*indata.extinction.r;
-			return float4(look.rgb,indata.extinction.r);
+		void main() {
+			float scale = dot(normalize(pos), sunDir);
+			float halo = max(scale*colorParams.x+colorParams.y, 0.0);
+			vec4 look = (textureCube(image, tex)+halo)*extinction.r;
+			gl_FragColor = vec4(look.rgb,extinction.r);
 		}
 	%> }
 
@@ -560,19 +620,29 @@ renderProgram atmosphereLinear {
 		maskDepth
 		maskAlpha
 	}
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP _F1, _F2;
-		SUB		_F2, vertex.position, $viewOrigin;
-		DP3		_F1.x, _F2, _F2;
-		RSQ		_F1.y, _F1.x;
-		MUL		_F1.x, _F1.y, _F1.x;
-		MAD		result.color.secondary, _F1.x, $fogDepths.z, $fogDepths.w; 
+	program vertex glsl { <%
+		varying vec4 var_Color2;
+
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 _F1;
+			vec4 _F2;
+			_F2 = attr_Vertex - $viewOrigin;
+			_F1.x = dot ( _F2.xyz , _F2.xyz );
+			_F1.y = 1.0 / sqrt ( _F1.x );
+			_F1.x = _F1.y * _F1.x;
+			var_Color2 = vec4( _F1.x * $fogDepths.z + $fogDepths.w );
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
-	program fragment arb { <%
-		MUL result.color.rgb, $fogColor, 1;#fragment.color.secondary.r;
-		#MOV result.color.rgb, fragment.color.secondary.r;
-		MOV result.color.a, fragment.color.secondary.r;
+	program fragment glsl { <%
+		varying vec4 var_Color2;
+
+		void main ( void ) { 
+			gl_FragColor.rgb = $fogColor.rgb * 1.0; // fragment.color.secondary.r; 
+			// MOV result.color.rgb, fragment.color.secondary.r; 
+			gl_FragColor.a = var_Color2.r;
+		} 
 	%> }
 }
 

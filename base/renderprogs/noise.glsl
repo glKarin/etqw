@@ -9,7 +9,7 @@ float bandLimitedNoise( vec3 P ) {
 }
 
 float perlin(vec3 inpos) {
-	vec4 octaveScales = { 0.5, 0.25, 0.125, 0.0625 };
+	vec4 octaveScales = vec4( 0.5, 0.25, 0.125, 0.0625 );
 	vec4 noiseSamples;
 
 	//FIXME: use inpos+inpos? is add still faster than a mul?
@@ -23,7 +23,7 @@ float perlin(vec3 inpos) {
 #else
 float perlin(vec3 inpos) {
 	vec4 noiseSamples = vec4( inpos, 1.0 );
-	vec4 octaveScales = { 0.5, 0.25, 0.125, 0.0625 };
+	vec4 octaveScales = vec4( 0.5, 0.25, 0.125, 0.0625 );
 	return dot( noiseSamples, octaveScales );
 }
 #endif

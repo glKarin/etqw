@@ -9,7 +9,7 @@ renderprogram game/scope {
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
-#ifdef r_32ByteVtx
+#if r_32ByteVtx
 			indata.tex *= 1.0/4096.0;
 #endif
 			
@@ -110,7 +110,7 @@ renderprogram game/scopeModel {
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
-#ifdef r_32ByteVtx
+#if r_32ByteVtx
 			indata.tex *= 1.0/4096.0;
 #endif
 			
@@ -207,7 +207,7 @@ renderprogram game/scopeStatix {
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
-#ifdef r_32ByteVtx
+#if r_32ByteVtx
 			indata.tex *= 1.0/4096.0;
 #endif
 			
