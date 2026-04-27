@@ -218,6 +218,7 @@ void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, flo
 	//Rotate the verts about the z axis before drawing them
 	idMat4 rotz;
 	rotz.Identity();
+	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
 	float sinAng = idMath::Sin(angle);
 	float cosAng = idMath::Cos(angle);
 	rotz[0][0] = cosAng;
@@ -1029,6 +1030,7 @@ void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, floa
 	//Rotate the verts about the z axis before drawing them
 	idMat4 rotz;
 	rotz.Identity();
+	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
 	float sinAng = idMath::Sin(angle);
 	float cosAng = idMath::Cos(angle);
 	rotz[0][0] = cosAng;
