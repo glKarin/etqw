@@ -2358,10 +2358,8 @@ void idAASFileLocal::FlagNoPushAreas(void)
       }
       v11 = 1.0 / (double)v1->numEdges;
       v12 = v11 * v12;
-#if 0 // TODO: block
-      if ( PushPointIntoArea(v7, &v12) )
+      if ( this->PushPointIntoArea(v7, v12) )
         v1->flags |= AAS_AREA_NOPUSH; //0x10u;
-#endif        
       ++v8;
       ++v7;
     }
