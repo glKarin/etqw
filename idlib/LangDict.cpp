@@ -319,7 +319,7 @@ const wchar_t* idLangDict::GetString( const char *str ) const
         }
     }
 
-    idLib::common->Warning( "Unknown String ID '%s'", str );
+    //idLib::common->Warning( "Unknown String ID '%s'", str );
     return va( L"###Bad String %hs###", str );
 }
 #endif
