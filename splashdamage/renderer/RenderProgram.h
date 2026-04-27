@@ -20,6 +20,7 @@ public:
     void Unbind(const materialStage_t *stage) const;
 	void BindVector(const char *name, const float v4[]) const;
 	void BindVector(const char *name, float f) const;
+	void BindVector(const char *name, float x, float y, float z, float w = 1.0f) const;
 	void BindMat4(const char *name, const float mat4[]) const;
 
     // state
@@ -45,6 +46,8 @@ private:
     void InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName, const char *type) const;
+    void InsertMacro(sdStringBuilder_Heap &buf, const char *name, const char *value = NULL) const;
+    void InsertBuiltinMacros(sdStringBuilder_Heap &buf) const;
 	void GetLocations(shaderHandle_t handle);
 	void GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader);
     int GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const;

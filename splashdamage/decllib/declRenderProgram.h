@@ -59,6 +59,7 @@ class sdRenderProgramShader
 			return i >= 0 && i < placeholders.Num() ? placeholders[i].c_str() : NULL;
 		}
 		void ExportSource(const char *path, const char *filename, const char *name, bool raw = false) const;
+		bool HasPostprocessTexture(void) const;
 
 	private:
 		void HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName);
@@ -104,6 +105,7 @@ public:
 	bool							IsInteraction(void) const {
 		return (flags & INTERACTION) != 0;
 	}
+	bool							HasPostprocess(void) const;
 
 	void							ExportSource(const char *path, bool raw = false) const;
 	static void						ExportDeclRenderPrograms_f(const idCmdArgs &args);

@@ -108,7 +108,31 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 		bool handled = false;
 
 		if(!binding) // external binding
+		{
+			const idStr &name = bindingNames[j];
+			if(!name.Icmp("water_tint")) {
+				BindVector(name, regs[stage->water.tint[0]], regs[stage->water.tint[1]], regs[stage->water.tint[2]]);
+			}
+			else if(!name.Icmp("water_distortion")) {
+				BindVector(name, regs[stage->water.distortion[0]], regs[stage->water.distortion[1]], regs[stage->water.distortion[2]], regs[stage->water.distortion[3]]);
+			}
+			else if(!name.Icmp("water_fresnel")) {
+				BindVector(name, regs[stage->water.fresnel]);
+			}
+			else if(!name.Icmp("water_glare")) {
+				BindVector(name, regs[stage->water.glare]);
+			}
+			else if(!name.Icmp("water_offset")) {
+				BindVector(name, regs[stage->water.offset[0]], regs[stage->water.offset[1]], regs[stage->water.offset[2]], regs[stage->water.offset[3]]);
+			}
+			else if(!name.Icmp("water_desat")) {
+				BindVector(name, regs[stage->water.desat]);
+			}
+			else if(!name.Icmp("water_lerp")) {
+				BindVector(name, regs[stage->water.lerp]);
+			}
 			continue;
+		}
 		if(binding->GetBindingType() == sdDeclRenderBinding::BT_VECTOR)
 		{
 			// setup vectors uniform
@@ -272,6 +296,9 @@ void sdRenderProgram::LoadVertexSource(idStr &out) const {
 
     sdStringBuilder_Heap buf;
 
+	InsertBuiltinMacros(buf);
+    buf.Append("\n");
+
     InsertBindings(buf, shader);
     buf.Append("\n");
 
@@ -285,6 +312,9 @@ void sdRenderProgram::LoadFragmentSource(idStr &out) const {
     const sdRenderProgramShader *shader = declRenderProgram->GetFragmentShader();
 
     sdStringBuilder_Heap buf;
+
+	InsertBuiltinMacros(buf);
+    buf.Append("\n");
 
     InsertBindings(buf, shader);
     buf.Append("\n");
@@ -320,6 +350,28 @@ void sdRenderProgram::InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDe
     buf.Append(" ");
     buf.Append(rawName);
     buf.Append(";\n");
+}
+
+void sdRenderProgram::InsertMacro(sdStringBuilder_Heap &buf, const char *name, const char *value) const {
+    buf.Append("#define ");
+    buf.Append(name);
+	if(value)
+	{
+		buf.Append(" ");
+		buf.Append(value);
+	}
+    buf.Append("\n");
+}
+
+void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
+	InsertMacro(buf, "r_shaderQuality", "3");
+	InsertMacro(buf, "r_megaDrawMethod", "0");
+	InsertMacro(buf, "r_normalizeNormalMaps", "0");
+	InsertMacro(buf, "r_dxnNormalMaps", "0");
+	InsertMacro(buf, "r_32ByteVtx", "0");
+	InsertMacro(buf, "r_useDitherMask", "0");
+	InsertMacro(buf, "alphatest_kill", "0");
+	InsertMacro(buf, "r_shaderSkipSpecCubeMaps", "0");
 }
 
 void sdRenderProgram::InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
@@ -524,6 +576,15 @@ void sdRenderProgram::BindVector(const char *name, float f) const
 		return;
 
 	qglUniform4f(location, f, f, f, f);
+}
+
+void sdRenderProgram::BindVector(const char *name, float x, float y, float z, float w) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniform4f(location, x, y, z, w);
 }
 
 void sdRenderProgram::BindMat4(const char *name, const float mat4[]) const

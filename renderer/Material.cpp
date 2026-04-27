@@ -63,6 +63,7 @@ extern idStrList stageParms;
 		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO; \
 		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA; \
 		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
+		else if(!idStr::Icmp(p, "cubeMap")) cubeMap = CF_NATIVE; \
 		else if(!idStr::Icmp(p, "partialLoad")) {} \
 	}
 
@@ -1147,6 +1148,14 @@ void idMaterial::ClearStage(shaderStage_t *ss)
 	ss->textures = NULL;
 	ss->textureMatrices = NULL;
 	ss->renderProgram = NULL;
+	ss->water.tint[0] = ss->water.tint[1] = ss->water.tint[2] = GetExpressionConstant(1.0f);
+	ss->water.offset[0] = ss->water.offset[1] = ss->water.offset[2] = ss->water.offset[3] = GetExpressionConstant(0.0f);
+	ss->water.distortion[0] = ss->water.distortion[1] = ss->water.distortion[2] = GetExpressionConstant(1.0f);
+	ss->water.distortion[3] = GetExpressionConstant(0.0f);
+	ss->water.fresnel = GetExpressionConstant(1.0f);
+	ss->water.glare = GetExpressionConstant(1.0f);
+	ss->water.desat = GetExpressionConstant(0.0f);
+	ss->water.lerp = GetExpressionConstant(0.0f);
 #endif
 }
 
@@ -2143,46 +2152,52 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			src.ParseFloat();
 			continue;
 		}
+		// water parameters
 		if (!token.Icmp("water_tint")) { // water_tint	  1.2, 1.2, 1
-			src.ParseFloat();
+			ss->water.tint[0] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.tint[1] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.tint[2] = ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("water_distortion")) { // water_distortion  1, 0.1, 1, 0	
-			src.ParseFloat();
+			ss->water.distortion[0] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.distortion[1] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.distortion[2] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.distortion[3] = ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("water_fresnel")) { // water_fresnel	  8
-			src.ParseFloat();
+			ss->water.fresnel = ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("water_glare")) { // water_glare	  0.6
-			src.ParseFloat();
+			ss->water.glare = ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("water_offset")) { // water_offset 0, 0, 0, 0 
-			src.ParseFloat();
+			ss->water.offset[0] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.offset[1] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.offset[2] = ParseExpression(src);
 			src.ExpectTokenString(",");
-			src.ParseFloat();
+			ss->water.offset[3] = ParseExpression(src);
 			continue;
 		}
 		if (!token.Icmp("water_desat")) { // water_desat 0
-			src.ParseFloat();
+			ss->water.desat = ParseExpression(src);
 			continue;
 		}
+		if (!token.Icmp("water_lerp")) { // water_lerp ( time - ( ( ( ( ( time * 5 ) / 10 ) % 100000000 ) * ( ( 1 / 5 ) * 10 ) ) + ( 0 * ( 1 / 5 ) ) ) ) * 5 
+			ss->water.lerp = ParseExpression(src);
+			continue;
+		}
+
 		if (!token.Icmp("subsurfaceColor")) { // subsurfaceColor 0.02352941, 0.2, 0.282353
 			src.ParseFloat();
 			src.ExpectTokenString(",");
@@ -2247,6 +2262,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			|| !token.Icmp("selfIllumMap")
 			|| !token.Icmp("cinematicY")
 			|| !token.Icmp("environmentCubeMap")
+			|| !token.Icmp("bumpMap")
+			|| !token.Icmp("bumpMap2")
 			)
 		{
 			src.UnreadToken(&token);
@@ -2624,14 +2641,16 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	if(isInteractionProgram || (!spd.declRenderProgram && !imageName[0] && hasInteractionMap)) {
 		CompleteInterationStage(ss, spd);
 	} else if (spd.declRenderProgram) {
-		idList<stageTexture_t> texList;
-		texList.SetNum(spd.numTextures + 1);
-		texList[0].image = ts->image;
-		texList[0].renderBinding = imageBinding;
-		for(int m = 0; m < spd.numTextures; m++)
-			texList[1 + m] = spd.textures[m];
-		memcpy(spd.textures, texList.Ptr(), sizeof(stageTexture_t) * texList.Num());
-		spd.numTextures = texList.Num();
+		if(ts->image) {
+			idList<stageTexture_t> texList;
+			texList.SetNum(spd.numTextures + 1);
+			texList[0].image = ts->image;
+			texList[0].renderBinding = imageBinding;
+			for(int m = 0; m < spd.numTextures; m++)
+				texList[1 + m] = spd.textures[m];
+			memcpy(spd.textures, texList.Ptr(), sizeof(stageTexture_t) * texList.Num());
+			spd.numTextures = texList.Num();
+		}
 
 		CompleteStage(ss, spd, NULL, 0);
 	} else {
@@ -2767,14 +2786,18 @@ void idMaterial::ParseDeform(idLexer &src)
 #endif
 #ifdef _SPLASHDAMAGE
 	if (!token.Icmp("flarevcol")) {
+		deform = DFRM_FLARE;
 		cullType = CT_TWO_SIDED;
-		src.SkipRestOfLine();
+		deformRegisters[0] = ParseExpression(src);
 		SetMaterialFlag(MF_NOSHADOWS);
 		return;
 	}
 	if (!token.Icmp("glow")) {
+		deform = DFRM_FLARE;
 		cullType = CT_TWO_SIDED;
-		src.SkipRestOfLine();
+		deformRegisters[0] = ParseExpression(src);
+		deformRegisters[1] = ParseExpression(src);
+		deformRegisters[2] = ParseExpression(src);
 		SetMaterialFlag(MF_NOSHADOWS);
 		return;
 	}
@@ -3730,6 +3753,16 @@ bool idMaterial::Parse(const char *text, const int textLength)
 					break;
 				}
 			}
+
+			if(!hasPostProcess && pStage->renderProgram->GetDeclRenderProgram()->HasPostprocess()) {
+				if (sort != SS_PORTAL_SKY) {
+					sort = SS_POST_PROCESS;
+					coverage = MC_TRANSLUCENT;
+				}
+				hasPostProcess = true;
+				i = numStages;
+				break;
+			}
 		}
 #endif
 	}
@@ -4679,6 +4712,7 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 	textureRepeat_t		trp;
 	textureDepth_t		td;
 	bool				allowPicmip;
+	cubeFiles_t			cubeMap;
 	idImage *img;
 
 	if (!src.ReadToken(&token)) {
@@ -4689,6 +4723,7 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 	trp = TR_REPEAT;
 	td = TD_DEFAULT;
 	allowPicmip = true;
+	cubeMap = CF_2D;
 
 	str = R_ParsePastImageProgram(src);
 	for(int _i = 0; _i < stageParms.Num(); _i++) {
@@ -4706,6 +4741,7 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO;
 		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA;
 		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false;
+		else if(!idStr::Icmp(p, "cubeMap")) cubeMap = CF_NATIVE;
 		else if(!idStr::Icmp(p, "partialLoad")) {}
 	}
 
@@ -4726,7 +4762,7 @@ bool idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd 
 	}
 
 	td = binding->GetTextureDepth();
-	img = globalImages->ImageFromFile(str, tf, allowPicmip, trp, td, binding->GetCubeMap());
+	img = globalImages->ImageFromFile(str, tf, allowPicmip, trp, td, cubeMap);
 	if (!img) {
 		src.Warning("idMaterial::ParseProgramStageTexture: stage texture image load fail: %s", str);
 		img = binding->GetDefaultImage();

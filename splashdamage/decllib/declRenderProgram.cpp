@@ -236,6 +236,13 @@ const sdDeclRenderBinding * sdRenderProgramShader::GetBinding(const char *name) 
 
 void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length)
 {
+	idStr str;
+	if(sdDeclTemplate::ExpandTemplate(str, text, length))
+	{
+		text = str.c_str();
+		length = str.Length();
+	}
+
 	idLexer src;
 	src.LoadMemory(text, length, "shader");
 	src.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_NODOLLARPRECOMPILE | LEXFL_NOFATALERRORS);
@@ -554,4 +561,23 @@ void sdDeclRenderProgram::ExportDeclRenderPrograms_f(const idCmdArgs &args)
 	}
 
 	soundSystem->SetMute(false);
+}
+
+bool sdRenderProgramShader::HasPostprocessTexture(void) const {
+	const sdDeclRenderBinding *binding;
+
+	for(int i = 0; i < bindings.Num(); i++) {
+		binding = bindings[i];
+		if(binding && binding->GetBindingType() == sdDeclRenderBinding::BT_TEXTURE && binding->GetDefaultImage() == globalImages->currentRenderImage)
+			return true;
+	}
+	for(int i = 0; i < placeholders.Num(); i++) {
+		if(!placeholders[i].Icmp("_currentRender"))
+			return true;
+	}
+	return false;
+}
+
+bool sdDeclRenderProgram::HasPostprocess(void) const {
+	return fragment.IsValid() && fragment.HasPostprocessTexture();
 }

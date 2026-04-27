@@ -350,6 +350,17 @@ struct stageParseData_t {
 
 	const sdDeclRenderProgram *declRenderProgram;
 };
+
+//karin: I see them always constants, maybe not need register
+typedef struct {
+	int				tint[3];
+	int				distortion[4];
+	int				fresnel;
+	int				glare;
+	int				offset[4];
+	int				desat;
+	int				lerp; // must register
+} waterStage_t;
 #endif
 
 typedef struct {
@@ -393,6 +404,8 @@ typedef struct {
 	stageTexture_t*				textures;
 	int							numTextureMatrices;
 	stageTextureMatrix_t*		textureMatrices;
+
+	waterStage_t				water;
 #endif
 } shaderStage_t;
 #ifdef _SPLASHDAMAGE
