@@ -621,7 +621,11 @@ void idRenderWorldLocal::ProjectDecalOntoWorld(const idFixedWinding &winding, co
 				def->decals = idRenderModelDecal::Alloc();
 			}
 
-			def->decals->CreateDecal(model, localInfo);
+			def->decals->CreateDecal(model, localInfo
+#ifdef _RAVEN
+			, def->parms.suppressSurfaceMask
+#endif
+					);
 		}
 	}
 }
@@ -3405,7 +3409,7 @@ bool idRenderWorldLocal::UpdateEffectDef(qhandle_t effectHandle, const renderEff
     bool push; // [esp+17h] [ebp-11h]
 
     if ( r_skipUpdates.GetBool() )
-        return false;
+        return true;
     if ( !bse_enabled.GetBool() )
         return true;
     //++tr.pc.c_effectUpdates;
