@@ -185,6 +185,8 @@ class idAASFileLocal : public idAASFile
 		aasTrace_t *a2,
 		const idVec3 *a3,
 		const idVec3 *a4) const;
+	void LinkReachability(void);
+	void FlagNoPushAreas(void);
 
 		// 103 * 4 = 412
 		idList<int>					floorIndex; // area index

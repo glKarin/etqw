@@ -367,7 +367,11 @@ typedef struct aasArea_s {
 	unsigned short				flags;				// several area flags
 	unsigned short				contents;			// contents of the area
 	short						cluster;			// cluster the area belongs to, if negative it's a portal
+#ifdef _SPLASHDAMAGE
+	unsigned short				clusterAreaNum;		// number of the area in the cluster
+#else
 	short						clusterAreaNum;		// number of the area in the cluster
+#endif
 	int							travelFlags;		// travel flags for traveling through this area
 	idReachability 			*reach;				// reachabilities that start from this area
 	idReachability 			*rev_reach;			// reachabilities that lead to this area

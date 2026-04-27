@@ -1272,7 +1272,9 @@ bool idAASFileLocal::ParseAreas(idLexer &src)
 		return false;
 	}
 
+#if !defined(_SPLASHDAMAGE)
 	LinkReversedReachability();
+#endif
 
 	return true;
 }
@@ -1565,6 +1567,11 @@ bool idAASFileLocal::Load(const idStr &fileName, unsigned int mapFileCRC)
 		}
 	}
 
+#ifdef _SPLASHDAMAGE
+	LinkReachability();
+
+	FlagNoPushAreas();
+#endif
 	FinishAreas();
 
 	depth = MaxTreeDepth();
@@ -1911,15 +1918,9 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 		//area->travelFlags = AreaContentsTravelFlags(reach->fromAreaNum);
 	}*/
 
-	for (int i = 0; i < reachabilities.Num(); ++i) {
-		idReachability *reach = &reachabilities[i];
-		aasArea_t *area = &areas[reach->fromAreaNum];
+	LinkReachability();
 
-		reach->next = area->reach;
-		area->reach = reach;
-	}
-
-	LinkReversedReachability();
+	FlagNoPushAreas();
 
 	FinishAreas();
 
@@ -1945,17 +1946,16 @@ idAASFileLocal::ParsePlanesBinary
 bool idAASFileLocal::ParsePlanesBinary(idFile *file)
 {
 	int numPlanes, i;
-	idPlane plane;
 
 	file->ReadInt(numPlanes);
-	planeList.Resize(numPlanes);
+	planeList.SetNum(numPlanes);
 
 	for (i = 0; i < numPlanes; i++) {
+		idPlane &plane = planeList[i];
 		file->ReadFloat(plane[0]);
 		file->ReadFloat(plane[1]);
 		file->ReadFloat(plane[2]);
 		file->ReadFloat(plane[3]);
-		planeList.Append(plane);
 	}
 
 	return true;
@@ -1969,17 +1969,15 @@ idAASFileLocal::ParseVerticesBinary
 bool idAASFileLocal::ParseVerticesBinary(idFile *file)
 {
 	int numVertices, i;
-	idVec3 vec;
 
 	file->ReadInt(numVertices);
-	vertices.Resize(numVertices);
+	vertices.SetNum(numVertices);
 
 	for (i = 0; i < numVertices; i++) {
+		idVec3 &vec = vertices[i];
 		file->ReadFloat(vec[0]);
 		file->ReadFloat(vec[1]);
 		file->ReadFloat(vec[2]);
-
-		vertices.Append(vec);
 	}
 
 	return true;
@@ -1993,16 +1991,15 @@ idAASFileLocal::ParseEdgesBinary
 bool idAASFileLocal::ParseEdgesBinary(idFile *file)
 {
 	int numEdges, i;
-	aasEdge_t edge;
 
 	file->ReadInt(numEdges);
-	edges.Resize(numEdges);
+	edges.SetNum(numEdges);
 
 	for (i = 0; i < numEdges; i++) {
+		aasEdge_t &edge = edges[i];
 		file->ReadInt(edge.vertexNum[0]);
 		file->ReadInt(edge.vertexNum[1]);
 		file->ReadInt(edge.flags);
-		edges.Append(edge);
 	}
 
 	return true;
@@ -2016,14 +2013,12 @@ idAASFileLocal::ParseIndexBinary
 bool idAASFileLocal::ParseIndexBinary(idFile *file, idList<aasIndex_t> &indexes)
 {
 	int numIndexes, i;
-	aasIndex_t index;
 
 	file->ReadInt(numIndexes);
-	indexes.Resize(numIndexes);
+	indexes.SetNum(numIndexes);
 
 	for (i = 0; i < numIndexes; i++) {
-		file->ReadInt(index);
-		indexes.Append(index);
+		file->ReadInt(indexes[i]);
 	}
 
 	return true;
@@ -2037,13 +2032,13 @@ idAASFileLocal::ParseAreasBinary
 bool idAASFileLocal::ParseAreasBinary(idFile *file)
 {
 	int numAreas, i;
-	aasArea_t area;
 	unsigned short uh;
 
 	file->ReadInt(numAreas);
-	areas.Resize(numAreas);
+	areas.SetNum(numAreas);
 
 	for (i = 0; i < numAreas; i++) {
+		aasArea_t &area = areas[i];
 		file->ReadUnsignedShort(uh);
 		area.travelFlags = uh;
 		file->ReadUnsignedShort(area.flags);
@@ -2051,7 +2046,7 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		file->ReadInt(area.numEdges);
 		file->ReadInt(area.firstEdge);
 		file->ReadShort(area.cluster);
-		file->ReadShort(area.clusterAreaNum);
+		file->ReadUnsignedShort(area.clusterAreaNum);
 		file->ReadUnsignedInt(area.obstaclePVSOffset);
 		file->Seek(4 * 2, FS_SEEK_CUR); // 2 32bits pointers
 		area.reach = NULL;
@@ -2061,7 +2056,6 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		// compat for DOOM3
 		area.firstFace = 0;
 		area.numFaces = 0;
-		areas.Append(area);
 	}
 
 	return true;
@@ -2075,20 +2069,19 @@ idAASFileLocal::ParseNodesBinary
 bool idAASFileLocal::ParseNodesBinary(idFile *file)
 {
 	int numNodes, i;
-	aasNode_t node;
 
 	file->ReadInt(numNodes);
-	if (numNodes <= 1) //karin: at least 2
-		return false;
+	//if (numNodes <= 1) //karin: at least 2
+	//	return false;
 
-	nodes.Resize(numNodes);
+	nodes.SetNum(numNodes);
 
 	for (i = 0; i < numNodes; i++) {
+		aasNode_t &node = nodes[i];
 		file->ReadUnsignedShort(node.planeNum);
 		file->ReadUnsignedShort(node.flags);
 		file->ReadInt(node.children[0]);
 		file->ReadInt(node.children[1]);
-		nodes.Append(node);
 	}
 
 	return true;
@@ -2102,19 +2095,18 @@ idAASFileLocal::ParsePortalsBinary
 bool idAASFileLocal::ParsePortalsBinary(idFile *file)
 {
 	int numPortals, i;
-	aasPortal_t portal;
 
 	file->ReadInt(numPortals);
-	portals.Resize(numPortals);
+	portals.SetNum(numPortals);
 
 	for (i = 0; i < numPortals; i++) {
+		aasPortal_t &portal = portals[i];
 		file->ReadUnsignedShort(portal.areaNum);
 		file->ReadShort(portal.clusters[0]);
 		file->ReadShort(portal.clusters[1]);
 		file->ReadUnsignedShort(portal.clusterAreaNum[0]);
 		file->ReadUnsignedShort(portal.clusterAreaNum[1]);
 		file->ReadUnsignedShort(portal.maxAreaTravelTime);
-		portals.Append(portal);
 	}
 
 	return true;
@@ -2128,17 +2120,16 @@ idAASFileLocal::ParseClustersBinary
 bool idAASFileLocal::ParseClustersBinary(idFile *file)
 {
 	int numClusters, i;
-	aasCluster_t cluster;
 
 	file->ReadInt(numClusters);
-	clusters.Resize(numClusters);
+	clusters.SetNum(numClusters);
 
 	for (i = 0; i < numClusters; i++) {
+		aasCluster_t &cluster = clusters[i];
 		file->ReadInt(cluster.numAreas);
 		file->ReadInt(cluster.numReachableAreas);
 		file->ReadInt(cluster.firstPortal);
 		file->ReadInt(cluster.numPortals);
-		clusters.Append(cluster);
 	}
 
 	return true;
@@ -2154,7 +2145,7 @@ bool idAASFileLocal::ParseObstaclePVSsBinary(idFile *file)
 	int numIndexes, i;
 
 	file->ReadInt(numIndexes);
-	obstaclePVS.Resize(numIndexes);
+	obstaclePVS.SetNum(numIndexes);
 
 	for (i = 0; i < numIndexes; i++) {
 		file->ReadUnsignedChar(obstaclePVS[i]);
@@ -2173,7 +2164,7 @@ bool idAASFileLocal::ParseReachabilityNamesBinary(idFile *file)
 	int numIndexes, i;
 
 	file->ReadInt(numIndexes);
-	reachabilityNames.Resize(numIndexes);
+	reachabilityNames.SetNum(numIndexes);
 
 	for (i = 0; i < numIndexes; i++) {
 		file->Read(reachabilityNames[i].name, sizeof(reachabilityNames[i].name));
@@ -2273,6 +2264,109 @@ int idAASFileLocal::FindReachabilityByName( const char *name ) const {
 		}
 	}
 	return -1;
+}
+
+void idAASFileLocal::LinkReachability(void)
+{
+  int v1; // edi
+  int v2; // edx
+  int v3; // eax
+  int v4; // ebx
+  aasReachability_t *list; // eax
+  int fromAreaNum; // esi
+  aasReachability_t *v7; // eax
+  int toAreaNum; // edx
+
+  v1 = 0;
+  v2 = 0;
+  if ( this->areas.Num() > 0 )
+  {
+    v3 = 0;
+    do
+    {
+      this->areas[v3].reach = 0;
+      this->areas[v3].rev_reach = 0;
+      ++v2;
+      ++v3;
+    }
+    while ( v2 < this->areas.Num() );
+  }
+  if ( this->reachabilities.Num() > 0 )
+  {
+    v4 = 0;
+    do
+    {
+      list = this->reachabilities.Ptr();
+      fromAreaNum = list[v4].fromAreaNum;
+      v7 = &list[v4];
+      v7->next = this->areas[fromAreaNum].reach;
+      this->areas[fromAreaNum].reach = v7;
+      toAreaNum = v7->toAreaNum;
+      v7->rev_next = this->areas[toAreaNum].rev_reach;
+      ++v1;
+      this->areas[toAreaNum].rev_reach = v7;
+      ++v4;
+    }
+    while ( v1 < this->reachabilities.Num() );
+  }
+}
+
+void idAASFileLocal::FlagNoPushAreas(void)
+{
+  aasArea_t *v1; // esi
+  int v2; // edi
+  int *list; // ebx
+  aasEdge_t *v4; // ebp
+#define __int64 int64_t
+  __int64 v5; // rax
+  bool (*PushPointIntoArea)(int, idVec3 *); // edx
+  int v7; // [esp+8h] [ebp-1Ch]
+  int v8; // [esp+Ch] [ebp-18h]
+  idAASFileLocal *v9; // [esp+10h] [ebp-14h]
+  idVec3 *v10; // [esp+14h] [ebp-10h]
+  float v11; // [esp+14h] [ebp-10h]
+  idVec3 v12; // v12 v13 v14
+  //float v12; // [esp+18h] [ebp-Ch] BYREF
+  //float v13; // [esp+1Ch] [ebp-8h]
+  //float v14; // [esp+20h] [ebp-4h]
+
+  idVec3 *_v5_1;
+  v9 = this;
+  v7 = 0;
+  if ( this->areas.Num() > 0 )
+  {
+    v8 = 0;
+    do
+    {
+      v1 = &this->areas[v8];
+      v2 = 0;
+      v12 = vec3_zero;
+      if ( v1->numEdges > 0 )
+      {
+        list = this->edgeIndex.Ptr();
+        v4 = this->edges.Ptr();
+        v10 = this->vertices.Ptr();
+        do
+        {
+          int _v5_0 = list[v2 + v1->firstEdge];
+          //_v5 = &v10[v4[(HIDWORD(v5) ^ v5) - HIDWORD(v5)].vertexNum[(unsigned int)list[v2 + v1->firstEdge] >> 31]];
+          _v5_1 = &v10[v4[abs(_v5_0)].vertexNum[(unsigned int)list[v2 + v1->firstEdge] >> 31]];
+          ++v2;
+          v12 = *_v5_1 + v12;
+        }
+        while ( v2 < v1->numEdges );
+      }
+      v11 = 1.0 / (double)v1->numEdges;
+      v12 = v11 * v12;
+#if 0 // TODO: block
+      if ( PushPointIntoArea(v7, &v12) )
+        v1->flags |= AAS_AREA_NOPUSH; //0x10u;
+#endif        
+      ++v8;
+      ++v7;
+    }
+    while ( v7 < v9->areas.Num() );
+  }
 }
 
 #endif

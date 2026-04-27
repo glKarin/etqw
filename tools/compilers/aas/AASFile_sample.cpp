@@ -1849,9 +1849,11 @@ v33 = v9;
 v12 = v8;
 int *_v12 = v9;
 v37 = v8;
+int lastSign = v9[0]; // first sign
       for ( ; ; /*i = (char *)v33 - (char *)&v21; ; v13 = i*/ )
       {
-        if ( v33[v11] != *_v12 /* *(_DWORD *)((char *)&v12->ToFloatPtr()[0] + v13)*/ )
+        //if ( v33[v11] != *_v12 /* *(_DWORD *)((char *)&v12->ToFloatPtr()[0] + v13)*/ )
+		if(lastSign != v33[v11]) // cross this edge
         {
           v14 = this->edgeIndex[v11 + v34->firstEdge];
           v15 = &this->edges[abs(v14)];
@@ -1859,7 +1861,7 @@ v37 = v8;
           v17 = &this->vertices[v15->vertexNum[v14 >= 0]];
           v12 = v37;
           v29 = *v17 - *v16;
-        	float _v37 = *(v37 - 1);
+		  float _v37 = *(v37 - 1);
           v38 = _v37 / (_v37 - *v37);
           v26 = v29 * v38;
           v23 = *v16 + v26;
@@ -1878,6 +1880,7 @@ v37 = v8;
             a3->edgeIndex = v14;
             a3->point = _v19;
           }
+		  lastSign = v33[v11];
         }
         ++v11;
         v12++;
