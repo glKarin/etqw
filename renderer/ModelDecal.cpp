@@ -315,6 +315,8 @@ idRenderModelDecal::CreateDecal
 */
 #ifdef _RAVEN
 void idRenderModelDecal::CreateDecal(const idRenderModel *model, const decalProjectionInfo_t &localInfo, int suppressSurfaceMask)
+#elif defined(_SPLASHDAMAGE) //karin: hide surfaces
+void idRenderModelDecal::CreateDecal(const idRenderModel *model, const decalProjectionInfo_t &localInfo, const renderEntity_t *parms)
 #else
 void idRenderModelDecal::CreateDecal(const idRenderModel *model, const decalProjectionInfo_t &localInfo)
 #endif
@@ -324,6 +326,10 @@ void idRenderModelDecal::CreateDecal(const idRenderModel *model, const decalProj
 	for (int surfNum = 0; surfNum < model->NumSurfaces(); surfNum++) {
 #ifdef _RAVEN //k: for ShowSurface/HideSurface, shader mask is not 0 will skip make decal
 		if(SUPPRESS_SURFACE_MASK_CHECK(suppressSurfaceMask, surfNum))
+			continue;
+#endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+		if(parms && parms->hideSurfaceMask.Get(surfNum))
 			continue;
 #endif
 		const modelSurface_t *surf = model->Surface(surfNum);

@@ -4265,7 +4265,6 @@ void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
 }
 
 void idDeclManagerLocal::ExportDeclSource(const char *savePath, const char *target, bool expand) {
-	idFile *file;
 	idStr outPath;
 	if (savePath && savePath[0]) {
 		outPath.Append(savePath);

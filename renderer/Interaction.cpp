@@ -1005,6 +1005,8 @@ The results of this are cached and valid until the light or entity change.
 */
 #ifdef _RAVEN
 void idInteraction::CreateInteraction(const idRenderModel *model, int suppressSurfaceMask)
+#elif defined(_SPLASHDAMAGE) //karin: hide surfaces
+void idInteraction::CreateInteraction(const idRenderModel *model, const renderEntity_t *parms)
 #else
 void idInteraction::CreateInteraction(const idRenderModel *model)
 #endif
@@ -1062,6 +1064,10 @@ void idInteraction::CreateInteraction(const idRenderModel *model)
 	for (int c = 0 ; c < model->NumSurfaces() ; c++) {
 #ifdef _RAVEN //k: for ShowSurface/HideSurface, shader mask is not 0 will skip make shadow and interaction
 		if(SUPPRESS_SURFACE_MASK_CHECK(suppressSurfaceMask, c))
+			continue;
+#endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+		if(parms && parms->hideSurfaceMask.Get(c))
 			continue;
 #endif
 
@@ -1403,6 +1409,8 @@ void idInteraction::AddActiveInteraction(void)
 	if (IsDeferred()) {
 #ifdef _RAVEN
 		CreateInteraction(model, entityDef->parms.suppressSurfaceMask);
+#elif defined(_SPLASHDAMAGE) //karin: hide surfaces
+		CreateInteraction(model, &entityDef->parms);
 #else
 		CreateInteraction(model);
 #endif

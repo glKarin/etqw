@@ -1331,6 +1331,7 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 			break;
 	}
 
+#if !defined(_SPLASHDAMAGE) //karin: gui in game
 	// check for gui surfaces
 	idUserInterface	*gui = NULL;
 
@@ -1356,7 +1357,7 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 		oldFloatTime = tr.viewDef->floatTime;
 		oldTime = tr.viewDef->renderView.time;
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#if defined(_RAVEN)
 		tr.viewDef->floatTime = tr.viewDef->renderView.time * 0.001;
 #else
 		tr.viewDef->floatTime = game->GetTimeGroupTime(1) * 0.001;
@@ -1374,6 +1375,7 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 		tr.viewDef->floatTime = oldFloatTime;
 		tr.viewDef->renderView.time = oldTime;
 	}
+#endif
 
 	// we can't add subviews at this point, because that would
 	// increment tr.viewCount, messing up the rest of the surface
@@ -1413,6 +1415,10 @@ static void R_AddAmbientDrawsurfs(viewEntity_t *vEntity)
 
 #ifdef _RAVEN //k: for ShowSurface/HideSurface, shader mask is not 0 will skip render
 		if(SUPPRESS_SURFACE_MASK_CHECK(def->parms.suppressSurfaceMask, i))
+			continue;
+#endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+		if(def->parms.hideSurfaceMask.Get(i))
 			continue;
 #endif
 
@@ -2032,52 +2038,6 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEffect_s *space, const r
         case TG_WOBBLESKY_CUBE:
             R_WobbleskyTexGen(drawSurf, tr.viewDef->renderView.vieworg);
             break;
-    }
-#endif
-
-#if 0
-    // check for gui surfaces
-    idUserInterface	*gui = NULL;
-
-    if (!space->entityDef) {
-        gui = shader->GlobalGui();
-    } else {
-        int guiNum = shader->GetEntityGui() - 1;
-
-        if (guiNum >= 0 && guiNum < MAX_RENDERENTITY_GUI) {
-            gui = renderEntity->gui[ guiNum ];
-        }
-
-        if (gui == NULL) {
-            gui = shader->GlobalGui();
-        }
-    }
-
-    if (gui) {
-        // force guis on the fast time
-        float oldFloatTime;
-        int oldTime;
-
-        oldFloatTime = tr.viewDef->floatTime;
-        oldTime = tr.viewDef->renderView.time;
-
-#ifdef _RAVEN
-        tr.viewDef->floatTime = tr.viewDef->renderView.time * 0.001;
-#else
-        tr.viewDef->floatTime = game->GetTimeGroupTime(1) * 0.001;
-		tr.viewDef->renderView.time = game->GetTimeGroupTime(1);
-#endif
-
-        idBounds ndcBounds;
-
-        if (!R_PreciseCullSurface(drawSurf, ndcBounds)) {
-            // did we ever use this to forward an entity color to a gui that didn't set color?
-//			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
-            R_RenderGuiSurf(gui, drawSurf);
-        }
-
-        tr.viewDef->floatTime = oldFloatTime;
-        tr.viewDef->renderView.time = oldTime;
     }
 #endif
 

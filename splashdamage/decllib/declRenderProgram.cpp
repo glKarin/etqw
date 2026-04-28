@@ -276,34 +276,14 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 					buf.Append(text + range_start, range_end - range_start);
 				HandleInclude(buf, program, str.c_str());
 				range_start = src.GetFileOffset();
-			} else if (!token.Icmp("if")) {
-				if(!src.ReadTokenOnLine(&token))
+			} else if (!token.Icmp("if") || !token.Icmp("elif")) {
+				while(src.ReadTokenOnLine(&token))
 				{
-					src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
-					continue;
-				}
-				if (!token.Cmp("!")) {
-					if(!src.ReadTokenOnLine(&token))
-					{
-						src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
-						continue;
+					// skip && ! || defined number
+					if (token.type == TT_NAME && token.Icmp("defined")) {
+						defines.AddUnique(token);
 					}
 				}
-				defines.AddUnique(token);
-			} else if (!token.Icmp("elif")) {
-				if(!src.ReadTokenOnLine(&token))
-				{
-					src.Warning("sdRenderProgramShader::ParsePost: missing elif macro name");
-					continue;
-				}
-				if (!token.Cmp("!")) {
-					if(!src.ReadTokenOnLine(&token))
-					{
-						src.Warning("sdRenderProgramShader::ParsePost: missing if macro name");
-						continue;
-					}
-				}
-				defines.AddUnique(token);
 			} else if (!token.Icmp("else")) {
 			} else if (!token.Icmp("endif")) {
 			} else {

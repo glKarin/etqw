@@ -621,11 +621,13 @@ void idRenderWorldLocal::ProjectDecalOntoWorld(const idFixedWinding &winding, co
 				def->decals = idRenderModelDecal::Alloc();
 			}
 
-			def->decals->CreateDecal(model, localInfo
 #ifdef _RAVEN
-			, def->parms.suppressSurfaceMask
+			def->decals->CreateDecal(model, localInfo, def->parms.suppressSurfaceMask);
+#elif defined(_SPLASHDAMAGE) //karin: hide surfaces
+			def->decals->CreateDecal(model, localInfo, &def->parms);
+#else
+			def->decals->CreateDecal(model, localInfo);
 #endif
-					);
 		}
 	}
 }
@@ -676,11 +678,13 @@ void idRenderWorldLocal::ProjectDecal(qhandle_t entityHandle, const idFixedWindi
 		def->decals = idRenderModelDecal::Alloc();
 	}
 
-	def->decals->CreateDecal(model, localInfo
 #ifdef _RAVEN
-			, def->parms.suppressSurfaceMask
+	def->decals->CreateDecal(model, localInfo, def->parms.suppressSurfaceMask);
+#elif defined(_SPLASHDAMAGE) //karin: hide surfaces
+	def->decals->CreateDecal(model, localInfo, &def->parms);
+#else
+	def->decals->CreateDecal(model, localInfo);
 #endif
-			);
 }
 
 /*
@@ -716,7 +720,13 @@ void idRenderWorldLocal::ProjectOverlay(qhandle_t entityHandle, const idPlane lo
 		def->overlay = idRenderModelOverlay::Alloc();
 	}
 
+#ifdef _RAVEN
+	def->overlay->CreateOverlay(model, localTextureAxis, material, def->parms.suppressSurfaceMask);
+#elif defined(_SPLASHDAMAGE) //karin: hide surfaces
+	def->overlay->CreateOverlay(model, localTextureAxis, material, &def->parms);
+#else
 	def->overlay->CreateOverlay(model, localTextureAxis, material);
+#endif
 }
 
 /*
@@ -1183,6 +1193,10 @@ guiPoint_t	idRenderWorldLocal::GuiTrace(qhandle_t entityHandle, const idVec3 sta
 		if(SUPPRESS_SURFACE_MASK_CHECK(def->parms.suppressSurfaceMask, j))
 			continue;
 #endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+		if(def->parms.hideSurfaceMask.Get(j))
+			continue;
+#endif
 		const modelSurface_t *surf = model->Surface(j);
 
 		tri = surf->geometry;
@@ -1307,6 +1321,10 @@ bool idRenderWorldLocal::ModelTrace(modelTrace_t &trace, qhandle_t entityHandle,
 		if(SUPPRESS_SURFACE_MASK_CHECK(refEnt->suppressSurfaceMask, i))
 			continue;
 #endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+		if(refEnt->hideSurfaceMask.Get(i))
+			continue;
+#endif
 		surf = model->Surface(i);
 
 #ifdef _SPLASHDAMAGE
@@ -1325,6 +1343,10 @@ bool idRenderWorldLocal::ModelTrace(modelTrace_t &trace, qhandle_t entityHandle,
 	for (i = 0; i < model->NumBaseSurfaces(); i++) {
 #ifdef _RAVEN //k: for ShowSurface/HideSurface, shader mask is not 0 will skip model trace testing.
 		if(SUPPRESS_SURFACE_MASK_CHECK(refEnt->suppressSurfaceMask, i))
+			continue;
+#endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+		if(refEnt->hideSurfaceMask.Get(i))
 			continue;
 #endif
 		surf = model->Surface(i);
@@ -1487,6 +1509,10 @@ bool idRenderWorldLocal::Trace(modelTrace_t &trace, const idVec3 &start, const i
 			for (j = 0; j < model->NumSurfaces(); j++) {
 #ifdef _RAVEN //k: for ShowSurface/HideSurface, shader mask is not 0 will skip trace testing.
 				if(SUPPRESS_SURFACE_MASK_CHECK(def->parms.suppressSurfaceMask, j))
+					continue;
+#endif
+#ifdef _SPLASHDAMAGE //karin: hide surfaces
+				if(def->parms.hideSurfaceMask.Get(j))
 					continue;
 #endif
 				const modelSurface_t *surf = model->Surface(j);
