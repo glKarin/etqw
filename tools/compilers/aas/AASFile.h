@@ -72,11 +72,6 @@ If you have questions concerning this license or the applicable additional terms
 #define TFL_TELEPORT						BIT(13)		// teleportation
 #define TFL_ELEVATOR						BIT(14)		// travel by elevator
 
-//karin: compat for DOOM3
-#define TFL_CROUCH							BIT(15)		// crouching
-#define TFL_FLY								TFL_AIR		// fly
-#define TFL_SPECIAL							BIT(16)		// special
-
 #define TFL_VALID_GDF						( ~( TFL_INVALID | TFL_INVALID_GDF ) )
 #define TFL_VALID_STROGG					( ~( TFL_INVALID | TFL_INVALID_STROGG ) )
 #define TFL_VALID_GDF_AND_STROGG			( ~( TFL_INVALID ) )

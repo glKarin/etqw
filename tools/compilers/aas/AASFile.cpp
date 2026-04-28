@@ -891,11 +891,13 @@ bool idAASFileLocal::Write(const idStr &fileName, unsigned int mapFileCRC)
 #endif
 			Reachability_Write(aasFile, reach);
 
+#if !defined(_SPLASHDAMAGE)
 			switch (reach->travelType) {
 				case TFL_SPECIAL:
 					Reachability_Special_Write(aasFile, static_cast<idReachability_Special *>(reach));
 					break;
 			}
+#endif
 
 			aasFile->WriteFloatString("\n");
 		}
@@ -1171,6 +1173,8 @@ bool idAASFileLocal::ParseReachabilities(idLexer &src, int areaNum)
 					src.UnreadToken(&t);
 			}
 		}
+#elif defined(_SPLASHDAMAGE)
+		newReach = new aasReachability_t();
 #else
 		switch (reach.travelType) {
 			case TFL_SPECIAL:
