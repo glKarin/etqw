@@ -241,6 +241,9 @@ class idMD5Mesh
 		int							NumVerts(void) const;
 		int							NumTris(void) const;
 		int							NumWeights(void) const;
+#ifdef _SPLASHDAMAGE
+		void						ParseMeshBinary(idFile *file, int numJoints, const idJointMat *joints);
+#endif
 
 	private:
 		idList<idVec2>				texCoords;			// texture coordinates
@@ -301,6 +304,8 @@ class idRenderModelMD5 : public idRenderModelStatic
 #endif
 #ifdef _SPLASHDAMAGE //karin: has mesh name on md5mesh version 11
 		virtual int					FindSurfaceId( const char *surfaceName );
+		virtual idBounds			CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim );
+		virtual bool				LoadModelBinary();
 #endif
 
 	private:
@@ -312,6 +317,9 @@ class idRenderModelMD5 : public idRenderModelStatic
 		void						GetFrameBounds(const renderEntity_t *ent, idBounds &bounds) const;
 		void						DrawJoints(const renderEntity_t *ent, const struct viewDef_s *view) const;
 		void						ParseJoint(idLexer &parser, idMD5Joint *joint, idJointQuat *defaultPose);
+#ifdef _SPLASHDAMAGE
+		void						ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJointQuat *defaultPose, idJointMat *poseMat3);
+#endif
 
 #ifdef _RAVEN //k: show/hide surface
 		idList<idStr>               surfaceShaderList;

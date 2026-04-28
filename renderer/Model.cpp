@@ -2763,6 +2763,12 @@ int idRenderModelStatic::NumMeshes( const int lod ) const {
 }
 
 idBounds idRenderModelStatic::CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim ) {
+	idBounds bounds;
+	bounds.Clear();
+	const srfTriangles_t *tri = surfaces[meshIndex].geometry;
+	SIMDProcessor->MinMax(bounds[0], bounds[1], tri->verts, tri->numVerts);
+	bounds.TranslateSelf(offset);
+	bounds.RotateSelf(axis);
 	return bounds;
 }
 

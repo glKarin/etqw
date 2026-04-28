@@ -635,6 +635,10 @@ void idRenderModelMD5::LoadModel()
 	purged = false;
 
 	if (!parser.LoadFile(name)) {
+#ifdef _SPLASHDAMAGE //karin: and then try binary md5mesh
+		if (LoadModelBinary())
+			return;
+#endif
 		MakeDefaultModel();
 		return;
 	}
@@ -1199,6 +1203,421 @@ int idRenderModelMD5::FindSurfaceId( const char *surfaceName ) {
 	}
 	return -1;
 }
+
+idBounds idRenderModelMD5::CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim ) {
+	idBounds bounds = meshes[meshIndex].CalcBounds(joints);
+	bounds.TranslateSelf(offset);
+	bounds.RotateSelf(axis);
+	return bounds;
+}
+
+/*
+====================
+idMD5Mesh::ReadBinary
+====================
+*/
+void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *joints)
+{
+	idToken		token;
+	idToken		name;
+	int			num;
+	int			count;
+	int			jointnum;
+	idStr		shaderName;
+	int			i, j;
+	idList<int>	tris;
+	idList<int>	firstWeightForVertex;
+	idList<int>	numWeightsForVertex;
+	int			maxweight;
+	idList<vertexWeight_t> tempWeights;
+	unsigned short ush;
+	int numRawVertex;
+	int numVertex;
+	unsigned char uch;
+	unsigned char weight;
+
+	//
+	// parse name
+	//
+	file->ReadString(meshName);
+
+	file->ReadInt(i);
+	//if(i) flags |= MD5MF_VERTEX_COLOR;
+
+	file->ReadInt(i);
+	//if(i) flags |= MD5MF_NO_ANIMATE;
+
+	file->Seek(4, FS_SEEK_CUR); // uint32
+	file->ReadInt(numRawVertex);
+	file->Seek(1, FS_SEEK_CUR); // uint8
+	file->Seek(1, FS_SEEK_CUR); // uint8
+	byte vertexRigidFlag;
+	file->ReadUnsignedChar(vertexRigidFlag);
+
+	//
+	// parse shader
+	//
+	file->ReadString(shaderName);
+
+	shader = declManager->FindMaterial(shaderName);
+
+	file->Seek(4, FS_SEEK_CUR); // int32
+	file->Seek(4, FS_SEEK_CUR); // int32
+
+	//
+	// parse tris
+	//
+	file->ReadInt(count);
+	if (count < 0) {
+		fileSystem->CloseFile(file);
+		common->Error("Invalid size: %d", count);
+	}
+
+	tris.SetNum(count);
+	numTris = count;
+
+	for (i = 0; i < numTris; i++) {
+		file->ReadUnsignedShort(ush);
+		tris[ i ] = ush;
+	}
+
+	file->ReadInt(count);
+	file->Seek(4 * count * 2, FS_SEEK_CUR); // uint8[count * 2]
+	file->Seek(numRawVertex * 2, FS_SEEK_CUR); // uint8[count * 2]
+
+	file->Seek(4, FS_SEEK_CUR); // int32
+	file->ReadInt(numVertex);
+
+	file->ReadInt(count);
+	file->Seek(4 * count, FS_SEEK_CUR); // uint32[count]
+	file->Seek(4, FS_SEEK_CUR); // int32
+	file->Seek(4, FS_SEEK_CUR); // int32
+
+	file->ReadInt(count);
+	idList<byte> jointTables;
+	jointTables.SetNum(count);
+	for (i = 0; i < jointTables.Num(); i++)
+		file->ReadUnsignedChar(jointTables[i]);
+
+	//
+	// parse texture coordinates
+	//
+	count = numVertex;
+
+	if (count < 0) {
+		fileSystem->CloseFile(file);
+		common->Error("Invalid size: %s", token.c_str());
+	}
+
+	texCoords.SetNum(count);
+	firstWeightForVertex.SetNum(count);
+	numWeightsForVertex.SetNum(count);
+	vertColors.SetNum(count);
+	idList<idVec3> positions;
+	positions.SetNum(count);
+
+	numWeights = 0;
+	maxweight = 0;
+
+	for (i = 0; i < texCoords.Num(); i++) {
+		file->ReadFloatArray(positions[i].ToFloatPtr(), 3);
+
+		file->ReadFloat(texCoords[ i ][0]);
+		file->ReadFloat(texCoords[ i ][1]);
+
+		file->Seek(4 * 3, FS_SEEK_CUR); // normal
+		file->Seek(4 * 3, FS_SEEK_CUR); // tangent
+		file->Seek(4, FS_SEEK_CUR); // biTangentSign
+					   
+		file->ReadUnsignedChar(vertColors[i].r);
+		file->ReadUnsignedChar(vertColors[i].g);
+		file->ReadUnsignedChar(vertColors[i].b);
+		file->ReadUnsignedChar(vertColors[i].a);
+	}
+
+	//
+	// parse weights
+	//
+
+	if (vertexRigidFlag == 1)
+	{
+		count = numVertex;
+		tempWeights.SetNum(numVertex);
+		for (i = 0; i < numVertex; i++)
+		{
+			file->ReadUnsignedChar(uch);
+			jointnum = jointTables[uch / 3];
+			if ((jointnum < 0) || (jointnum >= numJoints)) {
+				fileSystem->CloseFile(file);
+				common->Error("Joint Index out of range(%d): %d", numJoints, jointnum);
+			}
+
+			tempWeights[ i ].joint			= jointnum;
+			tempWeights[ i ].jointWeight	= 1.0f;
+
+			tempWeights[ i ].offset = positions[i];
+
+			firstWeightForVertex[ i ]	= i;
+			numWeightsForVertex[ i ]	= 1;
+
+			numWeights += numWeightsForVertex[ i ];
+
+			if (numWeightsForVertex[ i ] + firstWeightForVertex[ i ] > maxweight) {
+				maxweight = numWeightsForVertex[ i ] + firstWeightForVertex[ i ];
+			}
+		}
+	}
+	else
+	{
+		count = 0;
+		for (i = 0; i < numVertex; i++)
+		{
+			firstWeightForVertex[ i ]	= tempWeights.Num();
+			numWeightsForVertex[ i ]	= 0;
+
+			for (j = 0; j < 4; j++)
+			{
+				file->ReadUnsignedChar(uch);
+				file->ReadUnsignedChar(weight);
+				if (weight > 0)
+				{
+					jointnum = jointTables[uch / 3];
+					if ((jointnum < 0) || (jointnum >= numJoints)) {
+						fileSystem->CloseFile(file);
+						common->Error("Joint Index out of range(%d): %d", numJoints, jointnum);
+					}
+
+					vertexWeight_t w;
+					w.joint			= jointnum;
+					w.jointWeight	= (float)weight / 255.0f;
+
+					w.offset = positions[i];
+					tempWeights.Append(w);
+					numWeightsForVertex[ i ]++;
+					count++;
+				}
+			}
+
+			if (!numWeightsForVertex[ i ]) {
+				fileSystem->CloseFile(file);
+				common->Error("Vertex without any joint weights.");
+			}
+
+			numWeights += numWeightsForVertex[ i ];
+
+			if (numWeightsForVertex[ i ] + firstWeightForVertex[ i ] > maxweight) {
+				maxweight = numWeightsForVertex[ i ] + firstWeightForVertex[ i ];
+			}
+		}
+	}
+
+	if (maxweight > count) {
+		common->Warning("Vertices reference out of range weights in model (%d of %d weights).", maxweight, count);
+	}
+
+	file->Seek(5, FS_SEEK_CUR);
+
+	// create pre-scaled weights and an index for the vertex/joint lookup
+	scaledWeights = (idVec4 *) Mem_Alloc16(numWeights * sizeof(scaledWeights[0]));
+	weightIndex = (int *) Mem_Alloc16(numWeights * 2 * sizeof(weightIndex[0]));
+	memset(weightIndex, 0, numWeights * 2 * sizeof(weightIndex[0]));
+
+	count = 0;
+
+	for (i = 0; i < texCoords.Num(); i++) {
+		num = firstWeightForVertex[i];
+
+		for (j = 0; j < numWeightsForVertex[i]; j++, num++, count++) {
+			scaledWeights[count].ToVec3() = tempWeights[num].offset * tempWeights[num].jointWeight;
+			scaledWeights[count].w = tempWeights[num].jointWeight;
+			weightIndex[count * 2 + 0] = tempWeights[num].joint * sizeof(idJointMat);
+		}
+
+		weightIndex[count * 2 - 1] = 1;
+	}
+
+	tempWeights.Clear();
+	numWeightsForVertex.Clear();
+	firstWeightForVertex.Clear();
+
+	// update counters
+	c_numVerts += texCoords.Num();
+	c_numWeights += numWeights;
+	c_numWeightJoints++;
+
+	for (i = 0; i < numWeights; i++) {
+		c_numWeightJoints += weightIndex[i*2+1];
+	}
+
+	//
+	// build the information that will be common to all animations of this mesh:
+	// silhouette edge connectivity and normal / tangent generation information
+	//
+
+#ifdef _DYNAMIC_ALLOC_STACK_OR_HEAP
+	_DROID_ALLOC16_DEF(idDrawVert, verts, (texCoords.Num() * sizeof(idDrawVert)));
+#else
+	idDrawVert *verts = (idDrawVert *) _alloca16(texCoords.Num() * sizeof(idDrawVert));
+#endif
+
+	for (i = 0; i < texCoords.Num(); i++) {
+		verts[i].Clear();
+		verts[i].st = texCoords[i];
+#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
+		if(flags & MD5MF_VERTEX_COLOR)
+		{
+			verts[i].color[0] = vertColors[i].r;
+			verts[i].color[1] = vertColors[i].g;
+			verts[i].color[2] = vertColors[i].b;
+			verts[i].color[3] = vertColors[i].a;
+		}
+#endif
+	}
+
+	TransformVerts(verts, joints);
+	deformInfo = R_BuildDeformInfo(texCoords.Num(), verts, tris.Num(), tris.Ptr(), shader->UseUnsmoothedTangents());
+
+#ifdef _DYNAMIC_ALLOC_STACK_OR_HEAP
+	_DROID_FREE(verts);
+#endif
+}
+
+/*
+====================
+idRenderModelMD5::ParseJoint_Binary
+====================
+*/
+void idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJointQuat *defaultPose, idJointMat *poseMat3)
+{
+	idStr	token;
+	int		num;
+
+	//
+	// parse name
+	//
+	file->ReadString(joint->name);
+
+	//
+	// parse parent
+	//
+	file->ReadInt(num);
+
+	if (num < 0) {
+		joint->parent = NULL;
+	} else {
+		if (num >= joints.Num() - 1) {
+			common->Error("Invalid parent for joint '%s'", joint->name.c_str());
+		}
+
+		joint->parent = &joints[ num ];
+	}
+
+	//
+	// parse default pose
+	//
+	file->ReadFloat(defaultPose->t[0]);
+	file->ReadFloat(defaultPose->t[1]);
+	file->ReadFloat(defaultPose->t[2]);
+	file->Seek(4, FS_SEEK_CUR); // float32
+	file->ReadFloat(defaultPose->q[0]);
+	file->ReadFloat(defaultPose->q[1]);
+	file->ReadFloat(defaultPose->q[2]);
+	defaultPose->q.w = defaultPose->q.CalcW();
+	file->Seek(4, FS_SEEK_CUR); // float32
+	//file->Skip(4 * 12, FS_SEEK_CUR);
+	file->ReadFloatArray(poseMat3->ToFloatPtr(), 12);
+}
+
+bool idRenderModelMD5::LoadModelBinary() {
+	int			majorVersion;
+	int			minorVersion;
+	int			version;
+	int			i;
+	int			num;
+	int			parentNum;
+	idToken		token;
+	idFile		*file;
+	idJointQuat	*pose;
+	idMD5Joint	*joint;
+	idJointMat *poseMat3;
+
+	idStr binPath = "generated/md5binary";
+	binPath.AppendPath(name);
+	binPath.SetFileExtension(".md5b");
+
+	file = fileSystem->OpenFileRead(binPath);
+	if (!file)
+		return false;
+
+	file->ReadInt(majorVersion);
+	file->ReadInt(minorVersion);
+	version = majorVersion * 10 + minorVersion;
+
+	if (version < MD5_VERSION) {
+		fileSystem->CloseFile(file);
+		common->Error("Invalid version %d%d.  Should be version %d\n", majorVersion, minorVersion, MD5_VERSION);
+		return false;
+	}
+
+	if (!purged) {
+		PurgeModel();
+	}
+
+	purged = false;
+
+	// parse num joints
+	file->ReadInt(num);
+	joints.SetGranularity(1);
+	joints.SetNum(num);
+	defaultPose.SetGranularity(1);
+	defaultPose.SetNum(num);
+	poseMat3 = (idJointMat *)_alloca16(num * sizeof(*poseMat3));
+
+	//
+	// parse joints
+	//
+	pose = defaultPose.Ptr();
+	joint = joints.Ptr();
+
+	for (i = 0; i < joints.Num(); i++, joint++, pose++) {
+		ParseJoint_Binary(file, joint, pose, &poseMat3[i]);
+
+		if (joint->parent) {
+			parentNum = joint->parent - joints.Ptr();
+			pose->q = (poseMat3[ i ].ToMat3() * poseMat3[ parentNum ].ToMat3().Transpose()).ToQuat();
+			pose->t = (poseMat3[ i ].ToVec3() - poseMat3[ parentNum ].ToVec3()) * poseMat3[ parentNum ].ToMat3().Transpose();
+		}
+	}
+
+	// parse num meshes
+	file->ReadInt(num);
+
+	if (num < 0) {
+		fileSystem->CloseFile(file);
+		common->Error("Invalid size: %d", num);
+		return false;
+	}
+
+	meshes.SetGranularity(1);
+	meshes.SetNum(num);
+
+	for (i = 0; i < meshes.Num(); i++) {
+		meshes[ i ].ParseMeshBinary(file, defaultPose.Num(), poseMat3);
+	}
+
+	//
+	// calculate the bounds of the model
+	//
+	CalculateBounds(poseMat3);
+
+	// set the timestamp for reloadmodels
+	timeStamp = file->Timestamp();
+
+	fileSystem->CloseFile(file);
+
+	return true;
+}
+
 #endif
 
 #ifdef _MODEL_MD5_EXT
