@@ -37,11 +37,11 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-#ifdef _SPLASHDAMAGExxx //karin: cmd hz
-const int USERCMD_HZ			= 30;			// 30 frames per second
-#else
-const int USERCMD_HZ			= 60;			// 60 frames per second
+#ifdef _SPLASHDAMAGE //karin: USERCMD_** in game, it is different with DOOM3 engine
+const int ETQW_USERCMD_HZ			= 30;			// 30 frames per second
+const int ETQW_USERCMD_MSEC			= 1000 / ETQW_USERCMD_HZ;
 #endif
+const int USERCMD_HZ			= 60;			// 60 frames per second
 const int USERCMD_MSEC			= 1000 / USERCMD_HZ;
 #ifdef _HUMANHEAD
 const float	USERCMD_ONE_OVER_HZ = (1.0f / USERCMD_HZ); // HUMANHEAD JRM

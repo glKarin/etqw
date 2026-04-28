@@ -661,6 +661,9 @@ public:
 	idList< savedPlayerStat_t > endGameStats;
 	idList< lifeStat_t >		lifeStats;
 
+#ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
+	volatile
+#endif
 	int						framenum;
 	int						startTime;
 	int						previousTime;			// time in msec of last frame
@@ -1206,6 +1209,9 @@ public:
 	const idVec3&					GetWindVector( const idVec3 & origin ) const;
 
 	// added the following to assist licensees with merge issues
+#ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
+	volatile
+#endif
 	int								GetFrameNum() const { return framenum; }
 	int								GetTime() const { return time; }
 	int								GetMSec() const { return msec; }
@@ -1906,5 +1912,10 @@ ID_INLINE void		sdSpawnPoint::SetOwner( idEntity* owner ) { _owner = owner; }
 
 #include "Player.h"
 #include "ScriptEntity.h"
+
+#ifdef _ETQW //karin: 30hz in ETQW game
+#define USERCMD_HZ ETQW_USERCMD_HZ
+#define USERCMD_MSEC ETQW_USERCMD_MSEC
+#endif
 
 #endif	/* !__GAME_LOCAL_H__ */
