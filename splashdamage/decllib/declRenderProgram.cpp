@@ -276,7 +276,7 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 					buf.Append(text + range_start, range_end - range_start);
 				HandleInclude(buf, program, str.c_str());
 				range_start = src.GetFileOffset();
-			} else if (!token.Icmp("if") || !token.Icmp("elif")) {
+			} else if (!token.Icmp("if") || !token.Icmp("ifdef") || !token.Icmp("ifndef") || !token.Icmp("elif") || !token.Icmp("define")) {
 				while(src.ReadTokenOnLine(&token))
 				{
 					// skip && ! || defined number
