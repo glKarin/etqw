@@ -97,9 +97,6 @@ InitFromMegaFile
 */
 bool idMegaTexture::InitFromMegaFile(const char *fileBase)
 {
-#ifdef _SPLASHDAMAGE //karin: TEMP TODO
-	return false;
-#endif	
 	idStr	name = "megaTextures/";
 	name += fileBase;
 	name.StripFileExtension();

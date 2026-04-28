@@ -2411,6 +2411,11 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		}
 
 		if (!token.Icmp("megaTexture")) {
+#ifdef _SPLASHDAMAGE //karin: TEMP TODO new megatexture
+			src.SkipRestOfLine();
+			SetMaterialFlag(MF_DEFAULTED);
+			continue;
+#endif
 			if (src.ReadTokenOnLine(&token)) {
 				newStage.megaTexture = new idMegaTexture;
 
