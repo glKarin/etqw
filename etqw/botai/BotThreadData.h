@@ -43,14 +43,7 @@
 
 #define BOT_THREAD_BUFFER_SIZE		8
 
-#ifdef _ETQW //karin: USERCMD_MSEC doom3 is 60, etqw is 30, it maybe make bot thread block
-#if USERCMD_MSEC != 30
-#define BOT_USERCMD_MSEC 30
-#endif
-#define BOT_THINK_DELAY_TIME	( bot_threadMaxFrameDelay.GetInteger() * BOT_USERCMD_MSEC ) //mal: how long the delay could be with the bots thinking with the threading system.
-#else
 #define BOT_THINK_DELAY_TIME	( bot_threadMaxFrameDelay.GetInteger() * USERCMD_MSEC ) //mal: how long the delay could be with the bots thinking with the threading system.
-#endif
 
 #define VEHICLE_BOX_EXPAND		50.0f
 #define NORMAL_BOX_EXPAND		25.0f

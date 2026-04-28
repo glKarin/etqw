@@ -752,12 +752,7 @@ void idAASLocal::RandomPullPlayer( const idVec3 &origin, int mode ) const {
 		failedCount++;
 	}
 
-#ifdef _ETQW //karin: USERCMD_MSEC doom3 is 60, etqw is 30, it maybe make bot thread block
-	if ( failedCount > 10 * 1000 / BOT_USERCMD_MSEC ) 
-#else
-	if ( failedCount > 10 * 1000 / USERCMD_MSEC ) 
-#endif
-	{
+	if ( failedCount > 10 * 1000 / USERCMD_MSEC ) {
 		failedCount = 0;
 		if ( mode > 1 ) {
 			common->Warning( "failed to go from area %d to area %d at area %d", startAreaNum, goalAreaNum, areaNum );
