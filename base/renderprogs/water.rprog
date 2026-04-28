@@ -484,108 +484,108 @@ renderProgram water/simple_cube_interpolate {
 	program vertex reference water/simple_cube
 	
 	program fragment glsl { <%
-varying vec4 var_TexCoord0;
-varying vec4 var_TexCoord2;
-varying vec4 var_TexCoord3;
-varying vec4 var_TexCoord4;
-varying vec4 var_TexCoord5;
-varying vec4 var_Color;
+        varying vec4 var_TexCoord0;
+        varying vec4 var_TexCoord2;
+        varying vec4 var_TexCoord3;
+        varying vec4 var_TexCoord4;
+        varying vec4 var_TexCoord5;
+        varying vec4 var_Color;
 
-void main ( void ) { 
-// ARB_precision_hint_fastest; 
-vec4 R0;
-vec4 R1;
-vec4 R2;
-vec4 R3;
-vec4 R4;
-vec4 eye;
-vec4 mix;
-vec4 spec;
-// get normals from normal maps 
-R0 = texture2D ( $bumpMap , var_TexCoord0.xy );
-R1 = texture2D ( $bumpMap2 , var_TexCoord0.xy );
-// interpolate 
-R2 = mix ( R0 , R1 , $water_lerp );
-#if !r_dxnNormalMaps 
-R2.x = R2.a;
-#endif 
-R2 = R2 * 2.0 + -1.0;
-R2.xy = R2.xy * $water_distortion.z;
-R0.a = clamp ( var_TexCoord2.w * 0.0001 , 0.0 , 1.0 );
-R1 = 0.0 - R2;
-R2 = R2 * R0.a + R1;
-#if r_normalizeNormalMaps 
-vec4 NR1;
-R2.z = 0.0;
-NR1.x = dot ( R2 , R2 );
-NR1.x = 1.0 + -NR1.x;
-NR1.x = 1.0 / sqrt ( NR1.x );
-R2.z = 1.0 / NR1.x;
-#endif 
-// put in world space 
-R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
-R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
-R1.z = dot ( R2.xyz , var_TexCoord5.xyz );
-// warped texcoords 
-#if ( r_shaderQuality < 2 ) 
-R3 = $water_distortion * $currentRenderTexelSize;
-R3 = R3 * var_Color.r;
-R3 = R3 * R1 + gl_FragCoord;
-#else 
-R3 = gl_FragCoord;
-#endif 
-// normalize to eye 
-#if ( r_shaderQuality < 2 ) 
-eye.w = dot ( var_TexCoord2.xyz , var_TexCoord2.xyz );
-eye.w = 1.0 / sqrt ( eye.w );
-eye = var_TexCoord2 * eye.w;
-#else 
-eye = var_TexCoord2;
-#endif 
-// calc reflection vector: i - 2 * dot(i, n) * n 
-R2 = vec4 ( dot ( eye.xyz , R1.xyz ) );
-R2 = R2 * 2.0;
-R4 = -R1 * R2.x + eye;
-// spec 
-#if ( r_shaderQuality < 1 ) 
-R0 = clamp ( dot ( R4.xyz , $sunDirection.xyz ) , 0.0 , 1.0 );
-spec = texture2D ( $map , R0.xy );
-spec = spec * $sunColor;
-spec = spec * $water_glare;
-spec = spec * var_Color.r;
-#endif 
-// reflect refract mixing (sorta fresnel) 
-#if ( r_shaderQuality < 2 ) 
-R1 = dot ( -eye.xyz , R1.xyz );
-R1 = R1 + 1.0;
-R1 = pow ( R1.x , $water_fresnel.x );
-mix = clamp ( 1.0 / R1.x, 0.0, 1.0 ); 
-mix = mix * var_Color.r;
-#else 
-mix = vec4( 0.125 );
-#endif 
-// lookup textures and interpolate 
-R1 = texture2D ( $currentRender , R3.xy / $currentRenderTexSize.xy );
-R1 = R1 * $water_tint;
-// modulate with water color 
-R2 = textureCube ( $environmentCubeMap , R4.xyz );
-R3 = R2 - R1;
-R3 = R3 * mix + R1;
-vec4 _finalcolor;
-#if ( r_shaderQuality < 1 ) 
-_finalcolor = R3 + spec;
-#else 
-_finalcolor = R3;
-#endif 
-gl_FragColor.a = spec.r + spec.g;
-#if ( r_megaDrawMethod != 0 ) 
-gl_FragColor.rgb = mix ( _finalcolor, $fogColor , var_Color.x ).xyz; 
-#else 
-gl_FragColor.rgb = _finalcolor.xyz;
-#endif 
-// MAD result.color.rgb, R4, 0.5, 0.5; 
-// MUL  result.color.rgb, fragment.texcoord[2].w, 0.00005; 
-} 
+        void main ( void ) {
+        // ARB_precision_hint_fastest;
+        vec4 R0;
+        vec4 R1;
+        vec4 R2;
+        vec4 R3;
+        vec4 R4;
+        vec4 eye;
+        vec4 _mix;
+        vec4 spec;
+        // get normals from normal maps
+        R0 = texture2D ( $bumpMap , var_TexCoord0.xy );
+        R1 = texture2D ( $bumpMap2 , var_TexCoord0.xy );
+        // interpolate
+        R2 = mix ( R0 , R1 , $water_lerp );
+        #if !r_dxnNormalMaps
+        R2.x = R2.a;
+        #endif
+        R2 = R2 * 2.0 + -1.0;
+        R2.xy = R2.xy * $water_distortion.z;
+        R0.a = clamp ( var_TexCoord2.w * 0.0001 , 0.0 , 1.0 );
+        R1 = 0.0 - R2;
+        R2 = R2 * R0.a + R1;
+        #if r_normalizeNormalMaps
+        vec4 NR1;
+        R2.z = 0.0;
+        NR1.x = dot ( R2 , R2 );
+        NR1.x = 1.0 + -NR1.x;
+        NR1.x = 1.0 / sqrt ( NR1.x );
+        R2.z = 1.0 / NR1.x;
+        #endif
+        // put in world space
+        R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
+        R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
+        R1.z = dot ( R2.xyz , var_TexCoord5.xyz );
+        // warped texcoords
+        #if ( r_shaderQuality < 2 )
+        R3 = $water_distortion * $currentRenderTexelSize;
+        R3 = R3 * var_Color.r;
+        R3 = R3 * R1 + gl_FragCoord;
+        #else
+        R3 = gl_FragCoord;
+        #endif
+        // normalize to eye
+        #if ( r_shaderQuality < 2 )
+        eye.w = dot ( var_TexCoord2.xyz , var_TexCoord2.xyz );
+        eye.w = 1.0 / sqrt ( eye.w );
+        eye = var_TexCoord2 * eye.w;
+        #else
+        eye = var_TexCoord2;
+        #endif
+        // calc reflection vector: i - 2 * dot(i, n) * n
+        R2 = vec4 ( dot ( eye.xyz , R1.xyz ) );
+        R2 = R2 * 2.0;
+        R4 = -R1 * R2.x + eye;
+        // spec
+        #if ( r_shaderQuality < 1 )
+        R0 = clamp ( dot ( R4.xyz , $sunDirection.xyz ) , 0.0 , 1.0 );
+        spec = texture2D ( $map , R0.xy );
+        spec = spec * $sunColor;
+        spec = spec * $water_glare;
+        spec = spec * var_Color.r;
+        #endif
+        // reflect refract mixing (sorta fresnel)
+        #if ( r_shaderQuality < 2 )
+        R1 = dot ( -eye.xyz , R1.xyz );
+        R1 = R1 + 1.0;
+        R1 = pow ( R1.x , $water_fresnel.x );
+        _mix = clamp ( 1.0 / R1.x, 0.0, 1.0 );
+        _mix = _mix * var_Color.r;
+        #else
+        _mix = vec4( 0.125 );
+        #endif
+        // lookup textures and interpolate
+        R1 = texture2D ( $currentRender , R3.xy / $currentRenderTexSize.xy );
+        R1 = R1 * $water_tint;
+        // modulate with water color
+        R2 = textureCube ( $environmentCubeMap , R4.xyz );
+        R3 = R2 - R1;
+        R3 = R3 * _mix + R1;
+        vec4 _finalcolor;
+        #if ( r_shaderQuality < 1 )
+        _finalcolor = R3 + spec;
+        #else
+        _finalcolor = R3;
+        #endif
+        gl_FragColor.a = spec.r + spec.g;
+        #if ( r_megaDrawMethod != 0 )
+        gl_FragColor.rgb = mix ( _finalcolor, $fogColor , var_Color.x ).xyz;
+        #else
+        gl_FragColor.rgb = _finalcolor.xyz;
+        #endif
+        // MAD result.color.rgb, R4, 0.5, 0.5;
+        // MUL  result.color.rgb, fragment.texcoord[2].w, 0.00005;
+        }
 	%> }
 }
 
