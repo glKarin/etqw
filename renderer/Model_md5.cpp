@@ -196,7 +196,13 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 			parser.ExpectTokenString(")");
 		}
 		else
+		{
 			parser.UnreadToken(&token);
+			vertColors[i].r = 255;
+			vertColors[i].g = 255;
+			vertColors[i].b = 255;
+			vertColors[i].a = 255;
+		}
 #endif
 
 		if (!numWeightsForVertex[ i ]) {
@@ -1235,6 +1241,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 	int numVertex;
 	unsigned char uch;
 	unsigned char weight;
+	bool b;
+	bool vertexRigidFlag;
 
 	//
 	// parse name
@@ -1245,14 +1253,13 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 	//if(i) flags |= MD5MF_VERTEX_COLOR;
 
 	file->ReadInt(i);
-	//if(i) flags |= MD5MF_NO_ANIMATE;
 
 	file->Seek(4, FS_SEEK_CUR); // uint32
 	file->ReadInt(numRawVertex);
+	file->ReadBool(b); // uint8 //noAnimate
+	if(b) flags |= MD5MF_NO_ANIMATE;
 	file->Seek(1, FS_SEEK_CUR); // uint8
-	file->Seek(1, FS_SEEK_CUR); // uint8
-	byte vertexRigidFlag;
-	file->ReadUnsignedChar(vertexRigidFlag);
+	file->ReadBool(vertexRigidFlag);
 
 	//
 	// parse shader
@@ -1339,7 +1346,7 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 	// parse weights
 	//
 
-	if (vertexRigidFlag == 1)
+	if (vertexRigidFlag)
 	{
 		count = numVertex;
 		tempWeights.SetNum(numVertex);
