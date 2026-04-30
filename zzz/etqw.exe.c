@@ -30,6 +30,7 @@ void __thiscall idImageManager::FinishBuild(idImageManager *__hidden this); // i
 void __thiscall idImageManager::Shutdown(idImageManager *__hidden this); // idb
 void __cdecl R_ShutdownInterationData(); // idb
 int __thiscall bdNetImpl::getStatus(bdNetImpl *this);
+char __thiscall idMD5Mesh::ReadBinary(idMD5Mesh *this, struct idFile *a2);
 void __cdecl R_StuffShutdown(); // idb
 void __thiscall sdRenderBindingManager::Shutdown(sdRenderBindingManager *__hidden this); // idb
 // void __usercall idRenderLog::StartFrame(idRenderLog *this@<ecx>, int@<edi>);
@@ -64,6 +65,8 @@ void __cdecl RB_DrawFullscreenQuad(const struct idMaterial *, float);
 void __cdecl RB_ShowOverdraw(); // idb
 void __cdecl RB_ShowIntensity(); // idb
 void __cdecl R_ShutdownTriSurfData(); // idb
+void __cdecl R_AllocStaticTriSurfSilEdges(struct srfTriangles_t *, unsigned int);
+void __cdecl R_AllocDeformInfoMirroredVerts(struct deformInfo_s *, unsigned int);
 void __thiscall idMegaTextureTileDecompressor::Shutdown(idMegaTextureTileDecompressor *__hidden this); // idb
 int sub_4E1060();
 int __cdecl sub_4E1220(int a1, int a2);
@@ -136,18 +139,18 @@ int __thiscall sub_5A0330(int this);
 void __thiscall sdNetTask_DemonWare_UpdateSession::OnCompleted(sdNetTask_DemonWare_UpdateSession *__hidden this); // idb
 unsigned int __thiscall bdArray<bdQoSProbe::bdQoSProbeEntryWrapper>::operator[](bdArray<struct bdQoSProbe::bdQoSProbeEntryWrapper> *this, unsigned int);
 void *__cdecl sub_5AF7C0(int a1, int a2, int a3);
-BOOL __thiscall idAASFileLocal::SplitFloorWinding(idAASFileLocal *this, int a2, const struct idPlane *a3, float *a4, int *a5);
-bool __thiscall idAASFileLocal::GetFloorEdgeSplitPoints(idAASFileLocal *this, struct idAASFileLocal::floorEdgeSplitPoint_t *a2, struct idAASFileLocal::floorEdgeSplitPoint_t *a3, int a4, const struct idPlane *a5, const struct idPlane *a6); // idb
 int __cdecl sad8x8__mmx(__m64 *, int, __m64 *, int);
 int __cdecl sub_609350(__m64 *a1, int a2, __m64 *a3, int a4);
 unsigned int __cdecl idStr::Icmp(const char *, const char *);
 char *va(char *Format, ...);
+void __thiscall idStr::FreeData(idStr *__hidden this); // idb
 char __thiscall idStr::operator=(idStr *this, const char *);
 void __cdecl Mem_FreeAligned(void **);
 void *__cdecl Mem_Alloc(size_t Size); // idb
 void *__cdecl Mem_AllocAligned(size_t Size, align_t); // weak
 void __thiscall sdSignal::Set(void **this); // idb
 bool __thiscall sdSignal::Wait(void **this, DWORD dwMilliseconds); // idb
+void __fastcall idSIMD_Generic::TransformShadowVerts(idSIMD_Generic *this, struct shadowCache_s *a2, int a3, const struct idJointMat *a4, const struct idDrawVert *a5, const __int16 *a6, int a7);
 int win32_init();
 int __thiscall curl_easy_init(float *); // idb
 _DWORD __cdecl curl_easy_setopt(_DWORD, _DWORD, char *String, _DWORD); // weak
@@ -183,6 +186,7 @@ void __thiscall bdNetImpl::sendAll(bdNetImpl *__hidden this); // idb
 void __thiscall bdNetImpl::receiveAndDispatchAll(bdNetImpl *__hidden this); // idb
 void __thiscall bdNetImpl::stop(bdNetImpl *__hidden this); // idb
 // void __cdecl operator delete(void *); idb
+// void *__cdecl operator new(unsigned int); idb
 // void *__cdecl memset(void *, int Val, size_t Size);
 
 //-------------------------------------------------------------------------
@@ -225,7 +229,7 @@ void ***off_7EADD8 = &off_7EADAC; // weak
 int dword_7EC158 = 0; // weak
 char *off_7EC15C[3] = { "Cpu_0", "Percentage of cpu 0 time that is used", "%" }; // weak
 char *off_7EC464 = "c_surfaces"; // weak
-_UNKNOWN off_7ED390; // weak
+void (__thiscall **off_7ED390[2])(idVertexCache *__hidden this) = { &off_7ED430, &idCVar::`vftable' }; // weak
 idMegaTextureTileDecompressor *off_7ED9A8 = &off_7EDA00; // idb
 idMegaTextureTileLoader *off_7EDB30 = &off_7EDB88; // idb
 _UNKNOWN off_7EDEA0; // weak
@@ -64109,20 +64113,20 @@ char __thiscall idMD5Mesh::UpdateSurface(
   int v19; // eax
   int v20; // ebp
   int v21; // eax
-  unsigned int v22; // ecx
+  unsigned int index1_v40; // ecx
   int v23; // eax
   int v24; // edi
   int v25; // ecx
   int v26; // eax
   bool v27; // zf
-  int v28; // eax
+  int numSourceVerts_v120; // eax
   int v29; // esi
   int v30; // edi
   int v31; // eax
   int v32; // eax
   int v33; // eax
   int v34; // ecx
-  int v35; // eax
+  int numMirroredVerts_v128; // eax
   int v36; // esi
   int v37; // edi
   unsigned int v38; // edx
@@ -64135,7 +64139,7 @@ char __thiscall idMD5Mesh::UpdateSurface(
   bool v45; // al
   const struct idJointMat *v46; // eax
   int v47; // eax
-  int v48; // eax
+  int num; // eax
   int v49; // eax
   int v50; // edx
   char *v51; // esi
@@ -64145,14 +64149,14 @@ char __thiscall idMD5Mesh::UpdateSurface(
   char v56; // [esp+17h] [ebp-9h]
   float v57[2]; // [esp+18h] [ebp-8h]
   char v58; // [esp+2Ch] [ebp+Ch]
-  struct modelSurface_s *v59; // [esp+2Ch] [ebp+Ch]
+  idMD5Mesh *v59; // [esp+2Ch] [ebp+Ch]
   char v60; // [esp+2Ch] [ebp+Ch]
   int v61; // [esp+30h] [ebp+10h]
   int v62; // [esp+30h] [ebp+10h]
   bool v63; // [esp+30h] [ebp+10h]
 
   v6 = 0;
-  if ( *((_DWORD *)this + 47) && (*((_BYTE *)a2 + 232) & 8) == 0 && off_7E80EC[9] )
+  if ( *(_DWORD *)this->padding_7 && (*((_BYTE *)a2 + 232) & 8) == 0 && off_7E80EC[9] )
   {
     v7 = 1;
     v54 = 1;
@@ -64169,21 +64173,21 @@ char __thiscall idMD5Mesh::UpdateSurface(
     v58 = 1;
   }
   ++dword_8AB818;
-  dword_8AB81C += *((_DWORD *)this + 31);
-  dword_8AB820 += *((_DWORD *)this + 34);
+  dword_8AB81C += this->numOutputVerts_v124;
+  dword_8AB820 += this->v136;
   v9 = (struct srfTriangles_t *)*((_DWORD *)a4 + 2);
   v56 = 0;
-  *((_DWORD *)a4 + 1) = *((_DWORD *)this + 12);
+  *((_DWORD *)a4 + 1) = this->shader_v48;
   if ( v9 )
   {
-    if ( *((_DWORD *)v9 + 12) == *((_DWORD *)this + 31) )
+    if ( *((_DWORD *)v9 + 12) == this->numOutputVerts_v124 )
     {
       if ( !v7 )
       {
         v10 = *((_DWORD *)v9 + 33);
         if ( v10 )
         {
-          if ( v10 == *((_DWORD *)this + 47) )
+          if ( v10 == *(_DWORD *)this->padding_7 )
             *((_DWORD *)v9 + 33) = 0;
         }
       }
@@ -64218,25 +64222,25 @@ char __thiscall idMD5Mesh::UpdateSurface(
   {
     v14 = R_AllocStaticTriSurf();
     *((_DWORD *)a4 + 2) = v14;
-    v15 = *((_DWORD *)this + 51);
-    if ( v15 && v15 != *((_DWORD *)this + 50) && *(_DWORD *)(v15 + 12) )
+    v15 = *(_DWORD *)&this->padding_9[5];
+    if ( v15 && v15 != *(_DWORD *)&this->padding_9[1] && *(_DWORD *)(v15 + 12) )
     {
       v16 = 0;
       v17 = this;
       do
       {
-        v18 = *((_DWORD *)v17 + 51);
-        v16 += *((_DWORD *)v17 + 20);
-        v6 += *((_DWORD *)v17 + 23);
+        v18 = *(_DWORD *)&v17->padding_9[5];
+        v16 += v17->numTris_v80;
+        v6 += v17->numSilEdges_v92;
         if ( !v18 )
           break;
-        if ( v18 == *((_DWORD *)v17 + 50) )
+        if ( v18 == *(_DWORD *)&v17->padding_9[1] )
           break;
         v17 = *(idMD5Mesh **)(v18 + 12);
       }
       while ( v17 );
       R_AllocStaticTriSurfIndexes(v14, v16);
-      v19 = *(_DWORD *)(*((_DWORD *)this + 12) + 104);
+      v19 = *((_DWORD *)this->shader_v48 + 26);
       if ( (v19 & 8) != 0 || (v19 & 4) == 0 )
         R_AllocStaticTriSurfSilEdges(*((struct srfTriangles_t **)a4 + 2), v6);
       *(_BYTE *)(*((_DWORD *)a4 + 2) + 33) = 1;
@@ -64248,14 +64252,14 @@ char __thiscall idMD5Mesh::UpdateSurface(
   *(_BYTE *)(v20 + 32) = 1;
   *(_BYTE *)(v20 + 29) = 0;
   *(_BYTE *)(v20 + 30) = 0;
-  *(_DWORD *)(v20 + 68) = *((_DWORD *)this + 32);
-  *(_DWORD *)(v20 + 72) = *((_DWORD *)this + 33);
-  *(_DWORD *)(v20 + 92) = *((_DWORD *)this + 39);
-  *(_DWORD *)(v20 + 48) = *((_DWORD *)this + 31);
+  *(_DWORD *)(v20 + 68) = this->numMirroredVerts_v128;
+  *(_DWORD *)(v20 + 72) = this->mirroredVerts_v132;
+  *(_DWORD *)(v20 + 92) = *(_DWORD *)&this->padding_6[4];
+  *(_DWORD *)(v20 + 48) = this->numOutputVerts_v124;
   if ( v58 )
   {
-    v21 = *((_DWORD *)this + 51);
-    if ( v21 && v21 != *((_DWORD *)this + 50) && *(_DWORD *)(v21 + 12) )
+    v21 = *(_DWORD *)&this->padding_9[5];
+    if ( v21 && v21 != *(_DWORD *)&this->padding_9[1] && *(_DWORD *)(v21 + 12) )
     {
       *(_DWORD *)(v20 + 56) = 0;
       *(_DWORD *)(v20 + 76) = 0;
@@ -64263,25 +64267,25 @@ char __thiscall idMD5Mesh::UpdateSurface(
       v59 = this;
       do
       {
-        v22 = *((_DWORD *)v59 + 10);
-        if ( v22 >= 0x40 || ((*((int *)a2 + (int)v22 / 32 + 63) >> (v22 & 0x1F)) & 1) == 0 )
+        index1_v40 = v59->index1_v40;
+        if ( index1_v40 >= 0x40 || ((*((int *)a2 + (int)index1_v40 / 32 + 63) >> (index1_v40 & 0x1F)) & 1) == 0 )
         {
-          (*(void (__stdcall **)(_DWORD, int))(*(_DWORD *)dword_F4658C + 160))(
-            *((_DWORD *)v59 + 21),
-            4 * *((_DWORD *)v59 + 20));
+          (*(void (__stdcall **)(unsigned __int16 *, int))(*(_DWORD *)dword_F4658C + 160))(
+            v59->tris_v84,
+            4 * v59->numTris_v80);
           v23 = *(_DWORD *)(v20 + 80);
           if ( v23 )
-            (*(void (__fastcall **)(int, int, _DWORD, int))(*(_DWORD *)dword_F4658C + 160))(
+            (*(void (__fastcall **)(int, int, int *, int))(*(_DWORD *)dword_F4658C + 160))(
               dword_F4658C,
               v23 + 16 * *(_DWORD *)(v20 + 76),
-              *((_DWORD *)v59 + 24),
-              16 * *((_DWORD *)v59 + 23));
+              v59->silEdges_v96,
+              16 * v59->numSilEdges_v92);
           if ( *(_DWORD *)(v20 + 56) )
           {
             if ( *(_DWORD *)(v20 + 80) )
             {
               v24 = *(_DWORD *)(v20 + 76);
-              if ( v24 < v24 + *((_DWORD *)v59 + 23) )
+              if ( v24 < v24 + v59->numSilEdges_v92 )
               {
                 v25 = 16 * v24;
                 do
@@ -64291,20 +64295,20 @@ char __thiscall idMD5Mesh::UpdateSurface(
                   ++v24;
                   v25 += 16;
                 }
-                while ( v24 < *(_DWORD *)(v20 + 76) + *((_DWORD *)v59 + 23) );
+                while ( v24 < *(_DWORD *)(v20 + 76) + v59->numSilEdges_v92 );
               }
             }
           }
-          *(_DWORD *)(v20 + 56) += *((_DWORD *)v59 + 20);
+          *(_DWORD *)(v20 + 56) += v59->numTris_v80;
           if ( *(_DWORD *)(v20 + 80) )
-            *(_DWORD *)(v20 + 76) += *((_DWORD *)v59 + 23);
+            *(_DWORD *)(v20 + 76) += v59->numSilEdges_v92;
         }
-        v26 = *((_DWORD *)v59 + 51);
+        v26 = *(_DWORD *)&v59->padding_9[5];
         if ( !v26 )
           break;
-        if ( v26 == *((_DWORD *)v59 + 50) )
+        if ( v26 == *(_DWORD *)&v59->padding_9[1] )
           break;
-        v59 = *(struct modelSurface_s **)(v26 + 12);
+        v59 = *(idMD5Mesh **)(v26 + 12);
       }
       while ( v59 );
       if ( *(_DWORD *)(v20 + 128) )
@@ -64317,19 +64321,19 @@ char __thiscall idMD5Mesh::UpdateSurface(
     }
     else
     {
-      *(_DWORD *)(v20 + 56) = *((_DWORD *)this + 20);
-      *(_DWORD *)(v20 + 60) = *((_DWORD *)this + 21);
+      *(_DWORD *)(v20 + 56) = this->numTris_v80;
+      *(_DWORD *)(v20 + 60) = this->tris_v84;
       *(_DWORD *)(v20 + 64) = 0;
-      *(_DWORD *)(v20 + 76) = *((_DWORD *)this + 23);
-      *(_DWORD *)(v20 + 80) = *((_DWORD *)this + 24);
+      *(_DWORD *)(v20 + 76) = this->numSilEdges_v92;
+      *(_DWORD *)(v20 + 80) = this->silEdges_v96;
     }
   }
   v60 = 0;
-  if ( *((_BYTE *)this + 196) )
+  if ( this->bool_v196 )
   {
-    *(_DWORD *)(v20 + 52) = *((_DWORD *)this + 46);
+    *(_DWORD *)(v20 + 52) = this->verts_v184;
     *(_BYTE *)(v20 + 29) = 1;
-    *(_DWORD *)(v20 + 132) = *((_DWORD *)this + 47);
+    *(_DWORD *)(v20 + 132) = *(_DWORD *)this->padding_7;
     *(_BYTE *)(v20 + 35) = 1;
     v60 = 1;
     goto LABEL_111;
@@ -64340,13 +64344,13 @@ char __thiscall idMD5Mesh::UpdateSurface(
     if ( !*(_DWORD *)(v20 + 52) )
     {
       R_AllocStaticTriSurfVerts((struct srfTriangles_t *)v20, *(_DWORD *)(v20 + 48));
-      v28 = *((_DWORD *)this + 30);
-      if ( *((_DWORD *)this + 14) == v28 )
+      numSourceVerts_v120 = this->numSourceVerts_v120;
+      if ( *(_DWORD *)this->padding_1 == numSourceVerts_v120 )
       {
         v57[0] = 1.0;
         v61 = 0;
         v57[1] = -1.0;
-        if ( v28 > 0 )
+        if ( numSourceVerts_v120 > 0 )
         {
           v29 = 0;
           v30 = 0;
@@ -64376,40 +64380,41 @@ char __thiscall idMD5Mesh::UpdateSurface(
             *(_BYTE *)(v32 + 30) = 0;
             *(_BYTE *)(v32 + 29) = 0;
             *(_BYTE *)(v32 + 28) = 0;
-            v33 = *((_DWORD *)this + 17);
+            v33 = *(_DWORD *)&this->padding_1[12];
             v34 = *(_DWORD *)(v20 + 52);
             *(_DWORD *)(v29 + v34 + 48) = *(_DWORD *)(v30 + v33);
             *(_DWORD *)(v29 + v34 + 52) = *(_DWORD *)(v30 + v33 + 4);
-            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 12) = *(_BYTE *)(v30 + *((_DWORD *)this + 17) + 8);
-            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 13) = *(_BYTE *)(v30 + *((_DWORD *)this + 17) + 9);
-            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 14) = *(_BYTE *)(v30 + *((_DWORD *)this + 17) + 10);
-            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 15) = *(_BYTE *)(v30 + *((_DWORD *)this + 17) + 11);
+            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 12) = *(_BYTE *)(v30 + *(_DWORD *)&this->padding_1[12] + 8);
+            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 13) = *(_BYTE *)(v30 + *(_DWORD *)&this->padding_1[12] + 9);
+            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 14) = *(_BYTE *)(v30 + *(_DWORD *)&this->padding_1[12] + 10);
+            *(_BYTE *)(v29 + *(_DWORD *)(v20 + 52) + 15) = *(_BYTE *)(v30 + *(_DWORD *)&this->padding_1[12] + 11);
             v30 += 12;
             v29 += 64;
-            *(float *)(v29 + *(_DWORD *)(v20 + 52) - 20) = v57[(*(unsigned __int8 *)(v61 / 8 + *((_DWORD *)this + 40)) >> (v61 % 8))
+            *(float *)(v29 + *(_DWORD *)(v20 + 52) - 20) = v57[(*(unsigned __int8 *)(v61 / 8
+                                                                                   + *(_DWORD *)&this->padding_6[8]) >> (v61 % 8))
                                                              & 1];
             ++v61;
           }
-          while ( v61 < *((_DWORD *)this + 30) );
+          while ( v61 < this->numSourceVerts_v120 );
         }
-        v35 = *((_DWORD *)this + 32);
+        numMirroredVerts_v128 = this->numMirroredVerts_v128;
         v36 = 0;
-        v62 = *((_DWORD *)this + 31) - v35;
-        if ( v35 > 0 )
+        v62 = this->numOutputVerts_v124 - numMirroredVerts_v128;
+        if ( numMirroredVerts_v128 > 0 )
         {
-          v37 = (*((_DWORD *)this + 31) - v35) << 6;
+          v37 = (this->numOutputVerts_v124 - numMirroredVerts_v128) << 6;
           do
           {
             sub_443F90(
               (float *)(v37 + *(_DWORD *)(v20 + 52)),
-              *(_DWORD *)(v20 + 52) + (*(_DWORD *)(*((_DWORD *)this + 33) + 4 * v36) << 6));
-            v38 = *(unsigned __int8 *)((v62 + v36) / 8 + *((_DWORD *)this + 40));
+              *(_DWORD *)(v20 + 52) + (this->mirroredVerts_v132[v36] << 6));
+            v38 = *(unsigned __int8 *)((v62 + v36) / 8 + *(_DWORD *)&this->padding_6[8]);
             v39 = v36 % 8;
             ++v36;
             v37 += 64;
             *(float *)(v37 + *(_DWORD *)(v20 + 52) - 20) = v57[(v38 >> v39) & 1];
           }
-          while ( v36 < *((_DWORD *)this + 32) );
+          while ( v36 < this->numMirroredVerts_v128 );
         }
       }
       else
@@ -64453,11 +64458,11 @@ char __thiscall idMD5Mesh::UpdateSurface(
     }
     goto LABEL_85;
   }
-  if ( *((_BYTE *)this + 197) )
+  if ( this->padding_8[0] )
   {
-    *(_DWORD *)(v20 + 52) = *((_DWORD *)this + 46);
+    *(_DWORD *)(v20 + 52) = this->verts_v184;
     *(_BYTE *)(v20 + 29) = 1;
-    *(_DWORD *)(v20 + 132) = *((_DWORD *)this + 47);
+    *(_DWORD *)(v20 + 132) = *(_DWORD *)this->padding_7;
     v55 = 1;
   }
   else
@@ -64466,19 +64471,19 @@ char __thiscall idMD5Mesh::UpdateSurface(
     {
 LABEL_66:
       if ( ((*((_BYTE *)a2 + 232) & 2) != 0
-         || (*(_DWORD *)(*((_DWORD *)this + 12) + 104) & 8) == 0 && (*(_DWORD *)(*((_DWORD *)this + 12) + 104) & 4) != 0
+         || (*((_DWORD *)this->shader_v48 + 26) & 8) == 0 && (*((_DWORD *)this->shader_v48 + 26) & 4) != 0
          || !off_7E9AF4[9])
         && !a5
-        && !*(_DWORD *)(*((_DWORD *)this + 12) + 180) )
+        && !*((_DWORD *)this->shader_v48 + 45) )
       {
         *(_DWORD *)(v20 + 124) |= 0x200u;
-        *(_DWORD *)(v20 + 132) = *((_DWORD *)this + 47);
+        *(_DWORD *)(v20 + 132) = *(_DWORD *)this->padding_7;
         v55 = 1;
       }
       goto LABEL_85;
     }
     R_ResizeStaticTriSurfShadowVerts((struct srfTriangles_t *)v20, *(_DWORD *)(v20 + 48));
-    *(_DWORD *)(v20 + 52) = *((_DWORD *)this + 46);
+    *(_DWORD *)(v20 + 52) = this->verts_v184;
     *(_BYTE *)(v20 + 29) = 1;
   }
   v27 = *(_DWORD *)(v20 + 108) == 0;
@@ -64493,7 +64498,7 @@ LABEL_85:
   v63 = v45;
   if ( !v55 )
   {
-    if ( v45 || off_7E8120[9] && *((_DWORD *)this + 46) )
+    if ( v45 || off_7E8120[9] && this->verts_v184 )
       v46 = a3;
     else
       v46 = (const struct idJointMat *)*((_DWORD *)a2 + 45);
@@ -64506,29 +64511,28 @@ LABEL_85:
     v47 = *(_DWORD *)(v20 + 132);
     *(_BYTE *)(v20 + 34) = 1;
     *(_BYTE *)(v20 + 29) = 1;
-    if ( v47 && v47 != *((_DWORD *)this + 47) )
+    if ( v47 && v47 != *(_DWORD *)this->padding_7 )
       (*((void (__thiscall **)(void (__thiscall **)(idVertexCache *__hidden), int))*off_7ED390[0] + 13))(
         off_7ED390[0],
         v47);
     v27 = *(_DWORD *)(v20 + 148) == 0;
-    *(_DWORD *)(v20 + 132) = *((_DWORD *)this + 47);
-    *(_DWORD *)(v20 + 140) = *((_DWORD *)this + 48);
-    v48 = *((_DWORD *)this + 41);
-    *(_DWORD *)(v20 + 144) = v48;
+    *(_DWORD *)(v20 + 132) = *(_DWORD *)this->padding_7;
+    *(_DWORD *)(v20 + 140) = *(_DWORD *)&this->padding_7[4];
+    num = this->jointIndex_v164.num;
+    *(_DWORD *)(v20 + 144) = num;
     if ( v27 )
-      *(_DWORD *)(v20 + 148) = Mem_AllocAligned(48 * v48, (align_t)16);
+      *(_DWORD *)(v20 + 148) = Mem_AllocAligned(48 * num, (align_t)16);
     v49 = 0;
-    if ( *((int *)this + 41) > 0 )
+    if ( this->jointIndex_v164.num > 0 )
     {
       v50 = 0;
       do
       {
-        v51 = (char *)a3 + 48 * *(unsigned __int8 *)(v49 + *((_DWORD *)this + 44));
-        ++v49;
+        v51 = (char *)a3 + 48 * this->jointIndex_v164.list[v49++];
         qmemcpy((void *)(v50 + *(_DWORD *)(v20 + 148)), v51, 0x30u);
         v50 += 48;
       }
-      while ( v49 < *((_DWORD *)this + 41) );
+      while ( v49 < this->jointIndex_v164.num );
     }
   }
   else
@@ -64544,15 +64548,15 @@ LABEL_85:
   }
 LABEL_111:
   if ( v56 )
-    (*(void (__fastcall **)(int, int, int, _DWORD, _DWORD))(*(_DWORD *)dword_F4658C + 132))(
+    (*(void (__fastcall **)(int, int, int, idDrawVert *, int))(*(_DWORD *)dword_F4658C + 132))(
       dword_F4658C,
       v20,
       v20 + 12,
-      *((_DWORD *)this + 46),
-      *((_DWORD *)this + 31));
+      this->verts_v184,
+      this->numOutputVerts_v124);
   return v60;
 }
-// 611FD0: using guessed type void *__cdecl Mem_AllocAligned(size_t Size, align_t a2);
+// 611FD0: using guessed type void *__cdecl Mem_AllocAligned(size_t Size, align_t);
 // 7E80EC: using guessed type void ***off_7E80EC;
 // 7E8120: using guessed type void ***off_7E8120;
 // 7E9AF4: using guessed type void ***off_7E9AF4;
@@ -64775,25 +64779,25 @@ char __thiscall idMD5Mesh::ReadBinary(idMD5Mesh *this, struct idFile *a2)
   int (__thiscall *ReadString)(idFile *__hidden, idStr *); // edx
   char *data; // ebp
   int Instance; // eax
-  void *v8; // eax
+  unsigned __int16 *v8; // eax
   bool v9; // cc
   int v10; // ebp
-  void *v11; // eax
+  __int16 *v11; // eax
   int v12; // ebp
-  unsigned int *v13; // ebx
-  signed int i; // ebp
+  int *p_numMirroredVerts_v128; // ebx
+  int i; // ebp
   int (__thiscall *ReadInt)(idFile *__hidden, int *); // edx
-  _BYTE *v16; // ebp
-  signed int v17; // eax
+  byte *list; // ebp
+  int num; // eax
   int j; // eax
   int v19; // eax
   unsigned int v20; // ebx
-  _BYTE *v21; // ebp
+  byte *v21; // ebp
   int k; // eax
   signed int v23; // ebp
-  int v24; // eax
+  int numOutputVerts_v124; // eax
   int v25; // ebx
-  int v26; // ebp
+  char *v26; // ebp
   idFile_vtbl *vtbl; // eax
   int (__thiscall *ReadVec4)(idFile *__hidden, idVec4 *); // edx
   int v29; // eax
@@ -64801,8 +64805,8 @@ char __thiscall idMD5Mesh::ReadBinary(idMD5Mesh *this, struct idFile *a2)
   int v31; // ebx
   int m; // ebx
   int v33; // ebp
-  int v34; // eax
-  int v35; // eax
+  idDrawVert *verts_v184; // eax
+  byte *v35; // eax
   unsigned __int16 v37; // [esp+9Ch] [ebp-108h] BYREF
   int v38; // [esp+A0h] [ebp-104h]
   unsigned int v39; // [esp+A4h] [ebp-100h] BYREF
@@ -64811,17 +64815,17 @@ char __thiscall idMD5Mesh::ReadBinary(idMD5Mesh *this, struct idFile *a2)
   float v42[4]; // [esp+BCh] [ebp-E8h] BYREF
   idStr v43; // [esp+CCh] [ebp-D8h] BYREF
   _BYTE v44[80]; // [esp+ECh] [ebp-B8h] BYREF
-  int v45; // [esp+13Ch] [ebp-68h]
+  silEdge_t *v45; // [esp+13Ch] [ebp-68h]
   int v46; // [esp+1A0h] [ebp-4h]
 
-  a2->vtbl->ReadString(a2, (idStr *)((char *)this + 4));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 36));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 40));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 44));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 52));
-  a2->vtbl->ReadBool(a2, (bool *)this + 196);
-  a2->vtbl->ReadBool(a2, (bool *)this + 198);
-  a2->vtbl->ReadBool(a2, (bool *)this + 217);
+  a2->vtbl->ReadString(a2, &this->name);
+  a2->vtbl->ReadInt(a2, &this->index0_v36);
+  a2->vtbl->ReadInt(a2, &this->index1_v40);
+  a2->vtbl->ReadInt(a2, &this->v44);
+  a2->vtbl->ReadInt(a2, &this->v52);
+  a2->vtbl->ReadBool(a2, &this->bool_v196);
+  a2->vtbl->ReadBool(a2, &this->bool_v198);
+  a2->vtbl->ReadBool(a2, &this->vertexRigidFlag_v217);
   v4 = 0;
   v43.len = 0;
   v43.alloced = -20;
@@ -64832,96 +64836,95 @@ char __thiscall idMD5Mesh::ReadBinary(idMD5Mesh *this, struct idFile *a2)
   ReadString(a2, &v43);
   data = v43.data;
   Instance = sdSingleton<sdDeclTypeHolder>::GetInstance();
-  *((_DWORD *)this + 12) = (*(int (__thiscall **)(void *, _DWORD, char *, int))(*(_DWORD *)off_7EF680 + 64))(
-                             off_7EF680,
-                             *(_DWORD *)(Instance + 4),
-                             data,
-                             1);
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 72));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 76));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 80));
-  v8 = Mem_AllocAligned(4 * *((_DWORD *)this + 20), (align_t)16);
-  v9 = *((_DWORD *)this + 20) <= 0;
-  *((_DWORD *)this + 21) = v8;
+  this->shader_v48 = (idMaterial *)(*(int (__thiscall **)(HWND__ *, _DWORD, char *, int))(*(_DWORD *)off_7EF680 + 64))(
+                                     off_7EF680,
+                                     *(_DWORD *)(Instance + 4),
+                                     data,
+                                     1);
+  a2->vtbl->ReadInt(a2, &this->v72);
+  a2->vtbl->ReadInt(a2, &this->v76);
+  a2->vtbl->ReadInt(a2, &this->numTris_v80);
+  v8 = (unsigned __int16 *)Mem_AllocAligned(4 * this->numTris_v80, (align_t)16);
+  v9 = this->numTris_v80 <= 0;
+  this->tris_v84 = v8;
   if ( !v9 )
   {
     do
     {
       a2->vtbl->ReadUnsignedShort(a2, &v37);
-      *(_DWORD *)(*((_DWORD *)this + 21) + 4 * v4++) = v37;
+      *(_DWORD *)&this->tris_v84[2 * v4++] = v37;
     }
-    while ( v4 < *((_DWORD *)this + 20) );
+    while ( v4 < this->numTris_v80 );
   }
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 92));
-  R_AllocStaticTriSurfSilEdges((struct srfTriangles_t *)v44, *((_DWORD *)this + 23));
+  a2->vtbl->ReadInt(a2, &this->numSilEdges_v92);
+  R_AllocStaticTriSurfSilEdges((struct srfTriangles_t *)v44, this->numSilEdges_v92);
   v10 = 0;
-  v9 = *((_DWORD *)this + 23) <= 0;
-  *((_DWORD *)this + 24) = v45;
+  v9 = this->numSilEdges_v92 <= 0;
+  this->silEdges_v96 = v45;
   v38 = 0;
   if ( !v9 )
   {
     do
     {
       a2->vtbl->ReadUnsignedShort(a2, &v37);
-      *(_DWORD *)(*((_DWORD *)this + 24) + v10) = v37;
+      this->silEdges_v96[v10].p1 = v37;
       a2->vtbl->ReadUnsignedShort(a2, &v37);
-      *(_DWORD *)(*((_DWORD *)this + 24) + v10 + 4) = v37;
+      this->silEdges_v96[v10].p2 = v37;
       a2->vtbl->ReadUnsignedShort(a2, &v37);
-      *(_DWORD *)(*((_DWORD *)this + 24) + v10 + 8) = v37;
+      this->silEdges_v96[v10].v1 = v37;
       a2->vtbl->ReadUnsignedShort(a2, &v37);
-      *(_DWORD *)(*((_DWORD *)this + 24) + v10 + 12) = v37;
-      v10 += 16;
-      v9 = ++v38 < *((_DWORD *)this + 23);
+      this->silEdges_v96[v10++].v2 = v37;
+      v9 = ++v38 < this->numSilEdges_v92;
     }
     while ( v9 );
   }
-  if ( !*((_BYTE *)this + 198) )
+  if ( !this->bool_v198 )
   {
-    v11 = Mem_AllocAligned(2 * *((_DWORD *)this + 18), (align_t)16);
+    v11 = (__int16 *)Mem_AllocAligned(2 * this->v72, (align_t)16);
     v12 = 0;
-    v9 = *((_DWORD *)this + 18) <= 0;
-    *((_DWORD *)this + 27) = v11;
+    v9 = this->v72 <= 0;
+    this->v108_list_length_of_v72 = v11;
     if ( !v9 )
     {
       do
-        a2->vtbl->ReadShort(a2, (__int16 *)(*((_DWORD *)this + 27) + 2 * v12++));
-      while ( v12 < *((_DWORD *)this + 18) );
+        a2->vtbl->ReadShort(a2, &this->v108_list_length_of_v72[v12++]);
+      while ( v12 < this->v72 );
     }
   }
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 120));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 124));
-  v13 = (unsigned int *)((char *)this + 128);
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 128));
-  if ( *((int *)this + 32) > 0 )
-    R_AllocDeformInfoMirroredVerts((idMD5Mesh *)((char *)this + 120), *v13);
-  for ( i = 0; i < (int)*v13; ++i )
-    a2->vtbl->ReadInt(a2, (int *)(*((_DWORD *)this + 33) + 4 * i));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 136));
-  a2->vtbl->ReadInt(a2, (int *)((char *)this + 148));
+  a2->vtbl->ReadInt(a2, &this->numSourceVerts_v120);
+  a2->vtbl->ReadInt(a2, &this->numOutputVerts_v124);
+  p_numMirroredVerts_v128 = &this->numMirroredVerts_v128;
+  a2->vtbl->ReadInt(a2, &this->numMirroredVerts_v128);
+  if ( this->numMirroredVerts_v128 > 0 )
+    R_AllocDeformInfoMirroredVerts((struct deformInfo_s *)&this->numSourceVerts_v120, *p_numMirroredVerts_v128);
+  for ( i = 0; i < *p_numMirroredVerts_v128; ++i )
+    a2->vtbl->ReadInt(a2, &this->mirroredVerts_v132[i]);
+  a2->vtbl->ReadInt(a2, &this->v136);
+  a2->vtbl->ReadInt(a2, &this->v148);
   ReadInt = a2->vtbl->ReadInt;
   v39 = 0;
   ReadInt(a2, (int *)&v39);
-  v16 = (_BYTE *)*((_DWORD *)this + 44);
-  *((_DWORD *)this + 43) = 1;
-  if ( v16 )
+  list = this->jointIndex_v164.list;
+  this->jointIndex_v164.granularity = 1;
+  if ( list )
   {
-    v17 = *((_DWORD *)this + 41);
-    if ( v17 != *((_DWORD *)this + 42) )
+    num = this->jointIndex_v164.num;
+    if ( num != this->jointIndex_v164.size )
     {
-      if ( v17 > 0 )
+      if ( num > 0 )
       {
-        *((_DWORD *)this + 42) = v17;
-        *((_DWORD *)this + 44) = operator new(v17);
-        for ( j = 0; j < *((_DWORD *)this + 41); ++j )
-          *(_BYTE *)(j + *((_DWORD *)this + 44)) = v16[j];
-        operator delete(v16);
+        this->jointIndex_v164.size = num;
+        this->jointIndex_v164.list = (byte *)operator new(num);
+        for ( j = 0; j < this->jointIndex_v164.num; ++j )
+          this->jointIndex_v164.list[j] = list[j];
+        operator delete(list);
       }
       else
       {
-        operator delete(v16);
-        *((_DWORD *)this + 44) = 0;
-        *((_DWORD *)this + 41) = 0;
-        *((_DWORD *)this + 42) = 0;
+        operator delete(list);
+        this->jointIndex_v164.list = 0;
+        this->jointIndex_v164.num = 0;
+        this->jointIndex_v164.size = 0;
       }
     }
   }
@@ -64929,66 +64932,63 @@ char __thiscall idMD5Mesh::ReadBinary(idMD5Mesh *this, struct idFile *a2)
   v20 = v39;
   if ( (int)v39 > 0 )
   {
-    if ( v39 == *((_DWORD *)this + 42) )
+    if ( v39 == this->jointIndex_v164.size )
       goto LABEL_30;
-    v9 = (int)v39 < *((_DWORD *)this + 41);
-    v21 = (_BYTE *)*((_DWORD *)this + 44);
-    *((_DWORD *)this + 42) = v39;
+    v9 = (int)v39 < this->jointIndex_v164.num;
+    v21 = this->jointIndex_v164.list;
+    this->jointIndex_v164.size = v39;
     if ( v9 )
-      *((_DWORD *)this + 41) = v19;
-    *((_DWORD *)this + 44) = operator new(v19);
+      this->jointIndex_v164.num = v19;
+    this->jointIndex_v164.list = (byte *)operator new(v19);
     if ( v21 )
     {
-      for ( k = 0; k < *((_DWORD *)this + 41); ++k )
-        *(_BYTE *)(k + *((_DWORD *)this + 44)) = v21[k];
+      for ( k = 0; k < this->jointIndex_v164.num; ++k )
+        this->jointIndex_v164.list[k] = v21[k];
       operator delete(v21);
     }
   }
   else
   {
-    operator delete(*((void **)this + 44));
-    *((_DWORD *)this + 44) = 0;
-    *((_DWORD *)this + 41) = 0;
-    *((_DWORD *)this + 42) = 0;
+    operator delete(this->jointIndex_v164.list);
+    this->jointIndex_v164.list = 0;
+    this->jointIndex_v164.num = 0;
+    this->jointIndex_v164.size = 0;
   }
   v19 = v39;
 LABEL_30:
   v23 = 0;
-  *((_DWORD *)this + 41) = v20;
+  this->jointIndex_v164.num = v20;
   if ( v19 > 0 )
   {
     do
-    {
-      a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(v23 + *((_DWORD *)this + 44)));
-      ++v23;
-    }
+      a2->vtbl->ReadUnsignedChar(a2, &this->jointIndex_v164.list[v23++]);
     while ( v23 < (int)v39 );
   }
-  v24 = *((_DWORD *)this + 31);
-  if ( v24 > 0 )
-    *((_DWORD *)this + 46) = Mem_AllocAligned(v24 << 6, (align_t)16);
+  numOutputVerts_v124 = this->numOutputVerts_v124;
+  if ( numOutputVerts_v124 > 0 )
+    this->verts_v184 = (idDrawVert *)Mem_AllocAligned(numOutputVerts_v124 << 6, (align_t)16);
   v25 = 0;
-  if ( *((int *)this + 31) > 0 )
+  if ( this->numOutputVerts_v124 > 0 )
   {
     v38 = 0;
     do
     {
-      v26 = v38 + *((_DWORD *)this + 46);
+      v26 = (char *)this->verts_v184 + v38;
       a2->vtbl->ReadVec3(a2, (idVec3 *)v26);
       a2->vtbl->ReadVec2(a2, (idVec2 *)v40);
-      *(_DWORD *)(v26 + 48) = v40[0];
-      *(_DWORD *)(v26 + 52) = v40[1];
+      *((_DWORD *)v26 + 12) = v40[0];
+      *((_DWORD *)v26 + 13) = v40[1];
       a2->vtbl->ReadVec3(a2, (idVec3 *)v41);
       vtbl = a2->vtbl;
-      *(float *)(v26 + 16) = v41[0];
+      *((float *)v26 + 4) = v41[0];
       ReadVec4 = vtbl->ReadVec4;
-      *(float *)(v26 + 20) = v41[1];
-      *(float *)(v26 + 24) = v41[2];
+      *((float *)v26 + 5) = v41[1];
+      *((float *)v26 + 6) = v41[2];
       ReadVec4(a2, (idVec4 *)v42);
-      *(float *)(v26 + 32) = v42[0];
-      *(float *)(v26 + 36) = v42[1];
-      *(float *)(v26 + 40) = v42[2];
-      *(float *)(v26 + 44) = v42[3];
+      *((float *)v26 + 8) = v42[0];
+      *((float *)v26 + 9) = v42[1];
+      *((float *)v26 + 10) = v42[2];
+      *((float *)v26 + 11) = v42[3];
       a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(v26 + 12));
       a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(v26 + 13));
       a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(v26 + 14));
@@ -64996,31 +64996,31 @@ LABEL_30:
       v38 += 64;
       ++v25;
     }
-    while ( v25 < *((_DWORD *)this + 31) );
+    while ( v25 < this->numOutputVerts_v124 );
   }
-  v29 = *((_DWORD *)this + 31);
-  if ( *((_BYTE *)this + 217) )
+  v29 = this->numOutputVerts_v124;
+  if ( this->vertexRigidFlag_v217 )
   {
     if ( v29 > 0 )
-      *((_DWORD *)this + 45) = Mem_AllocAligned(8 * v29, (align_t)16);
-    for ( m = 0; m < *((_DWORD *)this + 31); *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 7) = 0 )
+      this->v180 = (byte *)Mem_AllocAligned(8 * v29, (align_t)16);
+    for ( m = 0; m < this->numOutputVerts_v124; this->v180[v33 + 7] = 0 )
     {
       v33 = 8 * m;
-      a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(8 * m + *((_DWORD *)this + 45)));
-      *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 4) = -1;
-      *(_BYTE *)(*((_DWORD *)this + 45) + 8 * m + 1) = *(_BYTE *)(*((_DWORD *)this + 45) + 8 * m);
-      *(_BYTE *)(v33 + *((_DWORD *)this + 45) + 2) = *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 1);
-      *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 3) = *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 2);
-      *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 5) = 0;
-      *(_BYTE *)(*((_DWORD *)this + 45) + v33 + 6) = 0;
+      a2->vtbl->ReadUnsignedChar(a2, &this->v180[8 * m]);
+      this->v180[v33 + 4] = -1;
+      this->v180[8 * m + 1] = this->v180[8 * m];
+      this->v180[v33 + 2] = this->v180[v33 + 1];
+      this->v180[v33 + 3] = this->v180[v33 + 2];
+      this->v180[v33 + 5] = 0;
+      this->v180[v33 + 6] = 0;
       ++m;
     }
   }
   else
   {
     if ( v29 > 0 )
-      *((_DWORD *)this + 45) = Mem_AllocAligned(8 * v29, (align_t)16);
-    v9 = *((_DWORD *)this + 31) <= 0;
+      this->v180 = (byte *)Mem_AllocAligned(8 * v29, (align_t)16);
+    v9 = this->numOutputVerts_v124 <= 0;
     v38 = 0;
     if ( !v9 )
     {
@@ -65030,48 +65030,48 @@ LABEL_30:
         v31 = 8 * v38;
         do
         {
-          a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(v30 + v31 + *((_DWORD *)this + 45)));
-          a2->vtbl->ReadUnsignedChar(a2, (unsigned __int8 *)(v31 + *((_DWORD *)this + 45) + v30++ + 4));
+          a2->vtbl->ReadUnsignedChar(a2, &this->v180[v31 + v30]);
+          a2->vtbl->ReadUnsignedChar(a2, &this->v180[v31 + 4 + v30++]);
         }
         while ( v30 < 4 );
-        v9 = ++v38 < *((_DWORD *)this + 31);
+        v9 = ++v38 < this->numOutputVerts_v124;
       }
       while ( v9 );
     }
   }
-  if ( !*((_BYTE *)this + 198) && !(*((unsigned __int8 (__thiscall **)(void ***))*off_7F4E14[0] + 25))(off_7F4E14[0]) )
+  if ( !this->bool_v198 && !(*((unsigned __int8 (__thiscall **)(void ***))*off_7F4E14[0] + 25))(off_7F4E14[0]) )
   {
-    v34 = *((_DWORD *)this + 46);
-    if ( v34 )
-      (*((void (__thiscall **)(void (__thiscall **)(idVertexCache *__hidden), int, _DWORD, char *, _DWORD, _DWORD))*off_7ED390[0]
+    verts_v184 = this->verts_v184;
+    if ( verts_v184 )
+      (*((void (__thiscall **)(void (__thiscall **)(idVertexCache *__hidden), idDrawVert *, int, char *, _DWORD, _DWORD))*off_7ED390[0]
        + 5))(
         off_7ED390[0],
-        v34,
-        *((_DWORD *)this + 31) << 6,
-        (char *)this + 188,
+        verts_v184,
+        this->numOutputVerts_v124 << 6,
+        this->padding_7,
         0,
         0);
-    v35 = *((_DWORD *)this + 45);
+    v35 = this->v180;
     if ( v35 )
-      (*((void (__thiscall **)(void (__thiscall **)(idVertexCache *__hidden), int, int, char *, _DWORD, _DWORD))*off_7ED390[0]
+      (*((void (__thiscall **)(void (__thiscall **)(idVertexCache *__hidden), byte *, int, char *, _DWORD, _DWORD))*off_7ED390[0]
        + 5))(
         off_7ED390[0],
         v35,
-        8 * *((_DWORD *)this + 31),
-        (char *)this + 192,
+        8 * this->numOutputVerts_v124,
+        &this->padding_7[4],
         0,
         0);
   }
-  a2->vtbl->ReadBool(a2, (bool *)this + 216);
-  a2->vtbl->ReadFloat(a2, (float *)((char *)this + 220));
+  a2->vtbl->ReadBool(a2, &this->bool_v216);
+  a2->vtbl->ReadFloat(a2, &this->v220);
   v46 = -1;
   idStr::FreeData(&v43);
   return 1;
 }
 // 44E69F: conditional instruction was optimized away because ebp.4!=0
-// 611FD0: using guessed type void *__cdecl Mem_AllocAligned(size_t Size, align_t a2);
+// 611FD0: using guessed type void *__cdecl Mem_AllocAligned(size_t Size, align_t);
 // 7ED390: using guessed type void (__thiscall **off_7ED390[2])(idVertexCache *__hidden this);
-// 7EF680: using guessed type _UNKNOWN *off_7EF680;
+// 7EF680: using guessed type HWND__ *off_7EF680;
 // 7F4E14: using guessed type void ***off_7F4E14[2];
 
 //----- (0044EA80) --------------------------------------------------------
@@ -71409,9 +71409,9 @@ LABEL_193:
 // 45624D: conditional instruction was optimized away because ebx.4!=0
 // 4567F0: conditional instruction was optimized away because ebx.4!=0
 // 456985: conditional instruction was optimized away because ebx.4!=0
-// 43AB20: using guessed type guiSurface_t *__thiscall guiSurface_t::operator=(guiSurface_t *this, const guiSurface_t *a2);
-// 450150: using guessed type idMD5Mesh *__thiscall idMD5Mesh::operator=(idMD5Mesh *this, const idMD5Mesh *a2);
-// 611FD0: using guessed type void *__cdecl Mem_AllocAligned(size_t Size, align_t a2);
+// 43AB20: using guessed type guiSurface_t *__thiscall guiSurface_t::operator=(guiSurface_t *__hidden this, const guiSurface_t *);
+// 450150: using guessed type idMD5Mesh *__thiscall idMD5Mesh::operator=(idMD5Mesh *__hidden this, const idMD5Mesh *);
+// 611FD0: using guessed type void *__cdecl Mem_AllocAligned(size_t Size, align_t);
 // 7F1980: using guessed type int *off_7F1980;
 
 //----- (00456BD0) --------------------------------------------------------
@@ -389966,8 +389966,8 @@ double __thiscall idAASFileLocal::GetFloorDistance(
   int *v12; // edi
   unsigned int v13; // eax
   int v14; // edx
-  float *p_x; // eax
-  float *v16; // edx
+  idVec3 *v15; // eax
+  idVec3 *v16; // edx
   double v17; // st7
   double v18; // st5
   double v19; // st6
@@ -389979,40 +389979,38 @@ double __thiscall idAASFileLocal::GetFloorDistance(
   float v25; // [esp+14h] [ebp-30h]
   float v26; // [esp+18h] [ebp-2Ch]
   float v27; // [esp+1Ch] [ebp-28h]
-  float v28; // [esp+20h] [ebp-24h]
-  float v29; // [esp+24h] [ebp-20h]
-  float v30; // [esp+28h] [ebp-1Ch]
-  float v31; // [esp+2Ch] [ebp-18h]
-  float v32; // [esp+30h] [ebp-14h]
-  float v33; // [esp+34h] [ebp-10h]
-  float v34; // [esp+38h] [ebp-Ch]
-  float v35; // [esp+3Ch] [ebp-8h]
-  float v36; // [esp+40h] [ebp-4h]
+  idVec3 v28; // [esp+20h] [ebp-24h]
+  float v29; // [esp+2Ch] [ebp-18h]
+  float v30; // [esp+30h] [ebp-14h]
+  float v31; // [esp+34h] [ebp-10h]
+  float v32; // [esp+38h] [ebp-Ch]
+  float v33; // [esp+3Ch] [ebp-8h]
+  float v34; // [esp+40h] [ebp-4h]
+  float v35; // [esp+48h] [ebp+4h]
+  float v36; // [esp+48h] [ebp+4h]
   float v37; // [esp+48h] [ebp+4h]
-  float v38; // [esp+48h] [ebp+4h]
-  float v39; // [esp+48h] [ebp+4h]
-  int v40; // [esp+48h] [ebp+4h]
-  int v41; // [esp+48h] [ebp+4h]
+  int v38; // [esp+48h] [ebp+4h]
+  int v39; // [esp+48h] [ebp+4h]
+  float v40; // [esp+48h] [ebp+4h]
+  float v41; // [esp+48h] [ebp+4h]
   float v42; // [esp+48h] [ebp+4h]
-  float v43; // [esp+48h] [ebp+4h]
-  float v44; // [esp+48h] [ebp+4h]
-  int v45; // [esp+48h] [ebp+4h]
-  float v46; // [esp+4Ch] [ebp+8h]
-  float v47; // [esp+50h] [ebp+Ch]
+  int v43; // [esp+48h] [ebp+4h]
+  float v44; // [esp+4Ch] [ebp+8h]
+  float v45; // [esp+50h] [ebp+Ch]
   int numEdges; // [esp+54h] [ebp+10h]
 
   v6 = &this->areas.list[a2];
-  v37 = a3->a * a4->x + a3->b * a4->y + a3->c * a4->z + a3->d;
-  v38 = fabs(v37);
-  v8 = v38;
-  v39 = this->settings.invGravityDir.y * a3->b
+  v35 = a3->a * a4->x + a3->b * a4->y + a3->c * a4->z + a3->d;
+  v36 = fabs(v35);
+  v8 = v36;
+  v37 = this->settings.invGravityDir.y * a3->b
       + a3->a * this->settings.invGravityDir.x
       + this->settings.invGravityDir.z * a3->c;
-  v46 = v8 / v39;
-  result = v46;
-  if ( a5 <= (double)v46 )
+  v44 = v8 / v37;
+  result = v44;
+  if ( a5 <= (double)v44 )
   {
-    v47 = 1.0e30;
+    v45 = 1.0e30;
     if ( v6->numEdges > 0 )
     {
       list = this->edges.list;
@@ -390023,70 +390021,70 @@ double __thiscall idAASFileLocal::GetFloorDistance(
       {
         v13 = abs32(*v12);
         v14 = list[v13].vertexNum[0];
-        p_x = &v11[list[v13].vertexNum[1]].x;
-        v16 = &v11[v14].x;
-        v25 = *p_x - *v16;
-        v26 = p_x[1] - v16[1];
-        v27 = p_x[2] - v16[2];
+        v15 = &v11[list[v13].vertexNum[1]];
+        v16 = &v11[v14];
+        v25 = v15->x - v16->x;
+        v26 = v15->y - v16->y;
+        v27 = v15->z - v16->z;
         v17 = v26;
         v18 = v25;
         v19 = v27;
-        *(float *)&v40 = v27 * v27 + v26 * v26 + v25 * v25;
-        if ( *(float *)&v40 >= 0.1000000014901161 )
+        *(float *)&v38 = v27 * v27 + v26 * v26 + v25 * v25;
+        if ( *(float *)&v38 >= 0.1000000014901161 )
         {
-          v22 = a4->x - *v16;
-          v23 = a4->y - v16[1];
-          v24 = a4->z - v16[2];
+          v22 = a4->x - v16->x;
+          v23 = a4->y - v16->y;
+          v24 = a4->z - v16->z;
           v21 = v23 * v17 + v22 * v18 + v24 * v19;
-          *(float *)&v41 = v21 / *(float *)&v40;
-          if ( *(float *)&v41 >= 0.0 )
+          *(float *)&v39 = v21 / *(float *)&v38;
+          if ( *(float *)&v39 >= 0.0 )
           {
-            v20 = *(float *)&v41;
-            if ( *(float *)&v41 > 1.0 )
+            v20 = *(float *)&v39;
+            if ( *(float *)&v39 > 1.0 )
               v20 = (float)1.0;
           }
           else
           {
             v20 = (float)0.0;
           }
-          v28 = v18 * v20;
-          v29 = v17 * v20;
-          v30 = v20 * v19;
-          v31 = v22 - v28;
-          v32 = v23 - v29;
-          v33 = v24 - v30;
-          v42 = v33 * v33 + v32 * v32 + v31 * v31;
-          if ( v47 > (double)v42 )
+          v28.x = v18 * v20;
+          v28.y = v17 * v20;
+          v28.z = v20 * v19;
+          v29 = v22 - v28.x;
+          v30 = v23 - v28.y;
+          v31 = v24 - v28.z;
+          v40 = v31 * v31 + v30 * v30 + v29 * v29;
+          if ( v45 > (double)v40 )
           {
-            v47 = v33 * v33 + v32 * v32 + v31 * v31;
-            v34 = v22 - v28;
-            v35 = v23 - v29;
-            v36 = v24 - v30;
+            v45 = v31 * v31 + v30 * v30 + v29 * v29;
+            v32 = v22 - v28.x;
+            v33 = v23 - v28.y;
+            v34 = v24 - v28.z;
           }
         }
         ++v12;
         --numEdges;
       }
       while ( numEdges );
-      result = v46;
+      result = v44;
     }
-    v43 = a6 * a6;
-    if ( v43 <= (double)v47 )
-      return v46;
-    v44 = this->settings.invGravityDir.y * v35
-        + this->settings.invGravityDir.x * v34
-        + this->settings.invGravityDir.z * v36;
-    *(float *)&v45 = fabs(v44);
-    if ( *(float *)&v45 >= result )
-      return v46;
+    v41 = a6 * a6;
+    if ( v41 <= (double)v45 )
+      return v44;
+    v42 = this->settings.invGravityDir.y * v33
+        + this->settings.invGravityDir.x * v32
+        + this->settings.invGravityDir.z * v34;
+    *(float *)&v43 = fabs(v42);
+    if ( *(float *)&v43 >= result )
+      return v44;
     else
-      return *(float *)&v45;
+      return *(float *)&v43;
   }
   return result;
 }
-// 5EB8D7: variable 'v35' is possibly undefined
-// 5EB8E1: variable 'v34' is possibly undefined
-// 5EB8ED: variable 'v36' is possibly undefined
+// 5EB8D7: variable 'v33' is possibly undefined
+// 5EB8E1: variable 'v32' is possibly undefined
+// 5EB8ED: variable 'v34' is possibly undefined
 
 //----- (005EB940) --------------------------------------------------------
 void __thiscall idAASFileLocal::PointBestReachableAreaNum(
@@ -390127,11 +390125,11 @@ void __thiscall idAASFileLocal::PointBestReachableAreaNum(
       return;
   }
   v8 = &this->areas.list[-v5];
-  if ( (v8->flags & *((_DWORD *)a3 + 2)) != 0 && (v8->travelFlags & *((_DWORD *)a3 + 3)) == 0 )
+  if ( (v8->flags & a3->areaFlags) != 0 && (v8->travelFlags & a3->excludeTravelFlags) == 0 )
   {
     v9 = -v5;
-    *((float *)a3 + 5) = idAASFileLocal::GetFloorDistance(this, -v5, v10, a2, *(float *)a3, *((float *)a3 + 1));
-    *((_DWORD *)a3 + 4) = v9;
+    a3->distance1 = idAASFileLocal::GetFloorDistance(this, -v5, v10, a2, a3->v0, a3->v1);
+    a3->areaNum1 = v9;
   }
 }
 
@@ -390178,14 +390176,14 @@ LABEL_10:
       return;
   }
   v12 = &this->areas.list[-v6];
-  if ( (v12->flags & *((_DWORD *)a6 + 2)) != 0 && (v12->travelFlags & *((_DWORD *)a6 + 3)) == 0 )
+  if ( (v12->flags & a6->areaFlags) != 0 && (v12->travelFlags & a6->excludeTravelFlags) == 0 )
   {
     v13 = -v6;
-    FloorDistance = idAASFileLocal::GetFloorDistance(this, v13, a5, a3, *(float *)a6, *((float *)a6 + 1));
-    if ( *((float *)a6 + 5) - *(float *)a6 > FloorDistance && *((float *)a6 + 7) > (double)FloorDistance )
+    FloorDistance = idAASFileLocal::GetFloorDistance(this, v13, a5, a3, a6->v0, a6->v1);
+    if ( a6->distance1 - a6->v0 > FloorDistance && a6->distance2 > (double)FloorDistance )
     {
-      *((float *)a6 + 7) = FloorDistance;
-      *((_DWORD *)a6 + 6) = v13;
+      a6->distance2 = FloorDistance;
+      a6->areaNum2 = v13;
     }
   }
 }
@@ -390205,23 +390203,19 @@ struct idPlane *__thiscall idAASFileLocal::PointReachableAreaNum(
   float v10; // [esp+10h] [ebp-48h]
   struct idVec3 v11; // [esp+14h] [ebp-44h] BYREF
   struct idBounds v12; // [esp+20h] [ebp-38h] BYREF
-  float v13[4]; // [esp+38h] [ebp-20h] BYREF
-  int v14; // [esp+48h] [ebp-10h]
-  float v15; // [esp+4Ch] [ebp-Ch]
-  struct idPlane *v16; // [esp+50h] [ebp-8h]
-  float v17; // [esp+54h] [ebp-4h]
+  struct idAASFileLocal::bestReachableArea_t v13; // [esp+38h] [ebp-20h] BYREF
   float maxStepHeight; // [esp+64h] [ebp+Ch]
 
-  v13[0] = this->settings.boundingBox.b[1].z - this->settings.boundingBox.b[0].z;
-  LODWORD(v13[3]) = a5;
-  v13[1] = 24.0;
-  v15 = 1.0e30;
-  LODWORD(v13[2]) = a4;
-  v17 = 1.0e30;
-  v14 = 0;
-  v16 = 0;
-  idAASFileLocal::PointBestReachableAreaNum(this, a2, (struct idAASFileLocal::bestReachableArea_t *)v13);
-  if ( !v14 )
+  v13.v0 = this->settings.boundingBox.b[1].z - this->settings.boundingBox.b[0].z;
+  v13.excludeTravelFlags = a5;
+  v13.v1 = 24.0;
+  v13.distance1 = 1.0e30;
+  v13.areaFlags = a4;
+  v13.distance2 = 1.0e30;
+  v13.areaNum1 = 0;
+  v13.areaNum2 = 0;
+  idAASFileLocal::PointBestReachableAreaNum(this, a2, &v13);
+  if ( !v13.areaNum1 )
   {
     maxStepHeight = this->settings.maxStepHeight;
     v8 = maxStepHeight * this->settings.invGravityDir.x;
@@ -390230,10 +390224,10 @@ struct idPlane *__thiscall idAASFileLocal::PointReachableAreaNum(
     v11.x = a2->x + v8;
     v11.y = a2->y + v9;
     v11.z = a2->z + v10;
-    idAASFileLocal::PointBestReachableAreaNum(this, &v11, (struct idAASFileLocal::bestReachableArea_t *)v13);
+    idAASFileLocal::PointBestReachableAreaNum(this, &v11, &v13);
   }
-  if ( v13[0] > (double)v15 )
-    return (struct idPlane *)v14;
+  if ( v13.v0 > (double)v13.distance1 )
+    return (struct idPlane *)v13.areaNum1;
   v7 = 0;
   v12.b[0].x = a2->x - 4.0;
   v12.b[0].y = a2->y - 4.0;
@@ -390243,10 +390237,10 @@ struct idPlane *__thiscall idAASFileLocal::PointReachableAreaNum(
   v12.b[0].z = v12.b[1].z;
   while ( 1 )
   {
-    result = v16;
-    if ( v16 )
+    result = (struct idPlane *)v13.areaNum2;
+    if ( v13.areaNum2 )
       break;
-    idAASFileLocal::BoundsBestReachableAreaNum(this, &v12, a2, 1, 0, (struct idAASFileLocal::bestReachableArea_t *)v13);
+    idAASFileLocal::BoundsBestReachableAreaNum(this, &v12, a2, 1, 0, &v13);
     ++v7;
     v12.b[0].x = v12.b[0].x - 4.0;
     v12.b[0].y = v12.b[0].y - 4.0;
@@ -390256,9 +390250,9 @@ struct idPlane *__thiscall idAASFileLocal::PointReachableAreaNum(
     v12.b[1].z = v12.b[1].z + 4.0;
     if ( v7 >= 4 )
     {
-      result = v16;
-      if ( !v16 )
-        return (struct idPlane *)v14;
+      result = (struct idPlane *)v13.areaNum2;
+      if ( !v13.areaNum2 )
+        return (struct idPlane *)v13.areaNum1;
       return result;
     }
   }
@@ -390502,44 +390496,44 @@ BOOL __thiscall idAASFileLocal::SplitFloorWinding(
         float *a4,
         int *a5)
 {
-  aasArea_t *list; // eax
+  int num; // eax
   int v6; // ebp
   bool v7; // cc
-  aasArea_t *v8; // eax
+  int v8; // eax
   float *v9; // edi
   unsigned int v10; // esi
-  idVec3 *v11; // eax
+  float *v11; // eax
   int v12; // eax
   int v14; // [esp+4h] [ebp-8h]
   int v15; // [esp+8h] [ebp-4h]
   int v16; // [esp+10h] [ebp+4h]
 
-  list = this->areas.list;
+  num = (int)this->areas.list;
   v6 = 0;
-  v7 = list[a2].numEdges <= 0;
-  v8 = &list[a2];
+  v7 = *(_DWORD *)(num + 28 * a2 + 4) <= 0;
+  v8 = num + 28 * a2;
   v15 = 1;
   v14 = 0;
-  v16 = (int)v8;
+  v16 = v8;
   if ( !v7 )
   {
     v9 = a4;
     do
     {
-      v10 = this->edgeIndex.list[v6 + v8->firstEdge];
-      v11 = &this->vertices.list[this->edges.list[abs32(v10)].vertexNum[v10 >> 31]];
+      v10 = this->edgeIndex.list[v6 + *(_DWORD *)(v8 + 8)];
+      v11 = &this->vertices.list[this->edges.list[abs32(v10)].vertexNum[v10 >> 31]].x;
       ++v6;
-      *v9++ = v11->y * a3->b + v11->x * a3->a + v11->z * a3->c + a3->d;
+      *v9++ = v11[1] * a3->b + *v11 * a3->a + v11[2] * a3->c + a3->d;
       v12 = *((_DWORD *)v9 - 1) >> 31;
       v15 &= v12;
       v14 |= v12;
       *(_DWORD *)((char *)v9 + (char *)a5 - (char *)a4 - 4) = v12;
-      v8 = (aasArea_t *)v16;
+      v8 = v16;
     }
     while ( v6 < *(_DWORD *)(v16 + 4) );
   }
-  a4[v8->numEdges] = *a4;
-  a5[v8->numEdges] = *a5;
+  a4[*(_DWORD *)(v8 + 4)] = *a4;
+  a5[*(_DWORD *)(v8 + 4)] = *a5;
   return v15 != v14;
 }
 
@@ -390556,34 +390550,28 @@ bool __thiscall idAASFileLocal::GetFloorEdgeSplitPoints(
   void *v9; // esp
   bool result; // al
   int v11; // eax
-  struct idPlane *v12; // ebx
+  float *v12; // ebx
   int v13; // ecx
   int v14; // ecx
-  aasEdge_t *v15; // edx
+  const aasEdge_t *v15; // edx
   idVec3 *v16; // eax
   idVec3 *v17; // edx
-  double v18; // st6
-  double v19; // st7
-  double v20; // st5
+  double y; // st6
+  double x; // st7
+  double z; // st5
   int v21; // [esp+0h] [ebp-3Ch] BYREF
   _BYTE v22[8]; // [esp+4h] [ebp-38h] BYREF
-  float v23; // [esp+Ch] [ebp-30h]
-  float v24; // [esp+10h] [ebp-2Ch]
-  float v25; // [esp+14h] [ebp-28h]
-  float v26; // [esp+18h] [ebp-24h]
-  float v27; // [esp+1Ch] [ebp-20h]
-  float v28; // [esp+20h] [ebp-1Ch]
-  float v29; // [esp+24h] [ebp-18h]
-  float v30; // [esp+28h] [ebp-14h]
-  float v31; // [esp+2Ch] [ebp-10h]
+  idVec3 v23; // [esp+Ch] [ebp-30h]
+  idVec3 v24; // [esp+18h] [ebp-24h]
+  idVec3 v25; // [esp+24h] [ebp-18h]
   int i; // [esp+30h] [ebp-Ch]
-  int *v33; // [esp+34h] [ebp-8h]
-  aasArea_t *v34; // [esp+38h] [ebp-4h]
-  int v35; // [esp+4Ch] [ebp+10h]
-  int v36; // [esp+4Ch] [ebp+10h]
-  struct idPlane *v37; // [esp+50h] [ebp+14h]
-  float v38; // [esp+50h] [ebp+14h]
-  float v39; // [esp+50h] [ebp+14h]
+  int *v27; // [esp+34h] [ebp-8h]
+  aasArea_t *v28; // [esp+38h] [ebp-4h]
+  int v29; // [esp+4Ch] [ebp+10h]
+  int v30; // [esp+4Ch] [ebp+10h]
+  float *v31; // [esp+50h] [ebp+14h]
+  float v32; // [esp+50h] [ebp+14h]
+  float v33; // [esp+50h] [ebp+14h]
 
   a2->point.z = 0.0;
   a2->point.y = 0.0;
@@ -390595,67 +390583,67 @@ bool __thiscall idAASFileLocal::GetFloorEdgeSplitPoints(
   a3->point.y = 0.0;
   a3->point.x = 0.0;
   a3->distance = -1.0e30;
-  v34 = &this->areas.list[a4];
-  v35 = 4 * v34->numEdges + 19;
-  v8 = alloca(v35);
-  v9 = alloca(v35);
-  v33 = &v21;
+  v28 = &this->areas.list[a4];
+  v29 = 4 * v28->numEdges + 19;
+  v8 = alloca(v29);
+  v9 = alloca(v29);
+  v27 = &v21;
   result = idAASFileLocal::SplitFloorWinding(this, a4, a5, (float *)&v21, &v21);
   if ( result )
   {
     v11 = 0;
-    v36 = 0;
-    if ( v34->numEdges > 0 )
+    v30 = 0;
+    if ( v28->numEdges > 0 )
     {
-      v12 = (struct idPlane *)v22;
-      v13 = (char *)v33 - (char *)&v21;
-      v37 = (struct idPlane *)v22;
-      for ( i = (char *)v33 - (char *)&v21; ; v13 = i )
+      v12 = (float *)v22;
+      v13 = (char *)v27 - (char *)&v21;
+      v31 = (float *)v22;
+      for ( i = (char *)v27 - (char *)&v21; ; v13 = i )
       {
-        if ( v33[v11] != *(_DWORD *)((char *)&v12->a + v13) )
+        if ( v27[v11] != *(_DWORD *)((char *)v12 + v13) )
         {
-          v14 = this->edgeIndex.list[v11 + v34->firstEdge];
+          v14 = this->edgeIndex.list[v11 + v28->firstEdge];
           v15 = &this->edges.list[abs32(v14)];
           v16 = &this->vertices.list[v15->vertexNum[(unsigned int)v14 >> 31]];
           v17 = &this->vertices.list[v15->vertexNum[v14 >= 0]];
-          v12 = v37;
-          v29 = v17->x - v16->x;
-          v30 = v17->y - v16->y;
-          v31 = v17->z - v16->z;
-          v38 = v37[-1].d / (v37[-1].d - v37->a);
-          v26 = v29 * v38;
-          v27 = v30 * v38;
-          v28 = v38 * v31;
-          v23 = v16->x + v26;
-          v24 = v16->y + v27;
-          v25 = v28 + v16->z;
-          v18 = v24;
-          v19 = v23;
-          v20 = v25;
-          v39 = a6->c * v25 + a6->a * v23 + a6->b * v24 + a6->d;
-          if ( a2->distance > (double)v39 )
+          v12 = v31;
+          v25.x = v17->x - v16->x;
+          v25.y = v17->y - v16->y;
+          v25.z = v17->z - v16->z;
+          v32 = *(v31 - 1) / (*(v31 - 1) - *v31);
+          v24.x = v25.x * v32;
+          v24.y = v25.y * v32;
+          v24.z = v32 * v25.z;
+          v23.x = v16->x + v24.x;
+          v23.y = v16->y + v24.y;
+          v23.z = v24.z + v16->z;
+          y = v23.y;
+          x = v23.x;
+          z = v23.z;
+          v33 = a6->c * v23.z + a6->a * v23.x + a6->b * v23.y + a6->d;
+          if ( a2->distance > (double)v33 )
           {
-            a2->distance = v39;
+            a2->distance = v33;
             a2->edgeIndex = v14;
-            a2->point.x = v19;
-            a2->point.y = v18;
-            a2->point.z = v20;
+            a2->point.x = x;
+            a2->point.y = y;
+            a2->point.z = z;
           }
-          v11 = v36;
-          if ( a3->distance < (double)v39 )
+          v11 = v30;
+          if ( a3->distance < (double)v33 )
           {
-            a3->distance = v39;
+            a3->distance = v33;
             a3->edgeIndex = v14;
-            a3->point.x = v19;
-            a3->point.y = v18;
-            a3->point.z = v20;
+            a3->point.x = x;
+            a3->point.y = y;
+            a3->point.z = z;
           }
         }
         ++v11;
-        v12 = (struct idPlane *)((char *)v12 + 4);
-        v36 = v11;
-        v37 = v12;
-        if ( v11 >= v34->numEdges )
+        ++v12;
+        v30 = v11;
+        v31 = v12;
+        if ( v11 >= v28->numEdges )
           break;
       }
     }
@@ -391043,7 +391031,7 @@ bool __thiscall idAASFileLocal::Trace(
   float v62; // [esp+1Ch] [ebp-107Ch]
   float x; // [esp+20h] [ebp-1078h]
   float v64; // [esp+20h] [ebp-1078h]
-  float v65; // [esp+24h] [ebp-1074h]
+  float y; // [esp+24h] [ebp-1074h]
   float v66; // [esp+24h] [ebp-1074h]
   float v67; // [esp+28h] [ebp-1070h]
   float v68; // [esp+28h] [ebp-1070h]
@@ -391189,7 +391177,7 @@ LABEL_50:
           v76 = v5->y - v4->y;
           v77 = v5->z - v4->z;
           x = v75;
-          v65 = v76;
+          y = v76;
           v67 = v77;
           v83 = *v6 - v4->x;
           v84 = v6[1] - v4->y;
@@ -391208,14 +391196,14 @@ LABEL_50:
         {
           a2->fraction = 0.0;
           x = byte_F464D4.x;
-          v65 = MEMORY[0xF464D8];
-          v67 = MEMORY[0xF464DC];
+          y = byte_F464D4.y;
+          v67 = byte_F464D4.z;
         }
         v16 = *((_DWORD *)v6 + 6);
         a2->endpos = *(idVec3 *)v6;
         a2->blockingAreaNum = 0;
         a2->planeNum = v16;
-        v39 = this->planes.list[v16].b * v65 + this->planes.list[v16].a * x + this->planes.list[v16].c * v67;
+        v39 = this->planes.list[v16].b * y + this->planes.list[v16].a * x + this->planes.list[v16].c * v67;
         if ( v39 > 0.0 )
           a2->planeNum = v16 ^ 1;
         if ( a2->lastAreaNum || !a2->getOutOfSolid )
@@ -391254,8 +391242,8 @@ LABEL_50:
         {
           a2->fraction = 0.0;
           v64 = byte_F464D4.x;
-          v66 = MEMORY[0xF464D8];
-          v68 = MEMORY[0xF464DC];
+          v66 = byte_F464D4.y;
+          v68 = byte_F464D4.z;
         }
         a2->endpos.x = *v6;
         a2->endpos.y = v6[1];
@@ -391309,8 +391297,6 @@ LABEL_50:
   a2->planeNum = 0;
   return result;
 }
-// F464D8: using guessed type float flt_F464D8;
-// F464DC: using guessed type float flt_F464DC;
 
 //----- (005ED220) --------------------------------------------------------
 char __thiscall idAASFileLocal::TraceFloor(
@@ -391351,12 +391337,12 @@ char __thiscall idAASFileLocal::TraceFloor(
   double x; // st7
   int i; // eax
   int v36; // edx
-  int v37; // eax
+  int granularity; // eax
   bool v38; // cc
-  int v39; // ebx
-  int v40; // eax
+  int num; // ebx
+  int size; // eax
   int v41; // eax
-  _DWORD *v42; // edi
+  int *list; // edi
   int j; // eax
   double v44; // st7
   int v45; // edi
@@ -391371,16 +391357,16 @@ char __thiscall idAASFileLocal::TraceFloor(
   int v54; // ebp
   int v55; // eax
   int v56; // eax
-  _DWORD *v57; // edi
+  int *v57; // edi
   int k; // eax
   double v59; // st7
   double v60; // st5
   int v61; // ebp
-  float m; // eax
+  int m; // eax
   int v63; // edx
   double v64; // st7
   double v65; // st7
-  _DWORD *v66; // edi
+  int *v66; // edi
   int n; // eax
   float v68; // eax
   int ii; // eax
@@ -391423,7 +391409,7 @@ char __thiscall idAASFileLocal::TraceFloor(
   float v107; // [esp+18h] [ebp-74h]
   float v108; // [esp+18h] [ebp-74h]
   struct idPlane v109; // [esp+1Ch] [ebp-70h] BYREF
-  float v110; // [esp+2Ch] [ebp-60h]
+  int v110; // [esp+2Ch] [ebp-60h]
   struct idPlane v111; // [esp+30h] [ebp-5Ch] BYREF
   float v112; // [esp+40h] [ebp-4Ch]
   float v113; // [esp+44h] [ebp-48h]
@@ -391740,78 +391726,78 @@ LABEL_67:
     v120 = 0.0;
     v125 = 0.0;
   }
-  for ( i = 0; i < *((_DWORD *)this + 103); ++i )
+  for ( i = 0; i < this->floorIndex.num; ++i )
   {
-    v36 = *(_DWORD *)(*((_DWORD *)this + 106) + 4 * i);
+    v36 = this->floorIndex.list[i];
     this->areas.list[v36].flags &= ~0x8000u;
   }
-  if ( *((int *)this + 104) < 0 )
+  if ( this->floorIndex.size < 0 )
   {
-    operator delete(*((void **)this + 106));
-    *((_DWORD *)this + 106) = 0;
-    *((_DWORD *)this + 103) = 0;
-    *((_DWORD *)this + 104) = 0;
+    operator delete(this->floorIndex.list);
+    this->floorIndex.list = 0;
+    this->floorIndex.num = 0;
+    this->floorIndex.size = 0;
   }
-  *((_DWORD *)this + 103) = 0;
+  this->floorIndex.num = 0;
   while ( 1 )
   {
-    if ( !*((_DWORD *)this + 106) )
+    if ( !this->floorIndex.list )
     {
-      v37 = *((_DWORD *)this + 105);
-      if ( v37 > 0 )
+      granularity = this->floorIndex.granularity;
+      if ( granularity > 0 )
       {
-        if ( v37 != *((_DWORD *)this + 104) )
+        if ( granularity != this->floorIndex.size )
         {
-          v38 = v37 < *((_DWORD *)this + 103);
-          *((_DWORD *)this + 104) = v37;
+          v38 = granularity < this->floorIndex.num;
+          this->floorIndex.size = granularity;
           if ( v38 )
-            *((_DWORD *)this + 103) = v37;
-          *((_DWORD *)this + 106) = operator new(4 * v37);
+            this->floorIndex.num = granularity;
+          this->floorIndex.list = (int *)operator new(4 * granularity);
         }
       }
       else
       {
         operator delete(0);
-        *((_DWORD *)this + 106) = 0;
-        *((_DWORD *)this + 103) = 0;
-        *((_DWORD *)this + 104) = 0;
+        this->floorIndex.list = 0;
+        this->floorIndex.num = 0;
+        this->floorIndex.size = 0;
       }
     }
-    v39 = *((_DWORD *)this + 103);
-    v40 = *((_DWORD *)this + 104);
-    if ( v39 == v40 )
+    num = this->floorIndex.num;
+    size = this->floorIndex.size;
+    if ( num == size )
     {
-      if ( !*((_DWORD *)this + 105) )
-        *((_DWORD *)this + 105) = 16;
-      v41 = v40 + *((_DWORD *)this + 105) - (v40 + *((_DWORD *)this + 105)) % *((_DWORD *)this + 105);
+      if ( !this->floorIndex.granularity )
+        this->floorIndex.granularity = 16;
+      v41 = size + this->floorIndex.granularity - (size + this->floorIndex.granularity) % this->floorIndex.granularity;
       if ( v41 > 0 )
       {
-        if ( v41 != *((_DWORD *)this + 104) )
+        if ( v41 != this->floorIndex.size )
         {
-          v42 = (_DWORD *)*((_DWORD *)this + 106);
-          *((_DWORD *)this + 104) = v41;
-          if ( v41 < v39 )
-            *((_DWORD *)this + 103) = v41;
-          *((_DWORD *)this + 106) = operator new(4 * v41);
-          if ( v42 )
+          list = this->floorIndex.list;
+          this->floorIndex.size = v41;
+          if ( v41 < num )
+            this->floorIndex.num = v41;
+          this->floorIndex.list = (int *)operator new(4 * v41);
+          if ( list )
           {
-            for ( j = 0; j < *((_DWORD *)this + 103); ++j )
-              *(_DWORD *)(*((_DWORD *)this + 106) + 4 * j) = v42[j];
-            operator delete(v42);
+            for ( j = 0; j < this->floorIndex.num; ++j )
+              this->floorIndex.list[j] = list[j];
+            operator delete(list);
           }
         }
       }
       else
       {
-        operator delete(*((void **)this + 106));
-        *((_DWORD *)this + 106) = 0;
-        *((_DWORD *)this + 103) = 0;
-        *((_DWORD *)this + 104) = 0;
+        operator delete(this->floorIndex.list);
+        this->floorIndex.list = 0;
+        this->floorIndex.num = 0;
+        this->floorIndex.size = 0;
       }
     }
     v44 = v117;
     v45 = v116;
-    *(_DWORD *)(*((_DWORD *)this + 106) + 4 * (*((_DWORD *)this + 103))++) = v116;
+    this->floorIndex.list[this->floorIndex.num++] = v116;
     this->areas.list[v45].flags |= 0x8000u;
     v7->endpos.x = v44;
     v7->endpos.y = y;
@@ -391826,7 +391812,7 @@ LABEL_67:
     v47 = v7->endpos.y;
     v48 = *(float *)&this->areas.list[v45].reach;
     v49 = v109.a * v7->endpos.x;
-    v110 = *((float *)this + 103);
+    v110 = this->floorIndex.num;
     v112 = v109.c * v7->endpos.z + v109.b * v47 + v49;
     v50 = v112;
     v112 = v48;
@@ -391840,12 +391826,12 @@ LABEL_150:
       v98 = a5->x - a3->x;
       v103 = a5->y - a3->y;
       v108 = a5->z - a3->z;
-      v110 = v115 * v115 + v113 * v113 + v114 * v114;
-      v64 = v110;
-      v110 = v108 * v108 + v98 * v98 + v103 * v103;
-      v110 = v64 / v110;
-      v110 = sqrt(v110);
-      v65 = v110;
+      *(float *)&v110 = v115 * v115 + v113 * v113 + v114 * v114;
+      v64 = *(float *)&v110;
+      *(float *)&v110 = v108 * v108 + v98 * v98 + v103 * v103;
+      *(float *)&v110 = v64 / *(float *)&v110;
+      *(float *)&v110 = sqrt(*(float *)&v110);
+      v65 = *(float *)&v110;
       goto LABEL_159;
     }
     while ( 1 )
@@ -391856,61 +391842,63 @@ LABEL_150:
         v52 = &this->areas.list[v51];
         if ( (v52->travelFlags & (unsigned __int16)~a7) == 0 && (v52->flags & 0x8000u) == 0 )
         {
-          if ( !*((_DWORD *)this + 106) )
+          if ( !this->floorIndex.list )
           {
-            v53 = *((_DWORD *)this + 105);
+            v53 = this->floorIndex.granularity;
             if ( v53 > 0 )
             {
-              if ( v53 != *((_DWORD *)this + 104) )
+              if ( v53 != this->floorIndex.size )
               {
-                v38 = v53 < *((_DWORD *)this + 103);
-                *((_DWORD *)this + 104) = v53;
+                v38 = v53 < this->floorIndex.num;
+                this->floorIndex.size = v53;
                 if ( v38 )
-                  *((_DWORD *)this + 103) = v53;
-                *((_DWORD *)this + 106) = operator new(4 * v53);
+                  this->floorIndex.num = v53;
+                this->floorIndex.list = (int *)operator new(4 * v53);
               }
             }
             else
             {
               operator delete(0);
-              *((_DWORD *)this + 106) = 0;
-              *((_DWORD *)this + 103) = 0;
-              *((_DWORD *)this + 104) = 0;
+              this->floorIndex.list = 0;
+              this->floorIndex.num = 0;
+              this->floorIndex.size = 0;
             }
           }
-          v54 = *((_DWORD *)this + 103);
-          v55 = *((_DWORD *)this + 104);
+          v54 = this->floorIndex.num;
+          v55 = this->floorIndex.size;
           if ( v54 == v55 )
           {
-            if ( !*((_DWORD *)this + 105) )
-              *((_DWORD *)this + 105) = 16;
-            v56 = v55 + *((_DWORD *)this + 105) - (v55 + *((_DWORD *)this + 105)) % *((_DWORD *)this + 105);
+            if ( !this->floorIndex.granularity )
+              this->floorIndex.granularity = 16;
+            v56 = v55
+                + this->floorIndex.granularity
+                - (v55 + this->floorIndex.granularity) % this->floorIndex.granularity;
             if ( v56 > 0 )
             {
-              if ( v56 != *((_DWORD *)this + 104) )
+              if ( v56 != this->floorIndex.size )
               {
-                v57 = (_DWORD *)*((_DWORD *)this + 106);
-                *((_DWORD *)this + 104) = v56;
+                v57 = this->floorIndex.list;
+                this->floorIndex.size = v56;
                 if ( v56 < v54 )
-                  *((_DWORD *)this + 103) = v56;
-                *((_DWORD *)this + 106) = operator new(4 * v56);
+                  this->floorIndex.num = v56;
+                this->floorIndex.list = (int *)operator new(4 * v56);
                 if ( v57 )
                 {
-                  for ( k = 0; k < *((_DWORD *)this + 103); ++k )
-                    *(_DWORD *)(*((_DWORD *)this + 106) + 4 * k) = v57[k];
+                  for ( k = 0; k < this->floorIndex.num; ++k )
+                    this->floorIndex.list[k] = v57[k];
                   operator delete(v57);
                 }
               }
             }
             else
             {
-              operator delete(*((void **)this + 106));
-              *((_DWORD *)this + 106) = 0;
-              *((_DWORD *)this + 103) = 0;
-              *((_DWORD *)this + 104) = 0;
+              operator delete(this->floorIndex.list);
+              this->floorIndex.list = 0;
+              this->floorIndex.num = 0;
+              this->floorIndex.size = 0;
             }
           }
-          *(_DWORD *)(*((_DWORD *)this + 106) + 4 * (*((_DWORD *)this + 103))++) = v51;
+          this->floorIndex.list[this->floorIndex.num++] = v51;
           this->areas.list[v51].flags |= 0x8000u;
           idAASFileLocal::GetFloorEdgeSplitPoints(
             this,
@@ -391964,39 +391952,39 @@ LABEL_150:
         goto LABEL_150;
       }
     }
-    v61 = LODWORD(v110);
-    for ( m = v110; SLODWORD(m) < *((_DWORD *)this + 103); ++LODWORD(m) )
+    v61 = v110;
+    for ( m = v110; m < this->floorIndex.num; ++m )
     {
-      v63 = *(_DWORD *)(*((_DWORD *)this + 106) + 4 * LODWORD(m));
+      v63 = this->floorIndex.list[m];
       this->areas.list[v63].flags &= ~0x8000u;
     }
-    if ( v61 > *((_DWORD *)this + 104) )
+    if ( v61 > this->floorIndex.size )
     {
       if ( v61 > 0 )
       {
-        v38 = v61 < *((_DWORD *)this + 103);
-        v66 = (_DWORD *)*((_DWORD *)this + 106);
-        *((_DWORD *)this + 104) = v61;
+        v38 = v61 < this->floorIndex.num;
+        v66 = this->floorIndex.list;
+        this->floorIndex.size = v61;
         if ( v38 )
-          *((_DWORD *)this + 103) = v61;
-        *((_DWORD *)this + 106) = operator new(4 * v61);
+          this->floorIndex.num = v61;
+        this->floorIndex.list = (int *)operator new(4 * v61);
         if ( v66 )
         {
-          for ( n = 0; n < *((_DWORD *)this + 103); ++n )
-            *(_DWORD *)(*((_DWORD *)this + 106) + 4 * n) = v66[n];
+          for ( n = 0; n < this->floorIndex.num; ++n )
+            this->floorIndex.list[n] = v66[n];
           operator delete(v66);
         }
       }
       else
       {
-        operator delete(*((void **)this + 106));
-        *((_DWORD *)this + 106) = 0;
-        *((_DWORD *)this + 103) = 0;
-        *((_DWORD *)this + 104) = 0;
+        operator delete(this->floorIndex.list);
+        this->floorIndex.list = 0;
+        this->floorIndex.num = 0;
+        this->floorIndex.size = 0;
       }
     }
     v68 = v112;
-    *((_DWORD *)this + 103) = v61;
+    this->floorIndex.num = v61;
     v7 = a2;
     v116 = *(unsigned __int16 *)(LODWORD(v68) + 6);
   }
@@ -392005,18 +391993,18 @@ LABEL_150:
 LABEL_159:
   v7->lastAreaNum = v45;
   v7->fraction = v65;
-  for ( ii = 0; ii < *((_DWORD *)this + 103); ++ii )
+  for ( ii = 0; ii < this->floorIndex.num; ++ii )
   {
-    v70 = *(_DWORD *)(*((_DWORD *)this + 106) + 4 * ii);
+    v70 = this->floorIndex.list[ii];
     this->areas.list[v70].flags &= ~0x8000u;
   }
-  if ( *((int *)this + 104) < 0 )
+  if ( this->floorIndex.size < 0 )
   {
-    operator delete(*((void **)this + 106));
-    *((_DWORD *)this + 106) = 0;
-    *((_DWORD *)this + 104) = 0;
+    operator delete(this->floorIndex.list);
+    this->floorIndex.list = 0;
+    this->floorIndex.size = 0;
   }
-  *((_DWORD *)this + 103) = 0;
+  this->floorIndex.num = 0;
   return 1;
 }
 
@@ -475719,9 +475707,9 @@ void __fastcall idSIMD_Generic::TransformShadowVerts(
   if ( a3 >= 4 )
   {
     v10 = (float *)((char *)a2 + 132);
-    v11 = a2 - a5;
+    v11 = a2 - (struct shadowCache_s *)a5;
     v12 = ((unsigned int)(a3 - 4) >> 2) + 1;
-    v13 = (float *)((char *)a5 + 68);
+    v13 = &a5[1].xyz.y;
     v39 = (const __int16 *)(4 * v12);
     do
     {
@@ -475765,9 +475753,9 @@ void __fastcall idSIMD_Generic::TransformShadowVerts(
   {
     v28 = v8 << 6;
     v29 = (float *)((char *)a2 + v28);
-    v30 = a2 - a5;
+    v30 = a2 - (struct shadowCache_s *)a5;
     v31 = v7 - (_DWORD)v39;
-    v32 = (float *)((char *)a5 + v28 + 4);
+    v32 = (float *)((char *)&a5->xyz.y + v28);
     do
     {
       v33 = *a6;
