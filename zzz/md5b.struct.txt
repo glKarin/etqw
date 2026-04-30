@@ -89,3 +89,65 @@ md5b {
     <SEEK_CUR 28>
     <EOF>
 }
+
+
+struct idMD5Mesh {
+	void *vtbl; // 0 + 4
+	
+	idStr name; // 4 + 32
+	
+	int index0_v36; // 36 + 4
+	int index1_v40; // 40 + 4
+	int v44; // 44 + 4
+	idMaterial *shader_v48; // 48 + 4
+	int v52; // 52 + 4
+	
+	char padding_1[16]; // 56 + 16
+	
+	int v72; // int* + 18 // 72 + 6
+	int v76; // 76 + 4
+	int numTris_v80; // int* + 20 // 80 + 4
+	unsigned short *tris_v84; // length = v80 // 84 + 4
+	
+	char padding_2[4]; // 88 + 4
+	
+	int numSilEdges_v92; // int* + 23 // 92 + 4
+	int *silEdges_v96; // 96 + 100
+	
+	char padding_3[8]; // 100 + 8
+	
+	short *v108_list_length_of_v72; // length = v72 * 2 // 108 + 4
+	
+	char padding_4[8]; // 112 + 8
+	
+	int numSourceVerts_v120; // 120 + 4
+	int numOutputVerts_v124; // int* + 31 // 124 + 4
+	int numMirroredVerts_v128; // 128 + 4
+	
+	int *mirroredVerts_v132; // length = v128 // int* + 33 // 132 + 4
+	int v136; // 136 + 4
+	char padding_5[8]; // 140 + 8
+	int v148; // 148 + 4
+	
+	char padding_6[12]; // 152 + 12
+	
+	idList_byte jointIndex_v164; // int* + 41 = 16 // 164 + 16
+	byte *v180; // int* + 45 length = 8 * v124 // 180 + 4
+	
+	idDrawVert *verts_v184; // int* + 46, length = v124 // 184 + 4
+	
+	char padding_7[8]; // 188 + 8
+	
+	bool bool_v196; // 196 + 1
+	char padding_8[1]; // 197 + 1
+	bool bool_v198; // 198 + 1
+	
+	char padding_9[17]; // 199 + 17
+	
+	bool bool_v216; // 216 + 1
+	bool vertexRigidFlag_v217; // 217 + 1
+	
+	char padding_10[2]; // 218 + 2
+	
+	float v220; // 220 + 4
+}
