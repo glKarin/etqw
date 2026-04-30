@@ -555,6 +555,14 @@ struct quickChatMuteEntry_t {
 	idStr					name;
 };
 
+#ifdef _ETQWxxx //karin: 30hz in ETQW game
+#define USERCMD_HZ ETQW_USERCMD_HZ
+#define USERCMD_MSEC ETQW_USERCMD_MSEC
+#define BOT_THREAD_VOLATILE volatile
+#else
+#define BOT_THREAD_VOLATILE
+#endif
+
 class idGameLocal : public idGame {
 public:
 	idDict					serverInfo;				// all the tunable parameters, like numclients, etc
@@ -662,7 +670,7 @@ public:
 	idList< lifeStat_t >		lifeStats;
 
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	int						framenum;
 	int						startTime;
@@ -1210,7 +1218,7 @@ public:
 
 	// added the following to assist licensees with merge issues
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	int								GetFrameNum() const { return framenum; }
 	int								GetTime() const { return time; }
@@ -1912,10 +1920,5 @@ ID_INLINE void		sdSpawnPoint::SetOwner( idEntity* owner ) { _owner = owner; }
 
 #include "Player.h"
 #include "ScriptEntity.h"
-
-#ifdef _ETQW //karin: 30hz in ETQW game
-#define USERCMD_HZ ETQW_USERCMD_HZ
-#define USERCMD_MSEC ETQW_USERCMD_MSEC
-#endif
 
 #endif	/* !__GAME_LOCAL_H__ */

@@ -47,16 +47,16 @@ public:
 	void					UnLock() { lock.Release(); }
 
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	int						GetLastGameFrameNum() const { return lastGameFrameNum; }
 	int						GetFrameRate() const;
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	bool					IsActive() const { return isActive; }
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	bool					IsWaiting() const { return isWaiting; }
 
@@ -67,15 +67,15 @@ private:
 	sdLock					lock;
 
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	int						lastGameFrameNum;
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	bool					isWaiting;
 #ifdef _ETQW //karin: add volatile for game and bot thread shared access, doom3 is 60hz, it maybe blocked in WaitForGameThread on bot thread
-	volatile
+	BOT_THREAD_VOLATILE
 #endif
 	bool					isActive;
 
