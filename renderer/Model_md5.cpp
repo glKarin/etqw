@@ -441,7 +441,11 @@ void idMD5Mesh::UpdateSurface(const struct renderEntity_s *ent, const idJointMat
 	}
 
 	if (ent->shaderParms[ SHADERPARM_MD5_SKINSCALE ] != 0.0f) {
+#ifdef _SPLASHDAMAGE //karin: force to 1.0 if parm not 0. when character driving vehicle, the vehicle model scale will be not 0
+		TransformScaledVerts(tri->verts, entJoints, 1.0);
+#else
 		TransformScaledVerts(tri->verts, entJoints, ent->shaderParms[ SHADERPARM_MD5_SKINSCALE ]);
+#endif
 	} else {
 		TransformVerts(tri->verts, entJoints);
 	}
