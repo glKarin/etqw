@@ -2497,3 +2497,20 @@ int R_DeformInfoMemoryUsed(deformInfo_t *deformInfo)
 	return total;
 }
 
+#ifdef _SPLASHDAMAGE
+void R_AllocMirroredVerts(deformInfo_t *deformInfo) {
+	deformInfo->mirroredVerts = triMirroredVertAllocator.Alloc(deformInfo->numMirroredVerts);
+}
+
+void R_AllocIndexes(deformInfo_t *deformInfo) {
+	deformInfo->indexes = triIndexAllocator.Alloc(deformInfo->numIndexes);
+}
+
+void R_AllocSilIndexes(deformInfo_t *deformInfo, int num) {
+	deformInfo->silIndexes = triSilIndexAllocator.Alloc(num > deformInfo->numIndexes ? num : deformInfo->numIndexes);
+}
+
+void R_AllocSilEdges(deformInfo_t *deformInfo) {
+	deformInfo->silEdges = triSilEdgeAllocator.Alloc(deformInfo->numSilEdges);
+}
+#endif

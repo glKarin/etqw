@@ -1234,6 +1234,11 @@ idBounds idRenderModelMD5::CalcMeshBounds( int meshIndex, const idJointMat *join
 	return bounds;
 }
 
+extern void R_AllocMirroredVerts(deformInfo_t *deformInfo);
+extern void R_AllocSilIndexes(deformInfo_t *deformInfo, int num);
+extern void R_AllocSilEdges(deformInfo_t *deformInfo);
+extern void R_AllocIndexes(deformInfo_t *deformInfo);
+
 /*
 ====================
 idMD5Mesh::ReadBinary
@@ -1246,50 +1251,55 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 	int			jointnum;
 	idStr		shaderName;
 	int			i, j;
-	idList<int>	tris;
+	idList<glIndex_t>	tris;
 	idList<int>	firstWeightForVertex;
 	idList<int>	numWeightsForVertex;
 	int			maxweight;
 	idList<vertexWeight_t> tempWeights;
 	unsigned short ush;
 	int numRawVertex;
-	int numVertex;
 	unsigned char uch;
 	unsigned char weight;
 	bool b;
 	bool vertexRigidFlag;
+	int numSilEdges;
+	bool bool_v198;
+	int numSilIndex_v72;
+	int numSourceVerts_v120;
+	int numOutputVerts_v124; // numVertex
+	int numMirroredVerts_v128;
+	float biTangentSign;
 
 	//
 	// parse name
 	//
 	file->ReadString(meshName);
 
-	file->ReadInt(i);
+	file->ReadInt(i); // index0_v36
 	//if(i) flags |= MD5MF_VERTEX_COLOR;
 
-	file->ReadInt(i);
+	file->ReadInt(i); // index1_v40
 
-	file->Seek(4, FS_SEEK_CUR); // uint32
-	file->ReadInt(numRawVertex);
-	file->ReadBool(b); // uint8 //noAnimate
-	if(b) flags |= MD5MF_NO_ANIMATE;
-	file->Seek(1, FS_SEEK_CUR); // uint8
+	file->ReadInt(i); // v44
+	file->ReadInt(numRawVertex); // v52
+	file->ReadBool(b);
+	//if(b) flags |= MD5MF_NO_ANIMATE;
+	file->ReadBool(bool_v198);
 	file->ReadBool(vertexRigidFlag);
 
 	//
 	// parse shader
 	//
 	file->ReadString(shaderName);
-
 	shader = declManager->FindMaterial(shaderName);
 
-	file->Seek(4, FS_SEEK_CUR); // int32
-	file->Seek(4, FS_SEEK_CUR); // int32
+	file->ReadInt(numSilIndex_v72); // v72
+	file->ReadInt(i); // v76
 
 	//
 	// parse tris
 	//
-	file->ReadInt(count);
+	file->ReadInt(count); // numTris_v80
 	if (count < 0) {
 		common->Warning("Invalid size: %d", count);
 		return false;
@@ -1303,17 +1313,41 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 		tris[ i ] = ush;
 	}
 
-	file->ReadInt(count);
-	file->Seek(4 * count * 2, FS_SEEK_CUR); // uint8[count * 2]
-	file->Seek(numRawVertex * 2, FS_SEEK_CUR); // uint8[count * 2]
+	file->ReadInt(numSilEdges); // numSilEdges_v92
+	idList<silEdge_t> silEdges;
+	silEdges.SetNum(numSilEdges);
+	for (i = 0; i < numSilEdges; i++) {
+		silEdge_t &edge = silEdges[ i ];
+		file->ReadUnsignedShort(ush);
+		edge.p1 = ush;
+		file->ReadUnsignedShort(ush);
+		edge.p2 = ush;
+		file->ReadUnsignedShort(ush);
+		edge.v1 = ush;
+		file->ReadUnsignedShort(ush);
+		edge.v2 = ush;
+	}
+	idList<glIndex_t> silIndexes;
+	if (!bool_v198) {
+		silIndexes.SetNum(numSilIndex_v72);
+		for (i = 0; i < numSilIndex_v72; i++) {
+			file->ReadUnsignedShort(ush);
+			silIndexes[i] = ush;
+		}
+	}
 
-	file->Seek(4, FS_SEEK_CUR); // int32
-	file->ReadInt(numVertex);
+	file->ReadInt(numSourceVerts_v120);
+	file->ReadInt(numOutputVerts_v124);
+	file->ReadInt(numMirroredVerts_v128);
 
-	file->ReadInt(count);
-	file->Seek(4 * count, FS_SEEK_CUR); // uint32[count]
-	file->Seek(4, FS_SEEK_CUR); // int32
-	file->Seek(4, FS_SEEK_CUR); // int32
+	//Sys_Printf(" %s = %d <> %d | %d %d | %d %d %d\n", meshName.c_str(), numSilIndex_v72, numTris, bool_v198, numSilEdges, numSourceVerts_v120, numOutputVerts_v124, numMirroredVerts_v128);
+	idList<int> mirroredVerts;
+	mirroredVerts.SetNum(numMirroredVerts_v128);
+	for (i = 0; i < numMirroredVerts_v128; i++)
+		file->ReadInt(mirroredVerts[i]);
+
+	file->ReadInt(i); // v136
+	file->ReadInt(i); // v148
 
 	file->ReadInt(count);
 	idList<byte> jointTables;
@@ -1324,7 +1358,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 	//
 	// parse texture coordinates
 	//
-	count = numVertex;
+	count = numOutputVerts_v124;
 
 	if (count < 0) {
 		common->Warning("Invalid size: %d", count);
@@ -1341,20 +1375,32 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 	numWeights = 0;
 	maxweight = 0;
 
+	idList<idDrawVert> verts;
+	verts.SetNum(texCoords.Num());
 	for (i = 0; i < texCoords.Num(); i++) {
+		idDrawVert &vert = verts[ i ];
+		vert.Clear();
 		file->ReadFloatArray(positions[i].ToFloatPtr(), 3);
+		vert.xyz = positions[i];
 
 		file->ReadFloat(texCoords[ i ][0]);
 		file->ReadFloat(texCoords[ i ][1]);
+		vert.st = texCoords[i];
 
-		file->Seek(4 * 3, FS_SEEK_CUR); // normal
-		file->Seek(4 * 3, FS_SEEK_CUR); // tangent
-		file->Seek(4, FS_SEEK_CUR); // biTangentSign
-					   
+		file->ReadFloatArray(vert.normal.ToFloatPtr(), 3);
+		file->ReadFloatArray(vert.tangents[0].ToFloatPtr(), 3);
+		file->ReadFloat(biTangentSign);
+		vert.SetBiTangent(biTangentSign);
+
 		file->ReadUnsignedChar(vertColors[i].r);
 		file->ReadUnsignedChar(vertColors[i].g);
 		file->ReadUnsignedChar(vertColors[i].b);
 		file->ReadUnsignedChar(vertColors[i].a);
+
+		vert.color[0] = vertColors[i].r;
+		vert.color[1] = vertColors[i].g;
+		vert.color[2] = vertColors[i].b;
+		vert.color[3] = vertColors[i].a;
 	}
 
 	//
@@ -1363,9 +1409,9 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 
 	if (vertexRigidFlag)
 	{
-		count = numVertex;
-		tempWeights.SetNum(numVertex);
-		for (i = 0; i < numVertex; i++)
+		count = numOutputVerts_v124;
+		tempWeights.SetNum(numOutputVerts_v124);
+		for (i = 0; i < numOutputVerts_v124; i++)
 		{
 			file->ReadUnsignedChar(uch);
 			jointnum = jointTables[uch / 3];
@@ -1392,7 +1438,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 	else
 	{
 		count = 0;
-		for (i = 0; i < numVertex; i++)
+		for (i = 0; i < numOutputVerts_v124; i++)
 		{
 			firstWeightForVertex[ i ]	= tempWeights.Num();
 			numWeightsForVertex[ i ]	= 0;
@@ -1437,8 +1483,8 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 		common->Warning("Vertices reference out of range weights in model (%d of %d weights).", maxweight, count);
 	}
 
-	file->Seek(1, FS_SEEK_CUR);
-	file->Seek(4, FS_SEEK_CUR);
+	file->ReadBool(b); // bool_v216
+	file->ReadInt(i);
 
 	// create pre-scaled weights and an index for the vertex/joint lookup
 	scaledWeights = (idVec4 *) Mem_Alloc16(numWeights * sizeof(scaledWeights[0]));
@@ -1477,32 +1523,35 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints
 	// silhouette edge connectivity and normal / tangent generation information
 	//
 
-#ifdef _DYNAMIC_ALLOC_STACK_OR_HEAP
-	_DROID_ALLOC16_DEF(idDrawVert, verts, (texCoords.Num() * sizeof(idDrawVert)));
-#else
-	idDrawVert *verts = (idDrawVert *) _alloca16(texCoords.Num() * sizeof(idDrawVert));
-#endif
+	deformInfo = (deformInfo_t *)R_ClearedStaticAlloc(sizeof(*deformInfo));
 
-	for (i = 0; i < texCoords.Num(); i++) {
-		verts[i].Clear();
-		verts[i].st = texCoords[i];
-#ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
-		if(flags & MD5MF_VERTEX_COLOR)
-		{
-			verts[i].color[0] = vertColors[i].r;
-			verts[i].color[1] = vertColors[i].g;
-			verts[i].color[2] = vertColors[i].b;
-			verts[i].color[3] = vertColors[i].a;
-		}
-#endif
+	deformInfo->numSourceVerts = numSourceVerts_v120;
+	deformInfo->numOutputVerts = numOutputVerts_v124;
+
+	deformInfo->numIndexes = numTris;
+	R_AllocIndexes(deformInfo);
+	memcpy(deformInfo->indexes, tris.Ptr(), sizeof(*deformInfo->indexes) * deformInfo->numIndexes);
+
+	if (silIndexes.Num() > 0) {
+		R_AllocSilIndexes(deformInfo, silIndexes.Num());
+		memcpy(deformInfo->silIndexes, silIndexes.Ptr(), sizeof(*deformInfo->silIndexes) * silIndexes.Num());
 	}
+	else
+		deformInfo->silIndexes = NULL;
+		deformInfo->silIndexes = NULL;
 
-	TransformVerts(verts, joints);
-	deformInfo = R_BuildDeformInfo(texCoords.Num(), verts, tris.Num(), tris.Ptr(), shader->UseUnsmoothedTangents());
+	deformInfo->numSilEdges = numSilEdges;
+	R_AllocSilEdges(deformInfo);
+	memcpy(deformInfo->silEdges, silEdges.Ptr(), sizeof(*deformInfo->silEdges) * deformInfo->numSilEdges);
 
-#ifdef _DYNAMIC_ALLOC_STACK_OR_HEAP
-	_DROID_FREE(verts);
-#endif
+	deformInfo->dominantTris = NULL;
+
+	deformInfo->numMirroredVerts = numMirroredVerts_v128;
+	R_AllocMirroredVerts(deformInfo);
+	memcpy(deformInfo->mirroredVerts, mirroredVerts.Ptr(), sizeof(*deformInfo->mirroredVerts) * deformInfo->numMirroredVerts);
+
+	deformInfo->numDupVerts = 0;
+	deformInfo->dupVerts = NULL;
 
 	return true;
 }
@@ -1633,13 +1682,23 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	meshes.SetGranularity(1);
 	meshes.SetNum(num);
 
-	for (i = 0; i < meshes.Num(); i++) {
-		if(!meshes[ i ].ReadBinary(file, defaultPose.Num(), poseMat3))
+	int n = 0;
+	for (i = 0; i < num; i++) {
+		if(!meshes[ n ].ReadBinary(file, defaultPose.Num(), poseMat3))
 		{
 			fileSystem->CloseFile(file);
 			return false;
 		}
+		if (meshes[ n ].deformInfo->numOutputVerts > 0)
+			n++;
+		else {
+			R_FreeDeformInfo(meshes[ n ].deformInfo);
+			meshes[ n ].deformInfo = NULL;
+			meshes[ n ].scaledWeights = NULL;
+			meshes[ n ].weightIndex = NULL;
+		}
 	}
+	meshes.Resize(n);
 
 	//
 	// calculate the bounds of the model
