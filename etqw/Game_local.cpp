@@ -5394,6 +5394,11 @@ idGameLocal::CheatsOk
 */
 bool idGameLocal::CheatsOk( bool requirePlayer ) {
 	idPlayer *player;
+#ifdef _ETQW //karin: TODO always allow cheats with cvar net_allowCheats for testing
+	if ( cvarSystem->GetCVarBool( "net_allowCheats" ) ) {
+		return true;
+	}
+#endif	
 
 	if ( networkSystem->IsActive() ) {
 		if ( !cvarSystem->GetCVarBool( "net_allowCheats" ) ) {

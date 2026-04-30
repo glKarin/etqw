@@ -970,6 +970,9 @@ void Cmd_Spawn_f( const idCmdArgs &args ) {
 
 	if ( gameLocal.isClient ) {
 		gameLocal.Printf( "Use networkSpawn in a network game\n" );
+#ifdef _ETQW //karin: TODO allow spawn in MP-game for testing
+		if ( !cvarSystem->GetCVarBool( "net_allowCheats" ) )
+#endif
 		return;
 	}
 
