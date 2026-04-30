@@ -357,7 +357,16 @@ Special transform to make the mesh seem fat or skinny.  May be used for zombie d
 void idMD5Mesh::TransformScaledVerts(idDrawVert *verts, const idJointMat *entJoints, float scale)
 {
 	idVec4 *scaledWeights = (idVec4 *) _alloca16(numWeights * sizeof(scaledWeights[0]));
-	SIMDProcessor->Mul(scaledWeights[0].ToFloatPtr(), scale, scaledWeights[0].ToFloatPtr(), numWeights * 4);
+	// Note: scaledWeights name is shadow of idMD5Mesh::scaledWeights, add this->. ETQW is used, but DOOM3/Quake4/Prey are not used
+#if 0 // only scale offset
+	idVec4 *sw = &this->scaledWeights[0], *tw = &scaledWeights[0];
+	for (int i = 0; i < numWeights; i++, sw++, tw++) {
+		tw->ToVec3() = sw->ToVec3() * scale;
+		tw->ToFloatPtr()[3] = sw->ToFloatPtr()[3];
+	}
+#else
+	SIMDProcessor->Mul(scaledWeights[0].ToFloatPtr(), scale, this->scaledWeights[0].ToFloatPtr(), numWeights * 4);
+#endif
 	SIMDProcessor->TransformVerts(verts, texCoords.Num(), entJoints, scaledWeights, weightIndex, numWeights);
 }
 
@@ -642,8 +651,7 @@ void idRenderModelMD5::LoadModel()
 
 	if (!parser.LoadFile(name)) {
 #ifdef _SPLASHDAMAGE //karin: and then try binary md5mesh
-		if (LoadModelBinary())
-			return;
+		if (!LoadMD5Binary())
 #endif
 		MakeDefaultModel();
 		return;
@@ -1204,16 +1212,21 @@ int idRenderModelMD5::FindSurfaceId( const char *surfaceName ) {
 
 	for (mesh = meshes.Ptr(), i = 0; i < meshes.Num(); i++, mesh++)
 	{
+#if 1
 		if(!idStr::Icmp(surfaceName, mesh->meshName))
 			return i;
+#else
+		if(!idStr::Icmp(surfaceName, mesh->meshName) && i < surfaces.Num())
+			return surfaces[i].id;
+#endif
 	}
 	return -1;
 }
 
 idBounds idRenderModelMD5::CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim ) {
 	idBounds bounds = meshes[meshIndex].CalcBounds(joints);
-	bounds.TranslateSelf(offset);
 	bounds.RotateSelf(axis);
+	bounds.TranslateSelf(offset);
 	return bounds;
 }
 
@@ -1222,10 +1235,8 @@ idBounds idRenderModelMD5::CalcMeshBounds( int meshIndex, const idJointMat *join
 idMD5Mesh::ReadBinary
 ====================
 */
-void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *joints)
+bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const idJointMat *joints)
 {
-	idToken		token;
-	idToken		name;
 	int			num;
 	int			count;
 	int			jointnum;
@@ -1276,8 +1287,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 	//
 	file->ReadInt(count);
 	if (count < 0) {
-		fileSystem->CloseFile(file);
-		common->Error("Invalid size: %d", count);
+		common->Warning("Invalid size: %d", count);
+		return false;
 	}
 
 	tris.SetNum(count);
@@ -1312,8 +1323,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 	count = numVertex;
 
 	if (count < 0) {
-		fileSystem->CloseFile(file);
-		common->Error("Invalid size: %s", token.c_str());
+		common->Warning("Invalid size: %d", count);
+		return false;
 	}
 
 	texCoords.SetNum(count);
@@ -1355,8 +1366,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 			file->ReadUnsignedChar(uch);
 			jointnum = jointTables[uch / 3];
 			if ((jointnum < 0) || (jointnum >= numJoints)) {
-				fileSystem->CloseFile(file);
-				common->Error("Joint Index out of range(%d): %d", numJoints, jointnum);
+				common->Warning("Joint Index out of range(%d): %d", numJoints, jointnum);
+				return false;
 			}
 
 			tempWeights[ i ].joint			= jointnum;
@@ -1390,8 +1401,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 				{
 					jointnum = jointTables[uch / 3];
 					if ((jointnum < 0) || (jointnum >= numJoints)) {
-						fileSystem->CloseFile(file);
-						common->Error("Joint Index out of range(%d): %d", numJoints, jointnum);
+						common->Warning("Joint Index out of range(%d): %d", numJoints, jointnum);
+						return false;
 					}
 
 					vertexWeight_t w;
@@ -1406,8 +1417,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 			}
 
 			if (!numWeightsForVertex[ i ]) {
-				fileSystem->CloseFile(file);
-				common->Error("Vertex without any joint weights.");
+				common->Warning("Vertex without any joint weights.");
+				return false;
 			}
 
 			numWeights += numWeightsForVertex[ i ];
@@ -1422,7 +1433,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 		common->Warning("Vertices reference out of range weights in model (%d of %d weights).", maxweight, count);
 	}
 
-	file->Seek(5, FS_SEEK_CUR);
+	file->Seek(1, FS_SEEK_CUR);
+	file->Seek(4, FS_SEEK_CUR);
 
 	// create pre-scaled weights and an index for the vertex/joint lookup
 	scaledWeights = (idVec4 *) Mem_Alloc16(numWeights * sizeof(scaledWeights[0]));
@@ -1487,6 +1499,8 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 #ifdef _DYNAMIC_ALLOC_STACK_OR_HEAP
 	_DROID_FREE(verts);
 #endif
+
+	return true;
 }
 
 /*
@@ -1494,7 +1508,7 @@ void idMD5Mesh::ParseMeshBinary(idFile *file, int numJoints, const idJointMat *j
 idRenderModelMD5::ParseJoint_Binary
 ====================
 */
-void idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJointQuat *defaultPose, idJointMat *poseMat3)
+bool idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJointQuat *defaultPose, idJointMat *poseMat3)
 {
 	idStr	token;
 	int		num;
@@ -1513,7 +1527,8 @@ void idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJoin
 		joint->parent = NULL;
 	} else {
 		if (num >= joints.Num() - 1) {
-			common->Error("Invalid parent for joint '%s'", joint->name.c_str());
+			common->Warning("Invalid parent for joint '%s'", joint->name.c_str());
+			return false;
 		}
 
 		joint->parent = &joints[ num ];
@@ -1533,9 +1548,11 @@ void idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJoin
 	file->Seek(4, FS_SEEK_CUR); // float32
 	//file->Skip(4 * 12, FS_SEEK_CUR);
 	file->ReadFloatArray(poseMat3->ToFloatPtr(), 12);
+
+	return true;
 }
 
-bool idRenderModelMD5::LoadModelBinary() {
+bool idRenderModelMD5::LoadMD5Binary(void) {
 	int			majorVersion;
 	int			minorVersion;
 	int			version;
@@ -1562,7 +1579,7 @@ bool idRenderModelMD5::LoadModelBinary() {
 
 	if (version < MD5_VERSION) {
 		fileSystem->CloseFile(file);
-		common->Error("Invalid version %d%d.  Should be version %d\n", majorVersion, minorVersion, MD5_VERSION);
+		common->Warning("Invalid version %d%d.  Should be version %d\n", majorVersion, minorVersion, MD5_VERSION);
 		return false;
 	}
 
@@ -1587,7 +1604,11 @@ bool idRenderModelMD5::LoadModelBinary() {
 	joint = joints.Ptr();
 
 	for (i = 0; i < joints.Num(); i++, joint++, pose++) {
-		ParseJoint_Binary(file, joint, pose, &poseMat3[i]);
+		if(!ParseJoint_Binary(file, joint, pose, &poseMat3[i]))
+		{
+			fileSystem->CloseFile(file);
+			return false;
+		}
 
 		if (joint->parent) {
 			parentNum = joint->parent - joints.Ptr();
@@ -1609,7 +1630,11 @@ bool idRenderModelMD5::LoadModelBinary() {
 	meshes.SetNum(num);
 
 	for (i = 0; i < meshes.Num(); i++) {
-		meshes[ i ].ParseMeshBinary(file, defaultPose.Num(), poseMat3);
+		if(!meshes[ i ].ReadBinary(file, defaultPose.Num(), poseMat3))
+		{
+			fileSystem->CloseFile(file);
+			return false;
+		}
 	}
 
 	//

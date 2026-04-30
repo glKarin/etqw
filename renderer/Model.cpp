@@ -2767,8 +2767,8 @@ idBounds idRenderModelStatic::CalcMeshBounds( int meshIndex, const idJointMat *j
 	bounds.Clear();
 	const srfTriangles_t *tri = surfaces[meshIndex].geometry;
 	SIMDProcessor->MinMax(bounds[0], bounds[1], tri->verts, tri->numVerts);
-	bounds.TranslateSelf(offset);
 	bounds.RotateSelf(axis);
+	bounds.TranslateSelf(offset);
 	return bounds;
 }
 
