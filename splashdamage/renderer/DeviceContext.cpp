@@ -536,9 +536,7 @@ void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, f
 	DrawBox(x, y, w, h, size, color);
 }
 
-void sdDeviceContextLocal::DrawCircleMaterial( const float _x, const float _y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle ) {
-	DC_PLACEHOLDER("DC:DrawCircleMaterial|%s\n", material?material->GetName():NULL);
-
+void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle ) {
 	if(!material)
 		return;
 
@@ -546,8 +544,6 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float _x, const float _y, c
 		return;
 	}
 
-	float x = _x - radius.x;
-	float y = _y - radius.y;
 	float w = radius.x * 2.0f;
 	float h = radius.y * 2.0f;
 
@@ -594,21 +590,111 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float _x, const float _y, c
 		v1 = v1 * scaleY;
 	}
 
-	u0 += offsetX;
-	u1 += offsetX;
-	v0 += offsetY;
-	v1 += offsetY;
+	float uvRadiusX = (u1 - u0) * 0.5f;
+	float uvRadiusY = (v1 - v0) * 0.5f;
 
-	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
-		return;
+	idList<idVec2> outerPoints;
+	idList<idVec2> uvs;
+	int start, i;
+
+	CirclePoints(x, y, radius[0], radius[1], numSides, outerPoints);
+	CirclePoints(offsetX + u0 + uvRadiusX, offsetY + v0 + uvRadiusY, uvRadiusX, uvRadiusY, numSides, uvs);
+
+	idList<idDrawVert> verts;
+	verts.SetNum(numSides + 1);
+	idDrawVert *vert = verts.Ptr();
+	idList<glIndex_t> indexes;
+	indexes.SetNum(numSides * 3);
+	glIndex_t *idx = indexes.Ptr();
+
+	vert->xyz[0] = x;
+	vert->xyz[1] = y;
+	vert->xyz[2] = 0;
+	vert->st[0] = offsetX + u0 + uvRadiusX;
+	vert->st[1] = offsetY + v0 + uvRadiusY;
+	vert->normal[0] = 0;
+	vert->normal[1] = 0;
+	vert->normal[2] = 1;
+	vert->tangents[0][0] = 1;
+	vert->tangents[0][1] = 0;
+	vert->tangents[0][2] = 0;
+	vert->tangents[1][0] = 0;
+	vert->tangents[1][1] = 1;
+	vert->tangents[1][2] = 0;
+
+	vert++;
+
+	for(i = 0; i < numSides; i++, vert++)
+	{
+		idVec2 &outer = outerPoints[i];
+		const idVec2 &uv = uvs[i];
+		AdjustCoords(&outer[0], &outer[1], NULL, NULL);
+
+		vert->xyz[0] = outer[0];
+		vert->xyz[1] = outer[1];
+		vert->xyz[2] = 0;
+		vert->st[0] = uv[0];
+		vert->st[1] = uv[1];
+		vert->normal[0] = 0;
+		vert->normal[1] = 0;
+		vert->normal[2] = 1;
+		vert->tangents[0][0] = 1;
+		vert->tangents[0][1] = 0;
+		vert->tangents[0][2] = 0;
+		vert->tangents[1][0] = 0;
+		vert->tangents[1][1] = 1;
+		vert->tangents[1][2] = 0;
+
+		if (i == 0)
+			continue;
+
+		start = (i - 1);
+		idx[0] = 0;
+		idx[1] = start;
+		idx[2] = i;
+		idx += 3;
 	}
 
-	AdjustCoords(&x, &y, &w, &h);
+	// tail -> head
+	start = (i - 1);
+	idx[0] = 0;
+	idx[1] = start;
+	idx[2] = 1;
 
-	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle, &color);
+
+	//Generate a translation so we can translate to the center of the image rotate and draw
+	idVec3 origTrans;
+	origTrans.x = x;
+	origTrans.y = y;
+	origTrans.z = 0;
+
+	//Rotate the verts about the z axis before drawing them
+	idMat4 rotz;
+	rotz.Identity();
+	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
+	float sinAng = idMath::Sin(angle);
+	float cosAng = idMath::Cos(angle);
+	rotz[0][0] = cosAng;
+	rotz[0][1] = sinAng;
+	rotz[1][0] = -sinAng;
+	rotz[1][1] = cosAng;
+
+	vert = &verts[1];
+	for (i = 1; i < verts.Num(); i++, vert++) {
+		//Translate to origin
+		vert->xyz -= origTrans;
+
+		//Rotate
+		vert->xyz = rotz * vert->xyz;
+
+		//Translate back
+		vert->xyz += origTrans;
+	}
+
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), material, false, &color);
 }
 
-void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float _y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle, float u0, float v0, float u1, float v1 ) {
+void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle, float u0, float v0, float u1, float v1 ) {
 	DC_PLACEHOLDER("DC:DrawCircleMaterialMasked|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -618,8 +704,6 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float
 		return;
 	}
 
-	float x = _x - radius.x;
-	float y = _y - radius.y;
 	float w = radius.x * 2.0f;
 	float h = radius.y * 2.0f;
 
@@ -661,34 +745,203 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float _x, const float
 		v1 = v1 * scaleY;
 	}
 
-	u0 += offsetX;
-	u1 += offsetX;
-	v0 += offsetY;
-	v1 += offsetY;
+	float uvRadiusX = (u1 - u0) * 0.5f;
+	float uvRadiusY = (v1 - v0) * 0.5f;
 
-	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
-		return;
+	idList<idVec2> outerPoints;
+	idList<idVec2> uvs;
+	int start, i;
+
+	CirclePoints(x, y, radius[0], radius[1], numSides, outerPoints);
+	CirclePoints(offsetX + u0 + uvRadiusX, offsetY + v0 + uvRadiusY, uvRadiusX, uvRadiusY, numSides, uvs);
+
+	idList<idDrawVert> verts;
+	verts.SetNum(numSides + 1);
+	idDrawVert *vert = verts.Ptr();
+	idList<glIndex_t> indexes;
+	indexes.SetNum(numSides * 3);
+	glIndex_t *idx = indexes.Ptr();
+
+	vert->xyz[0] = x;
+	vert->xyz[1] = y;
+	vert->xyz[2] = 0;
+	vert->st[0] = offsetX + u0 + uvRadiusX;
+	vert->st[1] = offsetY + v0 + uvRadiusY;
+	vert->normal[0] = 0;
+	vert->normal[1] = 0;
+	vert->normal[2] = 1;
+	vert->tangents[0][0] = 1;
+	vert->tangents[0][1] = 0;
+	vert->tangents[0][2] = 0;
+	vert->tangents[1][0] = 0;
+	vert->tangents[1][1] = 1;
+	vert->tangents[1][2] = 0;
+
+	vert++;
+
+	for(i = 0; i < numSides; i++, vert++)
+	{
+		idVec2 &outer = outerPoints[i];
+		const idVec2 &uv = uvs[i];
+		AdjustCoords(&outer[0], &outer[1], NULL, NULL);
+
+		vert->xyz[0] = outer[0];
+		vert->xyz[1] = outer[1];
+		vert->xyz[2] = 0;
+		vert->st[0] = uv[0];
+		vert->st[1] = uv[1];
+		vert->normal[0] = 0;
+		vert->normal[1] = 0;
+		vert->normal[2] = 1;
+		vert->tangents[0][0] = 1;
+		vert->tangents[0][1] = 0;
+		vert->tangents[0][2] = 0;
+		vert->tangents[1][0] = 0;
+		vert->tangents[1][1] = 1;
+		vert->tangents[1][2] = 0;
+
+		if (i == 0)
+			continue;
+
+		start = (i - 1);
+		idx[0] = 0;
+		idx[1] = start;
+		idx[2] = i;
+		idx += 3;
 	}
 
-	AdjustCoords(&x, &y, &w, &h);
+	// tail -> head
+	start = (i - 1);
+	idx[0] = 0;
+	idx[1] = start;
+	idx[2] = 1;
 
-	DrawStretchPicRotated(x, y, w, h, u0, v0, u1, v1, material, angle, &color);
+
+	//Generate a translation so we can translate to the center of the image rotate and draw
+	idVec3 origTrans;
+	origTrans.x = x;
+	origTrans.y = y;
+	origTrans.z = 0;
+
+	//Rotate the verts about the z axis before drawing them
+	idMat4 rotz;
+	rotz.Identity();
+	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
+	float sinAng = idMath::Sin(angle);
+	float cosAng = idMath::Cos(angle);
+	rotz[0][0] = cosAng;
+	rotz[0][1] = sinAng;
+	rotz[1][0] = -sinAng;
+	rotz[1][1] = cosAng;
+
+	vert = &verts[1];
+	for (i = 1; i < verts.Num(); i++, vert++) {
+		//Translate to origin
+		vert->xyz -= origTrans;
+
+		//Rotate
+		vert->xyz = rotz * vert->xyz;
+
+		//Translate back
+		vert->xyz += origTrans;
+	}
+
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), material, false, &color);
 }
 
 void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec2& radius, const float width, const int numSides, const idVec4& color ) {
-	DC_PLACEHOLDER("DC:DrawCircle\n");
+	idList<idVec2> outerPoints;
+	idList<idVec2> innerPoints;
+	int start, i;
+
+	CirclePoints(x, y, radius[0], radius[1], numSides, outerPoints);
+	CirclePoints(x, y, radius[0] - width, radius[1] - width, numSides, innerPoints);
+
+	idList<idDrawVert> verts;
+	verts.SetNum(numSides * 2);
+	idDrawVert *vert = verts.Ptr();
+	idList<glIndex_t> indexes;
+	indexes.SetNum(numSides * 6);
+	glIndex_t *idx = indexes.Ptr();
+
+	for(i = 0; i < numSides; i++, vert += 2)
+	{
+		idVec2 &outer = outerPoints[i];
+		idVec2 &inner = innerPoints[i];
+		AdjustCoords(&outer[0], &outer[1], NULL, NULL);
+		AdjustCoords(&inner[0], &inner[1], NULL, NULL);
+
+		vert[0].xyz[0] = inner[0];
+		vert[0].xyz[1] = inner[1];
+		vert[0].xyz[2] = 0;
+		vert[0].st[0] = 0;
+		vert[0].st[1] = 0;
+		vert[0].normal[0] = 0;
+		vert[0].normal[1] = 0;
+		vert[0].normal[2] = 1;
+		vert[0].tangents[0][0] = 1;
+		vert[0].tangents[0][1] = 0;
+		vert[0].tangents[0][2] = 0;
+		vert[0].tangents[1][0] = 0;
+		vert[0].tangents[1][1] = 1;
+		vert[0].tangents[1][2] = 0;
+		vert[1].xyz[0] = outer[0];
+		vert[1].xyz[1] = outer[1];
+		vert[1].xyz[2] = 0;
+		vert[1].st[0] = 0;
+		vert[1].st[1] = 0;
+		vert[1].normal[0] = 0;
+		vert[1].normal[1] = 0;
+		vert[1].normal[2] = 1;
+		vert[1].tangents[0][0] = 1;
+		vert[1].tangents[0][1] = 0;
+		vert[1].tangents[0][2] = 0;
+		vert[1].tangents[1][0] = 0;
+		vert[1].tangents[1][1] = 1;
+		vert[1].tangents[1][2] = 0;
+
+		if (i == 0)
+			continue;
+
+		start = (i - 1) * 2;
+		idx[0] = start + 0;
+		idx[1] = start + 3;
+		idx[2] = start + 2;
+		idx[3] = start + 0;
+		idx[4] = start + 1;
+		idx[5] = start + 3;
+		idx += 6;
+	}
+
+	// tail -> head
+	start = (i - 1) * 2;
+	idx[0] = start + 0;
+	idx[1] = 1;
+	idx[2] = 0;
+	idx[3] = start + 0;
+	idx[4] = start + 1;
+	idx[5] = 1;
+
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), whiteImage, false, &color);
 }
 
 void sdDeviceContextLocal::DrawLineMaterial( const idVec2& start, const idVec2& end, const float width, const idMaterial* material, const idVec4& color ) {
 	DC_UNUSED_ON_GAME
-	DC_PLACEHOLDER("DC:DrawLineMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
 		return;
+
+	idDrawVert verts[4];
+	glIndex_t indexes[6];
+	LineDrawVerts(start, end, width, verts, indexes);
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], 4, 6, material, start[0] != end[0] && start[1] != end[1], &color);
 }
 
 void sdDeviceContextLocal::DrawLine( const idVec2& start, const idVec2& end, const float width, const idVec4 &color ) {
-	DC_PLACEHOLDER("DC:DrawLine\n");
+	idDrawVert verts[4];
+	glIndex_t indexes[6];
+	LineDrawVerts(start, end, width, verts, indexes);
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], 4, 6, whiteImage, start[0] != end[0] && start[1] != end[1], &color);
 }
 
 void sdDeviceContextLocal::DrawFilledArc( const float x, const float y, const float radius, int numSides, float percent, const idVec4 &color, float startAngle, const idMaterial *material ) {
@@ -749,6 +1002,9 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 		textAlign = ALIGN_LEFT;
 
 	fontManagerLocal.DrawText(text, rect, textAlign, wrap, tr.gameGuiModel->CurrentColor());
+
+	//const idMaterial* material = declManager->FindMaterial("commandmaps/area22");
+	//DrawCircleMaterial( rect.GetCenter().x, rect.GetCenter().y, idVec2(rect.GetWidth()/2,rect.GetWidth()/2), 90, idVec4(0,0,1,1), material, idVec4(1,1,1,1), 135 );
 }
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
@@ -1068,6 +1324,117 @@ void sdDeviceContextLocal::UnsetTempColor()
 		usingTempColor = false;
 		tr.gameGuiModel->SetColor(tempColor[0], tempColor[1], tempColor[2], tempColor[3]);
 	}
+}
+
+void sdDeviceContextLocal::LineDrawVerts(const idVec2 &start, const idVec2 &end, float width, idDrawVert verts[4], glIndex_t indexes[6])
+{
+	idVec3 a(start[0], start[1], 0.0f);
+	idVec3 b(end[0], end[1], 0.0f);
+	idVec3 up(0.0f, 0.0f, 1.0f);
+	idVec3 atob = b - a;
+	atob.Normalize();
+
+	float half = width * 0.5f;
+	idVec3 right3 = atob.Cross(up);
+	right3.Normalize();
+	const idVec2 &right = right3.ToVec2();
+
+	idVec2 startLeft = start - right * half;
+	idVec2 startRight = start + right * half;
+	idVec2 endLeft = end - right * half;
+	idVec2 endRight = end + right * half;
+
+	AdjustCoords(&startLeft[0], &startLeft[1], NULL, NULL);
+	AdjustCoords(&startRight[0], &startRight[1], NULL, NULL);
+	AdjustCoords(&endLeft[0], &endLeft[1], NULL, NULL);
+	AdjustCoords(&endRight[0], &endRight[1], NULL, NULL);
+
+	float s1 = 0.0f;
+	float t1 = 0.0f;
+	float s2 = 1.0f;
+	float t2 = 1.0f;
+
+	indexes[0] = 3;
+	indexes[1] = 0;
+	indexes[2] = 2;
+	indexes[3] = 2;
+	indexes[4] = 0;
+	indexes[5] = 1;
+	verts[0].xyz[0] = startRight[0];
+	verts[0].xyz[1] = startRight[1];
+	verts[0].xyz[2] = 0;
+	verts[0].st[0] = s1;
+	verts[0].st[1] = t1;
+	verts[0].normal[0] = 0;
+	verts[0].normal[1] = 0;
+	verts[0].normal[2] = 1;
+	verts[0].tangents[0][0] = 1;
+	verts[0].tangents[0][1] = 0;
+	verts[0].tangents[0][2] = 0;
+	verts[0].tangents[1][0] = 0;
+	verts[0].tangents[1][1] = 1;
+	verts[0].tangents[1][2] = 0;
+	verts[1].xyz[0] = endRight[0];
+	verts[1].xyz[1] = endRight[1];
+	verts[1].xyz[2] = 0;
+	verts[1].st[0] = s2;
+	verts[1].st[1] = t1;
+	verts[1].normal[0] = 0;
+	verts[1].normal[1] = 0;
+	verts[1].normal[2] = 1;
+	verts[1].tangents[0][0] = 1;
+	verts[1].tangents[0][1] = 0;
+	verts[1].tangents[0][2] = 0;
+	verts[1].tangents[1][0] = 0;
+	verts[1].tangents[1][1] = 1;
+	verts[1].tangents[1][2] = 0;
+	verts[2].xyz[0] = endLeft[0];
+	verts[2].xyz[1] = endLeft[1];
+	verts[2].xyz[2] = 0;
+	verts[2].st[0] = s2;
+	verts[2].st[1] = t2;
+	verts[2].normal[0] = 0;
+	verts[2].normal[1] = 0;
+	verts[2].normal[2] = 1;
+	verts[2].tangents[0][0] = 1;
+	verts[2].tangents[0][1] = 0;
+	verts[2].tangents[0][2] = 0;
+	verts[2].tangents[1][0] = 0;
+	verts[2].tangents[1][1] = 1;
+	verts[2].tangents[1][2] = 0;
+	verts[3].xyz[0] = startLeft[0];
+	verts[3].xyz[1] = startLeft[1];
+	verts[3].xyz[2] = 0;
+	verts[3].st[0] = s1;
+	verts[3].st[1] = t2;
+	verts[3].normal[0] = 0;
+	verts[3].normal[1] = 0;
+	verts[3].normal[2] = 1;
+	verts[3].tangents[0][0] = 1;
+	verts[3].tangents[0][1] = 0;
+	verts[3].tangents[0][2] = 0;
+	verts[3].tangents[1][0] = 0;
+	verts[3].tangents[1][1] = 1;
+	verts[3].tangents[1][2] = 0;
+}
+
+void sdDeviceContextLocal::CirclePoints(float x, float y, float xRadius, float yRadius, int numSides, idList<idVec2> &verts)
+{
+	float r;
+	int i;
+
+	verts.SetNum(numSides + 1);
+	
+	float step = 360.0f / (float)numSides;
+
+	for(i = 0; i < numSides; i++)
+	{
+		r = DEG2RAD(step * (float)i);
+		verts[i][0] = x + xRadius * idMath::Cos(r);
+		verts[i][1] = y + yRadius * idMath::Sin(r);
+	}
+
+	verts[i] = verts[0];
 }
 
 sdDeviceContextLocal deviceContextLocal;

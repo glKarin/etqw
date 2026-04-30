@@ -84,6 +84,8 @@ private:
 	void 					DrawStretchPicRotated(float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *shader, float angle, const idVec4 *color = NULL);
 	void					SetTempColor(const idVec4 &c);
 	void					UnsetTempColor();
+	void					LineDrawVerts(const idVec2 &start, const idVec2 &end, float width, idDrawVert verts[4], glIndex_t indexes[6]);
+	void					CirclePoints(float x, float y, float xRadius, float yRadius, int numSides, idList<idVec2> &verts);
 
 private:
 	float					xScale;

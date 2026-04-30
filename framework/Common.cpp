@@ -3881,7 +3881,7 @@ void idCommonLocal::ShutdownGame(bool reloading)
 	// unload the game dll
 	UnloadGameDLL();
 
-#ifdef _SPLASHDAMAGE) //karin: move to after game shutdown, because call declManager->UnregisterXXX on game shutdown
+#ifdef _SPLASHDAMAGE //karin: move to after game shutdown, because call declManager->UnregisterXXX on game shutdown
 	// shutdown the decl manager
 	declManager->Shutdown();
 #endif
