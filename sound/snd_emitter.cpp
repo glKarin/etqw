@@ -1402,7 +1402,22 @@ void idSoundEmitterLocal::ModifySound(idSoundShader* shader, const s_channelType
 
 #ifdef _SPLASHDAMAGE
 const soundShaderParms_t& idSoundEmitterLocal::GetChannelParms( const soundChannel_t channel ) {
-	return channels[channel].parms;
+	for (int i = 0; i < SOUND_MAX_CHANNELS; i++) {
+		idSoundChannel	*chan = &channels[i];
+
+		if (chan->triggerChannel == channel) {
+			return chan->parms;
+		}
+	}
+	// else using SCHANNEL_ANY
+	for (int i = 0; i < SOUND_MAX_CHANNELS; i++) {
+		idSoundChannel	*chan = &channels[i];
+
+		if (chan->triggerChannel == SCHANNEL_ANY) {
+			return chan->parms;
+		}
+	}
+	return channels[0].parms; // TODO: if missing
 }
 
 void idSoundEmitterLocal::ModifySound( const soundChannel_t channel, const soundShaderParms_t& parms ) {

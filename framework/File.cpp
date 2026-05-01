@@ -1531,7 +1531,7 @@ int idFile::Read1DFloatArray( float* dst ) {
 }
 
 int idFile::ReadFloatArray( float* src, const int num ) {
-	int result = Read(&src, num * sizeof(float));
+	int result = Read(src, num * sizeof(float));
 	LittleRevBytes(src, sizeof(float), num);
 	return result;
 }
