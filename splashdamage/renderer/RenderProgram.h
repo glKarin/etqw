@@ -64,6 +64,7 @@ private:
     idList<const sdDeclRenderBinding *>				bindings;
     idList<idStr>									bindingNames;
     idList<GLint>									locations;
+	idList<int>										nameHash;
 
     static void LoadSourceCallback(struct GLSLShaderProp *prop);
     static void BindingLocationCallback(struct GLSLShaderProp *prop);

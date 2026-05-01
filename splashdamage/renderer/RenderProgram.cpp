@@ -133,6 +133,7 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 			}
 			continue;
 		}
+
 		if(binding->GetBindingType() == sdDeclRenderBinding::BT_VECTOR)
 		{
 			// setup vectors uniform
@@ -446,6 +447,7 @@ void sdRenderProgram::GetLocations(shaderHandle_t handle)
 
 	bindings.Clear();
 	bindingNames.Clear();
+	nameHash.Clear();
 	locations.Clear();
 	GetShaderLocations(shader->program, declRenderProgram->GetVertexShader());
 	GetShaderLocations(shader->program, declRenderProgram->GetFragmentShader());
@@ -462,6 +464,7 @@ void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramS
     const sdDeclRenderBinding *binding;
     GLint location;
 	const char *name;
+	int index;
 
     for (int i = 0; i < shader->NumBindings(); i++) {
 		name = shader->GetPlaceholder(i);
@@ -472,16 +475,18 @@ void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramS
         if(location < 0)
             continue;
 		bindings.Append(binding);
-		bindingNames.Append(name);
+		index = bindingNames.Append(name);
 		locations.Append(location);
+		nameHash.Append(idStr::Hash(name));
 		// add texture size to shader for OpenGLES2.0 texRECT
 		if(binding && binding->GetBindingType() == sdDeclRenderBinding::BT_TEXTURE) {
 			idStr texName = TEXEL_SIZE_NAME(name);
 			location = GetLocation(glHandle, NULL, texName.c_str());
 			if(location >= 0) {
 				bindings.Append(NULL);
-				bindingNames.Append(texName);
+				index = bindingNames.Append(texName);
 				locations.Append(location);
+				nameHash.Append(idStr::Hash(texName));
 			}
 		}
     }
@@ -554,7 +559,12 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 GLint sdRenderProgram::GetUniformLocation(const char *name) const {
 	if(name[0] == '$')
 		name++;
+#if 1
+	int key = idStr::Hash(name);
+	int index = nameHash.FindIndex(key);
+#else
 	int index = bindingNames.FindIndex(name);
+#endif
 	if(index < 0)
 		return -1;
 	return locations[index];

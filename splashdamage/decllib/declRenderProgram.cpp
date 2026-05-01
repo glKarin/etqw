@@ -277,15 +277,28 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 				HandleInclude(buf, program, str.c_str());
 				range_start = src.GetFileOffset();
 			} else if (!token.Icmp("if") || !token.Icmp("ifdef") || !token.Icmp("ifndef") || !token.Icmp("elif") || !token.Icmp("define")) {
+				if(range_start < range_end)
+					buf.Append(text + range_start, range_end - range_start);
+				buf.Append("#");
+				buf.Append(token.c_str());
 				while(src.ReadTokenOnLine(&token))
 				{
+					buf.Append(" ");
 					// skip && ! || defined number
 					if (token.type == TT_NAME && token.Icmp("defined")) {
 						defines.AddUnique(token);
 					}
+					buf.Append(token.c_str());
 				}
-			} else if (!token.Icmp("else")) {
-			} else if (!token.Icmp("endif")) {
+				buf.Append("\n");
+				range_start = src.GetFileOffset();
+			} else if (!token.Icmp("else") || !token.Icmp("endif")) {
+				if(range_start < range_end)
+					buf.Append(text + range_start, range_end - range_start);
+				buf.Append("#");
+				buf.Append(token.c_str());
+				buf.Append("\n");
+				range_start = src.GetFileOffset();
 			} else {
 				placeholders.AddUnique(token);
 			}
