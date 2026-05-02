@@ -497,7 +497,8 @@ class idFileSystemLocal : public idFileSystem
 
 		int						d3xp;	// 0: didn't check, -1: not installed, 1: installed
 #ifdef _SPLASHDAMAGE
-		idHashMap<sdAddonMetaDataList>		addonMetaDataList;
+		idStrList				addonMetaDataNames;
+		idList<sdAddonMetaDataList *> addonMetaDataList; //karin: sdAddonMetaDataList has heap memory member and destructor, but no operator=, so don't copy and make list resize, so we using new pointer, and delete it on Shutdown
 #endif
 
 	private:
@@ -3485,6 +3486,10 @@ void idFileSystemLocal::Shutdown(bool reloading)
 	cmdSystem->RemoveCommand("touchFile");
 
 	mapDict.Clear();
+#ifdef _SPLASHDAMAGE
+	addonMetaDataNames.Clear();
+	addonMetaDataList.DeleteContents(true);
+#endif
 }
 
 /*
@@ -5317,6 +5322,8 @@ bool idFileSystemLocal::ParseMetaConf(idLexer &src, metaDataContext_t &md)
 		return false;
 	}
 
+	token.StripPath();
+	token.StripFileExtension();
 	dict.Set("metadata_name", token.c_str());
 	md.addon = false;
 	idDict *meta = new idDict;
@@ -5363,20 +5370,35 @@ bool idFileSystemLocal::ParseMetaConfFile(const char *text, int length, bool isA
 
 sdAddonMetaDataList* idFileSystemLocal::ListAddonMetaData( const char* metaDataTag ) {
 	sdAddonMetaDataList *value;
-	if (addonMetaDataList.Get(metaDataTag, &value))
-		return value;
-	addonMetaDataList.Set(metaDataTag, sdAddonMetaDataList());
-	addonMetaDataList.Get(metaDataTag, &value);
+	int index;
+
+	index = addonMetaDataNames.FindIndex(metaDataTag);
+	if(index != -1)
+	{
+		return addonMetaDataList[index];
+	}
+	addonMetaDataNames.Append(metaDataTag);
+	value = new sdAddonMetaDataList;
+	addonMetaDataList.Append(value);
 	InitMetaConf(metaDataTag);
 	return value;
 }
 
 void idFileSystemLocal::FreeAddonMetaDataList( sdAddonMetaDataList* list ) {
-	for (int i = 0; i < addonMetaDataList.Num(); i++) {
-		if (addonMetaDataList.GetIndex(i) == list) {
-			addonMetaDataList.Remove(addonMetaDataList.GetKey(i));
-		}
+#if 0 //karin: TODO don't clear list, it is empty when in loading screen gui
+	int index;
+
+	index = addonMetaDataList.FindIndex(list);
+	if(index != -1)
+	{
+		//karin: only clear, don't delete it
+		list->~sdAddonMetaDataList();
+		list->meta.Clear();
+		//addonMetaDataList.RemoveIndex(index);
+		//addonMetaDataNames.RemoveIndex(index);
+		//delete list;
 	}
+#endif
 }
 
 #ifdef __ANDROID__
