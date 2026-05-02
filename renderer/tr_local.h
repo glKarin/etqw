@@ -663,6 +663,8 @@ typedef struct materialStageBuiltinUniform_s {
 	idVec4		postTint;
 	idVec4		postSaturationContrast;
 	idVec4		postGlareParameters;		// source brightness, blur brightness, brightness threshold, threshold dependency
+	idVec3								sunDir;
+	idVec3								sunColor;
 } materialStageBuiltinUniform_t;
 
 typedef struct {

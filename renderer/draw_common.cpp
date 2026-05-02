@@ -669,14 +669,18 @@ void R_AddCopyParmsCmd(const viewDef_t *view)
 		const sdDeclAtmosphere::postProcessParms_t &ppParms = atmosphere->GetPostProcessParms();
 
 		builtinUniforms.postTint.Set(ppParms.tint[0], ppParms.tint[1], ppParms.tint[2], 1.0f);
-		builtinUniforms.postSaturationContrast.Set(ppParms.saturation, ppParms.contrast, 1.0, 1.0f);
+		builtinUniforms.postSaturationContrast.Set(ppParms.saturation, ppParms.contrast, 1.0f, 1.0f);
 		builtinUniforms.postGlareParameters.Set(ppParms.glareParms[0], ppParms.glareParms[1], ppParms.glareParms[2], ppParms.glareParms[3]);
+		builtinUniforms.sunDir = atmosphere->GetSunDirection();
+		builtinUniforms.sunColor = atmosphere->GetSunColor();
 	}
 	else
 	{
-		builtinUniforms.postTint.Set(1.0, 1.0, 1.0, 1.0f);
-		builtinUniforms.postSaturationContrast.Set(1.0, 1.0, 1.0, 1.0f);
-		builtinUniforms.postGlareParameters.Set(1.0, 0.0, 1.0, 1.0f);
+		builtinUniforms.postTint.Set(1.0f, 1.0f, 1.0f, 1.0f);
+		builtinUniforms.postSaturationContrast.Set(1.0f, 1.0f, 1.0f, 1.0f);
+		builtinUniforms.postGlareParameters.Set(1.0f, 0.0f, 1.0f, 1.0f);
+		builtinUniforms.sunDir.Set(0.0f, 0.0f, -1.0f);
+		builtinUniforms.sunColor.Set(1.0f, 1.0f, 1.0f);
 	}
 
 	copyParmsCommand_t	*cmd;
@@ -699,11 +703,18 @@ void RB_CopyParms(const void *data)
 
 static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf, const shaderStage_t *pStage)
 {
+	float parm[4];
 	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize.ToFloatPtr());
+
 	program->BindVector("postTint", backEnd.parms.postTint.ToFloatPtr());
 	program->BindVector("postSaturationContrast", backEnd.parms.postSaturationContrast.ToFloatPtr());
 	program->BindVector("postGlareParameters", backEnd.parms.postGlareParameters.ToFloatPtr());
-	float parm[4];
+	program->BindVector("sunDirectionWorld", backEnd.parms.sunDir[0], backEnd.parms.sunDir[1], backEnd.parms.sunDir[2]);
+	program->BindVector("sunColor", backEnd.parms.sunColor[0], backEnd.parms.sunColor[1], backEnd.parms.sunColor[2]);
+    idVec3 localSunDir;
+    R_GlobalVectorToLocal(surf->space->modelMatrix, backEnd.parms.sunDir, localSunDir);
+	program->BindVector("sunDir", localSunDir[0], localSunDir[1], localSunDir[2]);
+
 	parm[0] = backEnd.viewDef->renderView.vieworg[0];
 	parm[1] = backEnd.viewDef->renderView.vieworg[1];
 	parm[2] = backEnd.viewDef->renderView.vieworg[2];
@@ -957,6 +968,8 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			if(!renderProgram->Bind(pStage, shader, regs))
 				continue;
 
+			int oldDrawBits = renderProgram->SetupState();
+
 			if(!materialBuiltinVariablesLoaded) {
 				RB_SetBuiltinProgramEnvironment();
 				materialBuiltinVariablesLoaded = true;
@@ -1001,6 +1014,9 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Bitangent));
 
 			renderProgram->Unbind(pStage);
+
+			if(oldDrawBits)
+				GL_State(oldDrawBits);
 
 			continue;
 		}

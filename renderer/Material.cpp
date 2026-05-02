@@ -1148,14 +1148,6 @@ void idMaterial::ClearStage(shaderStage_t *ss)
 	ss->textures = NULL;
 	ss->textureMatrices = NULL;
 	ss->renderProgram = NULL;
-	ss->water.tint[0] = ss->water.tint[1] = ss->water.tint[2] = GetExpressionConstant(1.0f);
-	ss->water.offset[0] = ss->water.offset[1] = ss->water.offset[2] = ss->water.offset[3] = GetExpressionConstant(0.0f);
-	ss->water.distortion[0] = ss->water.distortion[1] = ss->water.distortion[2] = GetExpressionConstant(1.0f);
-	ss->water.distortion[3] = GetExpressionConstant(0.0f);
-	ss->water.fresnel = GetExpressionConstant(1.0f);
-	ss->water.glare = GetExpressionConstant(1.0f);
-	ss->water.desat = GetExpressionConstant(0.0f);
-	ss->water.lerp = GetExpressionConstant(0.0f);
 #endif
 }
 
@@ -2152,51 +2144,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			src.ParseFloat();
 			continue;
 		}
-		// water parameters
-		if (!token.Icmp("water_tint")) { // water_tint	  1.2, 1.2, 1
-			ss->water.tint[0] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.tint[1] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.tint[2] = ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("water_distortion")) { // water_distortion  1, 0.1, 1, 0	
-			ss->water.distortion[0] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.distortion[1] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.distortion[2] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.distortion[3] = ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("water_fresnel")) { // water_fresnel	  8
-			ss->water.fresnel = ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("water_glare")) { // water_glare	  0.6
-			ss->water.glare = ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("water_offset")) { // water_offset 0, 0, 0, 0 
-			ss->water.offset[0] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.offset[1] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.offset[2] = ParseExpression(src);
-			src.ExpectTokenString(",");
-			ss->water.offset[3] = ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("water_desat")) { // water_desat 0
-			ss->water.desat = ParseExpression(src);
-			continue;
-		}
-		if (!token.Icmp("water_lerp")) { // water_lerp ( time - ( ( ( ( ( time * 5 ) / 10 ) % 100000000 ) * ( ( 1 / 5 ) * 10 ) ) + ( 0 * ( 1 / 5 ) ) ) ) * 5 
-			ss->water.lerp = ParseExpression(src);
-			continue;
-		}
 
 		if (!token.Icmp("subsurfaceColor")) { // subsurfaceColor 0.02352941, 0.2, 0.282353
 			src.ParseFloat();
@@ -2286,6 +2233,14 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			|| !token.Icmp("detailMult")
 			|| !token.Icmp("specularPower")
 			|| !token.Icmp("skies_cloudColor")
+			|| !token.Icmp("water_tint")
+			|| !token.Icmp("water_distortion")
+			|| !token.Icmp("water_fresnel")
+			|| !token.Icmp("water_fresnel")
+			|| !token.Icmp("water_glare")
+			|| !token.Icmp("water_offset")
+			|| !token.Icmp("water_desat")
+			|| !token.Icmp("water_lerp")
 			)
 		{
 			src.UnreadToken(&token);
@@ -2323,6 +2278,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #ifdef _SPLASHDAMAGE //karin: only program and only find from external resource, don't find on program built-in
 		if (!token.Icmp("program")) {
 			if (src.ReadTokenOnLine(&token)) {
+				token.StripFileExtension();
 				newStage.vertexProgram = -1;
 				newStage.fragmentProgram = -1;
 				spd.declRenderProgram = static_cast<const sdDeclRenderProgram *>(declManager->FindType(DECL_RENDERPROGRAM, token.c_str(), false));
@@ -2634,7 +2590,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			&& !ss->newShaderStage
 #endif
 #ifdef _SPLASHDAMAGE
-			&& (!spd.declRenderProgram)
+			&& (!spd.declRenderProgram && spd.numTextures == 0)
 #endif
 			) {
 		common->Warning("material '%s' had stage with no image", GetName());

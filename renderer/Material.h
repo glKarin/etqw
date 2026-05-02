@@ -404,8 +404,6 @@ typedef struct {
 	stageTexture_t*				textures;
 	int							numTextureMatrices;
 	stageTextureMatrix_t*		textureMatrices;
-
-	waterStage_t				water;
 #endif
 } shaderStage_t;
 #ifdef _SPLASHDAMAGE

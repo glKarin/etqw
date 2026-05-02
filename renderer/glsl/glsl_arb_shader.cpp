@@ -1192,6 +1192,21 @@ void idARBProgram::ParseFragment(void)
     else if(!token.Icmp("color"))
     {
         name.Append("var_Color");
+		if(ExpectTokenString("."))
+		{
+			if(ExpectTokenString("secondary"))
+				name.Append("2");
+			else
+			{
+				AddIn(name);
+				if(parser.ReadTokenOnLine(&token))
+					name.Append(va(".%s", token.c_str()));
+				else
+					parser.Error("Missing component '%s'", name.c_str());
+				AddToken(name);
+				return;
+			}
+		}
     }
     else
     {
@@ -1246,6 +1261,21 @@ void idARBProgram::ParseResult(void)
             name.Append("var_Color");
         else
             name.Append("gl_FragColor");
+		if(ExpectTokenString("."))
+		{
+			if(ExpectTokenString("secondary"))
+				name.Append("2");
+			else
+			{
+				AddOut(name);
+				if(parser.ReadTokenOnLine(&token))
+					name.Append(va(".%s", token.c_str()));
+				else
+					parser.Error("Missing component '%s'", name.c_str());
+				AddToken(name);
+				return;
+			}
+		}
     }
     else
     {
