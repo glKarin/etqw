@@ -242,7 +242,15 @@ class idMD5Mesh
 		int							NumTris(void) const;
 		int							NumWeights(void) const;
 #ifdef _SPLASHDAMAGE
-		bool						ReadBinary(idFile *file, int numJoints, const idJointMat *joints);
+		struct binaryVert_t {
+			idVec2 st;
+			byte color[4];
+			int num;
+			int joints[4];
+			float weights[4];
+			idVec3 offsets[4];
+		};
+		bool						ReadBinary(idFile *file, int numJoints, const void *transforms, const idJointMat *joints, idList<binaryVert_t> &retVerts);
 #endif
 
 	private:
