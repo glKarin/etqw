@@ -7,61 +7,69 @@
 
 renderProgram sfx/stroggWindow {
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP R0;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_TexCoord1;
+		varying vec4 var_Color;
+		varying vec4 var_TexCoord2;
 
-		# Noise texture coordinates
-		DP4	result.texcoord.x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4	result.texcoord.y, $texCoordAttrib, $diffuseMatrix_t;
-
-		# Glow texture coords go trough unmodified
-		MOV	result.texcoord[1], $texCoordAttrib;	
-		
-		# Vertex coloring if needed
-		MAD	R0, $colorAttrib, $colorModulate, $colorAdd;
-		MUL result.color, $diffuseColor, R0;
-		
-		# Vector to eye for cubemap lookup
-		SUB	result.texcoord[2], $viewOrigin, $positionAttrib;
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 R0;
+			// Noise texture coordinates 
+			var_TexCoord0.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			var_TexCoord0.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			// Glow texture coords go trough unmodified 
+			var_TexCoord1 = $texCoordAttrib;
+			// Vertex coloring if needed 
+			R0 = $colorAttrib * $colorModulate + $colorAdd;
+			var_Color = $diffuseColor * R0;
+			// Vector to eye for cubemap lookup 
+			var_TexCoord2 = $viewOrigin - $positionAttrib;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP noise, glow, dsdt, R1, screen, glass;
-		PARAM power = { 1.5, 0.0, 0.0, 0.0 };
+	program fragment glsl { <%
+		varying vec4 var_TexCoord0;
+		varying vec4 var_Color;
+		varying vec4 var_TexCoord1;
+		varying vec4 var_TexCoord2;
 
-		# Noise & scanlines texture lookup
-		TEX noise, fragment.texcoord[0], $map, 2D;
-		MUL noise, noise, fragment.color;
-		
-		# Glowy edges texture lookup
-		TEX glow, fragment.texcoord[1], $selfIllumMap, 2D;
-		
-		# Offset texture
-		TEX dsdt, fragment.texcoord[0], $mask, 2D;
-		
-		# Screen buffer
-		MAD R1, dsdt, $parameters, fragment.position;
-		TEX screen, R1, $currentRender, RECT;
-		#POW screen.x, screen.x, power.x;
-		#POW screen.y, screen.y, power.x;
-		#POW screen.z, screen.z, power.x;		
-		#MUL screen, screen, screen;
-		MUL	screen, screen, 2;
-		
-		# Montitor glass reflection
-		TEX glass, fragment.texcoord[2], $environmentCubeMap, CUBE;
-		MUL glass, glass, glass;
-		MUL glass, glass, 4;
-		
-		#Composit together
-		MAD_SAT screen, screen, noise, glow;				
-		
-		
-		#MAD result.color, glass, 1, screen;
-		LRP result.color, 0.8, screen, glass;
-		MOV result.color.a, 0.5;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 noise;
+			vec4 glow;
+			vec4 dsdt;
+			vec4 R1;
+			vec4 screen;
+			vec4 glass;
+			vec4 power = vec4(1.5,0.0,0.0,0.0);
+			// Noise & scanlines texture lookup 
+			noise = texture2D ( $map , var_TexCoord0.xy );
+			noise = noise * var_Color;
+			// Glowy edges texture lookup 
+			glow = texture2D ( $selfIllumMap , var_TexCoord1.xy );
+			// Offset texture 
+			dsdt = texture2D ( $mask , var_TexCoord0.xy );
+			// Screen buffer 
+			R1 = dsdt * $parameters + gl_FragCoord;
+			screen = texture2D ( $currentRender , R1.xy / $currentRenderTexSize.xy );
+			// POW screen.x, screen.x, power.x; 
+			// POW screen.y, screen.y, power.x; 
+			// POW screen.z, screen.z, power.x; 
+			// MUL screen, screen, screen; 
+			screen = screen * 2.0;
+			// Montitor glass reflection 
+			glass = textureCube ( $environmentCubeMap , var_TexCoord2.xyz );
+			glass = glass * glass;
+			glass = glass * 4.0;
+			// Composit together 
+			screen = clamp ( screen * noise + glow , 0.0 , 1.0 );
+			// MAD result.color, glass, 1, screen; 
+			gl_FragColor = mix ( glass , screen , 0.8 );
+			gl_FragColor.a = 0.5;
+		} 
 	%> }
 }
 

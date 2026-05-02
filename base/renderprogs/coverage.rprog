@@ -146,37 +146,46 @@ renderProgram filterVertexColorCoverage {
 }
 
 renderProgram filterVertexColorCoverageFogged {
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP R0;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
+		varying vec4 var_Color2;
 
-		DP4	result.texcoord.x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4	result.texcoord.y, $texCoordAttrib, $diffuseMatrix_t;
-		
-		MAD	R0, $colorAttrib, $colorModulate, $colorAdd;
-		MUL result.color, $diffuseColor, R0;
-
-		TEMP _F1, _F2;
-		SUB		_F2, $positionAttrib, $viewOrigin;
-		DP3		_F1.x, _F2, _F2;
-		RSQ		_F1.y, _F1.x;
-		MUL		_F1.x, _F1.y, _F1.x;
-		MAD		result.color.secondary, _F1.x, $fogDepths.z, $fogDepths.w; 
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 R0;
+			var_TexCoord.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			var_TexCoord.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			R0 = $colorAttrib * $colorModulate + $colorAdd;
+			var_Color = $diffuseColor * R0;
+			vec4 _F1;
+			vec4 _F2;
+			_F2 = $positionAttrib - $viewOrigin;
+			_F1.x = dot ( _F2 .xyz , _F2 .xyz );
+			_F1.y = 1.0 / sqrt ( _F1.x );
+			_F1.x = _F1.y * _F1.x;
+			var_Color2 = vec4( _F1.x * $fogDepths.z + $fogDepths.w );
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0, R1;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
+		varying vec4 var_Color2;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		SUB R1, 1, fragment.color.secondary.r;
-		MUL R1, fragment.color, R1;
-		
-		SUB R0, R0, 1;
-		MUL R0, R0, R1;
-		MAD result.color.rgb, R0, $coverage, 1;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			vec4 R1;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R1 = vec4( 1.0 - var_Color2.r );
+			R1 = var_Color * R1;
+			R0 = R0 - 1.0;
+			R0 = R0 * R1;
+			gl_FragColor.rgb = (R0 * $coverage + 1.0).rgb;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }
 
@@ -220,35 +229,45 @@ renderProgram addVertexColorCoverage {
 
 renderProgram addVertexColorCoverageFogged {
 
-	program vertex arb { <%
-		OPTION ARB_position_invariant;
-		TEMP R0;
+	program vertex glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
+		varying vec4 var_Color2;
 
-		DP4	result.texcoord.x, $texCoordAttrib, $diffuseMatrix_s;
-		DP4	result.texcoord.y, $texCoordAttrib, $diffuseMatrix_t;
-		
-		MAD	R0, $colorAttrib, $colorModulate, $colorAdd;
-		MUL result.color, $diffuseColor, R0;
-
-		TEMP _F1, _F2;
-		SUB		_F2, $positionAttrib, $viewOrigin;
-		DP3		_F1.x, _F2, _F2;
-		RSQ		_F1.y, _F1.x;
-		MUL		_F1.x, _F1.y, _F1.x;
-		MUL		R0, $fogDepths.z, 0.75;
-		MAD		result.color.secondary, _F1.x, R0, $fogDepths.w; 
+		void main ( void ) { 
+			// ARB_position_invariant; 
+			vec4 R0;
+			var_TexCoord.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+			var_TexCoord.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+			R0 = $colorAttrib * $colorModulate + $colorAdd;
+			var_Color = $diffuseColor * R0;
+			vec4 _F1;
+			vec4 _F2;
+			_F2 = $positionAttrib - $viewOrigin;
+			_F1.x = dot ( _F2 .xyz , _F2 .xyz );
+			_F1.y = 1.0 / sqrt ( _F1.x );
+			_F1.x = _F1.y * _F1.x;
+			R0 = $fogDepths.z * 0.75;
+			var_Color2 = _F1.x * R0 + $fogDepths.w;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+		} 
 	%> }
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0, R1;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
+		varying vec4 var_Color2;
 
-		TEX R0, fragment.texcoord, $map, 2D;
-		
-		MUL R0, R0, fragment.color;
-		SUB R1, 1, fragment.color.secondary.r;
-		MUL R0, R0, R1;
-		MUL result.color.rgb, R0, $coverage;
-		MOV result.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			vec4 R1;
+			R0 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R0 * var_Color;
+			R1 = vec4( 1.0 - var_Color2.r );
+			R0 = R0 * R1;
+			gl_FragColor.rgb = ( R0 * $coverage ).rgb;
+			gl_FragColor.a = 1.0;
+		} 
 	%> }
 }

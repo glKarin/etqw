@@ -4,14 +4,14 @@ renderprogram game/scope {
 		varying vec2 center;
 		varying vec4 color;
 		
-#define col $colorAttrib
-#define screenSize $currentRenderTexelSize
+		#define col $colorAttrib
+		#define screenSize $currentRenderTexelSize
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
-#if r_32ByteVtx
+		#if r_32ByteVtx
 			indata.tex *= 1.0/4096.0;
-#endif
+		#endif
 			
 			vec2 coord = tex.xy;
 			coord.y = 1.0 - coord.y;
@@ -32,11 +32,11 @@ renderprogram game/scope {
 		varying vec2 center;
 		varying vec4 color;
 
-#define blurbuffer $map // rect
-#define framebuffer $currentRender // rect
-#define screenSize $currentRenderTexelSize
+		#define blurbuffer $map // rect
+		#define framebuffer $currentRender // rect
+		#define screenSize $currentRenderTexelSize
 
-#define glareParameters $postGlareParameters
+		#define glareParameters $postGlareParameters
 
 		void main() {
 			float pi = 3.14159265358979323846;
@@ -100,13 +100,13 @@ renderprogram game/scope {
 
 renderprogram game/scopeModel {
 	program vertex glsl { <%
-#define col $colorAttrib
+		#define col $colorAttrib
 
 		varying vec2 texCoord0;
 		varying vec2 center;
 		varying vec4 color;
 		
-#define screenSize $currentRenderTexelSize
+		#define screenSize $currentRenderTexelSize
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
@@ -133,11 +133,11 @@ renderprogram game/scopeModel {
 		varying vec2 center;
 		varying vec4 color;
 
-#define blurbuffer $map // rect
-#define framebuffer $currentRender // rect
-#define screenSize $currentRenderTexelSize
+		#define blurbuffer $map // rect
+		#define framebuffer $currentRender // rect
+		#define screenSize $currentRenderTexelSize
 
-#define glareParameters $postGlareParameters
+		#define glareParameters $postGlareParameters
 
 		float luminance( vec3 c ){
 			return dot( c, vec3( 0.33, 0.33, 0.33 ) );
@@ -196,20 +196,20 @@ renderprogram game/scopeModel {
 
 renderprogram game/scopeStatix {
 	program vertex glsl { <%
-#define col $colorAttrib
+		#define col $colorAttrib
 
 		varying vec2 texCoord0;
 		varying vec2 center;
 		varying vec2 texCoord1;
 		varying vec4 color;
 		
-#define screenSize $currentRenderTexelSize
+		#define screenSize $currentRenderTexelSize
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
-#if r_32ByteVtx
+		#if r_32ByteVtx
 			indata.tex *= 1.0/4096.0;
-#endif
+		#endif
 			
 			vec2 coord = tex.xy;
 			coord.y = 1.0 - coord.y;
@@ -227,18 +227,18 @@ renderprogram game/scopeStatix {
 	%> }
 
 	program fragment glsl { <%
-#define texCoord gl_FragCoord.xy
+		#define texCoord gl_FragCoord.xy
 		//varying vec2 texCoord0;
 		varying vec2 center;
 		varying vec2 texCoord1;
 		varying vec4 color;
 
-#define noise $mask
-#define blurbuffer $map // rect
-#define framebuffer $currentRender // rect
-#define screenSize $currentRenderTexelSize
+		#define noise $mask
+		#define blurbuffer $map // rect
+		#define framebuffer $currentRender // rect
+		#define screenSize $currentRenderTexelSize
 
-#define glareParameters $postGlareParameters
+		#define glareParameters $postGlareParameters
 
 		void main() {
 			float pi = 3.14159265358979323846;

@@ -1279,43 +1279,40 @@ renderProgram sfx/slipgate {
 renderProgram sfx/blendFilterFade {
 	
 
-	program vertex cg { <%
-		struct VsInputs {
-			vec3 pos	: POSITION;
-			vec4 tex	: $texCoordAttrib;
-			vec4 col	: $colorAttrib;
-		};
+	program vertex glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
+		#define col var_Color
 
-		struct VsOutputs {
-			vec4 col  : COLOR0;
-			vec2 tex	: TEXCOORD0;
-		};
-
-		vec4 diffuse_s : $diffuseMatrix_s;
-		vec4 diffuse_t : $diffuseMatrix_t;
+		#define diffuse_s $diffuseMatrix_s
+		#define diffuse_t $diffuseMatrix_t
 		
-		VsOutputs vertex(VsInputs indata) {
-			VsOutputs outdata;
+		void main() {
+			vec4 tex = $texCoordAttrib;
 			$if r_32ByteVtx
-			indata.tex.xy *= 1.f/4096.f;
-			indata.tex.zw = 1.f;
+			tex.xy *= 1.0/4096.0;
+			tex.zw = vec2(1.0);
 			$endif
 
-			outdata.tex.x = dot( indata.tex, diffuse_s);
-			outdata.tex.y = dot( indata.tex, diffuse_t );
-			outdata.col = indata.col;
-	
-			return outdata;
+			var_TexCoord.x = dot( tex, diffuse_s);
+			var_TexCoord.y = dot( tex, diffuse_t );
+			col = BYTE_COLOR($colorAttrib);
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
 
-	program fragment arb { <%
-		OPTION ARB_precision_hint_fastest;
-		TEMP R0, R1;
+	program fragment glsl { <%
+		varying vec4 var_TexCoord;
+		varying vec4 var_Color;
 
-		TEX R1, fragment.texcoord, $map, 2D;
-		SUB R0, R1, 1;
-		MAD	result.color, R0, fragment.color.a, 1;
+		void main ( void ) { 
+			// ARB_precision_hint_fastest; 
+			vec4 R0;
+			vec4 R1;
+			R1 = texture2D ( $map , var_TexCoord.xy );
+			R0 = R1 - 1.0;
+			gl_FragColor = R0 * var_Color.a + 1.0;
+		} 
 	%> }
 }
 
@@ -1448,53 +1445,43 @@ renderProgram sfx/maskedInvert {
 }
 
 renderProgram sfx/beam {
-	program vertex cg { <%
+	program vertex glsl { <%
 	
-		struct VsInputs {
-			vec3 pos : $positionAttrib;
-			vec2 tex : $texCoordAttrib;
-		};
+		$define pos $positionAttrib.xyz
 	
-		struct VsOutputs {
-			vec2 tex	 : TEXCOORD0;
-			float1 toEye : TEXCOORD1;
-		};
+		varying vec2 tex;
+		varying float toEye;
 		
-		uniform vec3 viewOrigin : $viewOrigin;
-		
-		VsOutputs vertex( VsInputs indata ) {
-			VsOutputs outData;
+		void main() {
+			vec2 indata_tex = $texCoordAttrib.xy;
 
 			$if r_32ByteVtx
-			indata.tex *= 1.f/4096.f;
+			indata_tex *= 1.0/4096.0;
 			$endif
 
-			vec3 toEye = indata.pos - viewOrigin;
-			outData.toEye = sqrt( dot( toEye, toEye ) );
-			outData.tex = indata.tex;
-
-			return outData;
+			vec3 toEye = pos - $viewOrigin.xyz;
+			toEye = vec3( sqrt( dot( toEye, toEye ) ) );
+			tex = indata_tex;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}		
 	%> }
 
-	program fragment cg { <%
-		struct VsOutputs {
-			vec2 tex	: TEXCOORD0;
-			float toEye	: TEXCOORD1;
-		};
+	program fragment glsl { <%
+		varying vec2 tex;
+		varying float toEye;
 		
-		sampler2D baseMap : $map;
-		uniform vec4 parameters : $parameters;
+		$define baseMap $map
+		$define saturate(_v) clamp ( ( _v ), 0.0, 1.0 )
 		
-		vec4 fragment( VsOutputs indata ) : COLOR {
-			vec4 base = tex2D( baseMap, indata.tex );
+		void main() {
+			vec4 base = texture2D( baseMap, tex.xy );
 			
-			float distance = saturate( (indata.toEye - parameters.x) / parameters.y );
+			float distance = saturate( (toEye - $parameters.x) / parameters.y );
 			base *= distance;
-			base.xyz *= parameters.z;
-			base.w *= parameters.w;
+			base.xyz *= $parameters.z;
+			base.w *= $parameters.w;
 
-			return base;
+			gl_FragColor = base;
 		}
 	%> }
 }
