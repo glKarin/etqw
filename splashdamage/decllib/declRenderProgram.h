@@ -106,6 +106,9 @@ public:
 		return (flags & INTERACTION) != 0;
 	}
 	bool							HasPostprocess(void) const;
+	int								DrawStateBits(void) const {
+		return drawStateBits;
+	}
 
 	void							ExportSource(const char *path, bool raw = false) const;
 	static void						ExportDeclRenderPrograms_f(const idCmdArgs &args);
@@ -113,11 +116,17 @@ public:
 private:
 	void							Init(void);
 	bool							ParseShader(idParser &src);
+	bool							ParseState(idParser &src);
+	void							ParseBlend(idParser &src);
+	void							ParseDepthFunc(idParser &src);
+	int								NameToDstBlendMode(const idStr &name);
+	int								NameToSrcBlendMode(const idStr &name);
 
 private:
 	int								flags;
 	sdRenderProgramShader			vertex;
 	sdRenderProgramShader			fragment;
+	int								drawStateBits;
 };
 
 #endif /* !__DECLRENDERPROGRAM_H__ */

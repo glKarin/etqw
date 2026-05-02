@@ -418,7 +418,10 @@ bool sdDeclTemplate::ExpandTemplate(idStr &finalBuffer, const char *text, int te
 		range_end = src.GetFileOffset() - idStr::Length("useTemplate"); //karin: record range start before next `ReadToken`
 														
 		if(range_start < range_end)
+		{
 			finalBuffer.Append(text + range_start, range_end - range_start);
+			range_start = range_end;
+		}
 
 		idToken name;
 

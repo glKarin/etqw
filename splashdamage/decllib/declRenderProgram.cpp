@@ -5,6 +5,7 @@
 
 #include "declRenderProgram.h"
 #include "framework/DeclParseHelper.h"
+#include "renderer/tr_local.h"
 
 /*
 ===============================================================================
@@ -15,7 +16,8 @@ sdDeclRenderProgram
 */
 
 sdDeclRenderProgram::sdDeclRenderProgram()
-	: flags(0)
+	: flags(0),
+	drawStateBits(0)
 {
 }
 
@@ -51,8 +53,9 @@ bool sdDeclRenderProgram::Parse( const char* text, const int textLength ) {
 		}
 
 		if( !token.Icmp( "state" )) {
-			src.SkipUntilString("{");
-			src.SkipBracedSection(false);
+			if(!ParseState(src)) {
+				src.SkipBracedSection(false);
+			}
 			continue;
 		}
 
@@ -273,32 +276,46 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 					continue;
 				}
 				if(range_start < range_end)
+				{
 					buf.Append(text + range_start, range_end - range_start);
+					range_start = range_end;
+				}
 				HandleInclude(buf, program, str.c_str());
 				range_start = src.GetFileOffset();
-			} else if (!token.Icmp("if") || !token.Icmp("ifdef") || !token.Icmp("ifndef") || !token.Icmp("elif") || !token.Icmp("define")) {
+			} else  if (!token.Icmp("if") || !token.Icmp("ifdef") || !token.Icmp("ifndef") || !token.Icmp("elif") || !token.Icmp("define")) {
 				if(range_start < range_end)
+				{
 					buf.Append(text + range_start, range_end - range_start);
+					range_start = range_end;
+				}
 				buf.Append("#");
-				buf.Append(token.c_str());
+				//buf.Append(token.c_str());
 				while(src.ReadTokenOnLine(&token))
 				{
-					buf.Append(" ");
+					//buf.Append(" ");
 					// skip && ! || defined number
 					if (token.type == TT_NAME && token.Icmp("defined")) {
 						defines.AddUnique(token);
 					}
-					buf.Append(token.c_str());
+					else if(token.type == TT_PUNCTUATION && token == "$") { // $ in precompile command
+						src.ReadTokenOnLine(&token);
+						placeholders.AddUnique(token);
+					}
+					//buf.Append(token.c_str());
+					range_start = src.GetFileOffset();
 				}
+				buf.Append(text + range_end + 1, range_start - range_end - 1); // skip $
 				buf.Append("\n");
-				range_start = src.GetFileOffset();
 			} else if (!token.Icmp("else") || !token.Icmp("endif")) {
 				if(range_start < range_end)
+				{
 					buf.Append(text + range_start, range_end - range_start);
-				buf.Append("#");
-				buf.Append(token.c_str());
-				buf.Append("\n");
+					range_start = range_end;
+				}
 				range_start = src.GetFileOffset();
+				buf.Append("#");
+				buf.Append(text + range_end + 1, range_start - range_end - 1); // skip $
+				buf.Append("\n");
 			} else {
 				placeholders.AddUnique(token);
 			}
@@ -367,6 +384,7 @@ void sdDeclRenderProgram::Init(void)
 	flags = 0;
 	vertex.Init();
 	fragment.Init();
+	drawStateBits = 0;
 }
 
 bool sdDeclRenderProgram::ParseShader(idParser &src)
@@ -574,3 +592,187 @@ bool sdRenderProgramShader::HasPostprocessTexture(void) const {
 bool sdDeclRenderProgram::HasPostprocess(void) const {
 	return fragment.IsValid() && fragment.HasPostprocessTexture();
 }
+
+/*
+===============
+sdDeclRenderProgram::NameToSrcBlendMode
+===============
+*/
+int sdDeclRenderProgram::NameToSrcBlendMode(const idStr &name)
+{
+	if (!name.Icmp("GL_ONE")) {
+		return GLS_SRCBLEND_ONE;
+	} else if (!name.Icmp("GL_ZERO")) {
+		return GLS_SRCBLEND_ZERO;
+	} else if (!name.Icmp("GL_DST_COLOR")) {
+		return GLS_SRCBLEND_DST_COLOR;
+	} else if (!name.Icmp("GL_ONE_MINUS_DST_COLOR")) {
+		return GLS_SRCBLEND_ONE_MINUS_DST_COLOR;
+	} else if (!name.Icmp("GL_SRC_ALPHA")) {
+		return GLS_SRCBLEND_SRC_ALPHA;
+	} else if (!name.Icmp("GL_ONE_MINUS_SRC_ALPHA")) {
+		return GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA;
+	} else if (!name.Icmp("GL_DST_ALPHA")) {
+		return GLS_SRCBLEND_DST_ALPHA;
+	} else if (!name.Icmp("GL_ONE_MINUS_DST_ALPHA")) {
+		return GLS_SRCBLEND_ONE_MINUS_DST_ALPHA;
+	} else if (!name.Icmp("GL_SRC_ALPHA_SATURATE")) {
+		return GLS_SRCBLEND_ALPHA_SATURATE;
+	}
+
+	common->Warning("unknown src blend mode '%s' in renderProg '%s' at '%s'", name.c_str(), GetName(), GetFileName());
+
+	return GLS_SRCBLEND_ONE;
+}
+
+/*
+===============
+sdDeclRenderProgram::NameToDstBlendMode
+===============
+*/
+int sdDeclRenderProgram::NameToDstBlendMode(const idStr &name)
+{
+	if (!name.Icmp("GL_ONE")) {
+		return GLS_DSTBLEND_ONE;
+	} else if (!name.Icmp("GL_ZERO")) {
+		return GLS_DSTBLEND_ZERO;
+	} else if (!name.Icmp("GL_SRC_ALPHA")) {
+		return GLS_DSTBLEND_SRC_ALPHA;
+	} else if (!name.Icmp("GL_ONE_MINUS_SRC_ALPHA")) {
+		return GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+	} else if (!name.Icmp("GL_DST_ALPHA")) {
+		return GLS_DSTBLEND_DST_ALPHA;
+	} else if (!name.Icmp("GL_ONE_MINUS_DST_ALPHA")) {
+		return GLS_DSTBLEND_ONE_MINUS_DST_ALPHA;
+	} else if (!name.Icmp("GL_SRC_COLOR")) {
+		return GLS_DSTBLEND_SRC_COLOR;
+	} else if (!name.Icmp("GL_ONE_MINUS_SRC_COLOR")) {
+		return GLS_DSTBLEND_ONE_MINUS_SRC_COLOR;
+	}
+
+	common->Warning("unknown dst blend mode '%s' in renderProg '%s' at '%s'", name.c_str(), GetName(), GetFileName());
+
+	return GLS_DSTBLEND_ONE;
+}
+
+void sdDeclRenderProgram::ParseBlend(idParser &src)
+{
+	idToken token;
+	int		srcBlend, dstBlend;
+
+	if (!src.ReadToken(&token)) {
+		return;
+	}
+
+	// blending combinations
+	if (!token.Icmp("blend")) {
+		drawStateBits = GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+		return;
+	}
+
+	if (!token.Icmp("add")) {
+		drawStateBits = GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
+		return;
+	}
+
+	if (!token.Icmp("filter") || !token.Icmp("modulate")) {
+		drawStateBits = GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
+		return;
+	}
+
+	if (!token.Icmp("none")) {
+		// none is used when defining an alpha mask that doesn't draw
+		drawStateBits = GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE;
+		return;
+	}
+
+	srcBlend = NameToSrcBlendMode(token);
+
+	if (!src.ExpectTokenString(",")) {
+		src.UnreadToken(&token);
+		src.SkipRestOfLine();
+		return;
+	}
+
+	if (!src.ReadToken(&token)) {
+		return;
+	}
+
+	dstBlend = NameToDstBlendMode(token);
+
+	drawStateBits = srcBlend | dstBlend;
+}
+
+void sdDeclRenderProgram::ParseDepthFunc(idParser &src)
+{
+	idToken t;
+	src.ReadToken(&t);
+	if(!idStr::Icmp(t, "equal"))
+		drawStateBits |= GLS_DEPTHFUNC_EQUAL;
+	else if(!idStr::Icmp(t, "always"))
+		drawStateBits |= GLS_DEPTHFUNC_ALWAYS;
+	else if(!idStr::Icmp(t, "lequal"))
+		drawStateBits |= GLS_DEPTHFUNC_LESS;
+	else if(!idStr::Icmp(t, "less"))
+		drawStateBits |= GLS_DEPTHFUNC_LESS;
+	else
+		common->Warning("unknown depth func '%s' in renderProg '%s' at '%s'", t.c_str(), GetName(), GetFileName());
+}
+
+bool sdDeclRenderProgram::ParseState(idParser &src)
+{
+	idToken	token;
+
+	while(1)
+	{
+		if(!src.ReadToken(&token))
+		{
+			src.Warning( "sdDeclRenderProgram::ParseState: unable parse state." );
+			return false;
+		}
+
+		if(!token.Icmp("force"))
+			continue;
+
+		if(!token.Cmp("{"))
+			break;
+	}
+
+	while (1) {
+		if( !src.ReadToken( &token )) {
+			src.Error( "sdDeclRenderProgram::ParseState: unexpected end of file." );
+			break;
+		}
+
+		if (!token.Icmp("}")) {
+			break;
+		}
+
+		if( !token.Icmp( "blend" )) {
+			ParseBlend(src);
+			continue;
+		}
+
+		if( !token.Icmp( "depthFunc" )) {
+			ParseDepthFunc(src);
+			continue;
+		}
+
+		if (!token.Icmp("maskAlpha")) {
+			drawStateBits |= GLS_ALPHAMASK;
+			continue;
+		}
+
+		if (!token.Icmp("maskDepth")) {
+			drawStateBits |= GLS_DEPTHMASK;
+			continue;
+		}
+
+		src.Warning( "sdDeclRenderProgram::ParseState: unexpected token '%s'.", token.c_str() );
+		src.SkipBracedSection(false);
+		break;
+	}
+
+	return true;
+}
+

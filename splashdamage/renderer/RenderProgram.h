@@ -18,6 +18,7 @@ public:
     // bind
     bool Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const;
     void Unbind(const materialStage_t *stage) const;
+    int SetupState(void) const;
 	void BindVector(const char *name, const float v4[]) const;
 	void BindVector(const char *name, float f) const;
 	void BindVector(const char *name, float x, float y, float z, float w = 1.0f) const;

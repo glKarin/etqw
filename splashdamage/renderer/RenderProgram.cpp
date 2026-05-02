@@ -109,28 +109,6 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 
 		if(!binding) // external binding
 		{
-			const idStr &name = bindingNames[j];
-			if(!name.Icmp("water_tint")) {
-				BindVector(name, regs[stage->water.tint[0]], regs[stage->water.tint[1]], regs[stage->water.tint[2]]);
-			}
-			else if(!name.Icmp("water_distortion")) {
-				BindVector(name, regs[stage->water.distortion[0]], regs[stage->water.distortion[1]], regs[stage->water.distortion[2]], regs[stage->water.distortion[3]]);
-			}
-			else if(!name.Icmp("water_fresnel")) {
-				BindVector(name, regs[stage->water.fresnel]);
-			}
-			else if(!name.Icmp("water_glare")) {
-				BindVector(name, regs[stage->water.glare]);
-			}
-			else if(!name.Icmp("water_offset")) {
-				BindVector(name, regs[stage->water.offset[0]], regs[stage->water.offset[1]], regs[stage->water.offset[2]], regs[stage->water.offset[3]]);
-			}
-			else if(!name.Icmp("water_desat")) {
-				BindVector(name, regs[stage->water.desat]);
-			}
-			else if(!name.Icmp("water_lerp")) {
-				BindVector(name, regs[stage->water.lerp]);
-			}
 			continue;
 		}
 
@@ -258,6 +236,16 @@ bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, 
 	BindMaterialUniform(mat, regs);
 
     return true;
+}
+
+int sdRenderProgram::SetupState(void) const {
+	if(declRenderProgram->DrawStateBits())
+	{
+		int old = backEnd.glState.glStateBits;
+		GL_State(declRenderProgram->DrawStateBits());
+		return old;
+	}
+	return 0;
 }
 
 void sdRenderProgram::UnbindUniform(const materialStage_t *stage) const

@@ -182,6 +182,14 @@ bool sdDeclRenderBinding::ParseTexture( idParser& src ) {
 	}
 
 	if (!parseBuffer.IsEmpty()) {
+		//karin: HARDCODE: as cube map if image name end with CubeMap
+		if(defaults.texture.defaultCubeMap != CF_NATIVE)
+		{
+			int index = parseBuffer.Find("CubeMap", false);
+			if(index != -1 && index == parseBuffer.Length() - 7)
+				defaults.texture.defaultCubeMap = CF_NATIVE;
+		}
+
 		defaults.texture.image = globalImages->ImageFromFile(parseBuffer.c_str(), TF_DEFAULT, defaults.texture.defaultDepth != TD_HIGH_QUALITY, TR_CLAMP, defaults.texture.defaultDepth, defaults.texture.defaultCubeMap);
 		if (!defaults.texture.image) {
 			common->Warning("renderBinding '%s' image '%s' not loaded", GetName(), parseBuffer.c_str());
