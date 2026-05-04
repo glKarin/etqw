@@ -1518,10 +1518,6 @@ void idSessionLocal::StartNewGame(const char *mapName, bool devmap)
 		return;
 	}
 	common->Printf("Start local map '%s': %d\n", gameMapName.c_str(), changeResult);
-	// strip 'maps/' prefix
-	if (!idStr::Icmpn(gameMapName, "maps/", 5))
-		gameMapName.StripLeadingOnce("maps/");
-	mapName = gameMapName.c_str(); // return map name if campaign mode, else is normalized map file path
 #endif
 	MoveToNewMap(mapName);
 #endif
@@ -1583,6 +1579,13 @@ Leaves the existing userinfo and serverinfo
 */
 void idSessionLocal::MoveToNewMap(const char *mapName)
 {
+#ifdef _SPLASHDAMAGE //karin: add 'maps/' prefix
+	idStr gameMapName = mapName;
+	if(idStr::Icmpn(mapName, "maps/", 5)) {
+		gameMapName.Insert("maps/", 0);
+		mapName = gameMapName.c_str();
+	}
+#endif
 	mapSpawnData.serverInfo.Set("si_map", mapName);
 
 	ExecuteMapChange();
@@ -2048,8 +2051,18 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	// extract the map name from serverinfo
 	idStr mapString = mapSpawnData.serverInfo.GetString("si_map");
 
+#ifdef _SPLASHDAMAGE //karin: has 'maps/' prefix in ETQW
+	idStr fullMapName;
+	if (!idStr::Icmpn(mapString, "maps/", 5))
+		fullMapName = mapString;
+	else {
+		fullMapName = "maps/";
+		fullMapName += mapString;
+	}
+#else
 	idStr fullMapName = "maps/";
 	fullMapName += mapString;
+#endif
 	fullMapName.StripFileExtension();
 
 	// shut down the existing game if it is running

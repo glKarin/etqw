@@ -343,10 +343,10 @@ void idAsyncServer::ExecuteMapChange(void)
 	common->Printf("Start server map '%s': %d\n", gameMapName.c_str(), changeResult);
 	mapName = gameMapName.c_str(); // return map name if campaign mode, else is normalized map file path
 	// strip 'maps/' prefix
-	if (!idStr::Icmpn(gameMapName, "maps/", 5))
-		gameMapName.StripLeadingOnce("maps/");
-	cvarSystem->SetCVarString("si_map", gameMapName.c_str());
-	sessLocal.mapSpawnData.serverInfo.Set("si_map", gameMapName.c_str());
+	// if (!idStr::Icmpn(gameMapName, "maps/", 5))
+	// 	gameMapName.StripLeadingOnce("maps/");
+	// cvarSystem->SetCVarString("si_map", gameMapName.c_str());
+	// sessLocal.mapSpawnData.serverInfo.Set("si_map", gameMapName.c_str());
 #else
 	sprintf(mapName, "maps/%s", sessLocal.mapSpawnData.serverInfo.GetString("si_map"));
 	mapName.SetFileExtension(".map");

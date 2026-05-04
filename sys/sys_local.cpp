@@ -468,12 +468,6 @@ void idSysLocal::SetClipboardData( const wchar_t *string ) {
 	Sys_SetClipboardData(text);
 }
 
-void idSysLocal::SetServerInfo( const char* key, const char* value ) {
-}
-
-void idSysLocal::FlushServerInfo( void ) {
-}
-
 idKeyboard& idSysLocal::Keyboard() {
 	return *globalKeyboard;
 }
@@ -497,6 +491,15 @@ const char * idSysLocal::NetAdrToString( const netadr_t& a ) const {
 
 bool idSysLocal::StringToNetAdr( const char *s, netadr_t *a, bool doDNSResolve ) const {
 	return Sys_StringToNetAdr(s, a, doDNSResolve);
+}
+
+#include "../framework/Session_local.h"
+void idSysLocal::SetServerInfo( const char* key, const char* value ) {
+	sessLocal.mapSpawnData.serverInfo.Set(key, value);
+}
+
+void idSysLocal::FlushServerInfo( void ) {
+	sessLocal.mapSpawnData.serverInfo = *cvarSystem->MoveCVarsToDict(CVAR_SERVERINFO);
 }
 
 #endif

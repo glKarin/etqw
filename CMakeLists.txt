@@ -3183,6 +3183,7 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/FontManager.cpp
 			splashdamage/renderer/RenderProgram.cpp
 			splashdamage/renderer/RenderProgramManager.cpp
+			splashdamage/renderer/PostprocessBuffer.cpp
 	)
 	set(splashdamage_decl_src
 			splashdamage/decllib/declAmbientCubeMap.cpp

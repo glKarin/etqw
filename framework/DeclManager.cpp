@@ -3767,7 +3767,10 @@ void idDeclManagerLocal::ParseAllDecls_f(const idCmdArgs &args)
 	soundSystem->SetMute(true);
 
 	for(int m = 0; m < numDecls; m++)
-		declManagerLocal.DeclByIndex(declType->type, m, true);
+	{
+		const idDecl *decl = declManagerLocal.DeclByIndex(declType->type, m, true);
+		common->Printf("%s\n", decl->GetName());
+	}
 
 	soundSystem->SetMute(false);
 }

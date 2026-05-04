@@ -5322,8 +5322,9 @@ bool idFileSystemLocal::ParseMetaConf(idLexer &src, metaDataContext_t &md)
 		return false;
 	}
 
-	token.StripPath();
-	token.StripFileExtension();
+	//karin: must has 'maps/' prefix
+	//token.StripPath();
+	//token.StripFileExtension();
 	dict.Set("metadata_name", token.c_str());
 	md.addon = false;
 	idDict *meta = new idDict;
