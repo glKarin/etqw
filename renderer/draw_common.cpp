@@ -713,7 +713,7 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindVector("sunColor", backEnd.parms.sunColor[0], backEnd.parms.sunColor[1], backEnd.parms.sunColor[2]);
     idVec3 localSunDir;
     R_GlobalVectorToLocal(surf->space->modelMatrix, backEnd.parms.sunDir, localSunDir);
-	program->BindVector("sunDir", localSunDir[0], localSunDir[1], localSunDir[2]);
+	program->BindVector("sunDirection", localSunDir[0], localSunDir[1], localSunDir[2]);
 
 	parm[0] = backEnd.viewDef->renderView.vieworg[0];
 	parm[1] = backEnd.viewDef->renderView.vieworg[1];
@@ -958,6 +958,8 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
 		// see if we are a new-style stage
+		//if(pStage->destinationBuffer != -1) continue;
+
 		const sdRenderProgram *renderProgram = pStage->renderProgram;
 
 		if (renderProgram && renderProgram->IsValid()) {
@@ -967,6 +969,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 			if(!renderProgram->Bind(pStage, shader, regs))
 				continue;
+
+			if(pStage->destinationBuffer != -1)
+			{
+				postprocessBuffer.Begin(pStage->destinationBuffer);
+			}
 
 			int oldDrawBits = renderProgram->SetupState();
 
@@ -1013,10 +1020,15 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Tangent));
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Bitangent));
 
-			renderProgram->Unbind(pStage);
-
 			if(oldDrawBits)
 				GL_State(oldDrawBits);
+
+			if(pStage->destinationBuffer != -1)
+			{
+				postprocessBuffer.End();
+			}
+
+			renderProgram->Unbind(pStage);
 
 			continue;
 		}
@@ -1236,6 +1248,13 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				break;
 		}
 
+#ifdef _SPLASHDAMAGE //karin: postprocess buffer
+		if(pStage->destinationBuffer != -1)
+		{
+			postprocessBuffer.Begin(pStage->destinationBuffer);
+		}
+#endif
+
 		GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
 
 		if(usingTexCoord)
@@ -1339,6 +1358,13 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
 
 		GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+
+#ifdef _SPLASHDAMAGE //karin: postprocess buffer
+		if(pStage->destinationBuffer != -1)
+		{
+			postprocessBuffer.End();
+		}
+#endif
 	}
 
 	// reset polygon offset
@@ -1369,9 +1395,6 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 
 	// if we are about to draw the first surface that needs
 	// the rendering in a texture, copy it over
-#ifdef _SPLASHDAMAGE //karin: after postprocess
-	bool isPostprocess = false;
-#endif
 	if (drawSurfs[0]->material->GetSort() >= SS_POST_PROCESS
 #ifdef _RAVEN //karin: sniper's blur is 2D and has flag `MF_NEED_CURRENT_RENDER`
 		|| drawSurfs[0]->material->TestMaterialFlag(MF_NEED_CURRENT_RENDER)
@@ -1391,18 +1414,10 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 			                backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
 		}
 
-		backEnd.currentRenderCopied = true;
-#ifdef _SPLASHDAMAGE //karin: _postProcessBuffer_* image
-		isPostprocess = true;
-		globalImages->postProcessBuffers[0]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
-				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
-				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
-		backEnd.postProcessBuffersCopied[0] = true;
-		globalImages->postProcessBuffers[1]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
-				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
-				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
-		backEnd.postProcessBuffersCopied[1] = true;
+#ifdef _SPLASHDAMAGE //karin: clear all postprocess images
+		postprocessBuffer.ClearAll();
 #endif
+		backEnd.currentRenderCopied = true;
 	}
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
@@ -1457,19 +1472,6 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 		}
 
 		backEnd.currentSpace = surf->space;
-#ifdef _SPLASHDAMAGE //karin: recopy _postProcessBuffer_* image
-		if (isPostprocess && surf->material->GetSort() >= SS_POST_PROCESS)
-		{
-			globalImages->postProcessBuffers[0]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
-					backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
-					backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
-			backEnd.postProcessBuffersCopied[0] = true;
-			globalImages->postProcessBuffers[1]->CopyFramebuffer(backEnd.viewDef->viewport.x1,
-					backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
-					backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true);
-			backEnd.postProcessBuffersCopied[1] = true;
-		}
-#endif
 	}
 
 	backEnd.currentSpace = NULL; //k2023

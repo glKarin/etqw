@@ -674,6 +674,8 @@ typedef struct {
 
 void R_AddCopyParmsCmd(const viewDef_t *view);
 void RB_CopyParms(const void *data);
+
+#include "renderer/PostprocessBuffer.h"
 #endif
 
 //=======================================================================
@@ -852,7 +854,6 @@ typedef struct {
     RenderMatrix		shadowP[6];				// shadow depth projection matrix
 #endif
 #ifdef _SPLASHDAMAGE //karin: custom stage shader parms
-	bool				postProcessBuffersCopied[2];	// true if any material has already referenced _postProcessBuffer_*
 	materialStageBuiltinUniform_t parms;
 #endif
 } backEndState_t;

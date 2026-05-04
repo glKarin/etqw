@@ -2297,7 +2297,7 @@ void idImageManager::Init()
 #ifdef _SPLASHDAMAGE
 	grayImage = ImageFromFunction("_gray", R_GrayImage);
 	postProcessBuffers[0] = ImageFromFunction("_postProcessBuffer_0", R_RGBA8Image);
-	postProcessBuffers[1] = ImageFromFunction("_postProcessBuffer_2", R_RGBA8Image);
+	postProcessBuffers[1] = ImageFromFunction("_postProcessBuffer_1", R_RGBA8Image);
 #endif
 
 	// cinematicImage is used for cinematic drawing
