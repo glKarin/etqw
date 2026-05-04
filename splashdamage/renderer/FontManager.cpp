@@ -8,6 +8,7 @@
 #include "renderer/tr_local.h"
 
 #define DEFAULT_FONT_TEXTURE_SIZE 1024
+#define FONT_CHECKSUM_FILE_NAME "font_checksum.txt"
 
 #define AsASCIICharLang(text_, len_) ( !_hasWideCharFont || idStr::IsPureASCII(text_, len_) )
 
@@ -96,7 +97,7 @@ qhandle_t sdFontManagerLocal::FindFont( const char* name ) {
             newFileName.Replace(va("fonts/%s", fontLang.c_str()), "newfonts/");
             newFileName.StripFilename();
             newFileName.AppendPath(d3bfgFontName);
-            if (renderSystem->RegisterFont(newFileName, fonts[index]))
+            if (RegisterFont(index, newFileName.c_str()))
             {
                 common->Printf("Font '%s' using DOOM3-BFG new font '%s'.\n", name, newFileName.c_str());
                 fontLoaded = true;
@@ -104,18 +105,29 @@ qhandle_t sdFontManagerLocal::FindFont( const char* name ) {
             else // load default if fail
             {
                 common->Printf("Font '%s' load DOOM3-BFG new font '%s' fail, try using default font.\n", name, newFileName.c_str());
-                fontLoaded = renderSystem->RegisterFont(fileName, fonts[index]);
+                fontLoaded = RegisterFont(index, fileName.c_str());
             }
         }
         else
         {
             common->Printf("Font '%s' not use DOOM3-BFG new font.\n", name);
-            fontLoaded = renderSystem->RegisterFont(fileName, fonts[index]);
+            fontLoaded = RegisterFont(index, fileName.c_str());
         }
 	}
 	else
-#endif
-	fontLoaded = renderSystem->RegisterFont(fileName, fonts[index]);
+#endif	
+	fontLoaded = RegisterFont(index, fileName.c_str(), fc ? fc->checksum : 0);
+	if(!fontLoaded)
+	{
+		if(fc)
+		{
+			if(ConvertFont(fc, name, fontLang.c_str(), fileName.c_str()))
+			{
+				fontLoaded = RegisterFont(index, fileName.c_str());
+			}
+		}
+	}
+
 	if (fontLoaded) {
 		idStr::Copynz(fonts[index].name, name, sizeof(fonts[index].name));
 #ifdef _WCHAR_LANG
@@ -129,27 +141,9 @@ qhandle_t sdFontManagerLocal::FindFont( const char* name ) {
 		if(fc)
 			fc->fontId = index;
 		return index;
-	} else {
-		if(fc)
-		{
-			common->Printf("Converting and caching true type font '%s' to DOOM3 font......\n", name);
-			if(R_ExportTrueTypeFont(fc->file.c_str(), name, fontLang.c_str(), DEFAULT_FONT_TEXTURE_SIZE))
-			{
-				common->Printf("Convert and cached true type font '%s' to DOOM3 font successful.\n", name);
-				fontLoaded = renderSystem->RegisterFont(fileName, fonts[index]);
-			}
-			else	
-				common->Warning("Couldn't convert and cache true type font '%s' to DOOM3 font.", name);
-		}
-		if (fontLoaded) {
-			idStr::Copynz(fonts[index].name, name, sizeof(fonts[index].name));
-			fc->fontId = index;
-			return index;
-		} else {
-			common->Printf("Could not register font %s [%s]\n", name, fileName.c_str());
-			return -1;
-		}
-	}
+	} 
+
+	return -1;
 }
 
 void sdFontManagerLocal::FreeFont( const qhandle_t font ) {
@@ -775,6 +769,8 @@ bool sdFontManagerLocal::ParseFontConfig(const char *path, sdLocFont_t &config) 
 	if(!src.LoadFile(path))
 		return false;
 
+	config.checksum = 0;
+	config.fontId = -1;
 	idToken token;
 	while(true)
 	{
@@ -789,6 +785,7 @@ bool sdFontManagerLocal::ParseFontConfig(const char *path, sdLocFont_t &config) 
 				return false;
 			}
 			config.file = token.c_str();
+			config.checksum = TrueTypeFontFileChecksum(token.c_str());
 			continue;
 		}
 
@@ -843,6 +840,7 @@ void sdFontManagerLocal::LoadFontConfigs(const char *lang) {
 		{
 			exists->file = config.file;
 			exists->faceIndex = config.faceIndex;
+			exists->checksum = config.checksum;
 			common->Printf("Override %s font config '%s'.\n", lang, fileName.c_str());
 		}
 		else
@@ -1130,6 +1128,103 @@ void sdFontManagerLocal::GetTextDimensions( const char* text, const sdBounds2D& 
 
 	if (scale)
 		*scale = fontScale;
+}
+
+bool sdFontManagerLocal::RegisterFont(int index, const char *fileName, unsigned int check)
+{
+	if(check)
+	{
+		unsigned int checksum = ReadChecksum(fileName);
+		if(checksum == 0)
+			return false;
+		if(checksum != check)
+		{
+			common->Printf("Font '%s' is outdate!\n", fileName);
+			return false;
+		}
+		else
+			common->DPrintf("Font '%s' checksum pass.\n", fileName);
+	}
+	bool loaded = renderSystem->RegisterFont(fileName, fonts[index]);
+	if(loaded)
+		common->Printf("Font '%s' is loaded.\n", fileName);
+	else
+		common->Printf("Font '%s' load fail.\n", fileName);
+	return loaded;
+}
+
+void sdFontManagerLocal::ChecksumFileName(idStr &out, const char *fileName) const
+{
+	out = fileName;
+	//out.StripFilename();
+	out.AppendPath(FONT_CHECKSUM_FILE_NAME);
+}
+
+unsigned int sdFontManagerLocal::ReadChecksum(const char *fileName) const
+{
+	int ret = 0;
+	char *chechsum = NULL;
+	idStr checksumFile;
+
+	ChecksumFileName(checksumFile, fileName);
+	int length = fileSystem->ReadFile(checksumFile, (void **)&chechsum, NULL);
+	if(length > 0)
+	{
+		idStr str;
+		str.Append(chechsum, length);
+		if(sscanf(str.c_str(), "%u", &ret) != 1)
+		{
+			common->Printf("Unable read font checksum in file %s: %s\n", checksumFile.c_str(), str.c_str());
+		}
+		else
+		{
+			common->Printf("Read font checksum in file %s: %u\n", checksumFile.c_str(), ret);
+		}
+	}
+	else
+	{
+		common->Printf("Unable read font checksum file in %s\n", checksumFile.c_str());
+	}
+	Mem_Free(chechsum);
+	return ret;
+}
+
+void sdFontManagerLocal::WriteChecksum(const char *fileName, unsigned int checksum) const
+{
+	idStr checksumFile;
+	ChecksumFileName(checksumFile, fileName);
+	idStr checksumStr = va("%u", checksum);
+	fileSystem->WriteFile(checksumFile, checksumStr.c_str(), checksumStr.Length());
+	common->Printf("Write font checksum '%s' to %s.\n", checksumStr.c_str(), checksumFile.c_str());
+}
+
+bool sdFontManagerLocal::ConvertFont(const sdLocFont_t *fc, const char *name, const char *lang, const char *fileName) const
+{
+	common->Printf("Converting and caching true type font '%s' to DOOM3 font......\n", name);
+	if(R_ExportTrueTypeFont(fc->file.c_str(), name, lang, DEFAULT_FONT_TEXTURE_SIZE))
+	{
+		common->Printf("Convert and cached true type font '%s' to DOOM3 font successful.\n", name);
+		WriteChecksum(fileName, fc->checksum);
+		return true;
+	}
+	else	
+	{
+		common->Warning("Couldn't convert and cache true type font '%s' to DOOM3 font.", name);
+		return false;
+	}
+}
+
+unsigned int sdFontManagerLocal::TrueTypeFontFileChecksum(const char *file) const
+{
+	unsigned int checksum;
+	void *data = NULL;
+	int length = fileSystem->ReadFile(file, &data, NULL);
+	if(length > 0)
+		checksum = MD5_BlockChecksum(data, length);
+	else
+		checksum = 0;
+	Mem_Free(data);
+	return checksum;
 }
 
 
