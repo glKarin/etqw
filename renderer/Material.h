@@ -404,6 +404,7 @@ typedef struct {
 	stageTexture_t*				textures;
 	int							numTextureMatrices;
 	stageTextureMatrix_t*		textureMatrices;
+	int							destinationBuffer; //-1 for normal rendering
 #endif
 } shaderStage_t;
 #ifdef _SPLASHDAMAGE
@@ -1231,9 +1232,10 @@ class idMaterial : public idDecl
         void				CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults );
         void				CompleteInterationStage( materialStage_t *ss, stageParseData_t& spd );
         void				FinishStage( materialStage_t* ms, stageParseData_t& spd );
-        bool				ParseProgramStageVector( idParser &src, stageParseData_t& spd );
-        bool				ParseProgramStageTexture( idParser &src, stageParseData_t& spd );
-        bool				ParseProgramStageMatrix( idParser &src, stageParseData_t& spd );
+        int					ParseProgramStageVector( idParser &src, stageParseData_t& spd );
+        int					ParseProgramStageTexture( idParser &src, stageParseData_t& spd );
+        int					ParseProgramStageMatrix( idParser &src, stageParseData_t& spd );
+		bool				ParseConstantCVarExpression( idParser& src, bool& result );
 #endif
 
 	private:

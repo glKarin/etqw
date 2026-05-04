@@ -12,7 +12,17 @@
 #define NSS_DEBUG(x)
 #endif
 
-#define TEXEL_SIZE_NAME(x) va("%sTexSize", x)
+#define TEXEL_SIZE_SUFFIX "TexSize"
+#define TEXEL_SIZE_NAME(x) va("%s" TEXEL_SIZE_SUFFIX, x)
+
+static idCVar r_shaderQuality("r_shaderQuality", "3", CVAR_RENDERER | CVAR_INTEGER, "");
+static idCVar r_megaDrawMethod("r_megaDrawMethod", "0", CVAR_RENDERER | CVAR_BOOL, "");
+static idCVar r_normalizeNormalMaps("r_normalizeNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
+static idCVar r_dxnNormalMaps("r_dxnNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
+static idCVar r_32ByteVtx("r_32ByteVtx", "0", CVAR_RENDERER | CVAR_BOOL, "");
+static idCVar r_useDitherMask("r_useDitherMask", "0", CVAR_RENDERER | CVAR_BOOL, "");
+static idCVar r_shaderSkipSpecCubeMaps("r_shaderSkipSpecCubeMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
+static idCVar alphatest_kill("alphatest_kill", "1", CVAR_RENDERER | CVAR_BOOL, "");
 
 extern void RB_GLSL_ConvertGL2ESVertexShader(idStr &ret, const char *text, int version);
 extern void RB_GLSL_ConvertGL2ESFragmentShader(idStr &ret, const char *text, int version);
@@ -204,6 +214,7 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 }
 
 void sdRenderProgram::BindMaterialUniform(const idMaterial *mat, const float *regs) const {
+#if 0
 	float parms[4];
 	int i1 = mat->GetDeformRegister(1);
 	int i2 = mat->GetDeformRegister(2);
@@ -220,6 +231,7 @@ void sdRenderProgram::BindMaterialUniform(const idMaterial *mat, const float *re
 	parms[2] = 0.0f;
 	parms[3] = 1.0f;
 	BindVector("deformMagnitude", parms);
+#endif
 }
 
 bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const
@@ -233,7 +245,7 @@ bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, 
     GL_UseProgram((shaderProgram_t *)shader);
 
     BindStageUniform(stage, regs);
-	BindMaterialUniform(mat, regs);
+	//BindMaterialUniform(mat, regs);
 
     return true;
 }
@@ -353,14 +365,24 @@ void sdRenderProgram::InsertMacro(sdStringBuilder_Heap &buf, const char *name, c
 }
 
 void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
-	InsertMacro(buf, "r_shaderQuality", "3");
-	InsertMacro(buf, "r_megaDrawMethod", "0");
-	InsertMacro(buf, "r_normalizeNormalMaps", "0");
-	InsertMacro(buf, "r_dxnNormalMaps", "0");
-	InsertMacro(buf, "r_32ByteVtx", "0");
-	InsertMacro(buf, "r_useDitherMask", "0");
-	InsertMacro(buf, "alphatest_kill", "0");
-	InsertMacro(buf, "r_shaderSkipSpecCubeMaps", "0");
+	//InsertMacro(buf, "alphatest_kill", "0");
+
+	const char *CvarMacros[] = {
+		"r_shaderQuality",
+		"r_megaDrawMethod",
+		"r_normalizeNormalMaps",
+		"r_dxnNormalMaps",
+		"r_32ByteVtx",
+		"r_useDitherMask",
+		"r_shaderSkipSpecCubeMaps",
+		"alphatest_kill",
+	};
+	idCVar *cvar;
+	for(int i = 0; i < sizeof(CvarMacros) / sizeof(CvarMacros[0]); i++)
+	{
+		cvar = cvarSystem->Find(CvarMacros[i]);
+		InsertMacro(buf, CvarMacros[i], cvar ? cvar->GetString() : "0");
+	}
 }
 
 void sdRenderProgram::InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
@@ -522,8 +544,6 @@ GLint sdRenderProgram::GetBindingLocation(const sdDeclRenderBinding *binding) co
 void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char *rawName) const {
 	const char *Builtin_Variables[] = {
 		"currentRenderTexelSize",
-		"deformMagnitude",
-		"deformScroll",
 	};
 	for (int i = 0; i < sizeof(Builtin_Variables) / sizeof(Builtin_Variables[0]); i++) {
 		if(!idStr::Icmp(rawName, Builtin_Variables[i])) {
@@ -541,7 +561,9 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 			return;
 		}
 	}
-	common->Warning("sdRenderProgram::InsertBuiltinBinding: unknown render built-in binding '%s'", rawName);
+	int index = idStr::FindText(rawName, TEXEL_SIZE_SUFFIX);
+	if(index == -1 || index != idStr::Length(rawName) - idStr::Length(TEXEL_SIZE_SUFFIX))
+		common->Warning("sdRenderProgram::InsertBuiltinBinding: unknown render built-in binding '%s'", rawName);
 }
 
 GLint sdRenderProgram::GetUniformLocation(const char *name) const {
