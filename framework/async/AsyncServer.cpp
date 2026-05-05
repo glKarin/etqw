@@ -312,15 +312,14 @@ void idAsyncServer::ExecuteMapChange(void)
 	fileSystem->ClearPureChecksums();
 
 	// make sure the map/gametype combo is good
+#if !defined(_SPLASHDAMAGE)
 #ifdef _RAVEN
 	GetBestGameType(cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"), bestGameType);
 #elif defined(_HUMANHEAD)
 	game->GetBestGameType(cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"));
-#elif defined(_SPLASHDAMAGE)
 #else
 	game->GetBestGameType(cvarSystem->GetCVarString("si_map"), cvarSystem->GetCVarString("si_gametype"), bestGameType);
 #endif
-#if !defined(_SPLASHDAMAGE)
 	cvarSystem->SetCVarString("si_gametype", bestGameType);
 #endif
 
@@ -329,8 +328,8 @@ void idAsyncServer::ExecuteMapChange(void)
 
 #ifdef _SPLASHDAMAGE //karin: call OnUserStartMap before spawn server map, must on after rescanSI, because must sync cvars to serverInfo
 	const char *map = sessLocal.mapSpawnData.serverInfo.GetString("si_map");
+	idStr gameMapName;
 	idStr reason;
-	idStr gameMapName = map;
 	common->Printf("idAsyncServer::OnUserStartMap '%s': isServer=%d, isClient=%d......\n", map, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive());
 	userMapChangeResult_e changeResult = game->OnUserStartMap(map, reason, gameMapName);
 	common->Printf("idAsyncServer::OnUserStartMap '%s': %d\n", map, changeResult);
@@ -342,11 +341,15 @@ void idAsyncServer::ExecuteMapChange(void)
 	}
 	common->Printf("Start server map '%s': %d\n", gameMapName.c_str(), changeResult);
 	mapName = gameMapName.c_str(); // return map name if campaign mode, else is normalized map file path
-	// strip 'maps/' prefix
-	// if (!idStr::Icmpn(gameMapName, "maps/", 5))
-	// 	gameMapName.StripLeadingOnce("maps/");
-	// cvarSystem->SetCVarString("si_map", gameMapName.c_str());
-	// sessLocal.mapSpawnData.serverInfo.Set("si_map", gameMapName.c_str());
+
+	// OnUserStartMap return normalized map file path with extension
+	idStr cleanName = gameMapName;
+	cleanName.StripFileExtension();
+	if(cleanName.Cmp(map))
+	{
+		cvarSystem->SetCVarString("si_map", cleanName.c_str());
+		sessLocal.mapSpawnData.serverInfo.Set("si_map", cleanName.c_str());
+	}
 #else
 	sprintf(mapName, "maps/%s", sessLocal.mapSpawnData.serverInfo.GetString("si_map"));
 	mapName.SetFileExtension(".map");

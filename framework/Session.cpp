@@ -682,10 +682,11 @@ void idSessionLocal::ShowLoadingGui()
 	console->Close();
 
 #ifdef _SPLASHDAMAGE //karin: level loading UI
-	idStr mapsName = mapSpawnData.serverInfo.GetString("si_map");
-	if(idStr::Icmpn(mapsName, "maps/", 5))
-		mapsName.Insert("maps/", 0);
-	game->ShowLevelLoadScreen(mapsName.c_str());
+	idStr mapName = mapSpawnData.serverInfo.GetString("si_map");
+	if(idStr::Icmpn(mapName, "maps/", 5))
+		mapName.Insert("maps/", 0);
+	mapName.StripFileExtension();
+	game->ShowLevelLoadScreen(mapName.c_str());
 #endif
 	// introduced in D3XP code. don't think it actually fixes anything, but doesn't hurt either
 #if 1
@@ -1583,8 +1584,9 @@ void idSessionLocal::MoveToNewMap(const char *mapName)
 	idStr gameMapName = mapName;
 	if(idStr::Icmpn(mapName, "maps/", 5)) {
 		gameMapName.Insert("maps/", 0);
-		mapName = gameMapName.c_str();
 	}
+	gameMapName.StripFileExtension();
+	mapName = gameMapName.c_str();
 #endif
 	mapSpawnData.serverInfo.Set("si_map", mapName);
 
