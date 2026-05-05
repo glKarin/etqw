@@ -42,6 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #define GL_BLIT_FRAMEBUFFER_AVAILABLE() ( GLIMP_PROCISVALID(qglBlitFramebuffer) )
 #define GL_DRAW_BUFFERS_AVAILABLE() ( GLIMP_PROCISVALID(qglDrawBuffers) )
 #define GL_DEBUG_MESSAGE_AVAILABLE() ( GLIMP_PROCISVALID(qglDebugMessageControl) && GLIMP_PROCISVALID(qglDebugMessageCallback) && GLIMP_PROCISVALID(qglGetDebugMessageLog))
+#define GL_QUERY_AVAILABLE() ( GLIMP_PROCISVALID(qglBeginQuery) )
 #endif
 
 
@@ -1114,6 +1115,8 @@ extern idCVar r_useETC2;				// ETC2 compression
 
 extern idCVar harm_r_useFenceSync;
 extern void RB_FenceSync(void);
+
+//#include "rb/OcclusionQuery.h"
 #endif
 //#define DEBUG_SYNC_MIN_INTERVAL 1
 #ifdef DEBUG_SYNC_MIN_INTERVAL
@@ -1687,6 +1690,7 @@ typedef enum {
 #endif
 	SHADER_DIFFUSECUBEMAP,
 	// SHADER_GLASSWARP,
+	//SHADER_OCCLUSIONTEST,
 	SHADER_TEXGEN,
 	// new stage
 	SHADER_COLORPROCESS,

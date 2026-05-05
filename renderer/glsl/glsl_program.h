@@ -24,6 +24,8 @@ GLSL_PROGRAM_PROC shaderProgram_t diffuseCubemapShader; //k: diffuse cubemap sha
 GLSL_PROGRAM_PROC shaderProgram_t depthToColorShader; //k: depth to color shader
 GLSL_PROGRAM_PROC shaderProgram_t stencilToColorShader; //k: stencil index to color shader
 GLSL_PROGRAM_PROC shaderProgram_t texgenShader; //k: texgen shader
+//GLSL_PROGRAM_PROC shaderProgram_t occlusionTestShader; //k: occlusion testing
+												
 #ifdef _POSTPROCESS
 GLSL_PROGRAM_PROC shaderProgram_t retro2BitShader; //k: 2Bit postprocess shader
 GLSL_PROGRAM_PROC shaderProgram_t retroC64Shader; //k: C64 postprocess shader
