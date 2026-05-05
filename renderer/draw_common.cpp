@@ -631,6 +631,13 @@ ID_INLINE static void RB_STD_T_SetNewShaderPassesUniforms(const drawSurf_t *surf
 }
 
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
+
+//#define _TEST_RENDER_PROGRAM 1
+#if _TEST_RENDER_PROGRAM
+#include "splashdamage/framework/CmdSystemDeclCompletion.h"
+static idCVar harm_r_testRenderProgram("harm_r_testRenderProgram", "", CVAR_RENDERER, "test render program", idArgCompletionDecl_f<DECLTYPE_RENDERPROGRAM>);
+#endif
+
 // call in backend render thread
 static void RB_SetBuiltinProgramEnvironment(void)
 {
@@ -966,6 +973,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			if ( r_skipNewAmbient.GetBool() ) {
 				continue;
 			}
+
+#if _TEST_RENDER_PROGRAM
+			if(harm_r_testRenderProgram.GetString() && harm_r_testRenderProgram.GetString()[0] && idStr::Icmp(harm_r_testRenderProgram.GetString(), renderProgram->GetDeclRenderProgram()->GetName()))
+				continue;
+#endif
 
 			if(!renderProgram->Bind(pStage, shader, regs))
 				continue;

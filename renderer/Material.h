@@ -212,6 +212,9 @@ typedef enum {
 	EXP_REG_SUN_G,
 	EXP_REG_SUN_B,
 	EXP_REG_SUN_AZIMUTH,
+	EXP_REG_WIND_X,
+	EXP_REG_WIND_Y,
+	EXP_REG_RANDF,
 #endif
 	EXP_REG_NUM_PREDEFINED
 } expRegister_t;

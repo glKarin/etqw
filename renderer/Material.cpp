@@ -67,6 +67,8 @@ extern idStrList stageParms;
 		else if(!idStr::Icmp(p, "partialLoad")) {} \
 	}
 
+static idCVar harm_r_windSpeedScale("harm_r_windSpeedScale", "0.0254", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "wind speed scale"); // DOOM_TO_METERS
+
 extern idStr R_RestorePastImageProgram(const char *img, bool clearParms);
 
 ID_INLINE static void R_AllocMaterialStageDefaultTexture(materialStage_t *stage, const sdDeclRenderBinding *binding = NULL)
@@ -936,10 +938,12 @@ int idMaterial::ParseTerm(idLexer &src)
 		return EXP_REG_SUN_AZIMUTH;
 	}
 	if (!token.Icmp("wind_x")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_WIND_X;
 	}
 	if (!token.Icmp("wind_y")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_WIND_Y;
 	}
 	if (!token.Icmp("AmbientMult")) {
 		return GetExpressionConstant(1.0f);
@@ -948,16 +952,23 @@ int idMaterial::ParseTerm(idLexer &src)
 		return GetExpressionConstant(1.0f);
 	}
 	if (!token.Icmp("desat_sun_r")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_R;
 	}
 	if (!token.Icmp("desat_sun_g")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_G;
 	}
 	if (!token.Icmp("desat_sun_b")) {
-		return GetExpressionConstant(1.0f);
+		pd->registersAreConstant = false;
+		return EXP_REG_SUN_B;
 	}
 	if (!token.Icmp("lightscale")) {
 		return GetExpressionConstant(1.0f);
+	}
+	if (!token.Icmp("randf")) {
+		pd->registersAreConstant = false;
+		return EXP_REG_RANDF;
 	}
 #endif
 
@@ -4027,6 +4038,12 @@ void idMaterial::EvaluateRegisters(float *registers, const float shaderParms[MAX
 		registers[EXP_REG_SUN_G] = sunColor[1];
 		registers[EXP_REG_SUN_B] = sunColor[2];
 		registers[EXP_REG_SUN_AZIMUTH] = atmosphere->GetSunAzimuth();
+		float windRad = DEG2RAD(atmosphere->GetWindAngle());
+		float windX = idMath::Cos(windRad);
+		float windY = idMath::Sin(windRad);
+		float speed = atmosphere->GetWindStrength() * harm_r_windSpeedScale.GetFloat();
+		registers[EXP_REG_WIND_X] = windX * speed;
+		registers[EXP_REG_WIND_Y] = windY * speed;
 	}
 	else
 	{
@@ -4034,7 +4051,11 @@ void idMaterial::EvaluateRegisters(float *registers, const float shaderParms[MAX
 		registers[EXP_REG_SUN_G] = 1.0f;
 		registers[EXP_REG_SUN_B] = 1.0f;
 		registers[EXP_REG_SUN_AZIMUTH] = 0.0f;
+		registers[EXP_REG_WIND_X] = 0.0f;
+		registers[EXP_REG_WIND_Y] = 0.0f;
 	}
+	static	idRandom random;
+	registers[EXP_REG_RANDF] = random.RandomFloat();
 #endif
 
 	op = ops;
