@@ -699,11 +699,11 @@ void idSurface_Patch::SubdivideExplicit(int horzSubdivisions, int vertSubdivisio
             verts[i]._normal.Normalize();
         }
 #endif
-#else		for (i = 0; i < width * height; i++) {
+#else
+        for (i = 0; i < width * height; i++) {
 			verts[i].normal.Normalize();
 		}
 #endif
-
 	}
 
 	GenerateIndexes();
