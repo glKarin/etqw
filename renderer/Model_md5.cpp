@@ -1151,6 +1151,9 @@ void idRenderModelMD5::PurgeModel()
 #if defined(_RAVEN) || defined(_HUMANHEAD) //k: md5 model ref def->dynamicModel, set to 0
 	staticModelInstance = NULL;
 #endif
+#ifdef _SPLASHDAMAGE
+	guiSurfaces.Clear();
+#endif
 }
 
 /*
@@ -1471,14 +1474,14 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 	for (i = 0; i < texCoords.Num(); i++) {
 		idDrawVert &vert = verts[ i ];
 		vert.Clear();
-		file->ReadFloatArray(vert.xyz.ToFloatPtr(), 3);
+		file->ReadVec3(vert.xyz);
 
 		file->ReadFloat(texCoords[ i ][0]);
 		file->ReadFloat(texCoords[ i ][1]);
 		vert.st = texCoords[i];
 
-		file->ReadFloatArray(vert.normal.ToFloatPtr(), 3);
-		file->ReadFloatArray(vert.tangents[0].ToFloatPtr(), 3);
+		file->ReadVec3(vert.normal);
+		file->ReadVec3(vert.tangents[0]);
 		file->ReadFloat(biTangentSign);
 		vert.SetBiTangent(biTangentSign);
 
@@ -1816,9 +1819,9 @@ bool idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJoin
 }
 
 bool idRenderModelMD5::LoadMD5Binary(void) {
-	int			majorVersion;
 	int			minorVersion;
 	int			version;
+	int			numLod;
 	int			i;
 	int			num;
 	int			parentNum;
@@ -1836,13 +1839,12 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	if (!file)
 		return false;
 
-	file->ReadInt(majorVersion);
 	file->ReadInt(minorVersion);
-	version = majorVersion * 10 + minorVersion;
+	version = 10 + minorVersion;
 
 	if (version < MD5_VERSION) {
 		fileSystem->CloseFile(file);
-		common->Warning("Invalid version %d%d.  Should be version %d\n", majorVersion, minorVersion, MD5_VERSION);
+		common->Warning("Invalid version 1%d.  Should be version %d\n", minorVersion, MD5_VERSION);
 		return false;
 	}
 
@@ -1851,6 +1853,14 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	}
 
 	purged = false;
+
+	file->ReadInt(numLod);
+	if (numLod <= 0)
+	{
+		fileSystem->CloseFile(file);
+		common->Error("Invalid LOD size: %d", numLod);
+		return false;
+	}
 
 	// parse num joints
 	file->ReadInt(num);
@@ -1929,7 +1939,6 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 
 	meshes.SetGranularity(1);
 	meshes.SetNum(num);
-	const idMD5Mesh *lastMesh = NULL;
 	idList<idMD5Mesh::binaryVertGroup_t> verts;
 
 	for (i = 0; i < num; i++) {
@@ -1940,10 +1949,39 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 		}
 	}
 
+	//karin: only read LOD 0, skip others
+	for (int lod = 1; lod < numLod; lod++)
+	{
+		idList<idMD5Mesh> lodMeshes;
+		lodMeshes.SetGranularity(1);
+		lodMeshes.SetNum(num);
+		verts.Clear();
+
+		for (i = 0; i < num; i++) {
+			if(! lodMeshes[ i ].ReadBinary(file, joints.Num(), md5Bones.Ptr(), poseMat3, verts))
+			{
+				fileSystem->CloseFile(file);
+				return false;
+			}
+		}
+	}
+
 	//
 	// calculate the bounds of the model
 	//
+	// if want to use bounds in file, or re-calc
+	file->ReadVec3(bounds[0]);
+	file->ReadVec3(bounds[1]);
 	CalculateBounds(poseMat3);
+
+	//
+	// calculate the bounds of the model
+	//
+	if (ParseGUISurfaces(file) < 0)
+	{
+		//karin: only clear parsed gui surfaces, but md5mesh is load finished although parse gui surfaces fail
+		guiSurfaces.Clear();
+	}
 
 	// set the timestamp for reloadmodels
 	timeStamp = file->Timestamp();
@@ -1951,6 +1989,46 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	fileSystem->CloseFile(file);
 
 	return true;
+}
+
+int idRenderModelMD5::ParseGUISurfaces(idFile *file)
+{
+	int num = 0;
+	guiSurface_t *guiSurf;
+	int jointIndex;
+	int numPlanes;
+
+	file->ReadInt(num);
+	if (num <= 0)
+		return num;
+
+	guiSurfaces.SetNum(num);
+	guiSurf = guiSurfaces.Ptr();
+	for (int i = 0; i < num; i++, guiSurf++)
+	{
+		file->ReadInt(guiSurf->guiNum);
+		file->ReadVec3(guiSurf->bounds[0]);
+		file->ReadVec3(guiSurf->bounds[1]);
+		file->ReadVec3(guiSurf->origin);
+		file->ReadMat3(guiSurf->axis);
+		file->ReadInt(jointIndex);
+		guiSurf->joint = *(jointHandle_t *)&jointIndex;
+		file->ReadFloatArray(guiSurf->plane.ToFloatPtr(), 4);
+		file->ReadInt(numPlanes);
+		if (numPlanes > MAX_GUISURFACE_TRIANGLES)
+		{
+			common->Warning("Number of planes is over: %d > %d", numPlanes, MAX_GUISURFACE_TRIANGLES);
+			return false;
+		}
+		for (int k = 0; k < num; k++)
+		{
+			file->ReadFloatArray(guiSurf->edgePlanes[k][0].ToFloatPtr(), 4);
+			file->ReadFloatArray(guiSurf->edgePlanes[k][1].ToFloatPtr(), 4);
+		}
+		guiSurf->numTris = 0;
+	}
+
+	return num;
 }
 
 #endif

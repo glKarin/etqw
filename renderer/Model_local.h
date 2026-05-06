@@ -181,6 +181,8 @@ class idRenderModelStatic : public idRenderModel
 		virtual idBounds			CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim );
 		bool						LoadModelBinary(const char *fileName);
 
+	protected:
+		idList<guiSurface_t>		guiSurfaces;
 	private:
 		idStr						ModelBinaryName(const char *fileName);
 #endif
@@ -322,6 +324,7 @@ class idRenderModelMD5 : public idRenderModelStatic
 		virtual int					FindSurfaceId( const char *surfaceName );
 		virtual idBounds			CalcMeshBounds( int meshIndex, const idJointMat *joints, const idVec3 &offset, const idMat3 &axis, bool useDefaultAnim );
 		bool						LoadMD5Binary(void);
+		int							ParseGUISurfaces(idFile *file);
 #endif
 
 	private:

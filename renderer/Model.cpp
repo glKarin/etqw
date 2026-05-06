@@ -2724,13 +2724,13 @@ void idRenderModelStatic::DirtyVertexAmbientCache() {
 
 // Returns the number of GUI surfaces
 int idRenderModelStatic::NumGUISurfaces( void ) const {
-	return 0;
+	return guiSurfaces.Num();
 }
 
 
 // Returns the GUI surfaces
 const guiSurface_t* idRenderModelStatic::GetGUISurface( int guiSurfaceNum ) const {
-	return NULL;
+	return &guiSurfaces[guiSurfaceNum];
 }
 
 // Returns the id of the surface with the given name (-1 if not supported or not found)
