@@ -4806,7 +4806,6 @@ int idParser::DollarDirective_elif( void )
     PushIndent( INDENT_ELIF, skip, skipElse );
     return true;
 }
-#endif
 
 void OutputTextSource(idParser &src, sdStringBuilder_Heap &buf) {
 	idToken token2;
@@ -4863,4 +4862,5 @@ void OutputFormatSource(idParser &src, const char *fileName, const char *name) {
 	OutputTextSource(src, buf);
 	idLib::fileSystem->CloseFile(f);
 }
+#endif
 
