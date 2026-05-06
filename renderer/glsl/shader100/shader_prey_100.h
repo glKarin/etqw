@@ -11,7 +11,7 @@
 #include "prey/liquid.vert.h"
 #include "prey/liquid.frag.h"
 
-#if 0
+#if 1
 #include "prey/membrane.vert.h"
 #include "prey/membrane.frag.h"
 #endif

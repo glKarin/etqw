@@ -648,7 +648,7 @@ idCollisionModelManagerLocal::FreeModel
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: free model memory actually
 void idCollisionModelManagerLocal::FreeModel_memory(cm_model_t *model)
 #else
-void idCollisionModelManagerLocal::FreeModel(idCollisionModel *_model)
+void idCollisionModelManagerLocal::FreeModel(cm_model_t *model)
 #endif
 {
 	cm_polygonRefBlock_t *polygonRefBlock, *nextPolygonRefBlock;
@@ -5220,11 +5220,6 @@ const char * cm_model_t::GetName( void ) const
 {
 	return name.c_str();
 }
-
-void idCollisionModelManagerLocal::DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis, const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) {
-	(void)viewAxis;
-	DrawModel(model, modelOrigin, modelAxis, viewOrigin, radius);
-}
 #endif
 
 #ifdef _HUMANHEAD
@@ -5661,5 +5656,10 @@ void idCollisionModelManagerLocal::InitModels(void)
 
 	// shutdown the hash
 	ShutdownHash();
+}
+
+void idCollisionModelManagerLocal::DrawModel( idCollisionModel *model, const idVec3 &modelOrigin, const idMat3 &modelAxis, const idVec3 &viewOrigin, const idMat3 &viewAxis, const float radius, int lifetime ) {
+	(void)viewAxis;
+	DrawModel(model, modelOrigin, modelAxis, viewOrigin, radius);
 }
 #endif

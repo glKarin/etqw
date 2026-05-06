@@ -278,29 +278,6 @@ float idMath::ScaleToDb( float scale ) {
 
 #endif
 
-#ifdef _RAVEN
-/*
-===================
-idMath::Distance
-===================
-*/
-float idMath::Distance(const idVec3 &p1, const idVec3 &p2)
-{
-	idVec3 v = p2 - p1;
-	return v.Length();
-}
-
-/*
-========================
-idMath::CreateVector
-========================
-*/
-idVec3 idMath::CreateVector(float x, float y, float z)
-{
-	return idVec3(x, y, z);
-}
-#endif
-
 #ifdef _SPLASHDAMAGE
 /*
 ================
@@ -408,6 +385,55 @@ void idMath::TestFloatBitConversions()
 #endif
 }
 
+// ================================================================================================
+// Barycentric texture coordinate functions
+// Get the *SIGNED* area of a triangle required for barycentric
+// ================================================================================================
+float idMath::BarycentricTriangleArea( const idVec3 &normal, const idVec3 &a, const idVec3 &b, const idVec3 &c )
+{
+    idVec3	v1, v2;
+    idVec3	cross;
+    float	area;
+
+    v1 = b - a;
+    v2 = c - a;
+    cross = v1.Cross( v2 );
+    area = 0.5f * ( cross * normal );
+
+    return( area );
+}
+
+void idMath::BarycentricEvaluate( idVec2 &result, const idVec3 &point, const idVec3 &normal, const float area, const idVec3 t[3], const idVec2 tc[3] )
+{
+    float	b1, b2, b3;
+
+    float scale = 1.f;
+
+    scale /= area;
+
+    b1 = idMath::BarycentricTriangleArea( normal, point, t[1], t[2] );
+    b2 = idMath::BarycentricTriangleArea( normal, t[0], point, t[2] );
+    b3 = idMath::BarycentricTriangleArea( normal, t[0], t[1], point );
+
+    result[0] = ( ( b1 * tc[0][0] ) + ( b2 * tc[1][0] ) + ( b3 * tc[2][0] ) ) * scale;
+    result[1] = ( ( b1 * tc[0][1] ) + ( b2 * tc[1][1] ) + ( b3 * tc[2][1] ) ) * scale;
+}
+
+void idMath::BarycentricEvaluate( idVec2 &result, const idVec3 &point, const idVec3 &normal, const float area, const idVec3 t[3], const short tc[ 3 ][ 2 ], float scale )
+{
+    float	b1, b2, b3;
+
+    scale /= area;
+
+    b1 = idMath::BarycentricTriangleArea( normal, point, t[1], t[2] );
+    b2 = idMath::BarycentricTriangleArea( normal, t[0], point, t[2] );
+    b3 = idMath::BarycentricTriangleArea( normal, t[0], t[1], point );
+
+    result[0] = ( ( b1 * tc[0][0] ) + ( b2 * tc[1][0] ) + ( b3 * tc[2][0] ) ) * scale;
+    result[1] = ( ( b1 * tc[0][1] ) + ( b2 * tc[1][1] ) + ( b3 * tc[2][1] ) ) * scale;
+}
+#endif
+
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 
 // ================================================================================================
@@ -456,51 +482,25 @@ int rvRandom::Init( void )
 }
 #endif
 
-// ================================================================================================
-// Barycentric texture coordinate functions
-// Get the *SIGNED* area of a triangle required for barycentric
-// ================================================================================================
-float idMath::BarycentricTriangleArea( const idVec3 &normal, const idVec3 &a, const idVec3 &b, const idVec3 &c )
+#ifdef _RAVEN
+/*
+===================
+idMath::Distance
+===================
+*/
+float idMath::Distance(const idVec3 &p1, const idVec3 &p2)
 {
-    idVec3	v1, v2;
-    idVec3	cross;
-    float	area;
-
-    v1 = b - a;
-    v2 = c - a;
-    cross = v1.Cross( v2 );
-    area = 0.5f * ( cross * normal );
-
-    return( area );
+	idVec3 v = p2 - p1;
+	return v.Length();
 }
 
-void idMath::BarycentricEvaluate( idVec2 &result, const idVec3 &point, const idVec3 &normal, const float area, const idVec3 t[3], const idVec2 tc[3] )
+/*
+========================
+idMath::CreateVector
+========================
+*/
+idVec3 idMath::CreateVector(float x, float y, float z)
 {
-    float	b1, b2, b3;
-
-    float scale = 1.f;
-
-    scale /= area;
-
-    b1 = idMath::BarycentricTriangleArea( normal, point, t[1], t[2] );
-    b2 = idMath::BarycentricTriangleArea( normal, t[0], point, t[2] );
-    b3 = idMath::BarycentricTriangleArea( normal, t[0], t[1], point );
-
-    result[0] = ( ( b1 * tc[0][0] ) + ( b2 * tc[1][0] ) + ( b3 * tc[2][0] ) ) * scale;
-    result[1] = ( ( b1 * tc[0][1] ) + ( b2 * tc[1][1] ) + ( b3 * tc[2][1] ) ) * scale;
-}
-
-void idMath::BarycentricEvaluate( idVec2 &result, const idVec3 &point, const idVec3 &normal, const float area, const idVec3 t[3], const short tc[ 3 ][ 2 ], float scale )
-{
-    float	b1, b2, b3;
-
-    scale /= area;
-
-    b1 = idMath::BarycentricTriangleArea( normal, point, t[1], t[2] );
-    b2 = idMath::BarycentricTriangleArea( normal, t[0], point, t[2] );
-    b3 = idMath::BarycentricTriangleArea( normal, t[0], t[1], point );
-
-    result[0] = ( ( b1 * tc[0][0] ) + ( b2 * tc[1][0] ) + ( b3 * tc[2][0] ) ) * scale;
-    result[1] = ( ( b1 * tc[0][1] ) + ( b2 * tc[1][1] ) + ( b3 * tc[2][1] ) ) * scale;
+	return idVec3(x, y, z);
 }
 #endif

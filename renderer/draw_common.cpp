@@ -29,7 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "tr_local.h"
+#ifdef _SPLASHDAMAGE //karin: custom stage shader
 #include "renderer/RenderProgram.h"
+#endif
 
 #ifdef _K_DEV //karin: debug shader pass
 #define _HARM_SKIP_RENDER_SHADER_PASS

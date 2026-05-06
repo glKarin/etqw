@@ -30,12 +30,12 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "../renderer/Image.h"
-#include "decllib/declLocStr.h"
 #ifdef _IMGUI
 #include "../renderer/imgui/r_imgui.h"
 #endif
 
 #ifdef _SPLASHDAMAGE
+#include "decllib/declLocStr.h"
 #include "framework/AdManager.h"
 #include "framework/NotificationSystem.h"
 #include "framework/GraphManager.h"

@@ -629,12 +629,6 @@ ID_INLINE idVec3 idMat3::operator/( const idVec3 &vec ) const
                 mat[2].x * vec.x + mat[2].y * vec.y + mat[2].z * vec.z ) );
 }
 
-ID_INLINE idMat3& idMat3::operator=( const idMat3 &a )
-{
-    memcpy( mat[ 0 ].ToFloatPtr(), a.mat[ 0 ].ToFloatPtr(), sizeof( mat ) );
-    return *this;
-}
-
 ID_INLINE idMat3 idMat3::operator/( const idMat3 &a ) const
 {
     idMat3		dst;
@@ -1016,14 +1010,6 @@ ID_INLINE int idMat3::GetDimension(void) const
 	return 9;
 }
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-// abahr: made version for when getting vectors
-ID_INLINE int idMat3::GetSquareDimension( void ) const
-{
-    return 3;
-}
-#endif
-
 ID_INLINE const float *idMat3::ToFloatPtr(void) const
 {
 	return mat[0].ToFloatPtr();
@@ -1034,7 +1020,25 @@ ID_INLINE float *idMat3::ToFloatPtr(void)
 	return mat[0].ToFloatPtr();
 }
 
+#ifdef _RAVEN
+// abahr: made version for when getting vectors
+ID_INLINE int idMat3::GetVec3Dimension( void ) const {
+	return 3;
+}
+#endif
+
 #ifdef _SPLASHDAMAGE
+ID_INLINE int idMat3::GetSquareDimension( void ) const
+{
+    return 3;
+}
+
+ID_INLINE idMat3& idMat3::operator=( const idMat3 &a )
+{
+    memcpy( mat[ 0 ].ToFloatPtr(), a.mat[ 0 ].ToFloatPtr(), sizeof( mat ) );
+    return *this;
+}
+
 ID_INLINE idVec3 idMat3::TransposeMultiply( const idVec3 &vec ) const
 {
     return idVec3(

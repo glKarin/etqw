@@ -362,6 +362,22 @@ static char parseBuffer[MAX_IMAGE_NAME];
 #ifdef _SPLASHDAMAGE //karin: save image program stage parms
 idStrList stageParms;
 
+idStr R_RestorePastImageProgram(const char *img, bool clearParms)
+{
+	sdStringBuilder_Heap buf;
+	for(int i = 0; i < stageParms.Num(); i++)
+	{
+		buf.Append(stageParms[i]);
+		buf.Append(" ");
+	}
+	buf.Append(img);
+
+	if(clearParms)
+		stageParms.Clear();
+
+	return buf.c_str();
+}
+
 /*
 ===================
 R_ImageAdd
@@ -914,18 +930,3 @@ const char *R_ParsePastImageProgram(idLexer &src)
 	return parseBuffer;
 }
 
-idStr R_RestorePastImageProgram(const char *img, bool clearParms)
-{
-	sdStringBuilder_Heap buf;
-	for(int i = 0; i < stageParms.Num(); i++)
-	{
-		buf.Append(stageParms[i]);
-		buf.Append(" ");
-	}
-	buf.Append(img);
-
-	if(clearParms)
-		stageParms.Clear();
-
-	return buf.c_str();
-}
