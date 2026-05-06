@@ -189,7 +189,7 @@ class idCollisionModelManager
         // Loads collision models from a map file.
         virtual void			LoadMap( const idMapFile *mapFile, bool forceCreateMap ) = 0;
         // Frees all the collision models.
-        virtual void			FreeMap(const char* mapName) = 0
+        virtual void			FreeMap(const char* mapName) = 0;
 
         // sets up a trace model for collision with other trace models
         virtual cmHandle_t      ModelFromTrm(const char* mapName, const char* modelName, const idTraceModel &trm, const idMaterial *material ) = 0;
