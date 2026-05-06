@@ -1283,12 +1283,27 @@ static void R_ConvertJointTransforms(idList<md5meshBinaryJoint_t> &joints)
     }
 }
 
+int idMD5Mesh::FindBinaryVert(const idList<binaryVertGroup_t> &list) const
+{
+	const binaryVertGroup_t *group = list.Ptr();
+	for(int i = 0; i < list.Num(); i++, group++)
+	{
+		if(group->shader != shader)
+			continue;
+		if(group->noAnimate != ((flags & MD5MF_NO_ANIMATE) != 0))
+			continue;
+		return i;
+	}
+
+	return -1;
+}
+
 /*
 ====================
 idMD5Mesh::ReadBinary
 ====================
 */
-bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, const idJointMat *joints, idList<binaryVert_t> &retVerts)
+bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, const idJointMat *joints, idList<binaryVertGroup_t> &retVerts)
 {
 	int			num;
 	int			count;
@@ -1307,6 +1322,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 	bool b;
 	bool vertexRigidFlag;
 	int numSilEdges;
+	bool bool_v196;
 	bool bool_v198;
 	int numSilIndex; // v72
 	int numSourceVerts; // v120
@@ -1314,7 +1330,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 	int numMirroredVerts; // v128
 	float biTangentSign;
 	const md5meshBinaryJoint_t *trans = (const md5meshBinaryJoint_t *)transforms;
-	int basei = retVerts.Num();
+	binaryVertGroup_t *group = NULL;
 
 	//
 	// parse name
@@ -1328,8 +1344,8 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 
 	file->ReadInt(i); // v44
 	file->ReadInt(numRawVertex); // v52
-	file->ReadBool(b);
-	//if(b) flags |= MD5MF_NO_ANIMATE;
+	file->ReadBool(bool_v196); // v196
+	if(bool_v196) flags |= MD5MF_NO_ANIMATE;
 	file->ReadBool(bool_v198);
 	file->ReadBool(vertexRigidFlag);
 
@@ -1410,6 +1426,13 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 		common->Warning("Invalid size: %d", count);
 		return false;
 	}
+	else if(count > 0)
+	{
+		group = &retVerts.Alloc();
+		group->shader = shader;
+		group->noAnimate = bool_v196;
+		group->verts.SetNum(count);
+	}
 
 	texCoords.SetNum(count);
 	firstWeightForVertex.SetNum(count);
@@ -1445,7 +1468,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 		vert.color[2] = vertColors[i].b;
 		vert.color[3] = vertColors[i].a;
 
-		binaryVert_t &bin = retVerts.Alloc();
+		binaryVert_t &bin = group->verts[i];
 		bin.st = texCoords[i];
 		bin.color[0] = vertColors[i].r;
 		bin.color[1] = vertColors[i].g;
@@ -1486,7 +1509,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 				maxweight = numWeightsForVertex[ i ] + firstWeightForVertex[ i ];
 			}
 			
-			binaryVert_t &bin = retVerts[basei + i];
+			binaryVert_t &bin = group->verts[i];
 			bin.joints[0] = jointnum;
 			bin.weights[0] = 1.0f;
 			bin.offsets[0] = tempWeights[i].offset;
@@ -1501,7 +1524,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 			firstWeightForVertex[ i ]	= tempWeights.Num();
 			numWeightsForVertex[ i ]	= 0;
 			
-			binaryVert_t &bin = retVerts[basei + i];
+			binaryVert_t &bin = group->verts[i];
 			bin.num = 0;
 
 			for (j = 0; j < 4; j++)
@@ -1549,15 +1572,28 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 	file->ReadBool(b); // bool_v216
 	file->ReadInt(i);
 
-	Sys_Printf("xxx %s = %d <> %d | %d %d | %d %d %d | %d %d %d\n", meshName.c_str(), numSilIndex, numTris, bool_v198, numSilEdges, numSourceVerts, numOutputVerts, numMirroredVerts, maxweight, numWeights, count);
-	if(numOutputVerts <= 0)
+	//Sys_Printf("xxx %s|%s: v=%d t=%d | %d a=%d | %d %d %d | %d %d %d | %d\n", meshName.c_str(),shaderName.c_str(), numSilIndex, numTris, bool_v198, flags & MD5MF_NO_ANIMATE, numSourceVerts, numOutputVerts, numMirroredVerts, maxweight, numWeights, count, numSilEdges);
+	
+	//karin: find other mesh verts if no verts
+	if(numOutputVerts == 0)
 	{
+		int groupIndex = FindBinaryVert(retVerts);
+		if(groupIndex < 0)
+		{
+			common->Warning("Couldn't find mesh group: %s", meshName.c_str());
+			return false;
+		}
+		const idList<binaryVert_t> &groupVerts = retVerts[groupIndex].verts;
+		/*
+		printf("fff %d\n", index);
 		for (i = 0; i < tris.Num(); i++) {
-			if(tris[i] >= retVerts.Num())
+			if(tris[i] >= groupVerts.Num())
 			printf("kkk %d ", tris[i]);
 		}
 		printf("\n");
+		*/
 
+		//karin: filter verts of used only, but not need to do it in ETQW original, because it using GPU skinning
 		idList<const binaryVert_t *> used;
 		idList<int> mapBefore;
 		idList<int> mapAfter;
@@ -1568,7 +1604,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 			if(oldIndex == -1)
 			{
 				mapBefore.Append(idx);
-				int index = used.Append(&retVerts[idx]);
+				int index = used.Append(&groupVerts[idx]);
 				idx = mapAfter.Append(index);
 			}
 			else
@@ -1582,6 +1618,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 		firstWeightForVertex.SetNum(texCoords.Num());
 		numWeightsForVertex.SetNum(texCoords.Num());
 		verts.SetNum(texCoords.Num());
+
 		numWeights = 0;
 		idDrawVert *dv = verts.Ptr();
 		for(int j = 0; j < used.Num(); j++, dv++)
@@ -1806,17 +1843,17 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	joint = joints.Ptr();
 	/**
 	 * //karin: NOTE
-	 * ascii: joints transform are global/absolutive in md5mesh
-	 * binary: joints transsform are local/relative in md5mesh
+	 * ASCII: joints transform are global/absolute in md5mesh
+	 * binary: joints transform are local/relative in md5mesh
 	 * binary joint format is Qx Qy Qz Qw Tx Ty Tz w global_mat3x4
-	 * so we don't need calc extras like parsing ascii joints
+	 * so we don't need calc extras like parsing ASCII joints
 	 */
 	idList<md5meshBinaryJoint_t> md5Bones;
 	md5Bones.SetNum(joints.Num());
     md5meshBinaryJoint_t *md5Bone;
 	md5Bone = &md5Bones[0];
 
-	printf("qqq %s\n", Name());
+	//printf("qqq %s\n", Name());
 	for (i = 0; i < joints.Num(); i++, joint++, pose++, md5Bone++) {
 		if(!ParseJoint_Binary(file, joint, pose, &poseMat3[i]))
 		{
@@ -1869,7 +1906,7 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	meshes.SetGranularity(1);
 	meshes.SetNum(num);
 	const idMD5Mesh *lastMesh = NULL;
-	idList<idMD5Mesh::binaryVert_t> verts;
+	idList<idMD5Mesh::binaryVertGroup_t> verts;
 
 	for (i = 0; i < num; i++) {
 		if(! meshes[ i ].ReadBinary(file, joints.Num(), md5Bones.Ptr(), poseMat3, verts))

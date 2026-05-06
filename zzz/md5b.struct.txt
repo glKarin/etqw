@@ -15,18 +15,18 @@ md5b {
     # joints
     numJoints: int32
     joints: [numJoints]Joint_t
-        Joint_t {
+        Joint_t { # not same as ASCII md5mesh, rotation and position data are local/relative, but are absolute in ASCII version
             jointName: string
             parentIndex: int32
-            rotationQuat.x: float32
-            rotationQuat.y: float32
-            rotationQuat.z: float32
-            unknownFloat1: float32
-            position.x: float32
-            position.y: float32
-            position.z: float32
-            unknownFloat2: float32
-            poseMat: [12]float32
+            rotationQuat.x: float32 # idJointQuat::q::x
+            rotationQuat.y: float32 # idJointQuat::q::y
+            rotationQuat.z: float32 # idJointQuat::q::z
+            rotationQuat.w: float32 # idJointQuat::q::w
+            position.x: float32 # idJointQuat::t::x
+            position.y: float32 # idJointQuat::t::y
+            position.z: float32 # idJointQuat::t::z
+            w: float32 # idJointQuat::w
+            poseMat: [12]float32 # idJointMat::m # global/absolute transform
         }
 
     # meshes
@@ -34,29 +34,29 @@ md5b {
     meshes: [numMeshes]Mesh_t
         Mesh_t {
             meshName: string
-            noAnimate: int32
-            vertexColor: int32
-            unknownInt1: int32
-            numVerts: int32
-            vertexBufferIndex?: uint8
-            vertexBufferSharedFlags?: uint8
-            vertexRigidFlag: uint8
+            majorIndex: int32
+            minorIndex: int32
+            unknown1: int32
+            numRawVertex: int32 ???
+            noAnimate: bool
+            noAnimate: bool
+            singleJointsOnVertex: bool # 1 = only has 1 joint on every vertex; 0 = has more than 1 joints on every vertex;
             shader: string
-            unknownInt2: int32
-            unknownInt3: int32
-            numTris: int32
-            tris: [numTris * 3]uint16
-            numShadowIndices?: int32
-            rawVertices?: [numVertices * 2]uint8
-            numverts_unused?: [numVertices * 2]uint8
-            numVertices: int32
-            numExtendedVerts?: int32
-            extendedVertices?: [numExtendedVerts]int32
-            unknownInt4: int32
-            unknownInt5: int32
+            numTexCoords: int32 # same as numVerts in ASCII version, so I named it `numTexCoords`
+            numTriVertexes: int32 # numTris == numTriVertexes / 3; it is num of vertex, not num of triangle
+            tris: [numTriVertexes]uint16
+            numSilEdges: int32 # it seams is deformInfo_t under this
+            silEdges: [numSilEdges * 4]uint16
+            silIndexes: [numTexCoords]uint16
+            numSourceVerts: int32
+            numOutputVerts: int32
+            numMirroredVerts: int32
+            mirroredVerts?: [numMirroredVerts]int32
+            unknown2: int32
+            unknown3: int32
             numJointTables: int32
             jointIndices: [numJointTables]uint8
-            drawVerts: [numVertices]DrawVert_t
+            drawVerts: [numOutputVerts]DrawVert_t
                 DrawVert_t {
                     position.x: float32
                     position.y: float32
@@ -75,18 +75,20 @@ md5b {
                     color.b: uint8
                     color.a: uint8
                 }
-            if vertexRigidFlag == 1: # vertex only 1 joint
-            vertJointIndices: [numVertices]uint8 # VALUE / 3 == joint index
-            elseif vertexRigidFlag == 4: # vertex > 1 joints
+            @if singleJointsOnVertex == 1: # vertex only 1 joint
+            vertJointIndices: [numVertices]uint8 # VALUE / 3 == index of `jointIndices`, every weight is 1.0(255) on a vertex
+            @elseif singleJointsOnVertex == 4: # has more joints and weights on a vertex
             vertJointIndices: [numVertices]VertJointIndex_t
                 VertJointIndex_t {
-                    jointIndex: uint8 # VALUE / 3 == joint index
+                    jointIndex: uint8 # VALUE / 3 == index of `jointIndices`
                     weight: uint8 # VALUE / 255 == float joint weight, no more weights if equals 0
                 }
-            unknownBytes: [5]int8
+            @endif
+            unknown4: bool
+            unknown5: float32
         }
         ...
-    <SEEK_CUR 28>
+    <...> # gui model surfaces
     <EOF>
 }
 

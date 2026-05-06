@@ -297,6 +297,7 @@ void sdRenderProgram::LoadVertexSource(idStr &out) const {
 
     sdStringBuilder_Heap buf;
 
+    buf.Append("\n");
 	InsertBuiltinMacros(buf);
     buf.Append("\n");
 
@@ -314,6 +315,7 @@ void sdRenderProgram::LoadFragmentSource(idStr &out) const {
 
     sdStringBuilder_Heap buf;
 
+    buf.Append("\n");
 	InsertBuiltinMacros(buf);
     buf.Append("\n");
 

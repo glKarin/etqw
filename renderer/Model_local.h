@@ -250,7 +250,15 @@ class idMD5Mesh
 			float weights[4];
 			idVec3 offsets[4];
 		};
-		bool						ReadBinary(idFile *file, int numJoints, const void *transforms, const idJointMat *joints, idList<binaryVert_t> &retVerts);
+		struct binaryVertGroup_t {
+			idList<binaryVert_t> verts;
+			const idMaterial *shader;
+			bool noAnimate;
+		};
+		bool						ReadBinary(idFile *file, int numJoints, const void *transforms, const idJointMat *joints, idList<binaryVertGroup_t> &retVerts);
+
+	private:
+		int							FindBinaryVert(const idList<binaryVertGroup_t> &list) const;
 #endif
 
 	private:
