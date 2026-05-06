@@ -1283,6 +1283,20 @@ static void R_ConvertJointTransforms(idList<md5meshBinaryJoint_t> &joints)
     }
 }
 
+/*
+shader_v48 = a3->shader_v48;
+			if ( (shader_v48->materialFlags & 0x10000) == 0 // BIT(16) # MF_NOSURFACEMERGE
+			  && !shader_v48->entityGui
+			  && shader_v48->deform == DFRM_NONE
+			  && -3.0 != shader_v48->sort
+			  && (shader_v48->surfaceFlags & 0x40) == 0 // BIT(6) # SURF_DISCRETE
+			  && shader_v48->deform == DFRM_NONE
+			  && v10->shader_v48 == shader_v48
+			  && v10->noAnimate_bool_v196 == a3->noAnimate_bool_v196 )
+			{
+			  break;
+			}
+ */
 int idMD5Mesh::FindBinaryVert(const idList<binaryVertGroup_t> &list) const
 {
 	const binaryVertGroup_t *group = list.Ptr();
@@ -1291,7 +1305,17 @@ int idMD5Mesh::FindBinaryVert(const idList<binaryVertGroup_t> &list) const
 		if(group->shader != shader)
 			continue;
 		if(group->noAnimate != ((flags & MD5MF_NO_ANIMATE) != 0))
-			continue;
+                continue;
+            if (group->shader->GetEntityGui())
+                continue;
+/*            if (group->shader->Deform() != DFRM_NONE)
+                continue;
+            if (group->shader->GetSort() == SS_SUBVIEW) // - 3.0
+                continue;
+            if ((group->shader->GetSurfaceFlags() & SURF_DISCRETE) != 0)
+                continue;
+            if (group->shader->TestMaterialFlag(MF_NOSURFACEMERGE))
+                continue;*/
 		return i;
 	}
 

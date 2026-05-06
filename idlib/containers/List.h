@@ -71,7 +71,7 @@ ID_INLINE type *idListNewElement(void)
 	return new type;
 }
 
-#if 0 //karin: move to Sort.h for Sort function
+#if !defined(_SPLASHDAMAGE) //karin: move to Sort.h for Sort function
 /*
 ================
 idSwap<type>

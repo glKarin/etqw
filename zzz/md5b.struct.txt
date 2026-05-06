@@ -39,7 +39,7 @@ md5b {
             unknown1: int32
             numRawVertex: int32 ???
             noAnimate: bool
-            noAnimate: bool
+            noVertexData: bool # 0 = has `drawVerts` data, numOutputVerts != 0 && numSourceVerts != 0; 1 = no `drawVerts` data, reference other mesh's vertex/weight data(by comparing mesh shader) in this mesh tris
             singleJointsOnVertex: bool # 1 = only has 1 joint on every vertex; 0 = has more than 1 joints on every vertex;
             shader: string
             numTexCoords: int32 # same as numVerts in ASCII version, so I named it `numTexCoords`
@@ -47,7 +47,9 @@ md5b {
             tris: [numTriVertexes]uint16
             numSilEdges: int32 # it seams is deformInfo_t under this
             silEdges: [numSilEdges * 4]uint16
-            silIndexes: [numTexCoords]uint16
+            @if noVertexData == 0:
+            silIndexes: [numTexCoords]uint16 # ???
+            @endif
             numSourceVerts: int32
             numOutputVerts: int32
             numMirroredVerts: int32
