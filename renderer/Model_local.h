@@ -338,6 +338,7 @@ class idRenderModelMD5 : public idRenderModelStatic
 		void						ParseJoint(idLexer &parser, idMD5Joint *joint, idJointQuat *defaultPose);
 #ifdef _SPLASHDAMAGE
 		bool						ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJointQuat *defaultPose, idJointMat *poseMat3);
+		bool						SkipLOD(idFile *file) const;
 #endif
 
 #ifdef _RAVEN //k: show/hide surface

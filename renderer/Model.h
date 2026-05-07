@@ -43,6 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 #define MD5_ANIM_EXT			"md5anim"
 #define MD5_CAMERA_EXT			"md5camera"
 #ifdef _SPLASHDAMAGE
+#define MD5B_VERSION			1
 #define MD5_VERSION				11
 #else
 #define MD5_VERSION				10

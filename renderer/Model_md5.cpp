@@ -1769,6 +1769,98 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 	return true;
 }
 
+// only skip
+bool idRenderModelMD5::SkipLOD(idFile *file) const
+{
+	int			num;
+	int			count;
+	idStr		shaderName;
+	int			i;
+	bool vertexRigidFlag;
+	int numSilEdges;
+	bool bool_v198;
+	int numSilIndex;
+	int numSourceVerts;
+	int numOutputVerts;
+	int numMirroredVerts;
+	idStr meshName;
+
+	file->ReadInt(num);
+	for(i = 0; i < num; i++)
+	{
+		//
+		// parse name
+		//
+		file->ReadString(meshName);
+
+		file->Seek(4 + 4 + 4 + 4 + 1, FS_SEEK_CUR);
+		file->ReadBool(bool_v198);
+		file->ReadBool(vertexRigidFlag);
+
+		//
+		// parse shader
+		//
+		file->ReadString(shaderName);
+
+		file->ReadInt(numSilIndex);
+		file->Seek(4, FS_SEEK_CUR);
+
+		//
+		// parse tris
+		//
+		file->ReadInt(count); // numTris_v80
+		if (count < 0) {
+			common->Warning("Invalid size: %d", count);
+			return false;
+		}
+
+		file->Seek(count * 2, FS_SEEK_CUR);
+
+		file->ReadInt(numSilEdges); // numSilEdges_v92
+		file->Seek(numSilEdges * 4 * 2, FS_SEEK_CUR);
+		if (!bool_v198) {
+			file->Seek(numSilIndex * 2, FS_SEEK_CUR);
+		}
+
+		//karin: numOutputVerts = numSourceVerts + numMirroredVerts
+		file->ReadInt(numSourceVerts);
+		file->ReadInt(numOutputVerts);
+		file->ReadInt(numMirroredVerts);
+
+		file->Seek(numMirroredVerts * 4, FS_SEEK_CUR);
+
+		file->Seek(4 + 4, FS_SEEK_CUR);
+
+		file->ReadInt(count);
+		file->Seek(count, FS_SEEK_CUR);
+
+		//
+		// parse texture coordinates
+		//
+		if (count < 0) {
+			common->Warning("Invalid size: %d", count);
+			return false;
+		}
+
+		file->Seek(numOutputVerts * ((3 + 2 + 3 + 3 + 1) * 4 + 4), FS_SEEK_CUR);
+
+		//
+		// parse weights
+		//
+		if (vertexRigidFlag)
+		{
+			file->Seek(numOutputVerts, FS_SEEK_CUR);
+		}
+		else
+		{
+			file->Seek(numOutputVerts * 4 * 2, FS_SEEK_CUR);
+		}
+
+		file->Seek(1 + 4, FS_SEEK_CUR);
+	}
+	return true;
+}
+
 /*
 ====================
 idRenderModelMD5::ParseJoint_Binary
@@ -1817,7 +1909,6 @@ bool idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJoin
 	return true;
 }
 
-#define MD5B_VERSION 1
 bool idRenderModelMD5::LoadMD5Binary(void) {
 	int			version;
 	int			numLod;
@@ -1946,50 +2037,62 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 		}
 	}
 
-	//printf("zzz %s %d\n", Name(), numLod);
+	//Sys_Printf("zzz %s %d\n", Name(), numLod);
 	//karin: only read LOD 0, skip others
-	for (int lod = 1; lod < numLod; lod++)
-	{
+	bool res = true;
+	for (int lod = 1; lod < numLod; lod++) {
 		// parse num LOD meshes
+#if 1 // skip LODs
+		if (!SkipLOD(file)) {
+			res = false; // but md5mesh has loaded although fail here
+			break;
+		}
+#else
 		file->ReadInt(num);
 
 		if (num < 0) {
-			fileSystem->CloseFile(file);
-			common->Error("Invalid size: %d", num);
-			return false;
+			res = false; // but md5mesh has loaded although fail here
 		}
 
-		idList<idMD5Mesh> lodMeshes;
-		lodMeshes.SetGranularity(1);
-		lodMeshes.SetNum(num);
-		verts.Clear();
-
-		for (i = 0; i < num; i++) {
-			if(! lodMeshes[ i ].ReadBinary(file, joints.Num(), md5Bones.Ptr(), poseMat3, verts))
-			{
-				fileSystem->CloseFile(file);
-				return false;
+		if (res) {
+			idList<idMD5Mesh> lodMeshes;
+			lodMeshes.SetGranularity(1);
+			lodMeshes.SetNum(num);
+			verts.Clear();
+			for (i = 0; i < num; i++) {
+				if(! lodMeshes[ i ].ReadBinary(file, joints.Num(), md5Bones.Ptr(), poseMat3, verts))
+				{
+					res = false; // but md5mesh has loaded although fail here
+					break;
+				}
 			}
 		}
+#endif
 	}
 
 	//
 	// calculate the bounds of the model
 	//
 	// if want to use bounds in file, or re-calc
-	file->ReadVec3(bounds[0]);
-	file->ReadVec3(bounds[1]);
+	if(res)
+	{
+		file->ReadVec3(bounds[0]);
+		file->ReadVec3(bounds[1]);
+	}
 	CalculateBounds(poseMat3);
 
-	//
-	// calculate the bounds of the model
-	//
-	if (ParseGUISurfaces(file) < 0)
+	if(res)
 	{
-		//karin: only clear parsed gui surfaces, but md5mesh is load finished although parse gui surfaces fail
-		guiSurfaces.Clear();
+		//
+		// parse gui surfaces of the model
+		//
+		if (ParseGUISurfaces(file) < 0)
+		{
+			//karin: only clear parsed gui surfaces, but md5mesh is load finished although parse gui surfaces fail
+			guiSurfaces.Clear();
+		}
 	}
-	//printf("qqq %s %d\n", Name(), guiSurfaces.Num());
+	//Sys_Printf("qqq %s %d\n", Name(), guiSurfaces.Num());
 
 	// set the timestamp for reloadmodels
 	timeStamp = file->Timestamp();
