@@ -1285,6 +1285,7 @@ int idDeclFile::LoadAndParseBinary(void)
 			identifiedType = defaultType;
 		}
 
+		//Sys_Printf("fff %s %s\n", entry.type.c_str(), entry.name.c_str());
 		const idStr &name = entry.name;
 
 		// look it up, possibly getting a newly created default decl
@@ -1381,7 +1382,7 @@ int idDeclFile::LoadAndParseBinary(void)
 const char *listDeclStrings[] = { "current", "all", "ever", NULL };
 
 #ifdef _SPLASHDAMAGE
-sdDeclInfo declTableInfo("table");
+sdDeclInfo declTableInfo("table", DIF_ALLOW_TEMPLATES);
 sdDeclInfo declMaterialInfo("material", DIF_ALLOW_TEMPLATES, idMaterial::CacheFromDict);
 sdDeclInfo declSkinInfo("skin", DIF_ALLOW_TEMPLATES, idDeclSkin::CacheFromDict);
 sdDeclInfo declSoundInfo("sound", DIF_ALLOW_TEMPLATES, idSoundShader::CacheFromDict);
@@ -1395,19 +1396,19 @@ sdDeclInfo declEmailInfo("email");
 sdDeclInfo declVideoInfo("video");
 sdDeclInfo declAudioInfo("audio");
 
-sdDeclInfo declEffectInfo("effect"/*, DIF_ALLOW_TEMPLATES, idDeclEntityDef::CacheFromDict*/);
-sdDeclInfo declAtmosphereInfo("atmosphere");
+sdDeclInfo declEffectInfo("effect", DIF_ALLOW_TEMPLATES/*, idDeclEntityDef::CacheFromDict*/);
+sdDeclInfo declAtmosphereInfo("atmosphere", DIF_ALLOW_TEMPLATES);
 sdDeclInfo declAmbientCubeMapInfo("ambientCubemap", DIF_ALLOW_TEMPLATES, sdDeclAmbientCubeMap::CacheFromDict);
-sdDeclInfo declDecalInfo("decal");
-sdDeclInfo declSurfaceTypeInfo("surfaceType");
+sdDeclInfo declDecalInfo("decal", DIF_ALLOW_TEMPLATES);
+sdDeclInfo declSurfaceTypeInfo("surfaceType", DIF_ALLOW_TEMPLATES);
 sdDeclInfo declImposterInfo("imposter", DIF_ALLOW_TEMPLATES, sdDeclImposter::CacheFromDict);
 sdDeclInfo declImposterGeneratorInfo("imposterGenerator");
-sdDeclInfo declStuffTypeInfo("stuffType");
-sdDeclInfo declRenderBindingInfo("renderBinding");
-sdDeclInfo declRenderProgramInfo("renderProgram");
-sdDeclInfo declLocStrInfo("locString");
-sdDeclInfo declTemplateInfo("template");
-sdDeclInfo declSurfaceTypeMapInfo("surfaceTypeMap");
+sdDeclInfo declStuffTypeInfo("stuffType", DIF_ALLOW_TEMPLATES);
+sdDeclInfo declRenderBindingInfo("renderBinding", DIF_ALLOW_TEMPLATES);
+sdDeclInfo declRenderProgramInfo("renderProgram", DIF_ALLOW_TEMPLATES);
+sdDeclInfo declLocStrInfo("locString", DIF_ALLOW_TEMPLATES);
+sdDeclInfo declTemplateInfo("template", 0); //karin: template don't expend automatic
+sdDeclInfo declSurfaceTypeMapInfo("surfaceTypeMap", DIF_ALLOW_TEMPLATES);
 
 
 idDeclTypeTemplate< idDeclTable, &declTableInfo > declTableType;
@@ -3091,7 +3092,12 @@ void idDeclLocal::ParseLocal(void)
 	declManagerLocal.MediaPrint("parsing %s %s\n", declManagerLocal.declTypes[type]->typeName.c_str(), name.c_str());
 
 	// if no text source try to generate default text
-	if (textSource == NULL) {
+#ifdef _SPLASHDAMAGE //karin: if text source and binary source are all empty
+	if (textSource == NULL && !HasBinaryBuffer()) 
+#else
+	if (textSource == NULL) 
+#endif
+	{
 		generatedDefaultText = self->SetDefaultText();
 	}
 
@@ -3099,7 +3105,12 @@ void idDeclLocal::ParseLocal(void)
 	declManagerLocal.indent++;
 
 	// no text immediately causes a MakeDefault()
-	if (textSource == NULL) {
+#ifdef _SPLASHDAMAGE //karin: if text source and binary source are all empty
+	if (textSource == NULL && !HasBinaryBuffer()) 
+#else
+	if (textSource == NULL) 
+#endif
+	{
 		MakeDefault();
 		declManagerLocal.indent--;
 		return;
@@ -3115,7 +3126,7 @@ void idDeclLocal::ParseLocal(void)
 	//Sys_Printf("rrr|%s|%s|\n\n", GetFileName(), GetName()/*,idStr(declText,0,GetTextLength()).c_str()*/ );
 	//karin: 1. expand template if has useTemplate keyword
 	// NOTE: template should not expand template when parse, because some template use other template as parameter into this template - karin
-	if (type == DECL_TEMPLATE || !sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
+	if (!declManagerLocal.GetDeclType(type)->AllowTemplateEvaluation() || !sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, GetTextLength()))
 		finalPreprocessedBuffer.Append(declText, GetTextLength());
 	//karin: include depences
 	const idStrList &includeDependencies = GetIncludeDependencies();
@@ -4291,7 +4302,7 @@ void idDeclManagerLocal::ExportDeclSource(const char *savePath, const char *targ
 			char *declText = (char *) _alloca((decl->GetTextLength() + 1) * sizeof(char));
 			decl->GetText(declText);
 			idStr finalPreprocessedBuffer;
-			if (!expand || decl->type == DECL_TEMPLATE || !sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, decl->GetTextLength()))
+			if (!expand || !GetDeclType(decl->GetType())->AllowTemplateEvaluation() || !sdDeclTemplate::ExpandTemplate(finalPreprocessedBuffer, declText, decl->GetTextLength()))
 				finalPreprocessedBuffer.Append(declText, decl->GetTextLength());
 			const idStrList &includeDependencies = decl->GetIncludeDependencies();
 			if(includeDependencies.Num() > 0)

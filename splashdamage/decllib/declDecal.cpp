@@ -55,13 +55,15 @@ bool sdDeclDecal::Parse( const char *text, const int textLength ) {
 
 		if (!token.Icmp("size")) {
 			minSize = src.ParseFloat(); // vec2
-			src.SkipRestOfLine();
+			src.ExpectTokenString(",");
+			sizeDiff = src.ParseFloat() - minSize;
 			continue;
 		}
 
 		if (!token.Icmp("gridSize")) {
-			sizeDiff = src.ParseFloat(); // vec2
-			src.SkipRestOfLine();
+			src.ParseFloat(); // vec2
+			src.ExpectTokenString(",");
+			src.ParseFloat();
 			continue;
 		}
 

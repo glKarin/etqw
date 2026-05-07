@@ -4309,6 +4309,15 @@ int idParser::LoadMemoryBinary( const byte *ptr, int length, const char *name, i
         definehash = (define_t **) Mem_ClearedAlloc( DEFINEHASHSIZE * sizeof(define_t *) );
         AddGlobalDefinesToSource();
     }
+
+#if 0 //karin: output binary source for debug
+	extern void OutputTextSource(idParser &src, sdStringBuilder_Heap &buf);
+	sdStringBuilder_Heap buf;
+	OutputTextSource(*this, buf);
+	printf("|%s|\n",buf.c_str());
+	ResetBinaryParsing();
+#endif
+
     return true;
 }
 #endif

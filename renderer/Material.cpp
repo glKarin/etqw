@@ -2115,6 +2115,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			src.ReadToken(&t);
 			if(!idStr::Icmp(t, "cvar")) {
 				bool result = false;
+				/*
 				idList<idToken> tmp;
 				idStr ggg;
 				while(src.ReadTokenOnLine(&t))
@@ -2126,14 +2127,15 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 					src.UnreadToken(&tmp[p]);
 
 				printf("ggg %s\n", ggg.c_str());
+				*/
 				if(ParseConstantCVarExpression(src, result))
 				{
-					printf("ccc %s %d\n", ggg.c_str(), result);
+					//printf("ccc %s %d\n", ggg.c_str(), result);
 					ss->conditionRegister = GetExpressionConstant(result ? 1.0f : 0.0f);
 				}
 				else
 				{
-					printf("vvv %s\n", ggg.c_str());
+					//printf("vvv %s\n", ggg.c_str());
 					src.SkipRestOfLine(); // no ( )
 					ss->conditionRegister = GetExpressionConstant(0.0f); //TODO: always false
 				}
@@ -2441,6 +2443,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("alphatocoverage")) {
+			if(ss->hasAlphaTest)
+				coverage = MC_PERFORATED;
 			continue;
 		}
 		if (!token.Icmp("writeDepth")) {
@@ -5018,6 +5022,11 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 		} else {
 			//Sys_Printf("%s %s\n", name,tex.image->imgName.c_str());
 		}
+	}
+
+	if(ss->hasAlphaTest && (coverage == MC_BAD || coverage == MC_OPAQUE))
+	{
+		coverage = MC_PERFORATED;
 	}
 	
 	//Sys_Printf("xxxxxxxxxxxxxxxxx %s\n\n", GetName());
