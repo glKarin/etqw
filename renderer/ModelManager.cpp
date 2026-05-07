@@ -316,15 +316,16 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 		model->InitFromFile(modelName);
 	} else if (extension.Icmp(MD5_MESH_EXT) == 0) {
 		model = new idRenderModelMD5;
+		model->InitFromFile(modelName);
 #ifdef _MODEL_MD5_EXT
-		if(fileSystem->ReadFile(modelName, NULL, NULL) < 0) // if md5mesh not exists, try convert from other supported animation model types
+		if((model->IsDefaultModel() || !model->IsLoaded()) && fileSystem->ReadFile(modelName, NULL, NULL) < 0) // if md5mesh not exists, try convert from other supported animation model types
 		{
 			idStr str(modelName);
 			str.StripFileExtension();
             R_Model_ConvertToMd5(str.c_str());
+			model->InitFromFile(modelName);
 		}
 #endif
-		model->InitFromFile(modelName);
 	} else if (extension.Icmp("md3") == 0) {
 		model = new idRenderModelMD3;
 		model->InitFromFile(modelName);

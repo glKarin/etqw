@@ -1476,8 +1476,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 		vert.Clear();
 		file->ReadVec3(vert.xyz);
 
-		file->ReadFloat(texCoords[ i ][0]);
-		file->ReadFloat(texCoords[ i ][1]);
+		file->ReadVec2(texCoords[ i ]);
 		vert.st = texCoords[i];
 
 		file->ReadVec3(vert.normal);
@@ -1818,8 +1817,8 @@ bool idRenderModelMD5::ParseJoint_Binary(idFile *file, idMD5Joint *joint, idJoin
 	return true;
 }
 
+#define MD5B_VERSION 1
 bool idRenderModelMD5::LoadMD5Binary(void) {
-	int			minorVersion;
 	int			version;
 	int			numLod;
 	int			i;
@@ -1839,12 +1838,11 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 	if (!file)
 		return false;
 
-	file->ReadInt(minorVersion);
-	version = 10 + minorVersion;
+	file->ReadInt(version);
 
-	if (version < MD5_VERSION) {
+	if (version != MD5B_VERSION) {
 		fileSystem->CloseFile(file);
-		common->Warning("Invalid version 1%d.  Should be version %d\n", minorVersion, MD5_VERSION);
+		common->Warning("Wrong version loading MD5Binary: %s (%i, expected %i)", Name(), version, MD5B_VERSION);
 		return false;
 	}
 
@@ -1887,7 +1885,6 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
     md5meshBinaryJoint_t *md5Bone;
 	md5Bone = &md5Bones[0];
 
-	//printf("qqq %s\n", Name());
 	for (i = 0; i < joints.Num(); i++, joint++, pose++, md5Bone++) {
 		if(!ParseJoint_Binary(file, joint, pose, &poseMat3[i]))
 		{
@@ -1949,9 +1946,19 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 		}
 	}
 
+	//printf("zzz %s %d\n", Name(), numLod);
 	//karin: only read LOD 0, skip others
 	for (int lod = 1; lod < numLod; lod++)
 	{
+		// parse num LOD meshes
+		file->ReadInt(num);
+
+		if (num < 0) {
+			fileSystem->CloseFile(file);
+			common->Error("Invalid size: %d", num);
+			return false;
+		}
+
 		idList<idMD5Mesh> lodMeshes;
 		lodMeshes.SetGranularity(1);
 		lodMeshes.SetNum(num);
@@ -1982,6 +1989,7 @@ bool idRenderModelMD5::LoadMD5Binary(void) {
 		//karin: only clear parsed gui surfaces, but md5mesh is load finished although parse gui surfaces fail
 		guiSurfaces.Clear();
 	}
+	//printf("qqq %s %d\n", Name(), guiSurfaces.Num());
 
 	// set the timestamp for reloadmodels
 	timeStamp = file->Timestamp();
@@ -2020,12 +2028,12 @@ int idRenderModelMD5::ParseGUISurfaces(idFile *file)
 			common->Warning("Number of planes is over: %d > %d", numPlanes, MAX_GUISURFACE_TRIANGLES);
 			return false;
 		}
-		for (int k = 0; k < num; k++)
+		for (int k = 0; k < numPlanes; k++)
 		{
 			file->ReadFloatArray(guiSurf->edgePlanes[k][0].ToFloatPtr(), 4);
 			file->ReadFloatArray(guiSurf->edgePlanes[k][1].ToFloatPtr(), 4);
 		}
-		guiSurf->numTris = 0;
+		guiSurf->numTris = numPlanes;
 	}
 
 	return num;
