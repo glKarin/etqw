@@ -516,6 +516,11 @@ const int NUM_SERVER_PORTS				= 4;
 #elif defined( __linux__ )
 // Linux info
 #define DEFAULT_BASE_PATH				"/usr/local/games/etqw"
+#ifdef ID_DEMO_BUILD
+#define LINUX_DEFAULT_PATH			DEFAULT_BASE_PATH
+#else
+#define LINUX_DEFAULT_PATH			DEFAULT_BASE_PATH
+#endif
 #elif defined( MACOS_X )
 #define DEFAULT_BASE_PATH				"/Applications/Enemy Territory: QUAKE Wars"
 #endif
