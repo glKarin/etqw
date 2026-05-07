@@ -31,6 +31,8 @@
 
 #define COLOR_FTOUB(x) ((byte)((x) * 255.0f))
 
+#define NORMALIZE_DEG(x) DEG2RAD(-x) //karin: is degree in ETQW, but need radian in DOOM3
+
 const int VIRTUAL_WIDTH = 640;
 const int VIRTUAL_HEIGHT = 480;
 
@@ -38,6 +40,8 @@ static void R_DC_DebugMaterial(const idMaterial *shader, float x, float y, float
 {
 	if(!shader)
 		return;
+
+	//if (idStr::FindText(shader->GetName(), "commandmaps/island_territory") == -1) return;
 
 	idVec4 c = tr.gameGuiModel->CurrentColor();
 	tr.gameGuiModel->SetColor(1.0f, 0.0f, 0.0f, 0.5f);
@@ -218,7 +222,7 @@ void sdDeviceContextLocal::DrawMaskedClippedRect( float x, float y, float w, flo
 	//Rotate the verts about the z axis before drawing them
 	idMat4 rotz;
 	rotz.Identity();
-	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
+	angle = NORMALIZE_DEG(angle); //karin: is degree in ETQW, but need radian in DOOM3
 	float sinAng = idMath::Sin(angle);
 	float cosAng = idMath::Cos(angle);
 	rotz[0][0] = cosAng;
@@ -536,6 +540,13 @@ void sdDeviceContextLocal::DrawClippedBox( float x, float y, float w, float h, f
 	DrawBox(x, y, w, h, size, color);
 }
 
+/**
+ *	tcInfo: texCoord Info
+ * tcInfo.x: center.x
+ * tcInfo.y: center.y
+ * tcInfo.z: radius.x
+ * tcInfo.w: radius.y
+ */
 void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, const idVec2& radius, const int numSides, const idVec4& tcInfo, const idMaterial* material, const idVec4& color, float angle ) {
 	if(!material)
 		return;
@@ -544,61 +555,17 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, con
 		return;
 	}
 
-	float w = radius.x * 2.0f;
-	float h = radius.y * 2.0f;
-
-	float u0 = tcInfo[0];
-	float v0 = tcInfo[1];
-	float u1 = 1.0f;
-	float v1 = 1.0f;
-
 	float offsetX = tcInfo[0];
 	float offsetY = tcInfo[1];
 	float scaleX = tcInfo[2];
 	float scaleY = tcInfo[3];
-
-	//
-	//  handle negative scales as well
-	if (scaleX < 0) {
-		w *= -1;
-		scaleX *= -1;
-	}
-
-	if (scaleY < 0) {
-		h *= -1;
-		scaleY *= -1;
-	}
-
-	//
-	if (w < 0) {	// flip about vertical
-		w  = -w;
-		idSwap(u0, u1);
-		u0 = u0 * scaleX;
-		u1 = u1 * scaleX;
-	} else {
-		u0 = u0 * scaleX;
-		u1 = u1 * scaleX;
-	}
-
-	if (h < 0) {	// flip about horizontal
-		h  = -h;
-		idSwap(v0, v1);
-		v0 = v0 * scaleY;
-		v1 = v1 * scaleY;
-	} else {
-		v0 = v0 * scaleY;
-		v1 = v1 * scaleY;
-	}
-
-	float uvRadiusX = (u1 - u0) * 0.5f;
-	float uvRadiusY = (v1 - v0) * 0.5f;
 
 	idList<idVec2> outerPoints;
 	idList<idVec2> uvs;
 	int start, i;
 
 	CirclePoints(x, y, radius[0], radius[1], numSides, outerPoints);
-	CirclePoints(offsetX + u0 + uvRadiusX, offsetY + v0 + uvRadiusY, uvRadiusX, uvRadiusY, numSides, uvs);
+	CirclePoints(offsetX, offsetY, scaleX, scaleY, numSides, uvs);
 
 	idList<idDrawVert> verts;
 	verts.SetNum(numSides + 1);
@@ -610,8 +577,8 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, con
 	vert->xyz[0] = x;
 	vert->xyz[1] = y;
 	vert->xyz[2] = 0;
-	vert->st[0] = offsetX + u0 + uvRadiusX;
-	vert->st[1] = offsetY + v0 + uvRadiusY;
+	vert->st[0] = offsetX;
+	vert->st[1] = offsetY;
 	vert->normal[0] = 0;
 	vert->normal[1] = 0;
 	vert->normal[2] = 1;
@@ -671,7 +638,7 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, con
 	//Rotate the verts about the z axis before drawing them
 	idMat4 rotz;
 	rotz.Identity();
-	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
+	angle = NORMALIZE_DEG(angle); //karin: is degree in ETQW, but need radian in DOOM3
 	float sinAng = idMath::Sin(angle);
 	float cosAng = idMath::Cos(angle);
 	rotz[0][0] = cosAng;
@@ -704,56 +671,17 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float 
 		return;
 	}
 
-	float w = radius.x * 2.0f;
-	float h = radius.y * 2.0f;
-
 	float offsetX = tcInfo[0];
 	float offsetY = tcInfo[1];
 	float scaleX = tcInfo[2];
 	float scaleY = tcInfo[3];
-
-	//
-	//  handle negative scales as well
-	if (scaleX < 0) {
-		w *= -1;
-		scaleX *= -1;
-	}
-
-	if (scaleY < 0) {
-		h *= -1;
-		scaleY *= -1;
-	}
-
-	//
-	if (w < 0) {	// flip about vertical
-		w  = -w;
-		idSwap(u0, u1);
-		u0 = u0 * scaleX;
-		u1 = u1 * scaleX;
-	} else {
-		u0 = u0 * scaleX;
-		u1 = u1 * scaleX;
-	}
-
-	if (h < 0) {	// flip about horizontal
-		h  = -h;
-		idSwap(v0, v1);
-		v0 = v0 * scaleY;
-		v1 = v1 * scaleY;
-	} else {
-		v0 = v0 * scaleY;
-		v1 = v1 * scaleY;
-	}
-
-	float uvRadiusX = (u1 - u0) * 0.5f;
-	float uvRadiusY = (v1 - v0) * 0.5f;
 
 	idList<idVec2> outerPoints;
 	idList<idVec2> uvs;
 	int start, i;
 
 	CirclePoints(x, y, radius[0], radius[1], numSides, outerPoints);
-	CirclePoints(offsetX + u0 + uvRadiusX, offsetY + v0 + uvRadiusY, uvRadiusX, uvRadiusY, numSides, uvs);
+	CirclePoints(offsetX, offsetY, scaleX, scaleY, numSides, uvs);
 
 	idList<idDrawVert> verts;
 	verts.SetNum(numSides + 1);
@@ -765,8 +693,8 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float 
 	vert->xyz[0] = x;
 	vert->xyz[1] = y;
 	vert->xyz[2] = 0;
-	vert->st[0] = offsetX + u0 + uvRadiusX;
-	vert->st[1] = offsetY + v0 + uvRadiusY;
+	vert->st[0] = offsetX;
+	vert->st[1] = offsetY;
 	vert->normal[0] = 0;
 	vert->normal[1] = 0;
 	vert->normal[2] = 1;
@@ -826,7 +754,7 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float 
 	//Rotate the verts about the z axis before drawing them
 	idMat4 rotz;
 	rotz.Identity();
-	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
+	angle = NORMALIZE_DEG(angle); //karin: is degree in ETQW, but need radian in DOOM3
 	float sinAng = idMath::Sin(angle);
 	float cosAng = idMath::Cos(angle);
 	rotz[0][0] = cosAng;
@@ -847,6 +775,8 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float 
 	}
 
 	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), material, false, &color);
+
+	DC_DEBUG_MATERIAL(material, x, y, radius[0]*2, radius[1]*2);
 }
 
 void sdDeviceContextLocal::DrawCircle( const float x, const float y, const idVec2& radius, const float width, const int numSides, const idVec4& color ) {
@@ -1286,7 +1216,7 @@ void sdDeviceContextLocal::DrawStretchPicRotated(float x, float y, float w, floa
 	//Rotate the verts about the z axis before drawing them
 	idMat4 rotz;
 	rotz.Identity();
-	angle = DEG2RAD(angle); //karin: is degree in ETQW, but need radian in DOOM3
+	angle = NORMALIZE_DEG(angle); //karin: is degree in ETQW, but need radian in DOOM3
 	float sinAng = idMath::Sin(angle);
 	float cosAng = idMath::Cos(angle);
 	rotz[0][0] = cosAng;
