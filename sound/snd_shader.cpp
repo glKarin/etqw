@@ -723,6 +723,16 @@ bool idSoundShader::ParseShader(idLexer &src)
 				numEntries++;
 			}
 #endif
+#ifdef _SPLASHDAMAGE //karin: ignore bik video
+		} else if (token.Find(".bik", false) != -1) {
+			// add to the wav list
+			if (soundSystemLocal.soundCache && numEntries < maxSamples) {
+				token.BackSlashesToSlashes();
+				token.SetFileExtension(".wav");
+				entries[ numEntries ] = soundSystemLocal.soundCache->FindSound(token.c_str(), onDemand);
+				numEntries++;
+			}
+#endif
 		} else {
 			src.Warning("unknown token '%s'", token.c_str());
 			return false;

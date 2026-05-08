@@ -3184,6 +3184,7 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/RenderProgram.cpp
 			splashdamage/renderer/RenderProgramManager.cpp
 			splashdamage/renderer/PostprocessBuffer.cpp
+			splashdamage/renderer/Model_clust.cpp
 	)
 	set(splashdamage_decl_src
 			splashdamage/decllib/declAmbientCubeMap.cpp

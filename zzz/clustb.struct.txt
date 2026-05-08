@@ -1,0 +1,35 @@
+# string struct
+string {
+     length: int32
+     characters: [length]char8
+}
+
+# clustb file struct
+clustb {
+    # header
+    version: string = "Version 2"
+
+    # surfaces
+    @while NOT <EOF>
+    surfaces: []sdStuffSurface
+        sdStuffSurface {
+            numInstances: int32
+            stuffType: string # sdStuffType
+            instanceScale: float32
+            num: int32
+            surfaces: [num]Surface_t
+                Surface_t {
+                    origin.x: float32
+                    origin.y: float32
+                    origin.z: float32
+                    angles.x: float32
+                    angles.y: float32
+                    angles.z: float32
+                    color.x: float32
+                    color.y: float32
+                    color.z: float32
+                }
+        }
+        ...
+    <EOF>
+}

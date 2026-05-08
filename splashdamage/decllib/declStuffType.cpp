@@ -45,6 +45,11 @@ bool sdDeclStuffType::Parse( const char *text, const int textLength ) {
 			continue;
 		}
 
+		if( !token.Icmp( "randomizeAngles" )) {
+			randomizeAngles = true;
+			continue;
+		}
+
 		src.Warning( "sdDeclStuffType::Parse: unexpected token '%s'.", token.c_str() );
 		src.SkipBracedSection(false);
 		break;
