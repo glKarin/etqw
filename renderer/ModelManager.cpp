@@ -31,6 +31,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Model_local.h"
 #include "tr_local.h"	// just for R_FreeWorldInteractions and R_CreateWorldInteractions
+#ifdef _SPLASHDAMAGE
+#include "splashdamage/renderer/Model_clust.h"
+#endif
 
 
 class idRenderModelManagerLocal : public idRenderModelManager
@@ -394,7 +397,10 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 		model->InitFromFile(modelName);
     } else if (extension.Icmp("bse") == 0) {
         model = new rvRenderModelBSE;
-        model->InitFromFile(modelName);
+    	model->InitFromFile(modelName);
+    } else if (extension.Icmp("clust") == 0) {
+    	model = new sdRenderModelClust;
+    	model->InitFromFile(modelName);
 #endif
 	} else {
 
