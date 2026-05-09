@@ -11,9 +11,9 @@
 #define CLUSTB_VERSION "Version 2"
 
 static const char *Clust_SnapshotName = "_Clust_Snapshot_";
-static idRandom random;
+static idRandom clustRandom;
 
-static idCVar harm_r_stuffClustDistance("harm_r_stuffClustDistance", "500", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "max stuff distance with view origin");
+static idCVar harm_r_stuffClustDistance("harm_r_stuffClustDistance", "2000", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "max stuff distance with view origin, -1 to no limit");
 
 sdRenderModelStuffInstance::sdRenderModelStuffInstance(void)
 {
@@ -25,7 +25,8 @@ bool sdRenderModelStuffInstance::ParseBinary(idFile *file)
     file->ReadVec3(origin);
     file->ReadAngles(angles);
     file->ReadVec3(color);
-    rotation = angles.ToMat3();
+    //rotation = angles.ToMat3();
+	R_AxisToModelMatrix(angles.ToMat3(), origin, modelMatrix);
 
     return true;
 }
@@ -37,12 +38,13 @@ void sdRenderModelStuffInstance::UpdateSurface(int index, srfTriangles_t *tri, c
 
     for (int i = 0; i < surf->geometry->numVerts; i++, src++, dv++) {
         *dv = *src;
-        dv->xyz *= rotation;
-        dv->xyz += origin;
-        dv->color[0] = (byte)((float)255 * color[0]);
-        dv->color[1] = (byte)((float)255 * color[1]);
-        dv->color[2] = (byte)((float)255 * color[2]);
-        dv->color[3] = 255;
+        //dv->xyz *= rotation;
+        //dv->xyz += origin;
+		R_LocalPointToGlobal(modelMatrix, src->xyz, dv->xyz);
+		R_LocalVectorToGlobal(modelMatrix, src->normal, dv->normal);
+        dv->color[0] = (byte)((float)src->color[0] * color[0]);
+        dv->color[1] = (byte)((float)src->color[1] * color[1]);
+        dv->color[2] = (byte)((float)src->color[2] * color[2]);
     }
 
     glIndex_t base = index * surf->geometry->numVerts;
@@ -55,9 +57,7 @@ bool sdRenderModelStuffInstance::IsVisible(const struct renderEntity_s *ent, con
     if (distanceSqr > 0.0f && (view->renderView.vieworg - (ent->origin + origin)).LengthSqr() > distanceSqr)
         return false;
 
-    idBounds bv = bounds.Translate(origin);
-    bv.RotateSelf(rotation);
-    return view->viewFrustum.IntersectsBounds(bv);
+    return R_CullLocalBox(bounds, modelMatrix, 6, view->frustum);
 }
 
 
@@ -122,7 +122,7 @@ const idRenderModelStatic * sdStuffSurface::GetModel(void) const {
     if (stuffType->GetNumModels() == 0)
         model = renderModelManager->DefaultModel();
     else
-        model = renderModelManager->FindModel(stuffType->GetModelName(0/*random.RandomInt(stuffType->GetNumModels())*/));
+        model = renderModelManager->FindModel(stuffType->GetModelName(0/*clustRandom.RandomInt(stuffType->GetNumModels())*/));
     return static_cast<const idRenderModelStatic *>(model);
 }
 
@@ -163,7 +163,9 @@ void sdStuffSurface::UpdateSurface(const struct renderEntity_s *ent, const struc
 }
 
 int sdStuffSurface::GetModelNum(idList<int> &list, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) const {
-    list.Resize(instanceList.Num());
+	if(list.NumAllocated() < instanceList.Num())
+		list.Resize(instanceList.Num());
+	list.SetNum(0);
     const idRenderModelStatic *model = GetModel();
     for (int i = 0; i < instanceList.Num(); i++) {
         if (instanceList[i].IsVisible(ent, view, model->bounds, distanceSqr))
@@ -224,7 +226,6 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
         distance *= distance;
     }
     for (i = 0; i < surfaces.Num(); i++, mesh++) {
-        indexList.SetNum(0);
         surfaceNum = mesh->GetModelNum(indexList, ent, view, distance);
         if (!surfaceNum) {
             staticModel->DeleteSurfaceWithId(i);

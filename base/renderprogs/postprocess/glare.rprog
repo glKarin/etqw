@@ -11,7 +11,7 @@ renderProgram postprocess/downsample {
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
 		#if r_32ByteVtx
-			tex *= 1.f/4096.f;
+			tex *= 1.0/4096.0;
 		#endif
 
 			vec2 coord = tex.xy * screenSize.xy;

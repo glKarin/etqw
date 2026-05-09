@@ -129,6 +129,7 @@ renderProgram sfx/cheap_litsmoke {
 			
 			col = $colorAttrib * $colorModulate + $colorAdd;
 			col.w *= $coverage.x;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}			
 	%> }
 
@@ -970,7 +971,7 @@ renderProgram sfx/feAmbDecal_cloud {
 			color = diffuse * $diffuseColor;
 			// kill if we need this 
 #if alphatest_kill 
-			diffuse.a = diffuse.a - $alphaThresh;
+			diffuse.a = diffuse.a - $alphaThresh.a;
 			if(diffuse.a < 0.0)
 				discard;
 #endif 

@@ -17,7 +17,8 @@ class sdRenderModelStuffInstance
     idVec3                      origin;
     idAngles                    angles;
     idVec3                      color;
-    idMat3                      rotation;
+    //idMat3                      rotation;
+	float						modelMatrix[16];
 };
 
 class sdStuffSurface
