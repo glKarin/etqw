@@ -13,7 +13,7 @@
 static const char *Clust_SnapshotName = "_Clust_Snapshot_";
 static idRandom clustRandom;
 
-static idCVar harm_r_stuffClustDistance("harm_r_stuffClustDistance", "2000", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "max stuff distance with view origin, -1 to no limit");
+static idCVar harm_r_stuffClustDistance("harm_r_stuffClustDistance", "5000", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "max stuff distance with view origin, -1 to no limit");
 
 sdRenderModelStuffInstance::sdRenderModelStuffInstance(void)
 {
@@ -25,39 +25,13 @@ bool sdRenderModelStuffInstance::ParseBinary(idFile *file)
     file->ReadVec3(origin);
     file->ReadAngles(angles);
     file->ReadVec3(color);
-    //rotation = angles.ToMat3();
-	R_AxisToModelMatrix(angles.ToMat3(), origin, modelMatrix);
 
     return true;
 }
 
-void sdRenderModelStuffInstance::UpdateSurface(int index, srfTriangles_t *tri, const modelSurface_t *surf) const {
-    idDrawVert *dv = tri->verts + index * surf->geometry->numVerts;
-    glIndex_t *idx = tri->indexes + index * surf->geometry->numIndexes;
-    idDrawVert *src = surf->geometry->verts;
-
-    for (int i = 0; i < surf->geometry->numVerts; i++, src++, dv++) {
-        *dv = *src;
-        //dv->xyz *= rotation;
-        //dv->xyz += origin;
-		R_LocalPointToGlobal(modelMatrix, src->xyz, dv->xyz);
-		R_LocalVectorToGlobal(modelMatrix, src->normal, dv->normal);
-        dv->color[0] = (byte)((float)src->color[0] * color[0]);
-        dv->color[1] = (byte)((float)src->color[1] * color[1]);
-        dv->color[2] = (byte)((float)src->color[2] * color[2]);
-    }
-
-    glIndex_t base = index * surf->geometry->numVerts;
-    for (int i = 0; i < surf->geometry->numIndexes; i++) {
-        idx[i] = base + surf->geometry->indexes[i];
-    }
-}
-
-bool sdRenderModelStuffInstance::IsVisible(const struct renderEntity_s *ent, const struct viewDef_s *view, const idBounds &bounds, float distanceSqr) const {
-    if (distanceSqr > 0.0f && (view->renderView.vieworg - (ent->origin + origin)).LengthSqr() > distanceSqr)
-        return false;
-
-    return R_CullLocalBox(bounds, modelMatrix, 6, view->frustum);
+void sdRenderModelStuffInstance::GetModelMatrix(float modelMatrix[16]) const {
+    //rotation = angles.ToMat3();
+    R_AxisToModelMatrix(angles.ToMat3(), origin, modelMatrix);
 }
 
 
@@ -99,7 +73,7 @@ bool sdStuffSurface::ParseBinary(idFile *file)
     {
         if (!instance->ParseBinary(file))
             return false;
-        bounds.AddPoint(instance->origin);
+        bounds.AddPoint(instance->GetOrigin());
     }
 
     if (!stuffType)
@@ -116,62 +90,14 @@ bool sdStuffSurface::ParseBinary(idFile *file)
     return true;
 }
 
-const idRenderModelStatic * sdStuffSurface::GetModel(void) const {
+const idRenderModelStatic * sdStuffSurface::SelectModel(void) const {
     const idRenderModel *model;
 
     if (stuffType->GetNumModels() == 0)
         model = renderModelManager->DefaultModel();
     else
-        model = renderModelManager->FindModel(stuffType->GetModelName(0/*clustRandom.RandomInt(stuffType->GetNumModels())*/));
+        model = renderModelManager->FindModel(stuffType->GetModelName(clustRandom.RandomInt(stuffType->GetNumModels())));
     return static_cast<const idRenderModelStatic *>(model);
-}
-
-void sdStuffSurface::UpdateSurface(const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf, const idList<int> &indexList) const {
-	srfTriangles_t *tri;
-    const int *idx;
-
-    const idRenderModelStatic *model = GetModel();
-
-    const modelSurface_t &src = model->surfaces[0];
-
-    surf->material = src.material;
-
-    if (surf->geometry) {
-        /*if (surf->geometry->numVerts == deformInfo->numOutputVerts && surf->geometry->numIndexes == deformInfo->numIndexes) {
-            R_FreeStaticTriSurfVertexCaches(surf->geometry);
-        } else */
-            {
-            R_FreeStaticTriSurf(surf->geometry);
-            surf->geometry = R_AllocStaticTriSurf();
-        }
-    } else {
-        surf->geometry = R_AllocStaticTriSurf();
-    }
-
-    tri = surf->geometry;
-    tri->numVerts = indexList.Num() * src.geometry->numVerts;
-    tri->numIndexes = indexList.Num() * src.geometry->numIndexes;
-
-    R_AllocStaticTriSurfVerts(tri, tri->numVerts);
-    R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
-    idx = indexList.Ptr();
-    for (int i = 0; i < indexList.Num(); i++, idx++) {
-        instanceList[*idx].UpdateSurface(i, tri, &src);
-    }
-
-    R_BoundTriSurf(tri);
-}
-
-int sdStuffSurface::GetModelNum(idList<int> &list, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) const {
-	if(list.NumAllocated() < instanceList.Num())
-		list.Resize(instanceList.Num());
-	list.SetNum(0);
-    const idRenderModelStatic *model = GetModel();
-    for (int i = 0; i < instanceList.Num(); i++) {
-        if (instanceList[i].IsVisible(ent, view, model->bounds, distanceSqr))
-            list.Append(i);
-    }
-    return list.Num();
 }
 
 
@@ -196,7 +122,7 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
     int					i, surfaceNum;
     idRenderModelStatic	*staticModel;
     modelSurface_t *surf;
-    sdStuffSurface *mesh;
+    stuffSurface_t *mesh;
 
     if (cachedModel && !r_useCachedDynamicModels.GetBool()) {
         delete cachedModel;
@@ -206,6 +132,12 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
     if (purged) {
         common->DWarning("model %s instantiated while purged", Name());
         LoadModel();
+    }
+
+    // this may be triggered by a model trace or other non-view related source, to which we should look like an empty model
+    if (ent == NULL || view == NULL) {
+        delete cachedModel;
+        return NULL;
     }
 
     if (cachedModel) {
@@ -219,14 +151,16 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
 
     staticModel->bounds.Clear();
 
-    idList<int> indexList;
-    mesh = surfaces.Ptr();
+    idList<const instance_t *> viewList;
+    mesh = drawSurfaces.Ptr();
     float distance = harm_r_stuffClustDistance.GetFloat();
     if (distance > 0.0f) {
         distance *= distance;
     }
-    for (i = 0; i < surfaces.Num(); i++, mesh++) {
-        surfaceNum = mesh->GetModelNum(indexList, ent, view, distance);
+    for (i = 0; i < drawSurfaces.Num(); i++, mesh++) {
+        mesh->views = &viewList;
+        surfaceNum = UpdateViews(mesh, ent, view, distance);
+
         if (!surfaceNum) {
             staticModel->DeleteSurfaceWithId(i);
             continue;
@@ -234,7 +168,6 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
 
         if (staticModel->FindSurfaceWithId(i, surfaceNum)) {
             surf = &staticModel->surfaces[surfaceNum];
-            R_FreeStaticTriSurfVertexCaches(surf->geometry);
         } else {
             surf = &staticModel->surfaces.Alloc();
             surf->geometry = NULL;
@@ -242,7 +175,7 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
             surf->id = i;
         }
 
-        mesh->UpdateSurface(ent, view, surf, indexList);
+        UpdateStuffSurface(mesh, ent, view, surf);
     }
 
     staticModel->bounds = bounds;
@@ -266,6 +199,8 @@ void sdRenderModelClust::LoadModel(void)
         MakeDefaultModel();
         return;
     }
+
+    Finish();
 }
 
 bool sdRenderModelClust::ParseBinary(void)
@@ -300,7 +235,7 @@ bool sdRenderModelClust::ParseBinary(void)
 
     bounds.Clear();
     for (int i = 0; i < surfaces.Num(); i++) {
-        bounds.AddBounds(surfaces[i].bounds);
+        bounds.AddBounds(surfaces[i].GetBounds());
     }
 
     return true;
@@ -308,8 +243,142 @@ bool sdRenderModelClust::ParseBinary(void)
 
 void sdRenderModelClust::PurgeModel()
 {
+    drawSurfaces.Clear();
     surfaces.Clear();
     purged = true;
 }
 
+void sdRenderModelClust::Finish(void)
+{
+    const sdStuffSurface *surface;
+    const sdRenderModelStuffInstance *instance;
+    const idRenderModelStatic *model;
+    stuffSurface_t *stuff;
+    instance_t *inst;
+    int modelIndex;
+    drawSurfaces.Clear();
+
+    surface = surfaces.Ptr();
+    for (int i = 0; i < surfaces.Num(); i++, surface++)
+    {
+        idList<idList<const sdRenderModelStuffInstance *> > instList;
+        idList<const idRenderModelStatic *> modelList;
+
+        instance = surface->GetInstanceList().Ptr();
+        for (int j = 0; j < surface->GetInstanceList().Num(); j++, instance++)
+        {
+            model = surface->SelectModel();
+            modelIndex = modelList.FindIndex(model);
+            if (modelIndex < 0)
+            {
+                modelIndex = modelList.Append(model);
+                instList.Alloc();
+            }
+            instList[modelIndex].Append(instance);
+        }
+
+        for (int j = 0; j < modelList.Num(); j++) {
+            model = modelList[j];
+            idList<const sdRenderModelStuffInstance *> &list = instList[j];
+
+            stuff = &drawSurfaces.Alloc();
+            stuff->surf = &model->surfaces[0];
+            stuff->stuffSurface = surface;
+            stuff->instances.SetNum(list.Num());
+            inst = stuff->instances.Ptr();
+            for (int k = 0; k < list.Num(); k++, inst++) {
+                inst->instance = list[k];
+                inst->instance->GetModelMatrix(inst->modelMatrix);
+            }
+
+            stuff->numVerts = 0;
+            stuff->numIndexes = 0;
+        }
+    }
+}
+
+void sdRenderModelClust::UpdateInstanceSurface(const instance_t *inst, const stuffSurface_t *stuff, srfTriangles_t *tri, int &vertBase, int &indexBase) const {
+    const modelSurface_t *surf = stuff->surf;
+    idDrawVert *dv = tri->verts + vertBase;
+    glIndex_t *idx = tri->indexes + indexBase;
+    idDrawVert *src = surf->geometry->verts;
+
+    for (int i = 0; i < surf->geometry->numVerts; i++, src++, dv++) {
+        *dv = *src;
+        dv->xyz *= stuff->stuffSurface->GetInstanceScale();
+        R_LocalPointToGlobal(inst->modelMatrix, src->xyz, dv->xyz);
+        R_LocalVectorToGlobal(inst->modelMatrix, src->normal, dv->normal);
+        dv->color[0] = (byte)((float)src->color[0] * inst->instance->GetColor()[0]);
+        dv->color[1] = (byte)((float)src->color[1] * inst->instance->GetColor()[1]);
+        dv->color[2] = (byte)((float)src->color[2] * inst->instance->GetColor()[2]);
+    }
+
+    for (int i = 0; i < surf->geometry->numIndexes; i++) {
+        idx[i] = vertBase + surf->geometry->indexes[i];
+    }
+
+    vertBase += surf->geometry->numVerts;
+    indexBase += surf->geometry->numIndexes;
+}
+
+bool sdRenderModelClust::CheckInstanceVisible(instance_t *inst, const stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) {
+    if (distanceSqr > 0.0f && (view->renderView.vieworg - (ent->origin + inst->instance->GetOrigin())).LengthSqr() > distanceSqr)
+        return false;
+
+    return R_CullLocalBox(stuff->surf->geometry->bounds, inst->modelMatrix, 6, view->frustum);
+}
+
+void sdRenderModelClust::UpdateStuffSurface(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf) {
+    srfTriangles_t *tri;
+
+    surf->material = stuff->surf->material;
+
+    if (surf->geometry) {
+        /*if (stuff->numVerts == surf->geometry->numVerts && stuff->numIndexes == surf->geometry->numIndexes) {
+            R_FreeStaticTriSurfVertexCaches(surf->geometry);
+        }
+        else*/
+        {
+            R_FreeStaticTriSurf(surf->geometry);
+            surf->geometry = R_AllocStaticTriSurf();
+        }
+    } else {
+        surf->geometry = R_AllocStaticTriSurf();
+    }
+
+    tri = surf->geometry;
+    tri->numVerts = stuff->views->Num() * stuff->surf->geometry->numVerts;
+    tri->numIndexes = stuff->views->Num() * stuff->surf->geometry->numIndexes;
+
+    R_AllocStaticTriSurfVerts(tri, tri->numVerts);
+    R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
+    int vert = 0;
+    int index = 0;
+    for (int i = 0; i < stuff->views->Num(); i++) {
+        UpdateInstanceSurface(stuff->views->operator[](i), stuff, tri, vert, index);
+    }
+
+    R_BoundTriSurf(tri);
+
+    stuff->numVerts = tri->numVerts;
+    stuff->numIndexes = tri->numIndexes;
+}
+
+int sdRenderModelClust::UpdateViews(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) {
+    instance_t *instance;
+
+    if (stuff->views->NumAllocated() < stuff->instances.Num()) {
+        stuff->views->Clear();
+        stuff->views->Resize(stuff->instances.Num());
+    }
+    else
+        stuff->views->SetNum(0, false);
+    instance = stuff->instances.Ptr();
+    for (int i = 0; i < stuff->instances.Num(); i++, instance++) {
+        if (CheckInstanceVisible(instance, stuff, ent, view, distanceSqr))
+            stuff->views->Append(instance);
+    }
+
+    return stuff->views->Num();
+}
 

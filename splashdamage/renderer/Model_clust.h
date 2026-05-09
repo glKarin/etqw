@@ -3,6 +3,7 @@
 
 #ifndef __MODEL_CLUST_H__
 #define __MODEL_CLUST_H__
+#include "framework/async/Demo.h"
 
 class sdDeclStuffType;
 
@@ -11,14 +12,18 @@ class sdRenderModelStuffInstance
     public:
                                 sdRenderModelStuffInstance(void);
     bool                        ParseBinary(idFile *file);
-    void                        UpdateSurface(int index, srfTriangles_t *tri, const modelSurface_t *surf) const;
-    bool                        IsVisible(const struct renderEntity_s *ent, const struct viewDef_s *view, const idBounds &bounds, float distance = -1.0f) const;
+    const idVec3 &              GetOrigin(void) const {
+        return origin;
+    }
+    const idVec3 &              GetColor(void) const {
+        return color;
+    }
+    void                        GetModelMatrix(float modelMatrix[16]) const;
 
+private:
     idVec3                      origin;
     idAngles                    angles;
     idVec3                      color;
-    //idMat3                      rotation;
-	float						modelMatrix[16];
 };
 
 class sdStuffSurface
@@ -27,11 +32,16 @@ public:
                                 sdStuffSurface(void);
 
     bool                        ParseBinary(idFile *file);
-    void                        UpdateSurface(const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf, const idList<int> &indexList) const;
-    int                         GetModelNum(idList<int> &list, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr = -1.0f) const;
-
-private:
-    const idRenderModelStatic *  GetModel(void) const;
+    const idRenderModelStatic * SelectModel(void) const;
+    float                       GetInstanceScale() const {
+        return instanceScale;
+    }
+    const idBounds &            GetBounds() const {
+        return bounds;
+    }
+    const idList<sdRenderModelStuffInstance> & GetInstanceList() const {
+        return instanceList;
+    }
 
 private:
     int                         numInstances;
@@ -39,12 +49,25 @@ private:
     float                       instanceScale;
     idList<sdRenderModelStuffInstance> instanceList;
     idBounds                    bounds;
-
-    friend class sdRenderModelClust;
 };
 
 class sdRenderModelClust : public idRenderModelStatic
 {
+private:
+    struct instance_t {
+        const sdRenderModelStuffInstance *instance;
+        float					    modelMatrix[16];
+    };
+
+    struct stuffSurface_t {
+        const sdStuffSurface        *stuffSurface;
+        const modelSurface_t        *surf;
+        idList<instance_t>          instances;
+        int                         numVerts;
+        int                         numIndexes;
+        idList<const instance_t *>  *views;
+    };
+
 public:
                                 sdRenderModelClust(void);
     virtual void                InitFromFile(const char* fileName);
@@ -56,9 +79,16 @@ public:
 
 private:
     bool                        ParseBinary(void);
+    void                        Finish(void);
+
+    void                        UpdateInstanceSurface(const instance_t *inst, const stuffSurface_t *stuff, srfTriangles_t *tri, int &vertBase, int &indexBase) const;
+    bool                        CheckInstanceVisible(instance_t *inst, const stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distance = -1.0f);
+    void                        UpdateStuffSurface(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf);
+    int                         UpdateViews(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr = -1.0f);
 
 private:
     idList<sdStuffSurface>      surfaces;
+    idList<stuffSurface_t>      drawSurfaces;
 };
 
 #endif /* !__MODEL_CLUST_H__ */
