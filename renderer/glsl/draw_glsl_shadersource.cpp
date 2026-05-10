@@ -243,7 +243,7 @@ void RB_GLSL_ConvertGL2ESVertexShader(idStr &ret, const char *text, int version)
     ret += "\n";
     ret += "precision highp float;\n";
     ret += "\n";
-	ret += "#define BYTE_COLOR(x) ( ( x ) / 255.0)\n";
+	ret += "#define BYTE_COLOR(x) ( ( x ) / 255.0 )\n";
     ret += "\n";
 
     ret += attribute + " highp vec4 attr_Vertex;\n";

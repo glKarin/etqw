@@ -4751,24 +4751,7 @@ int idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd )
 	cubeMap = CF_2D;
 
 	str = R_ParsePastImageProgram(src);
-	for(int _i = 0; _i < stageParms.Num(); _i++) {
-		const idStr &p = stageParms[_i];
-		if(!idStr::Icmp(p, "clamp")) trp = TR_CLAMP;
-		else if(!idStr::Icmp(p, "clamp_x")) trp = TR_CLAMP_X;
-		else if(!idStr::Icmp(p, "clamp_y")) trp = TR_CLAMP_Y;
-		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false;
-		else if(!idStr::Icmp(p, "linear")) tf = TF_LINEAR;
-		else if(!idStr::Icmp(p, "nearest")) tf = TF_NEAREST;
-		else if(!idStr::Icmp(p, "highquality")) {
-			if (!globalImages->image_ignoreHighQuality.GetInteger()) td = TD_HIGH_QUALITY;
-		}
-		else if(!idStr::Icmp(p, "forceHighQuality")) td = TD_HIGH_QUALITY;
-		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO;
-		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA;
-		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false;
-		else if(!idStr::Icmp(p, "cubeMap")) cubeMap = CF_NATIVE;
-		else if(!idStr::Icmp(p, "partialLoad")) {}
-	}
+	SETUP_STAGE_PROGRAM_PARMS();
 
 	if (spd.numTextures >= MAX_STAGE_TEXTURES) {
 		src.Warning("idMaterial::ParseProgramStageTexture: stage textures num over %d", MAX_STAGE_TEXTURES);

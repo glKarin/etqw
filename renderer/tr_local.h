@@ -661,11 +661,17 @@ typedef struct {
 #ifdef _SPLASHDAMAGE //karin: copy frontend parms to backend
 typedef struct materialStageBuiltinUniform_s {
 	idVec4 currentRenderTexelSize;
-	idVec4		postTint;
-	idVec4		postSaturationContrast;
-	idVec4		postGlareParameters;		// source brightness, blur brightness, brightness threshold, threshold dependency
-	idVec3								sunDir;
-	idVec3								sunColor;
+	idVec3 postTint;
+	idVec2 postSaturationContrast;
+	idVec4 postGlareParameters;		// source brightness, blur brightness, brightness threshold, threshold dependency
+	idVec3 sunDir;
+	idVec3 sunColor;
+	idImage	*environmentCubeMap;
+	idVec3 fogColor;
+	float ambientBrightness;
+	idVec4 ambientAvgColor;
+	idImage	*skyGradientCubeMap;
+	idVec2 sunHaloParameters; // scale, bias
 } materialStageBuiltinUniform_t;
 
 typedef struct {

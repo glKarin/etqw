@@ -164,6 +164,9 @@ typedef enum {
 	CF_2D,			// not a cube map
 	CF_NATIVE,		// _px, _nx, _py, etc, directly sent to GL
 	CF_CAMERA		// _forward, _back, etc, rotated and flipped as needed before sending to GL
+#ifdef _SPLASHDAMAGE // cubemap with single image
+	, CF_HALFSPHERE	// Half-Spherical projection map resampled to cubemap at load time
+#endif
 #ifdef GL_ES_VERSION_3_0
 	, CF_2D_ARRAY		// not a cube map but not a single 2d texture either
 #endif

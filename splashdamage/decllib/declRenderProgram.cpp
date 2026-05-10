@@ -305,7 +305,7 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 					range_start = src.GetFileOffset();
 				}
 				buf.Append(text + range_end + 1, range_start - range_end - 1); // skip $
-				buf.Append("\n");
+				//buf.Append("\n");
 			} else if (!token.Icmp("else") || !token.Icmp("endif")) {
 				if(range_start < range_end)
 				{
@@ -315,7 +315,7 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 				range_start = src.GetFileOffset();
 				buf.Append("#");
 				buf.Append(text + range_end + 1, range_start - range_end - 1); // skip $
-				buf.Append("\n");
+				//buf.Append("\n");
 			} else {
 				placeholders.AddUnique(token);
 			}

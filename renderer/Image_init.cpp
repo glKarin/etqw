@@ -2621,5 +2621,8 @@ void idImageManager::PrintMemInfo(MemInfo_t *mi)
 	fileSystem->CloseFile(f);
 }
 
-#ifdef _MULTITHREAD
+#ifdef _SPLASHDAMAGE
+void R_GetCubeVector(int i, int cubesize, int x, int y, float *vector) {
+	getCubeVector(i, cubesize, x, y, vector);
+}
 #endif

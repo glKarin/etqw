@@ -670,26 +670,54 @@ static void RB_SetBuiltinProgramEnvironment(void)
 void R_AddCopyParmsCmd(const viewDef_t *view)
 {
 	materialStageBuiltinUniform_s builtinUniforms;
+	idImage *img;
+	const sdDeclAtmosphere *atmosphere;
+	const sdDeclAmbientCubeMap *amb;
 
 	if(view->renderWorld && view->renderWorld->GetAtmosphere())
 	{
-		const sdDeclAtmosphere *atmosphere = view->renderWorld->GetAtmosphere();
+		atmosphere = view->renderWorld->GetAtmosphere();
 
 		const sdDeclAtmosphere::postProcessParms_t &ppParms = atmosphere->GetPostProcessParms();
 
-		builtinUniforms.postTint.Set(ppParms.tint[0], ppParms.tint[1], ppParms.tint[2], 1.0f);
-		builtinUniforms.postSaturationContrast.Set(ppParms.saturation, ppParms.contrast, 1.0f, 1.0f);
-		builtinUniforms.postGlareParameters.Set(ppParms.glareParms[0], ppParms.glareParms[1], ppParms.glareParms[2], ppParms.glareParms[3]);
+		builtinUniforms.postTint = ppParms.tint;
+		builtinUniforms.postSaturationContrast.Set(ppParms.saturation, ppParms.contrast);
+		builtinUniforms.postGlareParameters = ppParms.glareParms;
 		builtinUniforms.sunDir = atmosphere->GetSunDirection();
 		builtinUniforms.sunColor = atmosphere->GetSunColor();
+		builtinUniforms.fogColor = atmosphere->GetFogColor();
+		builtinUniforms.sunHaloParameters.Set(atmosphere->GetSunHaloScale(), atmosphere->GetSunHaloBias());
+
+		builtinUniforms.skyGradientCubeMap = atmosphere->GetSkyGradientImage();
+
+		amb = atmosphere->GetAmbientCubeMap();
+		if(amb)
+		{
+			builtinUniforms.environmentCubeMap = globalImages->ImageFromFile(amb->GetEnvironmentMap(), TF_DEFAULT, true, TR_CLAMP, TD_DEFAULT, CF_NATIVE);
+
+			builtinUniforms.ambientBrightness = amb->GetBrightness();
+			builtinUniforms.ambientAvgColor = amb->GetAvgAmbientColor();
+		}
+		else
+		{
+			builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
+			builtinUniforms.ambientBrightness = 1.0f;
+			builtinUniforms.ambientAvgColor.Set(1.0f, 1.0f, 1.0f, 1.0f);
+		}
 	}
 	else
 	{
-		builtinUniforms.postTint.Set(1.0f, 1.0f, 1.0f, 1.0f);
-		builtinUniforms.postSaturationContrast.Set(1.0f, 1.0f, 1.0f, 1.0f);
+		builtinUniforms.postTint.Set(1.0f, 1.0f, 1.0f);
+		builtinUniforms.postSaturationContrast.Set(1.0f, 1.0f);
 		builtinUniforms.postGlareParameters.Set(1.0f, 0.0f, 1.0f, 1.0f);
 		builtinUniforms.sunDir.Set(0.0f, 0.0f, -1.0f);
 		builtinUniforms.sunColor.Set(1.0f, 1.0f, 1.0f);
+		builtinUniforms.fogColor.Set(1.0f, 1.0f, 1.0f);
+		builtinUniforms.ambientBrightness = 1.0f;
+		builtinUniforms.ambientAvgColor.Set(1.0f, 1.0f, 1.0f, 1.0f);
+		builtinUniforms.sunHaloParameters.Set(1.0f, 0.0f);
+		builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
+		builtinUniforms.skyGradientCubeMap = globalImages->ambientNormalMap;
 	}
 
 	copyParmsCommand_t	*cmd;
@@ -713,22 +741,22 @@ void RB_CopyParms(const void *data)
 static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf, const shaderStage_t *pStage)
 {
 	float parm[4];
-	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize.ToFloatPtr());
+	parm[3] = 1.0;
 
-	program->BindVector("postTint", backEnd.parms.postTint.ToFloatPtr());
-	program->BindVector("postSaturationContrast", backEnd.parms.postSaturationContrast.ToFloatPtr());
-	program->BindVector("postGlareParameters", backEnd.parms.postGlareParameters.ToFloatPtr());
-	program->BindVector("sunDirectionWorld", backEnd.parms.sunDir[0], backEnd.parms.sunDir[1], backEnd.parms.sunDir[2]);
-	program->BindVector("sunColor", backEnd.parms.sunColor[0], backEnd.parms.sunColor[1], backEnd.parms.sunColor[2]);
+	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize);
+
+	program->BindVector("postTint", backEnd.parms.postTint);
+	program->BindVector("postSaturationContrast", backEnd.parms.postSaturationContrast);
+	program->BindVector("postGlareParameters", backEnd.parms.postGlareParameters);
+	program->BindVector("sunDirectionWorld", backEnd.parms.sunDir);
+	program->BindVector("sunColor", backEnd.parms.sunColor);
+	program->BindVector("sunHaloParameters", backEnd.parms.sunHaloParameters);
     idVec3 localSunDir;
     R_GlobalVectorToLocal(surf->space->modelMatrix, backEnd.parms.sunDir, localSunDir);
-	program->BindVector("sunDirection", localSunDir[0], localSunDir[1], localSunDir[2]);
-
-	parm[0] = backEnd.viewDef->renderView.vieworg[0];
-	parm[1] = backEnd.viewDef->renderView.vieworg[1];
-	parm[2] = backEnd.viewDef->renderView.vieworg[2];
-	parm[3] = 1.0;
-	program->BindVector("viewOriginWorld", parm);
+	program->BindVector("sunDirection", localSunDir);
+	program->BindVector("ambientBrightness", backEnd.parms.ambientBrightness);
+	program->BindVector("ambientAvgColor", backEnd.parms.ambientAvgColor);
+	program->BindVector("ambientScale", vec3_one);
 
 	switch (pStage->vertexColor) {
 		case SVC_MODULATE:
@@ -749,9 +777,9 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
     idMat4 modelMatrix;
     memcpy(&modelMatrix, surf->space->modelMatrix, sizeof(modelMatrix));
     modelMatrix.TransposeSelf();
-	program->BindVector("transposedModelMatrix_x", modelMatrix[0].ToFloatPtr());
-	program->BindVector("transposedModelMatrix_y", modelMatrix[1].ToFloatPtr());
-	program->BindVector("transposedModelMatrix_z", modelMatrix[2].ToFloatPtr());
+	program->BindVector("transposedModelMatrix_x", modelMatrix[0]);
+	program->BindVector("transposedModelMatrix_y", modelMatrix[1]);
+	program->BindVector("transposedModelMatrix_z", modelMatrix[2]);
 
 	float mat[16];
 	R_TransposeGLMatrix(surf->space->modelViewMatrix, mat);
@@ -765,13 +793,13 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
     idVec4 localViewOrigin;
     R_GlobalPointToLocal(surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewOrigin.ToVec3());
     localViewOrigin[3] = 1.0f;
-	program->BindVector("viewOrigin", localViewOrigin.ToFloatPtr());
+	program->BindVector("viewOrigin", localViewOrigin);
 
-	parm[0] = backEnd.viewDef->renderView.vieworg[0];
-	parm[1] = backEnd.viewDef->renderView.vieworg[1];
-	parm[2] = backEnd.viewDef->renderView.vieworg[2];
-	parm[3] = 1.0;
-	program->BindVector("viewOriginWorld", parm);
+	program->BindVector("viewOriginWorld", backEnd.viewDef->renderView.vieworg);
+
+
+	program->BindImage("environmentCubeMap", backEnd.parms.environmentCubeMap);
+	program->BindImage("skyGradientCubeMap", backEnd.parms.skyGradientCubeMap);
 }
 #endif
 

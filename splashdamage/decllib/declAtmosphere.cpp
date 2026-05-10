@@ -262,7 +262,7 @@ bool sdDeclAtmosphere::Parse( const char* text, const int textLength ) {
 				src.Error( "sdDeclAtmosphere::Parse: failed to parse skyGradientImage" );
 				break;
 			}
-			skyGradientImage = globalImages->GetImage(token);
+			skyGradientImage = globalImages->ImageFromFile(token, TF_DEFAULT, true, TR_CLAMP, TD_DEFAULT, CF_HALFSPHERE);
 			continue;
 		}
 

@@ -569,6 +569,13 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 }
 
 GLint sdRenderProgram::GetUniformLocation(const char *name) const {
+	int index = FindIndex(name);
+	if(index < 0)
+		return -1;
+	return locations[index];
+}
+
+int sdRenderProgram::FindIndex(const char *name) const {
 	if(name[0] == '$')
 		name++;
 #if 1
@@ -577,9 +584,7 @@ GLint sdRenderProgram::GetUniformLocation(const char *name) const {
 #else
 	int index = bindingNames.FindIndex(name);
 #endif
-	if(index < 0)
-		return -1;
-	return locations[index];
+	return index;
 }
 
 void sdRenderProgram::BindVector(const char *name, const float v4[]) const
@@ -589,6 +594,35 @@ void sdRenderProgram::BindVector(const char *name, const float v4[]) const
 		return;
 
 	qglUniform4fv(location, 1, v4);
+}
+
+void sdRenderProgram::BindVector(const char *name, const idVec4 &v4) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniform4fv(location, 1, v4.ToFloatPtr());
+}
+
+void sdRenderProgram::BindVector(const char *name, const idVec3 &v3) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniform4f(location, v3[0], v3[1], v3[2], 1.0f);
+	//qglUniform3fv(location, 1, v3.ToFloatPtr());
+}
+
+void sdRenderProgram::BindVector(const char *name, const idVec2 &v2) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniform4f(location, v2[0], v2[1], 1.0f, 1.0f);
+	//qglUniform2fv(location, 1, v2.ToFloatPtr());
 }
 
 void sdRenderProgram::BindVector(const char *name, float f) const
@@ -616,6 +650,34 @@ void sdRenderProgram::BindMat4(const char *name, const float mat4[]) const
 		return;
 
 	qglUniformMatrix4fv(location, 1, false, mat4);
+}
+
+void sdRenderProgram::BindImage(const char *name, idImage *image) const
+{
+	int index = FindIndex(name);
+	if(index < 0)
+		return;
+
+	GLint location = locations[index];
+	if(location < 0)
+		return;
+
+    const sdDeclRenderBinding *binding = bindings[index];
+	// setup sampler uniform
+	GL_SelectTexture( index );
+	if(image)
+	{
+		image->Bind();
+		qglUniform1i(location, index);
+		BindTexelSize(name, image);
+	}
+	else if(binding && binding->GetBindingType() == sdDeclRenderBinding::BT_TEXTURE)
+	{
+		// binding default value
+		binding->GetDefaultImage()->Bind();
+		qglUniform1i(location, index);
+		BindTexelSize(name, binding->GetDefaultImage());
+	}
 }
 
 void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const {
