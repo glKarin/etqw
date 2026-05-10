@@ -3,7 +3,9 @@
 
 #ifndef __MODEL_CLUST_H__
 #define __MODEL_CLUST_H__
-#include "framework/async/Demo.h"
+
+//karin: update models on every frame
+//#define _DYNAMIC_STUFF_CLUST 1
 
 class sdDeclStuffType;
 
@@ -63,9 +65,11 @@ private:
         const sdStuffSurface        *stuffSurface;
         const modelSurface_t        *surf;
         idList<instance_t>          instances;
+#ifdef _DYNAMIC_STUFF_CLUST
         int                         numVerts;
         int                         numIndexes;
         idList<const instance_t *>  *views;
+#endif
     };
 
 public:
@@ -82,9 +86,11 @@ private:
     void                        Finish(void);
 
     void                        UpdateInstanceSurface(const instance_t *inst, const stuffSurface_t *stuff, srfTriangles_t *tri, int &vertBase, int &indexBase) const;
-    bool                        CheckInstanceVisible(instance_t *inst, const stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distance = -1.0f);
     void                        UpdateStuffSurface(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf);
+#ifdef _DYNAMIC_STUFF_CLUST
+    bool                        CheckInstanceVisible(instance_t *inst, const stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distance = -1.0f);
     int                         UpdateViews(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr = -1.0f);
+#endif
 
 private:
     idList<sdStuffSurface>      surfaces;

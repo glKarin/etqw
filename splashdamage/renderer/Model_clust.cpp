@@ -13,7 +13,10 @@
 static const char *Clust_SnapshotName = "_Clust_Snapshot_";
 static idRandom clustRandom;
 
+#ifdef _DYNAMIC_STUFF_CLUST
 static idCVar harm_r_stuffClustDistance("harm_r_stuffClustDistance", "5000", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_FLOAT, "max stuff distance with view origin, -1 to no limit");
+static idCVar harm_r_skipStuffClust("harm_r_skipStuffClust", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "skip stuff clust model rendering");
+#endif
 
 sdRenderModelStuffInstance::sdRenderModelStuffInstance(void)
 {
@@ -114,7 +117,11 @@ void sdRenderModelClust::InitFromFile(const char* fileName)
 
 dynamicModel_t sdRenderModelClust::IsDynamicModel() const
 {
+#ifdef _DYNAMIC_STUFF_CLUST
     return DM_CONTINUOUS;
+#else
+    return DM_CACHED;
+#endif
 }
 
 idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel)
@@ -128,6 +135,13 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
         delete cachedModel;
         cachedModel = NULL;
     }
+
+#ifdef _DYNAMIC_STUFF_CLUST
+	if (harm_r_skipStuffClust.GetBool()) {
+		delete cachedModel;
+		return NULL;
+	}
+#endif
 
     if (purged) {
         common->DWarning("model %s instantiated while purged", Name());
@@ -151,13 +165,16 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
 
     staticModel->bounds.Clear();
 
-    idList<const instance_t *> viewList;
     mesh = drawSurfaces.Ptr();
+#ifdef _DYNAMIC_STUFF_CLUST
+    idList<const instance_t *> viewList;
     float distance = harm_r_stuffClustDistance.GetFloat();
     if (distance > 0.0f) {
         distance *= distance;
     }
+#endif
     for (i = 0; i < drawSurfaces.Num(); i++, mesh++) {
+#ifdef _DYNAMIC_STUFF_CLUST
         mesh->views = &viewList;
         surfaceNum = UpdateViews(mesh, ent, view, distance);
 
@@ -165,6 +182,7 @@ idRenderModel * sdRenderModelClust::InstantiateDynamicModel(const struct renderE
             staticModel->DeleteSurfaceWithId(i);
             continue;
         }
+#endif
 
         if (staticModel->FindSurfaceWithId(i, surfaceNum)) {
             surf = &staticModel->surfaces[surfaceNum];
@@ -290,9 +308,10 @@ void sdRenderModelClust::Finish(void)
                 inst->instance = list[k];
                 inst->instance->GetModelMatrix(inst->modelMatrix);
             }
-
+#ifdef _DYNAMIC_STUFF_CLUST
             stuff->numVerts = 0;
             stuff->numIndexes = 0;
+#endif
         }
     }
 }
@@ -321,13 +340,6 @@ void sdRenderModelClust::UpdateInstanceSurface(const instance_t *inst, const stu
     indexBase += surf->geometry->numIndexes;
 }
 
-bool sdRenderModelClust::CheckInstanceVisible(instance_t *inst, const stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) {
-    if (distanceSqr > 0.0f && (view->renderView.vieworg - (ent->origin + inst->instance->GetOrigin())).LengthSqr() > distanceSqr)
-        return false;
-
-    return R_CullLocalBox(stuff->surf->geometry->bounds, inst->modelMatrix, 6, view->frustum);
-}
-
 void sdRenderModelClust::UpdateStuffSurface(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf) {
     srfTriangles_t *tri;
 
@@ -347,21 +359,40 @@ void sdRenderModelClust::UpdateStuffSurface(stuffSurface_t *stuff, const struct 
     }
 
     tri = surf->geometry;
+#ifdef _DYNAMIC_STUFF_CLUST
     tri->numVerts = stuff->views->Num() * stuff->surf->geometry->numVerts;
     tri->numIndexes = stuff->views->Num() * stuff->surf->geometry->numIndexes;
+
+    stuff->numVerts = tri->numVerts;
+    stuff->numIndexes = tri->numIndexes;
+#else
+    tri->numVerts = stuff->instances.Num() * stuff->surf->geometry->numVerts;
+    tri->numIndexes = stuff->instances.Num() * stuff->surf->geometry->numIndexes;
+#endif
 
     R_AllocStaticTriSurfVerts(tri, tri->numVerts);
     R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
     int vert = 0;
     int index = 0;
+#ifdef _DYNAMIC_STUFF_CLUST
     for (int i = 0; i < stuff->views->Num(); i++) {
         UpdateInstanceSurface(stuff->views->operator[](i), stuff, tri, vert, index);
     }
+#else
+    for (int i = 0; i < stuff->instances.Num(); i++) {
+        UpdateInstanceSurface(&stuff->instances[i], stuff, tri, vert, index);
+    }
+#endif
 
     R_BoundTriSurf(tri);
+}
 
-    stuff->numVerts = tri->numVerts;
-    stuff->numIndexes = tri->numIndexes;
+#ifdef _DYNAMIC_STUFF_CLUST
+bool sdRenderModelClust::CheckInstanceVisible(instance_t *inst, const stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) {
+    if (distanceSqr > 0.0f && (view->renderView.vieworg - (ent->origin + inst->instance->GetOrigin())).LengthSqr() > distanceSqr)
+        return false;
+
+    return R_CullLocalBox(stuff->surf->geometry->bounds, inst->modelMatrix, 6, view->frustum);
 }
 
 int sdRenderModelClust::UpdateViews(stuffSurface_t *stuff, const struct renderEntity_s *ent, const struct viewDef_s *view, float distanceSqr) {
@@ -381,4 +412,5 @@ int sdRenderModelClust::UpdateViews(stuffSurface_t *stuff, const struct renderEn
 
     return stuff->views->Num();
 }
+#endif
 
