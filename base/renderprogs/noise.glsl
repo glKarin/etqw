@@ -3,7 +3,7 @@
 //FIXME: Use a different number of octaves based on the shader quality settings?
 
 
-#ifdef GL_OES_texture_3D
+#if 0 //def GL_OES_texture_3D
 float bandLimitedNoise( vec3 P ) {
 	return texture3D( $noiseMap, P ).x;
 }

@@ -7,8 +7,8 @@ renderProgram skies/skycolor {
 		varying vec3 pos;
 		varying vec3 sunDir;
 
-		#define mat1 $fogRotation_x.xyz
-		#define mat2 $fogRotation_y.xyz
+		$define mat1 $fogRotation_x.xyz
+		$define mat2 $fogRotation_y.xyz
 
 		void main() {
 			vec3 p = normalize(pos);
@@ -28,8 +28,8 @@ renderProgram skies/skycolor {
 		varying vec3 pos;
 		varying vec3 sunDir;
 		
-		#define image $skyGradientCubeMap
-		#define haloParameters $sunHaloParameters.xy
+		$define image $skyGradientCubeMap
+		$define haloParameters $sunHaloParameters.xy
 		
 		void main() {
 

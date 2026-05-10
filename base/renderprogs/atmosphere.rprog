@@ -160,14 +160,14 @@ renderProgram atmosphere {
 		varying vec4 var_TexCoord1;
 		varying vec4 var_TexCoord0;
 
-		#define extinction var_Color.xyz
-		#define tex var_TexCoord0.xyz
-		#define pos var_TexCoord1.xyz
+		$define extinction var_Color.xyz
+		$define tex var_TexCoord0.xyz
+		$define pos var_TexCoord1.xyz
 
-		#define colorParams $sunHaloParameters
-		#define sunDir $sunDirection.xyz
+		$define colorParams $sunHaloParameters
+		$define sunDir $sunDirection.xyz
 
-		#define image $skyGradientCubeMap
+		$define image $skyGradientCubeMap
 
 		void main() {
 			float scale = dot(normalize(pos), sunDir);

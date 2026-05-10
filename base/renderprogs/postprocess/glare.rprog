@@ -6,13 +6,13 @@ renderProgram postprocess/downsample {
 		varying vec2 texCoord2;
 		varying vec2 texCoord3;
 		varying vec4 col;
-		#define screenSize $currentRenderTexelSize
+		$define screenSize $currentRenderTexelSize
 
 		void main() {
 			vec2 tex = $texCoordAttrib.xy;
-		#if r_32ByteVtx
+		$if r_32ByteVtx
 			tex *= 1.0/4096.0;
-		#endif
+		$endif
 
 			vec2 coord = tex.xy * screenSize.xy;
 			coord.y = screenSize.y - coord.y;
@@ -33,9 +33,9 @@ renderProgram postprocess/downsample {
 		varying vec2 texCoord3;
 		varying vec4 col;
 
-		#define framebuffer $currentRender // rect
+		$define framebuffer $currentRender // rect
 
-		#define glareParameters $postGlareParameters
+		$define glareParameters $postGlareParameters
 
 		void main() {
 			vec4 c;
@@ -62,14 +62,14 @@ renderProgram postprocess/downsample_glare {
 		varying vec2 texCoord3;
 		varying vec4 col;
 
-		#define framebuffer $currentRender // rect
+		$define framebuffer $currentRender // rect
 
 		float luminance( vec3 c ){
 			return dot( c, vec3( 0.33, 0.33, 0.33 ) );
 		}
 
 
-		#define glareParameters $postGlareParameters
+		$define glareParameters $postGlareParameters
 
 		void main() {
 
@@ -97,7 +97,7 @@ renderProgram postprocess/blur_bilinear {
 		varying vec2 texCoord6;
 		varying vec2 texCoord7;
 
-		#define blurSize $parameters
+		$define blurSize $parameters
 		
 		//Offset texture coords by half a texel so we can use bilinear interpolation on them
 		//This gives the same filter factor for two neighbouring texels but who cares it looks good...
@@ -106,9 +106,9 @@ renderProgram postprocess/blur_bilinear {
 			screenSize *= 0.25;// Blurring happens at 1/4 of the screen size
 
 			vec4 tex = $texCoordAttrib;
-		#if r_32ByteVtx
+		$if r_32ByteVtx
 			tex *= 1.0/4096.0;
-		#endif
+		$endif
 			
 			vec2 coord = tex.xy * screenSize.xy; 
 			coord.y =  screenSize.y - coord.y;
@@ -136,15 +136,15 @@ renderProgram postprocess/blur_bilinear {
 		varying vec2 texCoord6;
 		varying vec2 texCoord7;
 
-		#define sourceBuffer $map // rect
+		$define sourceBuffer $map // rect
 
-		#define WT9_0 1.0
-		#define WT9_1 0.8
-		#define WT9_2 0.6
-		#define WT9_3 0.4
+		$define WT9_0 1.0
+		$define WT9_1 0.8
+		$define WT9_2 0.6
+		$define WT9_3 0.4
 
 		//the compiler precalculates all the normalization factors...
-		#define WT9_NORMALIZE (2.0*(WT9_0+WT9_1+WT9_2+WT9_3))
+		$define WT9_NORMALIZE (2.0*(WT9_0+WT9_1+WT9_2+WT9_3))
 
 		void main() {
 			vec4 result = vec4(0.0);
@@ -167,14 +167,14 @@ renderProgram postprocess/glow {
 		varying vec2 texCoord0;
 		varying vec2 texCoord1;
 		
-		#define screenSize $currentRenderTexelSize
-		//#define blurSize $parameters
+		$define screenSize $currentRenderTexelSize
+		//$define blurSize $parameters
 
 		void main() {
 			vec4 tex = $texCoordAttrib;
-#if r_32ByteVtx
-			tex *= 1.0/4096.0;
-#endif
+			$if r_32ByteVtx
+				tex *= 1.0/4096.0;
+			$endif
 
 			vec2 coord = tex.xy;
 			coord.y =  1.0 - coord.y;
@@ -191,10 +191,10 @@ renderProgram postprocess/glow {
 		varying vec2 texCoord0;
 		varying vec2 texCoord1;
 		
-		#define blurbuffer $map // rect
-		#define framebuffer $currentRender // rect
+		$define blurbuffer $map // rect
+		$define framebuffer $currentRender // rect
 
-		#define glareParameters $postGlareParameters
+		$define glareParameters $postGlareParameters
 	
 		void main() {
 			//vec4 rain = tex2D( rainmask, indata.texCoord1 );
@@ -217,13 +217,13 @@ renderProgram postprocess/glowStrogg {
 		varying vec2 texCoord1;
 		varying vec2 texCoord2;
 
-		#define screenSize $currentRenderTexelSize
+		$define screenSize $currentRenderTexelSize
 
 		void main() {
 			vec4 tex = $texCoordAttrib;
-		#if r_32ByteVtx
+		$if r_32ByteVtx
 			tex *= 1.0/4096.0;
-		#endif
+		$endif
 
 			vec2 coord = tex.xy;
 			coord.y =  1.0 - coord.y;
@@ -243,13 +243,13 @@ renderProgram postprocess/glowStrogg {
 		varying vec2 texCoord1;
 		varying vec2 texCoord2;
 
-		#define blurbuffer $map // rect
-		#define dsdtNoise $mask
-		#define framebuffer $currentRender // rect
+		$define blurbuffer $map // rect
+		$define dsdtNoise $mask
+		$define framebuffer $currentRender // rect
 
-		#define glareParameters $postGlareParameters
+		$define glareParameters $postGlareParameters
 		
-		#define screenSize $currentRenderTexelSize
+		$define screenSize $currentRenderTexelSize
 	
 		void main() {
 			vec4 dstd = texture2D( dsdtNoise, texCoord2.xy );
@@ -288,16 +288,16 @@ renderProgram postprocess/showrect {
 	program vertex glsl { <%
 		varying vec2 texCoord0;
 
-		#define mat_s $diffuseMatrix_s
-		#define mat_t $diffuseMatrix_t
+		$define mat_s $diffuseMatrix_s
+		$define mat_t $diffuseMatrix_t
 
 		void main() {
 			vec4 tex = $texCoordAttrib;
 
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex.xy *= 1.0/4096.0;
 			tex.zw = 1.0;
-			#endif
+			$endif
 			
 			texCoord0.x = dot( tex, mat_s );
 			texCoord0.y = dot( tex, mat_t );
@@ -309,7 +309,7 @@ renderProgram postprocess/showrect {
 	program fragment glsl { <%
 		varying vec2 texCoord0;
 		
-		#define blurbuffer $currentRender
+		$define blurbuffer $currentRender
 
 		void main() {
 			gl_FragColor = texture2D( blurbuffer, texCoord0.xy / $currentRenderTexSize.xy ); // rect
@@ -323,15 +323,15 @@ renderProgram postprocess/heatsight {
 		varying vec2 texCoord0;
 		varying vec2 texCoord1;
 		
-		#define screenSize $currentRenderTexelSize
-		//#define blurSize $parameters
+		$define screenSize $currentRenderTexelSize
+		//$define blurSize $parameters
 
 		void main() {
 			vec4 tex = $texCoordAttrib;
 
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex *= 1.0/4096.0;
-			#endif
+			$endif
 
 			vec2 coord = tex.xy;
 			coord.y =  1.0 - coord.y;
@@ -350,12 +350,12 @@ renderProgram postprocess/heatsight {
 		varying vec2 texCoord0;
 		varying vec2 texCoord1;
 
-		#define blurbuffer $map
-		#define framebuffer $currentRender
-		#define gradient $mask
+		$define blurbuffer $map
+		$define framebuffer $currentRender
+		$define gradient $mask
 		
-		#define glareParameters $postGlareParameters
-		#define time $parameters
+		$define glareParameters $postGlareParameters
+		$define time $parameters
 	
 		void main() {
 			//vec4 rain = tex2D( rainmask, indata.texCoord1 );
@@ -378,16 +378,16 @@ renderProgram postprocess/motionblur {
 	program vertex glsl { <%
 		varying vec2 texCoord0;
 
-		#define mat_s $diffuseMatrix_s
-		#define mat_t $diffuseMatrix_t
+		$define mat_s $diffuseMatrix_s
+		$define mat_t $diffuseMatrix_t
 
 		void main() {
 			vec4 tex = $texCoordAttrib;
 
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex.xy *= 1.0/4096.0;
 			tex.zw = 1.0;
-			#endif
+			$endif
 			
 			texCoord0.x = dot( tex, mat_s );
 			texCoord0.y = dot( tex, mat_t );
@@ -398,10 +398,10 @@ renderProgram postprocess/motionblur {
 
 	program fragment glsl { <%
 		varying vec2 texCoord0;
-		#define wpos gl_FragCoord.xy
+		$define wpos gl_FragCoord.xy
 		
-		#define blurbuffer $currentRender
-		#define screenMovement $viewMovement
+		$define blurbuffer $currentRender
+		$define screenMovement $viewMovement
 
 		void main() {
 		

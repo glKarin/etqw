@@ -231,17 +231,17 @@ renderProgram sfx/visor {
 			vec4 mix;
 			// get normal from normal map 
 			R1 = texture2D ( $bumpMap , var_TexCoord0.xy );
-		#if !r_dxnNormalMaps 
+		$if !r_dxnNormalMaps 
 			R1.x = R1.a;
-		#endif 
+		$endif 
 			R2 = R1 * 2.0 + -1.0;
-		#if r_normalizeNormalMaps 
+		$if r_normalizeNormalMaps 
 			R2.z = 0.0;
 			R1.x = dot ( R2.xyz , R2.xyz );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			R2.z = 1.0 / R1.x;
-		#endif 
+		$endif 
 			// put in world space 
 			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
 			R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
@@ -418,17 +418,17 @@ renderProgram sfx/windowglass {
 			vec4 mix;
 			// get normal from normal map 
 			R1 = texture2D ( $bumpMap , var_TexCoord0.xy );
-			#if !r_dxnNormalMaps 
+			$if !r_dxnNormalMaps 
 			R1.x = R1.a;
-			#endif 
+			$endif 
 			R2 = R1 * 2.0 + -1.0;
-			#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			R2.z = 0.0;
 			R1.x = dot ( R2 , R2 );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			R2.z = 1.0 / R1.x;
-			#endif 
+			$endif 
 			// put in world space 
 			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
 			R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
@@ -558,17 +558,17 @@ renderProgram sfx/windowglass_mask {
 			vec4 mix;
 			// get normal from normal map 
 			R1 = texture2D ( $bumpMap , var_TexCoord0.xy );
-			#if !r_dxnNormalMaps 
+			$if !r_dxnNormalMaps 
 			R1.x = R1.a;
-			#endif 
+			$endif 
 			R2 = R1 * 2.0 + -1.0;
-			#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			R2.z = 0.0;
 			R1.x = dot ( R2 , R2 );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			R2.z = 1.0 / R1.x;
-			#endif 
+			$endif 
 			// put in world space 
 			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
 			R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
@@ -762,7 +762,7 @@ renderProgram sfx/deploy {
 	program fragment glsl { <%
 		varying vec3 pos;
 
-		#define color $diffuseColor	//Fragment
+		$define color $diffuseColor	//Fragment
 
 		float pattern( vec3 pos, float freq) {
 		   pos = pos*freq;
@@ -1028,10 +1028,10 @@ renderProgram sfx/stroggForceField {
 		varying vec4 color;
 		varying vec4 color1;
 		
-		#define rainbowMap $map
-		#define refreshMap $mask
+		$define rainbowMap $map
+		$define refreshMap $mask
 
-		#define noiseScale $parameters2
+		$define noiseScale $parameters2
 
 		
 		void main() {
@@ -1282,10 +1282,10 @@ renderProgram sfx/blendFilterFade {
 	program vertex glsl { <%
 		varying vec4 var_TexCoord;
 		varying vec4 var_Color;
-		#define col var_Color
+		$define col var_Color
 
-		#define diffuse_s $diffuseMatrix_s
-		#define diffuse_t $diffuseMatrix_t
+		$define diffuse_s $diffuseMatrix_s
+		$define diffuse_t $diffuseMatrix_t
 		
 		void main() {
 			vec4 tex = $texCoordAttrib;
@@ -1323,10 +1323,10 @@ renderProgram sfx/blendDecalBlendFade {
 	hwSkinningVersion 	sfx/blendDecalBlendFade_HardSkin sfx/blendDecalBlendFade_HardSkin
 
 	program vertex glsl { <%
-		#define col BYTE_COLOR($colorAttrib)
-		#define diffuse_s $diffuseMatrix_s
-		#define diffuse_t $diffuseMatrix_t
-		#define timeParms $parameters.xyz // Current time, 1 / length of time to fade
+		$define col BYTE_COLOR($colorAttrib)
+		$define diffuse_s $diffuseMatrix_s
+		$define diffuse_t $diffuseMatrix_t
+		$define timeParms $parameters.xyz // Current time, 1 / length of time to fade
 
 		varying vec4 var_TexCoord;
 		varying vec4 var_Color;
@@ -1338,12 +1338,12 @@ renderProgram sfx/blendDecalBlendFade {
 		void main() {
 			vec4 tex = $texCoordAttrib;
 			vec4 tangent = vec4($tangentAttrib, 1.0);
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex.xy *= 1.0/4096.0;
 			tex.zw = 1.0;
 			// I feel dirty
 			tangent.w = tangent.x * 32767 + tangent.y;
-			#endif
+			$endif
 
 			var_TexCoord.x = dot( tex, diffuse_s);
 			var_TexCoord.y = dot( tex, diffuse_t );
@@ -1489,7 +1489,7 @@ renderProgram sfx/beam {
 renderProgram sfx/displace {
 
 	program vertex glsl { <%
-		#define mvp u_modelViewProjectionMatrix
+		$define mvp u_modelViewProjectionMatrix
 		varying vec4 oPos;
 		varying vec4 var_TexCoord;
 		varying vec4 var_Color;

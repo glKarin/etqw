@@ -29,18 +29,18 @@ renderProgram water/simple_cube {
 			var_TexCoord0.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
 			// vector to eye 
 			R1 = $positionAttrib - $viewOrigin;
-#if r_shaderQuality > 1
+			$if r_shaderQuality > 1
 			R0.x = dot ( R1 , $transposedModelMatrix_x );
 			R0.y = dot ( R1 , $transposedModelMatrix_y );
 			R0.z = dot ( R1 , $transposedModelMatrix_z );
 			R0.w = dot ( R0 , R0 );
 			R0.w = 1.0 / sqrt ( R0.w );
 			var_TexCoord2.xyz = R0.xyz * R0.w;
-#else 
+			$else 
 			var_TexCoord2.x = dot ( R1 , $transposedModelMatrix_x );
 			var_TexCoord2.y = dot ( R1 , $transposedModelMatrix_y );
 			var_TexCoord2.z = dot ( R1 , $transposedModelMatrix_z );
-#endif 
+			$endif 
 			R1.w = dot ( R1.xyz , R1.xyz );
 			R0.w = 1.0 / sqrt ( R1.w );
 			var_TexCoord2.w = R0.w * R1.w;
@@ -70,7 +70,7 @@ renderProgram water/simple_cube {
 			R1 = min ( R1 , 0.02 );
 			R1 = R1 * $water_distortion;
 			var_TexCoord1 = R1 * $currentRenderTexelSize;
-#if r_megaDrawMethod != 0
+			$if r_megaDrawMethod != 0
 			vec4 _F1;
 			vec4 _F2;
 			_F2 = $positionAttrib - $viewOrigin;
@@ -78,7 +78,7 @@ renderProgram water/simple_cube {
 			_F1.y = 1.0 / sqrt ( _F1.x );
 			_F1.x = _F1.y * _F1.x;
 			var_Color.secondary = _F1.x * $fogDepths.z + $fogDepths.w;
-#endif 
+			$endif 
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		} 
 	%> }
@@ -428,18 +428,18 @@ renderProgram water/wake_cube {
 			vec4 _mask;
 			// get normal from normal map 
 			R0 = texture2D ( $bumpMap , var_TexCoord0.xy );
-			#if !r_dxnNormalMaps 
+			$if !r_dxnNormalMaps 
 			R0.x = R0.a;
-			#endif 
+			$endif 
 			R2 = R0 * 2.0 + -1.0;
 			R2.xy = R2.xy * $water_distortion.z;
-			#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			R2.z = 0.0;
 			R1.x = dot ( R2.xyz , R2.xyz );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			R2.z = 1.0 / R1.x;
-			#endif 
+			$endif 
 			_mask = texture2D ( $mask , var_TexCoord0.xy );
 			// put in world space 
 			R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
@@ -516,64 +516,64 @@ renderProgram water/simple_cube_interpolate {
         R1 = texture2D ( $bumpMap2 , var_TexCoord0.xy );
         // interpolate
         R2 = mix ( R0 , R1 , $water_lerp );
-        #if !r_dxnNormalMaps
+        $if !r_dxnNormalMaps
         R2.x = R2.a;
-        #endif
+        $endif
         R2 = R2 * 2.0 + -1.0;
         R2.xy = R2.xy * $water_distortion.z;
         R0.a = clamp ( var_TexCoord2.w * 0.0001 , 0.0 , 1.0 );
         R1 = 0.0 - R2;
         R2 = R2 * R0.a + R1;
-        #if r_normalizeNormalMaps
+        $if r_normalizeNormalMaps
         vec4 NR1;
         R2.z = 0.0;
         NR1.x = dot ( R2 , R2 );
         NR1.x = 1.0 + -NR1.x;
         NR1.x = 1.0 / sqrt ( NR1.x );
         R2.z = 1.0 / NR1.x;
-        #endif
+        $endif
         // put in world space
         R1.x = dot ( R2.xyz , var_TexCoord3.xyz );
         R1.y = dot ( R2.xyz , var_TexCoord4.xyz );
         R1.z = dot ( R2.xyz , var_TexCoord5.xyz );
         // warped texcoords
-        #if ( r_shaderQuality < 2 )
+        $if ( r_shaderQuality < 2 )
         R3 = $water_distortion * $currentRenderTexelSize;
         R3 = R3 * var_Color.r;
         R3 = R3 * R1 + gl_FragCoord;
-        #else
+        $else
         R3 = gl_FragCoord;
-        #endif
+        $endif
         // normalize to eye
-        #if ( r_shaderQuality < 2 )
+        $if ( r_shaderQuality < 2 )
         eye.w = dot ( var_TexCoord2.xyz , var_TexCoord2.xyz );
         eye.w = 1.0 / sqrt ( eye.w );
         eye = var_TexCoord2 * eye.w;
-        #else
+        $else
         eye = var_TexCoord2;
-        #endif
+        $endif
         // calc reflection vector: i - 2 * dot(i, n) * n
         R2 = vec4 ( dot ( eye.xyz , R1.xyz ) );
         R2 = R2 * 2.0;
         R4 = -R1 * R2.x + eye;
         // spec
-        #if ( r_shaderQuality < 1 )
+        $if ( r_shaderQuality < 1 )
         R0 = clamp ( dot ( R4.xyz , $sunDirection.xyz ) , 0.0 , 1.0 );
         spec = texture2D ( $map , R0.xy );
         spec = spec * $sunColor;
         spec = spec * $water_glare;
         spec = spec * var_Color.r;
-        #endif
+        $endif
         // reflect refract mixing (sorta fresnel)
-        #if ( r_shaderQuality < 2 )
+        $if ( r_shaderQuality < 2 )
         R1 = dot ( -eye.xyz , R1.xyz );
         R1 = R1 + 1.0;
         R1 = pow ( R1.x , $water_fresnel.x );
         _mix = clamp ( 1.0 / R1.x, 0.0, 1.0 );
         _mix = _mix * var_Color.r;
-        #else
+        $else
         _mix = vec4( 0.125 );
-        #endif
+        $endif
         // lookup textures and interpolate
         R1 = texture2D ( $currentRender , R3.xy / $currentRenderTexSize.xy );
         R1 = R1 * $water_tint;
@@ -582,17 +582,17 @@ renderProgram water/simple_cube_interpolate {
         R3 = R2 - R1;
         R3 = R3 * _mix + R1;
         vec4 _finalcolor;
-        #if ( r_shaderQuality < 1 )
+        $if ( r_shaderQuality < 1 )
         _finalcolor = R3 + spec;
-        #else
+        $else
         _finalcolor = R3;
-        #endif
+        $endif
         gl_FragColor.a = spec.r + spec.g;
-        #if ( r_megaDrawMethod != 0 )
+        $if ( r_megaDrawMethod != 0 )
         gl_FragColor.rgb = mix ( _finalcolor, $fogColor , var_Color.x ).xyz;
-        #else
+        $else
         gl_FragColor.rgb = _finalcolor.xyz;
-        #endif
+        $endif
         // MAD result.color.rgb, R4, 0.5, 0.5;
         // MUL  result.color.rgb, fragment.texcoord[2].w, 0.00005;
         }
@@ -972,18 +972,18 @@ renderProgram water/shoreline_froth {
 			R1 = texture2D ( $diffuseMap , var_TexCoord0.xy );
 			// get normal from normal map 
 			R0 = texture2D ( $bumpMap , var_TexCoord0.xy );
-			#if !r_dxnNormalMaps 
+			$if !r_dxnNormalMaps 
 			R0.x = R0.a;
-			#endif 
+			$endif 
 			R2 = R0 * 2.0 + -1.0;
-			#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			vec4 NR1;
 			R2.z = 0.0;
 			NR1.x = dot ( R2 .xyz , R2 .xyz );
 			NR1.x = 1.0 + -NR1.x;
 			NR1.x = 1.0 / sqrt ( NR1.x );
 			R2.z = 1.0 / NR1.x;
-			#endif 
+			$endif 
 			// put in world space 
 			R0.x = dot ( R2 .xyz , var_TexCoord4 .xyz );
 			R0.y = dot ( R2 .xyz , var_TexCoord5 .xyz );

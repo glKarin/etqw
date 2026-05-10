@@ -49,17 +49,17 @@ renderProgram heatHaze {
 			vec4 scaleTwo = vec4(2.0,2.0,2.0,2.0);
 			// load the filtered normal map and convert to -1 to 1 range
 			localNormal = texture2D ( $bumpMap , var_TexCoord1.xy );
-#if !r_dxnNormalMaps
-			localNormal.x = localNormal.a;
-#endif
-			localNormal = localNormal * scaleTwo + subOne;
-#if r_normalizeNormalMaps
-			localNormal.z = 0;
+			$if !r_dxnNormalMaps
+				localNormal.x = localNormal.a;
+			$endif
+				localNormal = localNormal * scaleTwo + subOne;
+			$if r_normalizeNormalMaps
+				localNormal.z = 0;
 			R0.x = dot ( localNormal.xyz , localNormal.xyz );
 			R0.x = 1.0 + -R0.x;
 			R0.x = 1.0 / sqrt ( R0.x );
 			localNormal.z = 1.0 / R0.x;
-#endif
+			$endif
 			// calculate the screen texcoord in the 0.0 to 1.0 range
 			R0 = gl_FragCoord * $currentRenderTexelSize.zwzw;
 			// offset by the scaled localNormal and clamp it to 0.0 - 1.0
@@ -128,17 +128,17 @@ renderProgram heatHazeWithVertex {
 			if ( mask.x < 0.0 || mask.y < 0.0 || mask.z < 0.0 || mask.w < 0.0 ) discard;
 			// load the filtered normal map and convert to -1 to 1 range
 			localNormal = texture2D ( $bumpMap , var_TexCoord1.xy );
-#if !r_dxnNormalMaps
-			localNormal.x = localNormal.a;
-#endif
-			localNormal = localNormal * scaleTwo + subOne;
-#if r_normalizeNormalMaps
-			localNormal.z = 0.0;
+			$if !r_dxnNormalMaps
+				localNormal.x = localNormal.a;
+			$endif
+				localNormal = localNormal * scaleTwo + subOne;
+			$if r_normalizeNormalMaps
+				localNormal.z = 0.0;
 			R0.x = dot ( localNormal.xyz , localNormal.xyz );
 			R0.x = 1.0 + -R0.x;
 			R0.x = 1.0 / sqrt ( R0.x );
 			localNormal.z = 1.0 / R0.x;
-#endif
+			$endif
 			localNormal = localNormal * mask;
 			// calculate the screen texcoord in the 0.0 to 1.0 range
 			R0 = gl_FragCoord * $currentRenderTexelSize.zwzw;
@@ -210,17 +210,17 @@ renderProgram heatHazeWithMask {
 			if ( _mask.x < 0.0 || _mask.y < 0.0 || _mask.z < 0.0 || _mask.w < 0.0 ) discard;
 			// load the filtered normal map and convert to -1 to 1 range
 			localNormal = texture2D ( $bumpMap , var_TexCoord1.xy );
-#if !r_dxnNormalMaps
-			localNormal.x = localNormal.a;
-#endif
-			localNormal = localNormal * scaleTwo + subOne;
-#if r_normalizeNormalMaps
-			localNormal.z = 0.0;
+			$if !r_dxnNormalMaps
+				localNormal.x = localNormal.a;
+			$endif
+				localNormal = localNormal * scaleTwo + subOne;
+			$if r_normalizeNormalMaps
+				localNormal.z = 0.0;
 			R0.x = dot ( localNormal.xyz , localNormal.xyz );
 			R0.x = 1 + -R0.x;
 			R0.x = 1.0 / sqrt ( R0.x );
 			localNormal.z = 1.0 / R0.x;
-#endif
+			$endif
 			localNormal = localNormal * _mask;
 			// calculate the screen texcoord in the 0.0 to 1.0 range
 			R0 = gl_FragCoord * $currentRenderTexelSize.zwzw;
@@ -296,17 +296,17 @@ renderProgram heatHazeWithMaskAndVertex {
 			if ( _mask.x < 0.0 || _mask.y < 0.0 || _mask.z < 0.0 || _mask.w < 0.0 ) discard;
 			// load the filtered normal map and convert to -1 to 1 range
 			localNormal = texture2D ( $bumpMap , var_TexCoord1.xy );
-#if !r_dxnNormalMaps
-			localNormal.x = localNormal.a;
-#endif
-			localNormal = localNormal * scaleTwo + subOne;
-#if r_normalizeNormalMaps
-			localNormal.z = 0.0;
+			$if !r_dxnNormalMaps
+				localNormal.x = localNormal.a;
+			$endif
+				localNormal = localNormal * scaleTwo + subOne;
+			$if r_normalizeNormalMaps
+				localNormal.z = 0.0;
 			R0.x = dot ( localNormal.xyz , localNormal.xyz );
 			R0.x = 1.0 + -R0.x;
 			R0.x = 1.0 / sqrt ( R0.x );
 			localNormal.z = 1.0 / R0.x;
-#endif
+			$endif
 			localNormal = localNormal * _mask;
 			// calculate the screen texcoord in the 0.0 to 1.0 range
 			R0 = gl_FragCoord * $currentRenderTexelSize.zwzw;
@@ -368,17 +368,17 @@ renderProgram heatHazeMatrix {
 			vec4 scaleTwo = vec4(2.0,2.0,2.0,2.0);
 			// load the filtered normal map and convert to -1 to 1 range
 			localNormal = texture2D ( $bumpMap , var_TexCoord1.xy );
-#if !r_dxnNormalMaps
-			localNormal.x = localNormal.a;
-#endif
-			localNormal = localNormal * scaleTwo + subOne;
-#if r_normalizeNormalMaps
-			localNormal.z = 0.0;
+			$if !r_dxnNormalMaps
+				localNormal.x = localNormal.a;
+			$endif
+				localNormal = localNormal * scaleTwo + subOne;
+			$if r_normalizeNormalMaps
+				localNormal.z = 0.0;
 			R0.x = dot ( localNormal.xyz , localNormal.xyz );
 			R0.x = 1.0 + -R0.x;
 			R0.x = 1.0 / sqrt ( R0.x );
 			localNormal.z = 1.0 / R0.x;
-#endif
+			$endif
 			// calculate the screen texcoord in the 0.0 to 1.0 range
 			R0 = gl_FragCoord * $currentRenderTexelSize.zwzw;
 			// offset by the scaled localNormal and clamp it to 0.0 - 1.0

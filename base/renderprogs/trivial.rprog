@@ -54,10 +54,10 @@ renderProgram trivialVtxColor {
 
 renderProgram trivial_instance {
 	program vertex glsl { <%
-		#define mvp u_modelViewProjectionMatrix
-		#define attr_TexCoord5 vec4(1.0)
-		#define attr_TexCoord6 vec4(1.0)
-		#define attr_TexCoord7 vec4(1.0)
+		$define mvp u_modelViewProjectionMatrix
+		$define attr_TexCoord5 vec4(1.0)
+		$define attr_TexCoord6 vec4(1.0)
+		$define attr_TexCoord7 vec4(1.0)
 		varying vec4 oPos;
 		varying vec4 var_TexCoord;
 		varying vec4 var_Color;
@@ -978,11 +978,11 @@ renderProgram trivialWithTextureMatrixDistortInst {
 renderProgram trivialMaskImage {
 
 	program vertex glsl { <%
-		#define pos $positionAttrib
-		#define color BYTE_COLOR($colorAttrib)
-		#define tex0 var_TexCoord0
-		#define tex1 var_TexCoord1
-		#define col var_Color
+		$define pos $positionAttrib
+		$define color BYTE_COLOR($colorAttrib)
+		$define tex0 var_TexCoord0
+		$define tex1 var_TexCoord1
+		$define col var_Color
 
 		varying vec4 tex0;
 		varying vec4 tex1;
@@ -992,10 +992,10 @@ renderProgram trivialMaskImage {
 			vec4 tex = $texCoordAttrib;
 			vec2 normal = $normalAttrib.xy;
 
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex.xy *= 1.f/4096.0;
 			normal.xy /= 1024.0;
-			#endif
+			$endif
 
 			tex0.x = dot( tex, $diffuseMatrix_s );
 			tex0.y = dot( tex, $diffuseMatrix_t );
@@ -1048,7 +1048,7 @@ renderProgram trivialBlendy {
 
 renderProgram trivialDetailmap {
 	program vertex glsl { <%
-		#define mv $u_modelViewMatrix
+		$define mv $u_modelViewMatrix
 		varying vec4 var_TexCoord0;
 		varying vec4 var_TexCoord7;
 		varying vec4 var_Color;
@@ -1092,11 +1092,11 @@ renderProgram trivialDetailmap {
 renderProgram trivialMaskImageScreen {
 
 	program vertex glsl { <%
-		#define color $colorAttrib
+		$define color $colorAttrib
 
-		#define tex0 var_TexCoord0
-		#define tex1 var_TexCoord1
-		#define col var_Color
+		$define tex0 var_TexCoord0
+		$define tex1 var_TexCoord1
+		$define col var_Color
 
 		varying vec4 var_TexCoord0;
 		varying vec4 var_TexCoord1;
@@ -1105,9 +1105,9 @@ renderProgram trivialMaskImageScreen {
 		void main() {
 			vec4 tex = $texCoordAttrib;
 
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex.xy *= 1.0/4096.0;
-			#endif
+			$endif
 
 			tex0.x = dot( tex, $diffuseMatrix_s );
 			tex0.y = dot( tex, $diffuseMatrix_t );

@@ -3,135 +3,126 @@ renderProgram imposters/lit {
 	//machineSpec 1
 	//fallBack imposters/lit_fallback
 
-	program vertex cg { <%
-		struct VsInputs {
-			float3 pos	: $positionAttrib;
-			float2 tex	: $texCoordAttrib;
-			float4 tang 	: $tangentAttrib;
-			float3 norm	: $normalAttrib;
-			float4 color	: $colorAttrib;
-			$if r_32ByteVtx
-			float4 signs : $signAttrib;
-			$endif
-		};
+	program vertex glsl { <%
+		$define indata_pos $positionAttrib.xyz
+		$define indata_color BYTE_COLOR( $colorAttrib )
+		$if r_32ByteVtx
+		$define indata_signs $signAttrib
+		$endif
 
-		struct VsOutputs {
-			float2 texDiff0	: TEXCOORD0;
-			float2 texNorm0	: TEXCOORD1;
-			float3 toLight  : TEXCOORD2;
-			float3 fogDir	: TEXCOORD3;
+		varying vec2 texDiff0;
+		varying vec2 texNorm0;
+		varying vec3 toLight ;
+		varying vec3 fogDir;
 			
-			float3 tang		: TEXCOORD4;
-			float3 bitang	: TEXCOORD5;
-			float3 norm		: TEXCOORD6;
+		varying vec3 tang;
+		varying vec3 bitang;
+		varying vec3 norm;
 			
-			float4 color	: COLOR0;
-			float extinct	: COLOR1;
-		};
+		varying vec4 color;
+		varying float extinct;
 
 
-		$include "atmosphere.hg"
-		uniform float3 toLight : $sunDirection;
-		uniform float3 rotMat1		: $fogRotation_x;
-		uniform float3 rotMat2 		: $fogRotation_y;
-		uniform float3 rotMat3 		: $fogRotation_z;
-		uniform float3 eyePos 		: $viewOrigin;
+		$include "atmosphere.glsl"
+		$define rotMat1 $fogRotation_x.xyz
+		$define rotMat2 $fogRotation_y.xyz
+		$define rotMat3 $fogRotation_z.xyz
+		$define eyePos $viewOrigin.xyz
 
-		float GetZ( float2 value, float sign ) {
-			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.f ) );
+		float GetZ( vec2 value, float sign ) {
+			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.0 ) );
 		}
 
-		VsOutputs vertex(VsInputs indata) {
-			VsOutputs outdata;
+		void main() {
+			vec2 indata_tex = $texCoordAttrib.xy;
+			vec3 indata_norm = $normalAttrib;
+			vec4 indata_tang = vec4( $tangentAttrib, 1.0 );
 
 			$if r_32ByteVtx
-			indata.tex *= 1.f/4096.f;
-			indata.norm.xy *= 1.f / 32767.f;
-			indata.tang.xy *= 1.f / 32767.f;
-			indata.norm.z = GetZ( indata.norm.xy, indata.signs.x );
-			indata.tang.z = GetZ( indata.tang.xy, indata.signs.y );
-			indata.tang.w = ( indata.signs.z - 1.f );
+			indata_tex *= 1.0/4096.0;
+			indata_norm.xy *= 1.0 / 32767.0;
+			indata_tang.xy *= 1.0 / 32767.0;
+			indata_norm.z = GetZ( indata_norm.xy, indata_signs.x );
+			indata_tang.z = GetZ( indata_tang.xy, indata_signs.y );
+			indata_tang.w = ( indata_signs.z - 1.0 );
 			$endif
 
-			float3 tangent = normalize( indata.tang.xyz );
-			float3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
+			vec3 tangent = normalize( indata_tang.xyz );
+			vec3 biTangent = attr_Bitangent;
 			
 
-			outdata.texDiff0 = indata.tex;//*float2(1.0,0.5);
-			outdata.texNorm0 = indata.tex + float2( 0.0, 0.5 );//*float2(1.0,0.5)+float2(0.0,0.5);//Select the normal map
+			texDiff0 = indata_tex;//*vec2(1.0,0.5);
+			texNorm0 = indata_tex + vec2( 0.0, 0.5 );//*vec2(1.0,0.5)+vec2(0.0,0.5);//Select the normal map
 
-			outdata.toLight.x = dot( toLight, tangent );
-			outdata.toLight.y = dot( toLight, biTangent );
-			outdata.toLight.z = dot( toLight, indata.norm );
+			vec3 toLight = $sunDirection.xyz;
+			toLight.x = dot( toLight, tangent );
+			toLight.y = dot( toLight, biTangent );
+			toLight.z = dot( toLight, indata_norm );
 
-			float3 dir = indata.pos - (eyePos);
-			outdata.fogDir.x = dot( dir, rotMat1 );
-			outdata.fogDir.y = dot( dir, rotMat2 );
-			outdata.fogDir.z = dot( dir, rotMat3 );
+			vec3 dir = indata_pos - (eyePos);
+			fogDir.x = dot( dir, rotMat1 );
+			fogDir.y = dot( dir, rotMat2 );
+			fogDir.z = dot( dir, rotMat3 );
 
-			outdata.color = indata.color;
+			color = indata_color;
 			
-			outdata.tang = tangent;
-			outdata.bitang = biTangent;
-			outdata.norm = indata.norm;
+			tang = tangent;
+			bitang = biTangent;
+			norm = indata_norm;
 
 			//Fog
-			float2 r = Extinction(indata.pos);
-			outdata.extinct = 1-r.x;
+			vec2 r = Extinction(indata_pos);
+			extinct = 1.0-r.x;
 
-			return outdata;
+			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 
 	%> }
 	
-	program fragment cg { <%
+	program fragment glsl { <%
 
-		struct VsOutputs {
-			float2 texDiff0	: TEXCOORD0;
-			float2 texNorm0	: TEXCOORD1;
-			float3 toLight  : TEXCOORD2;
-			float3 fogDir	: TEXCOORD3;
+		varying vec2 texDiff0;
+		varying vec2 texNorm0;
+		varying vec3 toLight ;
+		varying vec3 fogDir;
 			
-			float3 tang		: TEXCOORD4;
-			float3 bitang	: TEXCOORD5;
-			float3 norm		: TEXCOORD6;
+		varying vec3 tang;
+		varying vec3 bitang;
+		varying vec3 norm;
 			
-			float4 color	: COLOR0;
-			float extinct	: COLOR1;			
-		};
+		varying vec4 color;
+		varying float extinct;
 
-		uniform float3 lightColor : $sunColor;
+		$define lightColor $sunColor.xyz
 
-		sampler2D imposterMap : $diffuseMap;
-		samplerCUBE ambientMap : $ambientCubeMap;
+		$define imposterMap $diffuseMap
+		$define ambientMap $ambientCubeMap // cubemap
 		$if ( r_megaDrawMethod != 0 ) 
-		float3 fogColor : $fogColor;
 		$else
-		samplerCUBE fogColorMap : $skyGradientCubeMap;
+		$define fogColorMap $skyGradientCubeMap // cubemap
 		$endif
-		uniform float ambientBrightness : $ambientBrightness;
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		void main() {
 
 			//Interpolate two angles
 
-			float4 diff0 = tex2D( imposterMap, indata.texDiff0 );
-			float3 norm0 = tex2D( imposterMap, indata.texNorm0 ).rgb*2-1;
+			vec4 diff0 = texture2D( imposterMap, texDiff0 );
+			vec3 norm0 = texture2D( imposterMap, texNorm0 ).rgb*2.0-1.0;
 
-			float4 diff = diff0;//lerp( diff0, diff1, indata.color.b );
-			float3 norm = norm0;//lerp( norm0, norm1, indata.color.b );
+			vec4 diff = diff0;//lerp( diff0, diff1, color.b );
+			vec3 norm = norm0;//lerp( norm0, norm1, color.b );
 
-			float3 cube = texCUBE( ambientMap, norm ).rgb * ambientBrightness;
-			float3 light = max( dot( indata.toLight, norm ), 0 ) * lightColor + cube;
+			vec3 cube = textureCube( ambientMap, norm ).rgb * $ambientBrightness.x;
+			vec3 light = max( dot( toLight, norm ), 0.0 ) * lightColor + cube;
 
 			// Alpha test here
 			if ( diff.a < 0.1 ) discard;
 
 			// Blend with different alpha
 			$if ( r_megaDrawMethod != 0 ) 
-			return float4( lerp( diff.rgb * light, fogColor.rgb, indata.extinct ), indata.color.a * diff.a * 3);
+			gl_FragColor = vec4( mix( diff.rgb * light, fogColor.rgb, extinct ), color.a * diff.a * 3);
 			$else
-			return float4( lerp( diff.rgb * light, texCUBE( fogColorMap, indata.fogDir ).rgb, indata.extinct ), indata.color.a );
+			gl_FragColor = vec4( mix( diff.rgb * light, textureCube( fogColorMap, fogDir ).rgb, extinct ), color.a );
 			$endif
 		}	
 	%> }
@@ -144,60 +135,54 @@ renderProgram imposters/lit_foliage {
 
 	program vertex reference imposters/lit
 	
-	program fragment cg { <%
+	program fragment glsl { <%
 
-		struct VsOutputs {
-			float2 pos		: WPOS;
-			float2 texDiff0	: TEXCOORD0;
-			float2 texNorm0	: TEXCOORD1;
-			float3 toLight  : TEXCOORD2;
-			float3 fogDir	: TEXCOORD3;
+		varying vec2 texDiff0;
+		varying vec2 texNorm0;
+		varying vec3 toLight ;
+		varying vec3 fogDir;
 			
-			float3 tang		: TEXCOORD4;
-			float3 bitang	: TEXCOORD5;
-			float3 norm		: TEXCOORD6;
+		varying vec3 tang;
+		varying vec3 bitang;
+		varying vec3 norm;
 			
-			float4 color	: COLOR0;
-			float extinct	: COLOR1;			
-		};
+		varying vec4 color;
+		varying float extinct;
+		$define indata_pos gl_FragCoord.xy
 
-		uniform float3 sunDirectionWorld : $sunDirectionWorld;
-		uniform float3 lightColor : $sunColor;
+		$define lightColor $sunColor.xyz
 
-		sampler2D noiseMap : $noiseMap;
-		sampler2D imposterMap : $diffuseMap;
-		samplerCUBE ambientMap : $ambientCubeMap;
-		uniform float ambientBrightness : $ambientBrightness;
+		$define imposterMap $diffuseMap
+		$define ambientMap $ambientCubeMap // cubemap
 		$if ( r_megaDrawMethod != 0 ) 
-		float3 fogColor : $fogColor;
 		$else
-		samplerCUBE fogColorMap : $skyGradientCubeMap;
+		$define fogColorMap $skyGradientCubeMap // cubemap
 		$endif
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		void main() {
 
 			//Interpolate two angles
 
-			float4 noise = tex2D( noiseMap, indata.pos * 0.0625 + 0.0625);
+			vec4 noise = texture2D( $noiseMap, indata_pos * 0.0625 + 0.0625);
 
-			if ( indata.color.w < noise.w  ) {
+			if ( color.w < noise.w  ) {
 				discard;
 			}
-			float4 innorm = tex2D( imposterMap, indata.texNorm0 );
-			float4 diff = tex2D( imposterMap, indata.texDiff0 );
-			float3 norm0 = innorm.rgb*2-1;
+			vec4 innorm = texture2D( imposterMap, texNorm0 );
+			vec4 diff = texture2D( imposterMap, texDiff0 );
+			vec3 norm0 = innorm.rgb*2.0-1.0;
 
 			// No need to do the above since the color is always passed in as 0
-			float3 norm;
+			vec3 norm;
 			
-			norm = indata.tang * -norm0.x;
-			norm += indata.bitang * norm0.y;
-			norm += indata.norm * norm0.z;
+			norm = tang * -norm0.x;
+			norm += bitang * norm0.y;
+			norm += norm * norm0.z;
 			
 			norm = normalize( norm );
 
-			float3 cube = texCUBE( ambientMap, norm ).rgb * ambientBrightness;
-			float3 light = ( dot( sunDirectionWorld.xyz, norm ) );
+			vec3 cube = textureCube( ambientMap, norm ).rgb * $ambientBrightness.x;
+			vec3 light = vec3( dot( $sunDirectionWorld.xyz, norm ) );
 			light = max( light, innorm.a ) * lightColor;
 
 			light += cube;
@@ -206,9 +191,9 @@ renderProgram imposters/lit_foliage {
 
 			// Blend with different alpha
 			$if ( r_megaDrawMethod != 0 ) 
-			return float4( lerp( diff.rgb * light, fogColor.rgb, indata.extinct ), diff.a );
+			gl_FragColor = vec4( mix( diff.rgb * light, $fogColor.rgb, extinct ), diff.a );
 			$else
-			return float4( lerp( diff.rgb * light, texCUBE( fogColorMap, indata.fogDir ).rgb, indata.extinct ), diff.a );
+			gl_FragColor = vec4( mix( diff.rgb * light, textureCube( fogColorMap, fogDir ).rgb, extinct ), diff.a );
 			$endif
 		}	
 	%> }
@@ -223,26 +208,26 @@ renderProgram imposters/makeimposter {
 	program vertex cg { <%
 	
 		struct VsInputs {
-			float3 pos	: POSITION;
-			float2 tex	: TEXCOORD0;
-			float4 tang : ATTR9;
-			float3 norm	: ATTR10;
-			float4 col	: COLOR0;
+			vec3 pos	: POSITION;
+			vec2 tex	: TEXCOORD0;
+			vec4 tang : ATTR9;
+			vec3 norm	: ATTR10;
+			vec4 col	: COLOR0;
 			$if r_32ByteVtx
-			float4 signs : $signAttrib;
+			vec4 signs : $signAttrib;
 			$endif
 		};
 
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 tang0: TEXCOORD1;
-			float3 tang1: TEXCOORD2;
-			float3 norm	: TEXCOORD3;
-			float3 pos	: TEXCOORD4;
-			float4 col	: COLOR0;
+			vec2 tex	: TEXCOORD0;
+			vec3 tang0: TEXCOORD1;
+			vec3 tang1: TEXCOORD2;
+			vec3 norm	: TEXCOORD3;
+			vec3 pos	: TEXCOORD4;
+			vec4 col	: COLOR0;
 		};
 		
-		float GetZ( float2 value, float sign ) {
+		float GetZ( vec2 value, float sign ) {
 			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.f ) );
 		}
 
@@ -259,8 +244,8 @@ renderProgram imposters/makeimposter {
 			indata.tang.w = ( indata.signs.z - 1.f );
 			$endif
 
-			float3 tangent = indata.tang.xyz;
-			float3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
+			vec3 tangent = indata.tang.xyz;
+			vec3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
 
 			outdata.tang0.x = tangent.x;
 			outdata.tang0.y = biTangent.x;
@@ -274,9 +259,9 @@ renderProgram imposters/makeimposter {
 			outdata.norm.y = biTangent.z;
 			outdata.norm.z = indata.norm.z;
 			
-			float3x3 mv = (float3x3)glstate.matrix.modelview[0];
+			vec3x3 mv = (vec3x3)glstate.matrix.modelview[0];
 			outdata.norm = mul( mv, indata.norm );
-			outdata.pos = mul( mv, (indata.pos - float3( 0.f, 0.f, 100.f )));
+			outdata.pos = mul( mv, (indata.pos - vec3( 0.f, 0.f, 100.f )));
 
 			outdata.tex = indata.tex;
 			outdata.col = indata.col;
@@ -288,13 +273,13 @@ renderProgram imposters/makeimposter {
 	program fragment cg { <%
 	
 		struct VsOutputs {
-			//float4 pos  : WPOS;
-			float2 tex	: TEXCOORD0;
-			float3 tang0: TEXCOORD1;
-			float3 tang1: TEXCOORD2;
-			float3 norm	: TEXCOORD3;
-			float3 pos	: TEXCOORD4;
-			float4 col	: COLOR0;
+			//vec4 pos  : WPOS;
+			vec2 tex	: TEXCOORD0;
+			vec3 tang0: TEXCOORD1;
+			vec3 tang1: TEXCOORD2;
+			vec3 norm	: TEXCOORD3;
+			vec3 pos	: TEXCOORD4;
+			vec4 col	: COLOR0;
 		};
 
 		sampler2D diffuseMap : TEXUNIT0;
@@ -302,25 +287,25 @@ renderProgram imposters/makeimposter {
 		float alphaThresh : $alphaThresh;
 		float ambientBrightness : $ambientBrightness;
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		vec4 fragment(VsOutputs  indata) : COLOR {
 
 			float alpha =  tex2D( diffuseMap, indata.tex ).a;
-			float4 normal =  tex2D( normalMap, indata.tex )*2-1;
+			vec4 normal =  tex2D( normalMap, indata.tex )*2-1;
 			//normal.x = normal.a; //Normal map DXT compression with alpha
 			//normal.z = sqrt( 1 - dot( normal.xy, normal.xy ) );
 
 			//Put the normal in object space
-			float3 objectN = indata.norm;
+			vec3 objectN = indata.norm;
 			objectN.x = dot( normal.xyz, normalize(indata.tang0) );
 			objectN.y = dot( normal.xyz, normalize(indata.tang1) );
 			objectN.z = dot( normal.xyz, normalize(indata.norm) );
 
-			//float3 testnorm;
-			//testnorm.xy = ( indata.pos.xy - float2( 64, 64 ) ) / 64;
+			//vec3 testnorm;
+			//testnorm.xy = ( indata.pos.xy - vec2( 64, 64 ) ) / 64;
 			//testnorm.z = sqrt( 1.f - dot(testnorm.xy, testnorm.xy) );
 			
-			//return float4( testnorm * 0.5 + 0.5, alpha > 0.f );
-			//float3 testnorm = float3( scrofs.x, scrofs.y
+			//return vec4( testnorm * 0.5 + 0.5, alpha > 0.f );
+			//vec3 testnorm = vec3( scrofs.x, scrofs.y
 
 			//alpha = saturate( alpha / 0.05f );
 			
@@ -337,8 +322,8 @@ renderProgram imposters/makeimposter {
 			}
 			
 			alpha = (alpha > alphaThresh) * (ambientBrightness > 1.01);
-			//return float4( objectN.xyz * 0.5+0.5, alpha );
-			return float4( indata.norm.xyz * 0.5+0.5, alpha );
+			//return vec4( objectN.xyz * 0.5+0.5, alpha );
+			return vec4( indata.norm.xyz * 0.5+0.5, alpha );
 		}
 	%> }
 }
@@ -348,25 +333,25 @@ renderProgram imposters/makeimposter_diffuse {
 	program vertex cg { <%
 	
 		struct VsInputs {
-			float3 pos	: POSITION;
-			float2 tex	: TEXCOORD0;
-			float4 tang : ATTR9;
-			float3 norm	: ATTR10;
-			float4 col	: COLOR0;
+			vec3 pos	: POSITION;
+			vec2 tex	: TEXCOORD0;
+			vec4 tang : ATTR9;
+			vec3 norm	: ATTR10;
+			vec4 col	: COLOR0;
 			$if r_32ByteVtx
-			float4 signs : $signAttrib;
+			vec4 signs : $signAttrib;
 			$endif
 		};
 
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 tang0: TEXCOORD1;
-			float3 tang1: TEXCOORD2;
-			float3 norm	: TEXCOORD3;
-			float4 col	: COLOR0;
+			vec2 tex	: TEXCOORD0;
+			vec3 tang0: TEXCOORD1;
+			vec3 tang1: TEXCOORD2;
+			vec3 norm	: TEXCOORD3;
+			vec4 col	: COLOR0;
 		};
 		
-		float GetZ( float2 value, float sign ) {
+		float GetZ( vec2 value, float sign ) {
 			return ( sqrt( 1.0f - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.f ) );
 		}
 
@@ -383,8 +368,8 @@ renderProgram imposters/makeimposter_diffuse {
 			indata.tang.w = ( indata.signs.z - 1.f );
 			$endif
 
-			float3 tangent = indata.tang.xyz;
-			float3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
+			vec3 tangent = indata.tang.xyz;
+			vec3 biTangent = cross( indata.norm, tangent ) * indata.tang.w;
 
 			outdata.tang0.x = tangent.x;
 			outdata.tang0.y = biTangent.x;
@@ -398,7 +383,7 @@ renderProgram imposters/makeimposter_diffuse {
 			outdata.norm.y = biTangent.z;
 			outdata.norm.z = indata.norm.z;
 			
-			float3x3 mv = (float3x3)glstate.matrix.modelview[0];
+			vec3x3 mv = (vec3x3)glstate.matrix.modelview[0];
 			outdata.norm = mul( mv, indata.norm );
 
 			outdata.tex = indata.tex;
@@ -411,23 +396,23 @@ renderProgram imposters/makeimposter_diffuse {
 	program fragment cg { <%
 	
 		struct VsOutputs {
-			float2 tex	: TEXCOORD0;
-			float3 tang0: TEXCOORD1;
-			float3 tang1: TEXCOORD2;
-			float3 norm	: TEXCOORD3;
-			float4 col	: COLOR0;
+			vec2 tex	: TEXCOORD0;
+			vec3 tang0: TEXCOORD1;
+			vec3 tang1: TEXCOORD2;
+			vec3 norm	: TEXCOORD3;
+			vec4 col	: COLOR0;
 		};
 
 		sampler2D diffuseMap : TEXUNIT0;
 		sampler2D normalMap : TEXUNIT1;
 		float alphaThresh : $alphaThresh;
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		vec4 fragment(VsOutputs  indata) : COLOR {
 
-			float4 diff =  tex2D( diffuseMap, indata.tex ) * indata.col;
+			vec4 diff =  tex2D( diffuseMap, indata.tex ) * indata.col;
 			
 
-			return float4( diff.xyz, diff.w > alphaThresh);
+			return vec4( diff.xyz, diff.w > alphaThresh);
 		}
 	%> }
 }
@@ -438,40 +423,40 @@ renderProgram imposters/lit_fallback {
 	program fragment cg { <%
 
 		struct VsOutputs {
-			float2 texDiff0	: TEXCOORD0;
-			float2 texNorm0	: TEXCOORD1;
-			float3 toLight  : TEXCOORD2;
-			float3 fogDir	: TEXCOORD3;
+			vec2 texDiff0	: TEXCOORD0;
+			vec2 texNorm0	: TEXCOORD1;
+			vec3 toLight  : TEXCOORD2;
+			vec3 fogDir	: TEXCOORD3;
 			
-			float3 tang		: TEXCOORD4;
-			float3 bitang	: TEXCOORD5;
-			float3 norm		: TEXCOORD6;
+			vec3 tang		: TEXCOORD4;
+			vec3 bitang	: TEXCOORD5;
+			vec3 norm		: TEXCOORD6;
 			
-			float4 color	: COLOR0;
+			vec4 color	: COLOR0;
 			float extinct	: COLOR1;			
 		};
 
-		uniform float3 sunDirectionWorld : $sunDirectionWorld;
-		uniform float3 lightColor : $sunColor;
+		uniform vec3 sunDirectionWorld : $sunDirectionWorld;
+		uniform vec3 lightColor : $sunColor;
 
 		sampler2D imposterMap : $diffuseMap;
-		uniform float3 ambientAvgColor : $ambientAvgColor;
-		uniform float3 fogColor : $fogColor;
+		uniform vec3 ambientAvgColor : $ambientAvgColor;
+		uniform vec3 fogColor : $fogColor;
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		vec4 fragment(VsOutputs  indata) : COLOR {
 
 			//Interpolate two angles
 
-			float4 diff = tex2D( imposterMap, indata.texDiff0 );
+			vec4 diff = tex2D( imposterMap, indata.texDiff0 );
 			
-			float3 light = ( dot( sunDirectionWorld.xyz, indata.norm ) * 0.1 + 0.0 ) * lightColor + ambientAvgColor;
-//			float3 light = lightColor + ambientAvgColor;
+			vec3 light = ( dot( sunDirectionWorld.xyz, indata.norm ) * 0.1 + 0.0 ) * lightColor + ambientAvgColor;
+//			vec3 light = lightColor + ambientAvgColor;
 
 			// Alpha test here
 			if ( diff.a < 0.3 ) discard;
 
 			// Blend with different alpha
-			return float4( lerp( diff.rgb * light, fogColor, indata.extinct), diff.a );//float4( diff.rgb * light, indata.color.a * diff.a);
+			return vec4( lerp( diff.rgb * light, fogColor, indata.extinct), diff.a );//vec4( diff.rgb * light, indata.color.a * diff.a);
 		}	
 	%> }
 }

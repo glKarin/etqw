@@ -79,14 +79,14 @@ renderProgram sfx/cheap_litsmoke {
 	earlyCullVersion sfx/cheap_litsmoke_early
 
 	program vertex glsl { <%
-		#define tangent $tangentAttrib
+		$define tangent $tangentAttrib
 	
 		varying vec2 tex;
 		varying vec2 tex2;
 		varying vec4 col;
 		
-		#define textMatrixS $diffuseMatrix_s
-		#define textMatrixT $diffuseMatrix_t
+		$define textMatrixS $diffuseMatrix_s
+		$define textMatrixT $diffuseMatrix_t
 
 		float GetZ( vec2 value, float sign ) {
 			return ( sqrt( 1.0 - ( dot( value.xy, value.xy ) ) ) * ( sign - 1.0 ) );
@@ -96,14 +96,14 @@ renderProgram sfx/cheap_litsmoke {
 			vec4 _tex = $texCoordAttrib;
 			vec3 center = $normalAttrib;
 
-			#if r_32ByteVtx
+			$if r_32ByteVtx
 			_tex.xy *= 1.0/4096.0;
 			_tex.zw = 1.0;
 			
 			center.z = tangent.x;
 			
 			tangent = indata.signs; // TODO: calc sign
-			#endif
+			$endif
 
 			// Calculate the tangent space for this billboard, this is a bit tricky as our billboards are all lying in planes paralel
 			// to the near plane, this makes for cheap billboard calculations on the CPU.  But then they all lit identical because they
@@ -138,8 +138,8 @@ renderProgram sfx/cheap_litsmoke {
 		varying vec2 tex2;
 		varying vec4 col;
 		
-		#define colorMap $map
-		#define lightMap $gradientMap
+		$define colorMap $map
+		$define lightMap $gradientMap
 
 		void main() {
 			vec4 color = texture2D( colorMap, tex );
@@ -759,15 +759,15 @@ renderProgram sfx/feAmbDecal {
 			vec4 R2;
 
 			vec4 _pos = $positionAttrib;
-#if !r_32ByteVtx
+			$if !r_32ByteVtx
 			vec4 _nrm = vec4($normalAttrib, 1.0);
 			vec4 _tan = vec4($tangentAttrib, 1.0);
-#else 
+			$else 
 			vec4 _nrm;
 			vec4 _tan;
 			_nrm = vec4($normalAttrib, 1.0);
 			_tan = vec4($tangentAttrib, 1.0);
-#endif 
+			$endif 
 
 			vec4 defaultTexCoord = vec4(0.0,0.5,0.0,1.0);
 #if 0
@@ -832,13 +832,13 @@ renderProgram sfx/feAmbDecal {
 			vec4 _diffTC = var_TexCoord4;
 			vec4 _bumpTC = var_TexCoord4;
 			// coverage dither mask 
-#if r_useDitherMask 
+			$if r_useDitherMask 
 			R1.xy = gl_FragCoord.xy * 0.015625;
 			R0.r = texture2D ( $dithermask , R1.xy ).r;
 			R0.a = 0.5 - R0.r;
 			if(R0.a < 0.0)
 				discard;
-#endif 
+			$endif 
 			// modulate by the diffuse map and constant diffuse factor 
 			diffuse = texture2D ( $diffuseMap , _diffTC.xy );
 			R0.a = diffuse.a - 0.001;
@@ -848,13 +848,13 @@ renderProgram sfx/feAmbDecal {
 			localNormal.x = localNormal.a;
 			localNormal.xy = (localNormal * scaleTwo + subOne).xy;
 			// Renormalize 
-#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			localNormal.z = 0.0;
 			R1.x = dot ( localNormal.xyz , localNormal.xyz );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			localNormal.z = 1.0 / R1.x;
-#endif 
+			$endif 
 			// put normal into world space 
 			worldNormal.x = dot ( var_TexCoord5.xyz , localNormal.xyz );
 			worldNormal.y = dot ( var_TexCoord6.xyz , localNormal.xyz );
@@ -865,14 +865,14 @@ renderProgram sfx/feAmbDecal {
 			ambient = ambient * 2.0;
 			color = diffuse * $diffuseColor;
 			// kill if we need this 
-#if alphatest_kill 
+			$if alphatest_kill 
 			diffuse.a = diffuse.a - $alphaThresh.a;
 			if(diffuse.a < 0.0)
 				discard;
-#endif 
+			$endif 
 			// modulate by ambient 
 			color = ambient * color;
-#if !r_shaderSkipSpecCubeMaps 
+$if !r_shaderSkipSpecCubeMaps 
 			// calc reflection vector: i - 2 * dot(i, n) * n 
 			vec4 refl;
 			R1 = vec4( dot ( var_TexCoord2.xyz , worldNormal.xyz ) );
@@ -885,7 +885,7 @@ renderProgram sfx/feAmbDecal {
 			specLook = texture2D ( $specularMap , _diffTC.xy );
 			R0 = specLook + specLook;
 			color = R0 * spec + color;
-#endif 
+			$endif 
 			// modify by the vertex color 
 			R1 = color * var_Color;
 			gl_FragColor.a = diffuse.a;
@@ -938,13 +938,13 @@ renderProgram sfx/feAmbDecal_cloud {
 			vec4 _diffTC = var_TexCoord4;
 			vec4 _bumpTC = var_TexCoord4;
 			// coverage dither mask 
-#if r_useDitherMask 
+			$if r_useDitherMask 
 			R1.xy = gl_FragCoord * 0.015625;
 			R0.r = texture2D ( $dithermask , R1.xy ).r;
 			R0.a = 0.5 - R0.r;
 			if(R0.a < 0.0)
 				discard;
-#endif 
+			$endif 
 			// modulate by the diffuse map and constant diffuse factor 
 			diffuse = texture2D ( $diffuseMap , _diffTC.xy );
 			R0.a = diffuse.a - 0.001;
@@ -953,13 +953,13 @@ renderProgram sfx/feAmbDecal_cloud {
 			localNormal.x = localNormal.a;
 			localNormal.xy = (localNormal * scaleTwo + subOne).xy;
 			// Renormalize 
-#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			localNormal.z = 0.0;
 			R1.x = dot ( localNormal.xyz , localNormal.xyz );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			localNormal.z = 1.0 / R1.x;
-#endif 
+			$endif 
 			// put normal into world space 
 			worldNormal.x = dot ( var_TexCoord5.xyz , localNormal.xyz );
 			worldNormal.y = dot ( var_TexCoord6.xyz , localNormal.xyz );
@@ -970,14 +970,14 @@ renderProgram sfx/feAmbDecal_cloud {
 			ambient = ambient * 2.0;
 			color = diffuse * $diffuseColor;
 			// kill if we need this 
-#if alphatest_kill 
+			$if alphatest_kill 
 			diffuse.a = diffuse.a - $alphaThresh.a;
 			if(diffuse.a < 0.0)
 				discard;
-#endif 
+			$endif 
 			// modulate by ambient 
 			color = ambient * color;
-#if !r_shaderSkipSpecCubeMaps 
+			$if !r_shaderSkipSpecCubeMaps 
 			// calc reflection vector: i - 2 * dot(i, n) * n 
 			vec4 refl;
 			R1 = vec4 ( dot ( var_TexCoord2.xyz , worldNormal.xyz ) );
@@ -990,7 +990,7 @@ renderProgram sfx/feAmbDecal_cloud {
 			specLook = texture2D ( $specularMap , _diffTC.xy );
 			R0 = specLook + specLook;
 			color = R0 * spec + color;
-#endif 
+			$endif 
 			// modify by the vertex color 
 			R1 = color * var_Color;
 			R0 = vec4( dot ( var_TexCoord2.xyz , worldNormal.xyz ) );
@@ -1045,13 +1045,13 @@ renderProgram sfx/atmos {
 			localNormal.x = localNormal.a;
 			localNormal.xy = vec4( localNormal * scaleTwo + subOne ).xy;
 			// Renormalize 
-			#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			localNormal.z = 0.0;
 			R1.x = dot ( localNormal , localNormal );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			localNormal.z = 1.0 / R1.x;
-			#endif 
+			$endif 
 			// put normal into world space 
 			worldNormal.x = dot ( var_TexCoord5.xyz , localNormal.xyz );
 			worldNormal.y = dot ( var_TexCoord6.xyz , localNormal.xyz );
@@ -1071,11 +1071,11 @@ renderProgram sfx/atmos {
 renderprogram sfx/foggyWaterSurface {
 	program vertex glsl { <%
 
-		#define pos $positionAttrib.xyz
-		#define center $normalAttrib
-		#if r_32ByteVtx
+		$define pos $positionAttrib.xyz
+		$define center $normalAttrib
+		$if r_32ByteVtx
 		vec4 signs : $signAttrib;
-		#endif			
+		$endif			
 
 		varying vec2 tex;
 		varying float dist;
@@ -1090,14 +1090,14 @@ renderprogram sfx/foggyWaterSurface {
 			vec4 tex = $texCoordAttrib;
 			vec4 tangent = vec4($tangentAttrib, 1.0);
 			vec4 center = vec4($normalAttrib, 1.0);
-#if r_32ByteVtx
+			$if r_32ByteVtx
 			tex.xy *= 1.0/4096.0;
 			tex.zw = 1.0;
 
 			center.z = tangent.x;
 
 			tangent = signs;
-#endif
+			$endif
 
 			vec3 diff = pos - $viewOrigin.xyz;
 			dist = length( diff );
@@ -1114,7 +1114,7 @@ renderprogram sfx/foggyWaterSurface {
 		varying vec3 diff;
 		varying vec4 col;
 		
-		#define colorMap $map
+		$define colorMap $map
 
 		void main() {
 			float dist = length( diff );
@@ -1127,7 +1127,7 @@ renderprogram sfx/foggyWaterSurface {
 
 renderProgram sfx/ambsunDecalAlways {
 	program vertex glsl { <%
-		#define mvp u_modelViewProjectionMatrix
+		$define mvp u_modelViewProjectionMatrix
 		varying vec4 oPos;
 		varying vec4 var_TexCoord1;
 		varying vec4 var_TexCoord4;
@@ -1156,15 +1156,15 @@ renderProgram sfx/ambsunDecalAlways {
 			vec4 R1;
 			vec4 R2;
 			vec4 _pos = $positionAttrib;
-#if !r_32ByteVtx 
+			$if !r_32ByteVtx 
 			vec4 _nrm = vec4( $normalAttrib, 1.0 );
 			vec4 _tan = vec4( $tangentAttrib, 1.0 );
-#else 
+			$else 
 			vec4 _nrm;
 			vec4 _tan;
 			_nrm = vec4( $normalAttrib, 1.0 );
 			_tan = vec4( $tangentAttrib, 1.0 );
-#endif 
+			$endif 
 			vec4 defaultTexCoord = vec4(0.0,0.5,0.0,1.0);
 			bitangent = vec4( attr_Bitangent, 1.0 );
 			// textures 1 takes the base coordinates by the texture matrix 
@@ -1223,12 +1223,12 @@ renderProgram sfx/ambsunDecalAlways {
 			vec4 _diffTC = var_TexCoord4;
 			vec4 _bumpTC = var_TexCoord1;
 			// coverage dither mask 
-			#ifdef r_useDitherMask 
+			$ifdef r_useDitherMask 
 			R1.xy = gl_FragCoord.xy * 0.015625;
 			R0.r = texture2D ( $dithermask , R1.xy ).r;
 			R0.a = 0.5 - R0.r;
 			if ( R0.a < 0.0 ) discard;
-			#endif 
+			$endif 
 			// modulate by the diffuse map and constant diffuse factor 
 			diffuse = texture2D ( $diffuseMap , _diffTC.xy );
 			R0.a = diffuse.a - 0.001;
@@ -1237,13 +1237,13 @@ renderProgram sfx/ambsunDecalAlways {
 			localNormal.x = localNormal.a;
 			localNormal.xy = vec4( localNormal * scaleTwo + subOne ).xy;
 			// Renormalize 
-			#if r_normalizeNormalMaps 
+			$if r_normalizeNormalMaps 
 			localNormal.z = 0;
 			R1.x = dot ( localNormal.xyz , localNormal.xyz );
 			R1.x = 1.0 + -R1.x;
 			R1.x = 1.0 / sqrt ( R1.x );
 			localNormal.z = 1.0 / R1.x;
-			#endif 
+			$endif 
 			// put normal into world space 
 			worldNormal.x = dot ( var_TexCoord5.xyz , localNormal.xyz );
 			worldNormal.y = dot ( var_TexCoord6.xyz , localNormal.xyz );
@@ -1253,16 +1253,16 @@ renderProgram sfx/ambsunDecalAlways {
 			ambient = ambient * $ambientBrightness;
 			color = diffuse * $diffuseColor;
 			// kill if we need this 
-			#ifdef alphatest_kill 
+			$ifdef alphatest_kill 
 			diffuse.a = diffuse.a - $alphaThresh.x;
 			if ( diffuse.a < 0.0 ) discard;
-			#endif 
+			$endif 
 			vec4 lightdp;
 			lightdp = vec4( clamp ( dot ( worldNormal.xyz , $sunDirectionWorld.xyz ) , 0.0 , 1.0 ) );
 			// modulate by ambient 
 			ambient = lightdp * $sunColor + ambient;
 			color = ambient * color;
-			#if !r_shaderSkipSpecCubeMaps 
+			$if !r_shaderSkipSpecCubeMaps 
 			// calc reflection vector: i - 2 * dot(i, n) * n 
 			vec4 refl;
 			R1 = vec4( dot ( var_TexCoord2.xyz , worldNormal.xyz ) );
@@ -1281,7 +1281,7 @@ renderProgram sfx/ambsunDecalAlways {
 			lightdp = lightdp * lightdp;
 			R0 = lightdp * 2.0 + R0;
 			color = R0 * ambient + color;
-			#endif 
+			$endif 
 			// modify by the vertex color 
 			gl_FragColor = color * var_Color;
 			gl_FragColor.a = diffuse.a;

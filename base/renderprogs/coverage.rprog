@@ -247,7 +247,7 @@ renderProgram addVertexColorCoverageFogged {
 			_F1.x = dot ( _F2 .xyz , _F2 .xyz );
 			_F1.y = 1.0 / sqrt ( _F1.x );
 			_F1.x = _F1.y * _F1.x;
-			R0 = $fogDepths.z * 0.75;
+			R0 = vec4( $fogDepths.z * 0.75 );
 			var_Color2 = _F1.x * R0 + $fogDepths.w;
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		} 
