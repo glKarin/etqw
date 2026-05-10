@@ -1028,6 +1028,12 @@ void R_FreeEntityDefDerivedData(idRenderEntityLocal *def, bool keepDecals, bool 
 			md5_model->ClearDynamicModelSnapshot();
 	}
 #endif
+#ifdef _SPLASHDAMAGE //karin: imposter model
+	if (def->imposterModel) {
+		delete def->imposterModel;
+		def->imposterModel = NULL;
+	}
+#endif
 
 	def->entityRefs = NULL;
 }

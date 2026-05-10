@@ -43,6 +43,7 @@ public:
 	bool Read( idParser &src );
 
 private:
+	// (0,0), (1,0), (1,1), (0,1)
 	idVec2 texCoords[4];	// Texture coords for the four corners of the billboard (these may be rotated for rotated textures,...)
 	idVec2 rectMins;		// We "clip" the billboard rectangle to the texture coords so we don't sample from adjacent billboard images
 	idVec2 rectMaxs;		// this is the actual used part of the rectangle, this is in 0-1 space instead of texture space

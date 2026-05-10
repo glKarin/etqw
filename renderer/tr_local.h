@@ -418,6 +418,7 @@ class idRenderEntityLocal : public idRenderEntity
 #endif
 #ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 		int						lastModifiedGameTime;
+		idRenderModel 			*imposterModel;
 #endif
 };
 

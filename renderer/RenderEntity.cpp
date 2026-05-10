@@ -58,6 +58,7 @@ idRenderEntityLocal::idRenderEntityLocal()
 #endif
 #ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 	lastModifiedGameTime	= -1;
+	imposterModel			= NULL;
 #endif
 }
 

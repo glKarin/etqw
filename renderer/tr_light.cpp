@@ -30,6 +30,9 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "tr_local.h"
+#ifdef _SPLASHDAMAGE //karin: imposter
+#include "splashdamage/renderer/ImposterGeometry.h"
+#endif
 
 static const float CHECK_BOUNDS_EPSILON = 1.0f;
 
@@ -1110,6 +1113,10 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 	return update;
 }
 
+#ifdef _SPLASHDAMAGE //karin: imposter
+static idCVar harm_r_skipImposter("harm_r_skipImposter", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip imposter for static model");
+#endif
+
 /*
 ===================
 R_EntityDefDynamicModel
@@ -1140,6 +1147,14 @@ idRenderModel *R_EntityDefDynamicModel(idRenderEntityLocal *def)
 	if (model->IsDynamicModel() == DM_STATIC) {
 		def->dynamicModel = NULL;
 		def->dynamicModelFrameCount = 0;
+#ifdef _SPLASHDAMAGE //karin: imposter
+		if (def->parms.imposter && !harm_r_skipImposter.GetBool()) {
+			def->imposterModel = imposterGeometryManager->InstantiateDynamicModel(&def->parms, tr.viewDef, def->imposterModel);
+			if (def->imposterModel) {
+				model = def->imposterModel;
+			}
+		}
+#endif
 		return model;
 	}
 
@@ -1403,6 +1418,10 @@ static void R_AddAmbientDrawsurfs(viewEntity_t *vEntity)
 
 	if (def->dynamicModel) {
 		model = def->dynamicModel;
+#ifdef _SPLASHDAMAGE //karin: imposter model
+	} else if (def->imposterModel) {
+		model = def->imposterModel;
+#endif
 	} else {
 		model = def->parms.hModel;
 	}
