@@ -940,7 +940,12 @@ bool idAASFileLocal::Write(const idStr &fileName, unsigned int mapFileCRC)
 
 	for (i = 0; i < clusters.Num(); i++) {
 		aasFile->WriteFloatString("\t%d ( %d %d %d %d )\n", i, clusters[i].numAreas, clusters[i].numReachableAreas,
-		                          clusters[i].firstPortal, clusters[i].numPortals);
+#ifdef _SPLASHDAMAGE //karin: numPortals is before firstPortal on ETQW
+		                          clusters[i].numPortals, clusters[i].firstPortal
+#else
+		                          clusters[i].firstPortal, clusters[i].numPortals
+#endif
+		                          );
 	}
 
 	aasFile->WriteFloatString("}\n");
@@ -1383,8 +1388,13 @@ bool idAASFileLocal::ParseClusters(idLexer &src)
 		src.ExpectTokenString("(");
 		cluster.numAreas = src.ParseInt();
 		cluster.numReachableAreas = src.ParseInt();
+#ifdef _SPLASHDAMAGE //karin: numPortals is before firstPortal on ETQW
+		cluster.numPortals = src.ParseInt();
+		cluster.firstPortal = src.ParseInt();
+#else
 		cluster.firstPortal = src.ParseInt();
 		cluster.numPortals = src.ParseInt();
+#endif
 		src.ExpectTokenString(")");
 		clusters.Append(cluster);
 	}
@@ -2132,8 +2142,9 @@ bool idAASFileLocal::ParseClustersBinary(idFile *file)
 		aasCluster_t &cluster = clusters[i];
 		file->ReadInt(cluster.numAreas);
 		file->ReadInt(cluster.numReachableAreas);
-		file->ReadInt(cluster.firstPortal);
+		//karin: numPortals is before firstPortal on ETQW
 		file->ReadInt(cluster.numPortals);
+		file->ReadInt(cluster.firstPortal);
 	}
 
 	return true;
