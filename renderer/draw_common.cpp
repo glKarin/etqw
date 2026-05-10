@@ -719,6 +719,7 @@ void R_AddCopyParmsCmd(const viewDef_t *view)
 		builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
 		builtinUniforms.skyGradientCubeMap = globalImages->ambientNormalMap;
 	}
+	builtinUniforms.ambientCubeMap = globalImages->blackCubeMapImage;
 
 	copyParmsCommand_t	*cmd;
 
@@ -798,6 +799,7 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindVector("viewOriginWorld", backEnd.viewDef->renderView.vieworg);
 
 
+	program->BindImage("ambientCubeMap", backEnd.parms.ambientCubeMap);
 	program->BindImage("environmentCubeMap", backEnd.parms.environmentCubeMap);
 	program->BindImage("skyGradientCubeMap", backEnd.parms.skyGradientCubeMap);
 }

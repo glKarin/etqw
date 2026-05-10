@@ -511,6 +511,7 @@ class idImageManager
 		idImage 			*whiteImage;					// full of 0xff
 #ifdef _SPLASHDAMAGE
 	    idImage			    *grayImage;					// full of 0x77
+		idImage 			*blackCubeMapImage;			// RGB is 0, A is 255
 		idImage				*postProcessBuffers[2];
 #endif
 		idImage 			*blackImage;					// full of 0x00

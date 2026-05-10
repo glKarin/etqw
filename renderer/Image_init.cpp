@@ -356,6 +356,40 @@ static void R_GrayImage(idImage *image)
 	image->GenerateImage((byte *)data, DEFAULT_SIZE, DEFAULT_SIZE,
 	                     TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT);
 }
+
+static void R_MakeBlackCubeMap(idImage *image)
+{
+	byte	*pixels[6];
+	byte	*v1;
+	int		size;
+	int		i, j, k = 0;
+
+	size = 2;
+
+	pixels[0] = (GLubyte *) Mem_Alloc(size*size*4*6); // 96
+	for ( i = 0; i < 96; i += 16 )
+	{
+		v1 = pixels[0] + i;
+		for ( j = 0; j < 16; j += 8 )
+		{
+			v1[j] = 0;
+			v1[j + 1] = 0;
+			v1[j + 2] = 0;
+			v1[j + 3] = 255;
+			v1[j + 4] = 0;
+			v1[j + 5] = 0;
+			v1[j + 6] = 0;
+			v1[j + 7] = 255;
+		}
+		pixels[k++] = v1;
+	}
+
+	image->GenerateCubeImage((const byte **)pixels, size,
+	                         TF_NEAREST, false, TD_DEFAULT);
+
+	Mem_Free(pixels[0]);
+}
+
 #endif
 
 
@@ -2296,6 +2330,7 @@ void idImageManager::Init()
 	ImageFromFunction("_quadratic", R_QuadraticImage);
 #ifdef _SPLASHDAMAGE
 	grayImage = ImageFromFunction("_gray", R_GrayImage);
+	blackCubeMapImage = ImageFromFunction("_blackCubeMap", R_MakeBlackCubeMap);
 	postProcessBuffers[0] = ImageFromFunction("_postProcessBuffer_0", R_RGBA8Image);
 	postProcessBuffers[1] = ImageFromFunction("_postProcessBuffer_1", R_RGBA8Image);
 #endif
