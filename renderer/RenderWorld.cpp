@@ -330,6 +330,9 @@ void idRenderWorldLocal::UpdateEntityDef(qhandle_t entityHandle, const renderEnt
 	// based on the model bounds, add references in each area
 	// that may contain the updated surface
 	R_CreateEntityRefs(def);
+#ifdef _SPLASHDAMAGE //karin: entity inst
+	def->UpdateInstanceList();
+#endif
 }
 
 /*
@@ -370,6 +373,9 @@ void idRenderWorldLocal::FreeEntityDef(qhandle_t entityHandle)
 	def->parms.gui[ 1 ] = NULL;
 	def->parms.gui[ 2 ] = NULL;
 
+#ifdef _SPLASHDAMAGE //karin: entity inst
+	def->FreeInstanceList();
+#endif
 	delete def;
 	entityDefs[ entityHandle ] = NULL;
 }

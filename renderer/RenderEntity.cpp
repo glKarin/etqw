@@ -146,3 +146,59 @@ int idRenderLightLocal::GetIndex()
 {
 	return index;
 }
+
+#ifdef _SPLASHDAMAGE //karin: entity inst
+void idRenderEntityLocal::FreeInstanceList(void) {
+	if(!instList.Num())
+		return;
+
+	for (int i = 0; i < instList.Num(); i++) {
+		world->FreeEntityDef(instList[i]);
+	}
+
+	instList.Clear();
+}
+
+void idRenderEntityLocal::CreateInstanceList(void) {
+	const sdInstInfo *inst;
+
+	if ((!parms.flags.pushByInstances && !parms.flags.pushByCenter) || parms.numInsts == 0 || !parms.insts) {
+		FreeInstanceList();
+		return;
+	}
+
+	if (instList.Num() == parms.numInsts)
+		return;
+
+	FreeInstanceList();
+	instList.SetNum(parms.numInsts);
+
+	inst = parms.insts;
+	for (int i = 0; i < parms.numInsts; i++, inst++) {
+		renderEntity_t re = parms;
+		re.origin = inst->inst.origin;
+		re.axis = inst->inst.axis;
+		// re.shaderParms[SHADERPARM_RED] = (float)inst->inst.color[0] / 255.0f;
+		// re.shaderParms[SHADERPARM_GREEN] = (float)inst->inst.color[1] / 255.0f;
+		// re.shaderParms[SHADERPARM_BLUE] = (float)inst->inst.color[2] / 255.0f;
+		// re.shaderParms[SHADERPARM_ALPHA] = (float)inst->inst.color[3] / 255.0f;
+		re.numInsts = 0;
+		re.insts = NULL;
+		re.flags.pushByCenter = false;
+		re.flags.pushByInstances = false;
+
+		instList[i] = world->AddEntityDef(&re);
+	}
+}
+
+void idRenderEntityLocal::UpdateInstanceList(void) {
+	CreateInstanceList();
+
+	if(!instList.Num())
+		return;
+
+	for (int i = 0; i < instList.Num(); i++) {
+		world->UpdateEntityDef(instList[i], &((idRenderWorldLocal *)world)->entityDefs[instList[i]]->parms);
+	}
+}
+#endif
