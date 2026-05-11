@@ -59,6 +59,7 @@ idRenderEntityLocal::idRenderEntityLocal()
 #ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 	lastModifiedGameTime	= -1;
 	imposterModel			= NULL;
+	maxVisDist				= -1.0f;
 #endif
 }
 
@@ -213,6 +214,8 @@ void idRenderEntityLocal::UpdateInstanceList(void) {
 		re.flags.pushByInstances = false;
 
 		world->UpdateEntityDef(instList[i], &re);
+
+		world->entityDefs[instList[i]]->maxVisDist = inst->inst.maxVisDist;
 	}
 }
 #endif

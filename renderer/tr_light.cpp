@@ -32,6 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 #ifdef _SPLASHDAMAGE //karin: imposter
 #include "splashdamage/renderer/ImposterGeometry.h"
+
+static idCVar harm_r_skipImposter("harm_r_skipImposter", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip imposter for static model");
 #endif
 
 static const float CHECK_BOUNDS_EPSILON = 1.0f;
@@ -1114,7 +1116,19 @@ bool R_IssueEntityDefCallback(idRenderEntityLocal *def)
 }
 
 #ifdef _SPLASHDAMAGE //karin: imposter
-static idCVar harm_r_skipImposter("harm_r_skipImposter", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip imposter for static model");
+static void R_ClearEntityDefImposterModel(idRenderEntityLocal *def)
+{
+	// free all the interaction surfaces
+	for (idInteraction *inter = def->firstInteraction; inter != NULL && !inter->IsEmpty(); inter = inter->entityNext) {
+		inter->FreeSurfaces();
+	}
+
+	// clear the imposter model if present
+	if (def->imposterModel) {
+		def->imposterModel = NULL;
+	}
+}
+
 #endif
 
 /*
@@ -1148,11 +1162,40 @@ idRenderModel *R_EntityDefDynamicModel(idRenderEntityLocal *def)
 		def->dynamicModel = NULL;
 		def->dynamicModelFrameCount = 0;
 #ifdef _SPLASHDAMAGE //karin: imposter
-		if (def->parms.imposter && !harm_r_skipImposter.GetBool()) {
-			def->imposterModel = imposterGeometryManager->InstantiateDynamicModel(&def->parms, tr.viewDef, def->imposterModel);
+		if (def->parms.imposter && !harm_r_skipImposter.GetBool() && tr.viewDef->renderView.vieworg.Dist(def->parms.origin) > def->maxVisDist) {
+			if (!def->imposterModel) {
+				def->imposterModel = imposterGeometryManager->FindModel(def->parms.imposter);
+			}
+
 			if (def->imposterModel) {
 				model = def->imposterModel;
+
+				if (r_checkBounds.GetBool()) {
+					idBounds b = def->imposterModel->Bounds();
+
+					if (b[0][0] < def->referenceBounds[0][0] - CHECK_BOUNDS_EPSILON ||
+							b[0][1] < def->referenceBounds[0][1] - CHECK_BOUNDS_EPSILON ||
+							b[0][2] < def->referenceBounds[0][2] - CHECK_BOUNDS_EPSILON ||
+							b[1][0] > def->referenceBounds[1][0] + CHECK_BOUNDS_EPSILON ||
+							b[1][1] > def->referenceBounds[1][1] + CHECK_BOUNDS_EPSILON ||
+							b[1][2] > def->referenceBounds[1][2] + CHECK_BOUNDS_EPSILON) {
+						common->Printf("entity %i imposter model exceeded reference bounds\n", def->index);
+							}
+				}
+
+				if (model->DepthHack() != 0.0f && tr.viewDef) {
+					idPlane eye, clip;
+					idVec3 ndc;
+					R_TransformModelToClip(def->parms.origin, tr.viewDef->worldSpace.modelViewMatrix, tr.viewDef->projectionMatrix, eye, clip);
+					R_TransformClipToDevice(clip, tr.viewDef, ndc);
+					def->parms.modelDepthHack = model->DepthHack() * (1.0f - ndc.z);
+				}
 			}
+		}
+		else if(def->imposterModel)
+		{
+			R_ClearEntityDefImposterModel(def);
+			def->imposterModel = NULL;
 		}
 #endif
 		return model;

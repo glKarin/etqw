@@ -418,10 +418,9 @@ class idRenderEntityLocal : public idRenderEntity
 #endif
 #ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 		int						lastModifiedGameTime;
-		//idRenderModel 			*imposterModel;
-		//int						imposterModelFrameCount;
-		//idRenderModel 			*cachedImposterModel;
+		idRenderModel 			*imposterModel;
 		idList<qhandle_t>		instList;
+		float 					maxVisDist;
 
 public:
 		void					CreateInstanceList(void);

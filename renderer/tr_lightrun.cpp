@@ -1030,7 +1030,6 @@ void R_FreeEntityDefDerivedData(idRenderEntityLocal *def, bool keepDecals, bool 
 #endif
 #ifdef _SPLASHDAMAGE //karin: imposter model
 	if (def->imposterModel) {
-		delete def->imposterModel;
 		def->imposterModel = NULL;
 	}
 #endif
