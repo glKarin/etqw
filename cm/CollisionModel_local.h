@@ -44,12 +44,16 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE //karin: is multi-threading in game
 #include "splashdamage/idlib/threading/ThreadLocal.h"
 
+//karin: using thread lock, because models also must be `thread local`
 #define CM_LOCK_IN_COLLISION_TESTING 1
 
 #if CM_LOCK_IN_COLLISION_TESTING
 #define CM_LOCK_THREAD() sdScopedLock<true> _guard(lock)
 #else
 #define CM_LOCK_THREAD()
+typedef sdThreadLocal<int> thread_local_int_t;
+typedef sdThreadLocal<bool> thread_local_bool_t;
+typedef sdThreadLocal<contactInfo_t *> thread_local_contactInfo_ptr_t;
 #endif
 
 #endif
@@ -681,7 +685,11 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		ID_TIME_T			mapFileTime;
 		int				loaded;
 		// for multi-check avoidance
+#if 0 // defined(_SPLASHDAMAGE) && !CM_LOCK_IN_COLLISION_TESTING //karin: is multi-threading in game
+		thread_local_int_t				checkCount;
+#else
 		int				checkCount;
+#endif
 		// models
 		int				maxModels;
 		int				numModels;
@@ -699,10 +707,17 @@ class idCollisionModelManagerLocal : public idCollisionModelManager
 		int threadCount;
 		sdThreadLocal<uintptr_t>				threadId;
 #endif
+#if 0 // defined(_SPLASHDAMAGE) && !CM_LOCK_IN_COLLISION_TESTING //karin: is multi-threading in game
+		thread_local_bool_t			getContacts;
+		thread_local_contactInfo_ptr_t contacts;
+		thread_local_int_t				maxContacts;
+		thread_local_int_t				numContacts;
+#else
 		bool			getContacts;
 		contactInfo_t 	*contacts;
 		int				maxContacts;
 		int				numContacts;
+#endif
 #ifdef _HUMANHEAD
 	    //HUMANHEAD rww
 #if _HH_INLINED_PROC_CLIPMODELS
