@@ -2443,7 +2443,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("alphatocoverage")) {
-			if(ss->hasAlphaTest)
+			if(ss->hasAlphaTest && !ss->ignoreAlphaTest)
 				coverage = MC_PERFORATED;
 			continue;
 		}

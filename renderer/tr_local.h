@@ -420,7 +420,6 @@ class idRenderEntityLocal : public idRenderEntity
 		int						lastModifiedGameTime;
 		idRenderModel 			*imposterModel;
 		idList<qhandle_t>		instList;
-		float 					maxVisDist;
 
 public:
 		void					CreateInstanceList(void);

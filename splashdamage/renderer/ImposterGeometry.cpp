@@ -4,12 +4,8 @@
 #include "idlib/precompiled.h"
 
 #include "ImposterGeometry.h"
-
 #include "renderer/tr_local.h"
-
 #include "splashdamage/decllib/declImposter.h"
-
-static const char *Imposter_SnapshotName = "_Imposter_Snapshot_";
 
 sdImposterGeometry::sdImposterGeometry(void)
     : declImposter(NULL),
@@ -52,9 +48,9 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
     float rad = 0.0f;
     float unitDeg = 360.0f / (float)num;
 
-    byte red = 255;
-    byte green = 255;
-    byte blue = 255;
+    byte red = 0;
+    byte green = 0;
+    byte blue = 0;
     byte alpha = 255;
 
     for (int i = 0; i < num; i++) {
@@ -62,16 +58,14 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
 		dv = &triSurf->verts[i * 4];
 		idx = &triSurf->indexes[i * 6];
 
-        float width = declImposter->GetScaleX() * 2.0f;
-        float height = declImposter->GetScaleY() * 2.0f;
+        float width = declImposter->GetScaleX();
+        float height = declImposter->GetScaleY();
 		idVec2 mins = subImage.GetMins() * 2.0f - vec2_one;
 		idVec2 maxs = subImage.GetMaxs() * 2.0f - vec2_one;
         float x1 = mins[0] * width;
         float y1 = mins[1] * height;
         float x2 = maxs[0] * width;
         float y2 = maxs[1] * height;
-        // idVec3 right	= idVec3(0.0f, width, 0.0f);
-        // idVec3 up		= idVec3(0.0f, 0.0f, height);
 
         dv[ 0 ].Clear();
         dv[ 0 ].normal.Set(1.0f, 0.0f, 0.0f);
@@ -83,7 +77,7 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
         dv[ 0 ].color[ 2 ] = blue;
         dv[ 0 ].color[ 3 ] = alpha;
 	    dv[ 0 ].xyz.Set(0.0f, x2, y2);
-	    //dv[ 0 ].xyz += declImposter->GetOrigin();
+	    dv[ 0 ].xyz += declImposter->GetOrigin();
 
         dv[ 1 ].Clear();
         dv[ 1 ].normal.Set(1.0f, 0.0f, 0.0f);
@@ -95,7 +89,7 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
         dv[ 1 ].color[ 2 ] = blue;
         dv[ 1 ].color[ 3 ] = alpha;
 	    dv[ 1 ].xyz.Set(0.0f, x1, y2);
-	    //dv[ 1 ].xyz += declImposter->GetOrigin();
+	    dv[ 1 ].xyz += declImposter->GetOrigin();
 
         dv[ 2 ].Clear();
         dv[ 2 ].normal.Set(1.0f, 0.0f, 0.0f);
@@ -107,7 +101,7 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
         dv[ 2 ].color[ 2 ] = blue;
         dv[ 2 ].color[ 3 ] = alpha;
 	    dv[ 2 ].xyz.Set(0.0f, x1, y1);
-	    //dv[ 2 ].xyz += declImposter->GetOrigin();
+	    dv[ 2 ].xyz += declImposter->GetOrigin();
 
         dv[ 3 ].Clear();
         dv[ 3 ].normal.Set(1.0f, 0.0f, 0.0f);
@@ -119,7 +113,7 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
         dv[ 3 ].color[ 2 ] = blue;
         dv[ 3 ].color[ 3 ] = alpha;
 	    dv[ 3 ].xyz.Set(0.0f, x2, y1);
-	    //dv[ 3 ].xyz += declImposter->GetOrigin();
+	    dv[ 3 ].xyz += declImposter->GetOrigin();
 
         int baseVert = dv - triSurf->verts;
         idx[ 0 ] = baseVert + 0;

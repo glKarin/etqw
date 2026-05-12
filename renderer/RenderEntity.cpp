@@ -59,7 +59,6 @@ idRenderEntityLocal::idRenderEntityLocal()
 #ifdef _SPLASHDAMAGE //karin: save last call renderEntity_t::callback game time
 	lastModifiedGameTime	= -1;
 	imposterModel			= NULL;
-	maxVisDist				= -1.0f;
 #endif
 }
 
@@ -179,6 +178,9 @@ void idRenderEntityLocal::CreateInstanceList(void) {
 		renderEntity_t re = parms;
 		re.origin = inst->inst.origin;
 		re.axis = inst->inst.axis;
+		if (parms.flags.overridenBounds && parms.hModel) {
+			re.bounds = parms.hModel->Bounds();
+		}
 		// re.shaderParms[SHADERPARM_RED] = (float)inst->inst.color[0] / 255.0f;
 		// re.shaderParms[SHADERPARM_GREEN] = (float)inst->inst.color[1] / 255.0f;
 		// re.shaderParms[SHADERPARM_BLUE] = (float)inst->inst.color[2] / 255.0f;
@@ -187,6 +189,10 @@ void idRenderEntityLocal::CreateInstanceList(void) {
 		re.insts = NULL;
 		re.flags.pushByCenter = false;
 		re.flags.pushByInstances = false;
+		re.flags.overridenBounds = false;
+
+		re.minVisDist = inst->minVisDist;
+		re.maxVisDist = inst->maxVisDist;
 
 		instList[i] = world->AddEntityDef(&re);
 	}
@@ -204,6 +210,9 @@ void idRenderEntityLocal::UpdateInstanceList(void) {
 		renderEntity_t re = parms;
 		re.origin = inst->inst.origin;
 		re.axis = inst->inst.axis;
+		if (parms.flags.overridenBounds && parms.hModel) {
+			re.bounds = parms.hModel->Bounds();
+		}
 		// re.shaderParms[SHADERPARM_RED] = (float)inst->inst.color[0] / 255.0f;
 		// re.shaderParms[SHADERPARM_GREEN] = (float)inst->inst.color[1] / 255.0f;
 		// re.shaderParms[SHADERPARM_BLUE] = (float)inst->inst.color[2] / 255.0f;
@@ -212,10 +221,12 @@ void idRenderEntityLocal::UpdateInstanceList(void) {
 		re.insts = NULL;
 		re.flags.pushByCenter = false;
 		re.flags.pushByInstances = false;
+		re.flags.overridenBounds = false;
+
+		re.minVisDist = inst->minVisDist;
+		re.maxVisDist = inst->maxVisDist;
 
 		world->UpdateEntityDef(instList[i], &re);
-
-		world->entityDefs[instList[i]]->maxVisDist = inst->inst.maxVisDist;
 	}
 }
 #endif

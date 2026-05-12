@@ -31,6 +31,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
+#ifdef _SPLASHDAMAGE //karin: vis dist check
+static idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
+#endif
+
 /*
 
 
@@ -787,6 +791,23 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 				continue;
 		}
 #endif
+#ifdef _SPLASHDAMAGE //karin: vis dist check
+		//karin: skip entity with inst infos
+		if (entity->parms.numInsts || entity->parms.insts) {
+			continue;
+		}
+
+		//karin: check visible distance range
+		if ((entity->parms.minVisDist > 0.0f || entity->parms.maxVisDist > 0.0f)
+			&& !entity->parms.imposter //karin: using imposter if too far
+			&& !harm_r_skipVisDistCheck.GetBool()) {
+			float distance = tr.viewDef->renderView.vieworg.Dist(entity->parms.origin);
+			if (entity->parms.minVisDist > 0.0f && distance < entity->parms.minVisDist)
+				continue;
+			if (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist)
+				continue;
+		}
+#endif
 		// check for completely suppressing the model
 		if (!r_skipSuppress.GetBool()) {
 			if (entity->parms.suppressSurfaceInViewID
@@ -1008,6 +1029,15 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 			continue;
 		}
 
+
+#ifdef _SPLASHDAMAGE //karin: vis dist check
+		//karin: check visible distance range
+		if (light->parms.maxVisDist > 0.0f && !harm_r_skipVisDistCheck.GetBool()) {
+			float distance = tr.viewDef->renderView.vieworg.Dist(light->parms.origin);
+			if (distance > light->parms.maxVisDist)
+				continue;
+		}
+#endif
 
 #ifdef _D3BFG_CULLING
         if (harm_r_occlusionCulling.GetBool()) {
@@ -1659,7 +1689,15 @@ void idRenderWorldLocal::AddAreaEffectRefs(int areaNum, const portalStack_s *ps)
 
     p_effectRefs = &portalAreas[areaNum].effectRefs;
     for (i = p_effectRefs->areaNext; i != p_effectRefs; i = i->areaNext) {
-        effect = i->effect;
+    	effect = i->effect;
+#ifdef _SPLASHDAMAGE //karin: vis dist check
+    	//karin: check visible distance range
+    	if (effect->parms.maxVisDist > 0.0f && !harm_r_skipVisDistCheck.GetBool()) {
+    		float distance = tr.viewDef->renderView.vieworg.Dist(effect->parms.origin);
+    		if (distance > effect->parms.maxVisDist)
+    			continue;
+    	}
+#endif
         if (!r_skipSuppress.GetBool()) {
             suppressSurfaceInViewID = effect->parms.suppressSurfaceInViewID;
             if (suppressSurfaceInViewID) {

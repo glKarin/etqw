@@ -1162,13 +1162,21 @@ idRenderModel *R_EntityDefDynamicModel(idRenderEntityLocal *def)
 		def->dynamicModel = NULL;
 		def->dynamicModelFrameCount = 0;
 #ifdef _SPLASHDAMAGE //karin: imposter
-		if (def->parms.imposter && !harm_r_skipImposter.GetBool() && (def->parms.flags.forceImposter || tr.viewDef->renderView.vieworg.Dist(def->parms.origin) > def->maxVisDist)) {
+		if (def->parms.imposter && !harm_r_skipImposter.GetBool() && tr.viewDef
+			&& (def->parms.flags.forceImposter
+				|| (def->parms.maxVisDist <= 0.0f || tr.viewDef->renderView.vieworg.Dist(def->parms.origin) > def->parms.maxVisDist))
+			) {
 			if (!def->imposterModel) {
 				def->imposterModel = imposterGeometryManager->FindModel(def->parms.imposter);
 			}
 
 			if (def->imposterModel) {
 				model = def->imposterModel;
+				//karin: force face to view
+				idVec3 dir = def->parms.origin - tr.viewDef->renderView.vieworg;
+				dir.z = 0.0f; // only axis to Z
+				dir.Normalize();
+				def->parms.axis = dir.ToMat3();
 
 				if (r_checkBounds.GetBool()) {
 					idBounds b = def->imposterModel->Bounds();
@@ -1183,7 +1191,7 @@ idRenderModel *R_EntityDefDynamicModel(idRenderEntityLocal *def)
 							}
 				}
 
-				if (model->DepthHack() != 0.0f && tr.viewDef) {
+				if (model->DepthHack() != 0.0f) {
 					idPlane eye, clip;
 					idVec3 ndc;
 					R_TransformModelToClip(def->parms.origin, tr.viewDef->worldSpace.modelViewMatrix, tr.viewDef->projectionMatrix, eye, clip);
