@@ -31,6 +31,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
+#ifdef _SPLASHDAMAGE //karin: vis dist check
+extern  idCVar harm_r_skipVisDistCheck;
+#endif
+
 /*
 ===========================================================================
 
@@ -1396,6 +1400,24 @@ void idInteraction::AddActiveInteraction(void)
 		if(entityDef->parms.onlyVisibleInSpirit)
 			return;
 	}
+#endif
+#ifdef _SPLASHDAMAGE //karin: vis dist check for shadow
+	//karin: skip entity with inst infos
+	if (entityDef->parms.numInsts || entityDef->parms.insts) {
+		return;
+	}
+
+	//karin: check visible distance range
+	if ((entityDef->parms.minVisDist > 0.0f || entityDef->parms.maxVisDist > 0.0f)
+		&& entityDef->parms.flags.disableLODs
+		&& !entityDef->parms.imposter //karin: using imposter if too far
+		&& !harm_r_skipVisDistCheck.GetBool()) {
+		float distance = tr.viewDef->renderView.vieworg.Dist(entityDef->parms.origin);
+		if (entityDef->parms.minVisDist > 0.0f && distance < entityDef->parms.minVisDist)
+			return;
+		if (entityDef->parms.maxVisDist > 0.0f && distance > entityDef->parms.maxVisDist)
+			return;
+		}
 #endif
 
 	// the dynamic model may have changed since we built the surface list

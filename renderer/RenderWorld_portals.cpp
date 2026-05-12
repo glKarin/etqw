@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 
 #ifdef _SPLASHDAMAGE //karin: vis dist check
-static idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
+idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
 #endif
 
 /*
@@ -799,6 +799,7 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 
 		//karin: check visible distance range
 		if ((entity->parms.minVisDist > 0.0f || entity->parms.maxVisDist > 0.0f)
+			&& entity->parms.flags.disableLODs
 			&& !entity->parms.imposter //karin: using imposter if too far
 			&& !harm_r_skipVisDistCheck.GetBool()) {
 			float distance = tr.viewDef->renderView.vieworg.Dist(entity->parms.origin);
