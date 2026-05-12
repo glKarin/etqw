@@ -26,9 +26,6 @@ public:
     }
 
 private:
-    void                        UpdateSurface(const sdInstInfo *instInfo, const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf) const;
-
-private:
     const sdDeclImposter        *declImposter;
     struct srfTriangles_t       *triSurf;
     idBounds                    bounds;
@@ -41,15 +38,11 @@ public:
     virtual void                InitFromFile(const char* fileName);
     void                        InitFromImposterGeometry(const sdImposterGeometry* imposter);
     virtual dynamicModel_t		IsDynamicModel() const;
-    virtual idRenderModel 		*InstantiateDynamicModel(const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel);
-    virtual idBounds			Bounds(const struct renderEntity_s *ent) const {
-        return imposterGeometry->Bounds();
-    }
     void                        LoadModel(void);
     void                        PurgeModel(void);
 
 private:
-    void                        UpdateSurface(const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf) const;
+    void                        UpdateSurface(modelSurface_t *surf) const;
 
 private:
     const sdImposterGeometry    *imposterGeometry;
@@ -72,7 +65,6 @@ public:
 
 private:
     idList<sdImposterGeometry>  list;
-    idList<sdRenderModelImposter *> modelList;
 };
 
 extern sdImposterGeometryManager *imposterGeometryManager;

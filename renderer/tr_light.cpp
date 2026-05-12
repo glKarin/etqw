@@ -1162,7 +1162,7 @@ idRenderModel *R_EntityDefDynamicModel(idRenderEntityLocal *def)
 		def->dynamicModel = NULL;
 		def->dynamicModelFrameCount = 0;
 #ifdef _SPLASHDAMAGE //karin: imposter
-		if (def->parms.imposter && !harm_r_skipImposter.GetBool() && tr.viewDef->renderView.vieworg.Dist(def->parms.origin) > def->maxVisDist) {
+		if (def->parms.imposter && !harm_r_skipImposter.GetBool() && (def->parms.flags.forceImposter || tr.viewDef->renderView.vieworg.Dist(def->parms.origin) > def->maxVisDist)) {
 			if (!def->imposterModel) {
 				def->imposterModel = imposterGeometryManager->FindModel(def->parms.imposter);
 			}

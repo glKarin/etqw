@@ -38,40 +38,40 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
     if (!decl->IsValid() || decl->IsImplicit())
         return;
 
-    num = decl->GetNumAngles() / 2;
-    /*for (int i = 0; i < num; i++) {
-        const sdImposterSubImage &subImage = declImposter->GetSubImage(i);
-        if (subImage)
-    }*/
-
+    num = decl->GetNumAngles();
 
     declImposter = decl;
     triSurf = R_AllocStaticTriSurf();
 
-    num = 1;
+    //num = 1;
     triSurf->numVerts = 4 * num;
     triSurf->numIndexes = 6 * num;
     R_AllocStaticTriSurfVerts(triSurf, triSurf->numVerts);
     R_AllocStaticTriSurfIndexes(triSurf, triSurf->numIndexes);
+
+    float rad = 0.0f;
+    float unitDeg = 360.0f / (float)num;
 
     byte red = 255;
     byte green = 255;
     byte blue = 255;
     byte alpha = 255;
 
-    dv = &triSurf->verts[0];
-    idx = &triSurf->indexes[0];
     for (int i = 0; i < num; i++) {
         const sdImposterSubImage &subImage = declImposter->GetSubImage(i);
+		dv = &triSurf->verts[i * 4];
+		idx = &triSurf->indexes[i * 6];
 
-        float width = declImposter->GetScaleX();
-        float height = declImposter->GetScaleY();
-        float x1 = -subImage.GetMins()[0] * width * 0.5f;
-        float y1 = -subImage.GetMins()[1] * height * 0.5f;
-        float x2 = subImage.GetMaxs()[0] * width * 0.5f;
-        float y2 = subImage.GetMaxs()[1] * height * 0.5f;
-        idVec3 right	= idVec3(0.0f, width * 0.5f, 0.0f);
-        idVec3 up		= idVec3(0.0f, 0.0f, height * 0.5f);
+        float width = declImposter->GetScaleX() * 2.0f;
+        float height = declImposter->GetScaleY() * 2.0f;
+		idVec2 mins = subImage.GetMins() * 2.0f - vec2_one;
+		idVec2 maxs = subImage.GetMaxs() * 2.0f - vec2_one;
+        float x1 = mins[0] * width;
+        float y1 = mins[1] * height;
+        float x2 = maxs[0] * width;
+        float y2 = maxs[1] * height;
+        // idVec3 right	= idVec3(0.0f, width, 0.0f);
+        // idVec3 up		= idVec3(0.0f, 0.0f, height);
 
         dv[ 0 ].Clear();
         dv[ 0 ].normal.Set(1.0f, 0.0f, 0.0f);
@@ -83,53 +83,67 @@ void sdImposterGeometry::Init(const sdDeclImposter *decl) {
         dv[ 0 ].color[ 2 ] = blue;
         dv[ 0 ].color[ 3 ] = alpha;
 	    dv[ 0 ].xyz.Set(0.0f, x2, y2);
-	    dv[ 0 ].xyz += declImposter->GetOrigin();
+	    //dv[ 0 ].xyz += declImposter->GetOrigin();
 
         dv[ 1 ].Clear();
         dv[ 1 ].normal.Set(1.0f, 0.0f, 0.0f);
         dv[ 1 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
         dv[ 1 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
-        dv[ 0 ].st = subImage.GetTexCoord(1);
+        dv[ 1 ].st = subImage.GetTexCoord(1);
         dv[ 1 ].color[ 0 ] = red;
         dv[ 1 ].color[ 1 ] = green;
         dv[ 1 ].color[ 2 ] = blue;
         dv[ 1 ].color[ 3 ] = alpha;
 	    dv[ 1 ].xyz.Set(0.0f, x1, y2);
-	    dv[ 1 ].xyz += declImposter->GetOrigin();
+	    //dv[ 1 ].xyz += declImposter->GetOrigin();
 
         dv[ 2 ].Clear();
         dv[ 2 ].normal.Set(1.0f, 0.0f, 0.0f);
         dv[ 2 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
         dv[ 2 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
-        dv[ 0 ].st = subImage.GetTexCoord(2);
+        dv[ 2 ].st = subImage.GetTexCoord(2);
         dv[ 2 ].color[ 0 ] = red;
         dv[ 2 ].color[ 1 ] = green;
         dv[ 2 ].color[ 2 ] = blue;
         dv[ 2 ].color[ 3 ] = alpha;
 	    dv[ 2 ].xyz.Set(0.0f, x1, y1);
-	    dv[ 2 ].xyz += declImposter->GetOrigin();
+	    //dv[ 2 ].xyz += declImposter->GetOrigin();
 
         dv[ 3 ].Clear();
         dv[ 3 ].normal.Set(1.0f, 0.0f, 0.0f);
         dv[ 3 ].tangents[0].Set(0.0f, 1.0f, 0.0f);
         dv[ 3 ].tangents[1].Set(0.0f, 0.0f, 1.0f);
-        dv[ 0 ].st = subImage.GetTexCoord(3);
+        dv[ 3 ].st = subImage.GetTexCoord(3);
         dv[ 3 ].color[ 0 ] = red;
         dv[ 3 ].color[ 1 ] = green;
         dv[ 3 ].color[ 2 ] = blue;
         dv[ 3 ].color[ 3 ] = alpha;
 	    dv[ 3 ].xyz.Set(0.0f, x2, y1);
-	    dv[ 3 ].xyz += declImposter->GetOrigin();
+	    //dv[ 3 ].xyz += declImposter->GetOrigin();
 
-        idx[ 0 ] = 0;
-        idx[ 1 ] = 1;
-        idx[ 2 ] = 3;
-        idx[ 3 ] = 1;
-        idx[ 4 ] = 2;
-        idx[ 5 ] = 3;
+        int baseVert = dv - triSurf->verts;
+        idx[ 0 ] = baseVert + 0;
+        idx[ 1 ] = baseVert + 1;
+        idx[ 2 ] = baseVert + 3;
+        idx[ 3 ] = baseVert + 1;
+        idx[ 4 ] = baseVert + 2;
+        idx[ 5 ] = baseVert + 3;
 
-        dv += 4;
-        idx += 6;
+        if (i > 0)
+        {
+            idMat3 mat;
+            idAngles::YawToMat3(unitDeg * (float)i, mat);
+            float modelMatrix[16];
+            R_AxisToModelMatrix(mat, vec3_origin, modelMatrix);
+            idVec3 tmp;
+            for (int j = 0; j < 4; j++)
+            {
+                tmp = dv[j].xyz; R_LocalPointToGlobal(modelMatrix, tmp, dv[j].xyz);
+                tmp = dv[j].normal; R_LocalVectorToGlobal(modelMatrix, tmp, dv[j].normal);
+                tmp = dv[j].tangents[0]; R_LocalVectorToGlobal(modelMatrix, tmp, dv[j].tangents[0]);
+                tmp = dv[j].tangents[1]; R_LocalVectorToGlobal(modelMatrix, tmp, dv[j].tangents[1]);
+            }
+        }
     }
 
     R_BoundTriSurf(triSurf);
@@ -200,19 +214,13 @@ const sdImposterGeometry * sdImposterGeometryManager::Find(const sdDeclImposter 
 }
 
 idRenderModelStatic * sdImposterGeometryManager::GetModel(const char *name) {
-    for (int i = 0; i < list.Num(); i++) {
-        if (!idStr::Icmp(modelList[i]->Name(), name))
-            return modelList[i];
-    }
-    return NULL;
+    return static_cast<idRenderModelStatic *>(renderModelManager->GetModel(name));
 }
 
 idRenderModelStatic * sdImposterGeometryManager::GetModel(const sdDeclImposter *imposter) {
-    for (int i = 0; i < list.Num(); i++) {
-        if (!idStr::Icmp(modelList[i]->Name(), imposter->GetName()))
-            return modelList[i];
-    }
-    return NULL;
+    if (!imposter)
+        return NULL;
+    return static_cast<idRenderModelStatic *>(renderModelManager->GetModel(imposter->GetName()));
 }
 
 idRenderModelStatic * sdImposterGeometryManager::FindModel(const char *name) {
@@ -226,12 +234,15 @@ idRenderModelStatic * sdImposterGeometryManager::FindModel(const char *name) {
 
     sdRenderModelImposter *imposterModel = new sdRenderModelImposter;
     imposterModel->InitFromImposterGeometry(gemo);
-    modelList.Append(imposterModel);
+    renderModelManager->AddModel(imposterModel);
 
-    return model;
+    return imposterModel;
 }
 
 idRenderModelStatic * sdImposterGeometryManager::FindModel(const sdDeclImposter *imposter) {
+	if(!imposter)
+		return NULL;
+
     idRenderModelStatic *model = GetModel(imposter);
     if (model)
         return model;
@@ -242,9 +253,9 @@ idRenderModelStatic * sdImposterGeometryManager::FindModel(const sdDeclImposter 
 
     sdRenderModelImposter *imposterModel = new sdRenderModelImposter;
     imposterModel->InitFromImposterGeometry(gemo);
-    modelList.Append(imposterModel);
+    renderModelManager->AddModel(imposterModel);
 
-    return model;
+    return imposterModel;
 }
 
 
@@ -257,6 +268,7 @@ sdRenderModelImposter::sdRenderModelImposter(void)
 
 void sdRenderModelImposter::InitFromFile(const char* fileName) {
     name = fileName;
+	imposterGeometry = imposterGeometryManager->Find(name);
     LoadModel();
 }
 
@@ -264,58 +276,7 @@ dynamicModel_t sdRenderModelImposter::IsDynamicModel() const {
     return DM_STATIC;
 }
 
-idRenderModel * sdRenderModelImposter::InstantiateDynamicModel(const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel) {
-    int					i, surfaceNum;
-    idRenderModelStatic	*staticModel;
-    modelSurface_t *surf;
-
-    if (cachedModel && !r_useCachedDynamicModels.GetBool()) {
-        delete cachedModel;
-        cachedModel = NULL;
-    }
-
-    // this may be triggered by a model trace or other non-view related source, to which we should look like an empty model
-    if (ent == NULL || view == NULL) {
-        delete cachedModel;
-        return NULL;
-    }
-
-    if (!imposterGeometry) {
-        delete cachedModel;
-        return NULL;
-    }
-
-    if (cachedModel) {
-        assert(dynamic_cast<idRenderModelStatic *>(cachedModel) != NULL);
-        assert(idStr::Icmp(cachedModel->Name(), Imposter_SnapshotName) == 0);
-        staticModel = static_cast<idRenderModelStatic *>(cachedModel);
-    } else {
-        staticModel = new idRenderModelStatic;
-        staticModel->InitEmpty(Imposter_SnapshotName);
-    }
-
-    staticModel->bounds.Clear();
-
-    //distance = tr.viewDef->renderView.vieworg.Dist(def->parms.origin);
-    for (i = 0; i < ent->numInsts; i++) {
-        if (staticModel->FindSurfaceWithId(i, surfaceNum)) {
-            surf = &staticModel->surfaces[surfaceNum];
-        } else {
-            surf = &staticModel->surfaces.Alloc();
-            surf->geometry = NULL;
-            surf->material = NULL;
-            surf->id = i;
-        }
-
-        UpdateSurface(ent, view, surf);
-    }
-
-    staticModel->bounds = bounds;
-    return staticModel;
-}
-
-
-void sdRenderModelImposter::UpdateSurface(const struct renderEntity_s *ent, const struct viewDef_s *view, modelSurface_t *surf) const {
+void sdRenderModelImposter::UpdateSurface(modelSurface_t *surf) const {
     srfTriangles_t *tri;
     idDrawVert *dv;
     glIndex_t *idx;
@@ -325,17 +286,9 @@ void sdRenderModelImposter::UpdateSurface(const struct renderEntity_s *ent, cons
     surf->material = imposterGeometry->GetDeclImposter()->GetMaterial();
 
     if (surf->geometry) {
-        /*if (stuff->numVerts == surf->geometry->numVerts && stuff->numIndexes == surf->geometry->numIndexes) {
-            R_FreeStaticTriSurfVertexCaches(surf->geometry);
-        }
-        else*/
-        {
-            R_FreeStaticTriSurf(surf->geometry);
-            surf->geometry = R_AllocStaticTriSurf();
-        }
-    } else {
-        surf->geometry = R_AllocStaticTriSurf();
-    }
+		R_FreeStaticTriSurf(surf->geometry);
+	}
+	surf->geometry = R_AllocStaticTriSurf();
 
     tri = surf->geometry;
     tri->numVerts = triSurf->numVerts;
@@ -355,26 +308,45 @@ void sdRenderModelImposter::UpdateSurface(const struct renderEntity_s *ent, cons
         // dv->color[3] = instInfo->inst.color[3];
     }
 
-    for (int i = 0; i < surf->geometry->numIndexes; i++) {
-        idx[i] = surf->geometry->indexes[i];
+    for (int i = 0; i < triSurf->numIndexes; i++) {
+        idx[i] = triSurf->indexes[i];
     }
 
     R_BoundTriSurf(tri);
 }
 
 void sdRenderModelImposter::LoadModel(void) {
-    imposterGeometry = imposterGeometryManager->Find(name);
+	if(!imposterGeometry)
+	{
+		PurgeModel();
+		MakeDefaultModel();
+		return;
+	}
+
+    modelSurface_t *surf;
+	bounds.Clear();
+
+	surfaces.SetNum(1);
+	surf = &surfaces[0];
+	surf->geometry = NULL;
+	surf->material = NULL;
+	surf->id = 0;
+
+	UpdateSurface(surf);
 }
 
 void sdRenderModelImposter::InitFromImposterGeometry(const sdImposterGeometry* imposter) {
     name = imposter->GetDeclImposter()->GetName();
     imposterGeometry = imposter;
+
+	LoadModel();
 }
 
 void sdRenderModelImposter::PurgeModel(void) {
     imposterGeometry = NULL;
-    purged = true;
+	idRenderModelStatic::PurgeModel();
 }
+
 
 
 static sdImposterGeometryManager imposterGeometryManagerLocal;
