@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "Model_local.h"
 #include "tr_local.h"	// just for R_FreeWorldInteractions and R_CreateWorldInteractions
 #ifdef _SPLASHDAMAGE
-#include "splashdamage/renderer/Model_clust.h"
+#include "renderer/Model_clust.h"
 #endif
 
 

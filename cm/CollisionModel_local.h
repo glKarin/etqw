@@ -42,7 +42,7 @@ If you have questions concerning this license or the applicable additional terms
 #define CIRCLE_APPROXIMATION_LENGTH			64.0f
 
 #ifdef _SPLASHDAMAGE //karin: is multi-threading in game
-#include "splashdamage/idlib/threading/ThreadLocal.h"
+#include "idlib/threading/ThreadLocal.h"
 
 //karin: using thread lock, because models also must be `thread local`
 #define CM_LOCK_IN_COLLISION_TESTING 1

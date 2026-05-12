@@ -36,6 +36,9 @@ If you have questions concerning this license or the applicable additional terms
 //karin: for compat doom3 proc
 #define PROC_IS_QUAKE4_VERSION() (procVersion != 0)
 #endif
+#ifdef _SPLASHDAMAGE
+#include "renderer/ImposterGeometry.h"
+#endif
 
 /*
 ================
@@ -111,6 +114,9 @@ void idRenderWorldLocal::FreeWorld()
 	}
 
 	localModels.Clear();
+#ifdef _SPLASHDAMAGE //karin: only free imposter model
+	imposterGeometryManager->Clear();
+#endif
 
 	areaReferenceAllocator.Shutdown();
 	interactionAllocator.Shutdown();

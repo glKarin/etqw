@@ -5,7 +5,7 @@
 
 #include "ImposterGeometry.h"
 #include "renderer/tr_local.h"
-#include "splashdamage/decllib/declImposter.h"
+#include "decllib/declImposter.h"
 
 sdImposterGeometry::sdImposterGeometry(void)
     : declImposter(NULL),
@@ -160,6 +160,16 @@ void sdImposterGeometryManager::Shutdown(void) {
         list[i].Purged();
     }
     list.Clear();
+}
+
+void sdImposterGeometryManager::Clear(void) {
+    idRenderModelStatic *model;
+
+    for (int i = 0; i < list.Num(); i++) {
+        model = GetModel(list[i].GetDeclImposter());
+        if (model)
+            renderModelManager->RemoveModel(model);
+    }
 }
 
 const sdImposterGeometry * sdImposterGeometryManager::Get(const char *name) {

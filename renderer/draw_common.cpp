@@ -636,7 +636,7 @@ ID_INLINE static void RB_STD_T_SetNewShaderPassesUniforms(const drawSurf_t *surf
 
 //#define _TEST_RENDER_PROGRAM 1
 #if _TEST_RENDER_PROGRAM
-#include "splashdamage/framework/CmdSystemDeclCompletion.h"
+#include "framework/CmdSystemDeclCompletion.h"
 static idCVar harm_r_testRenderProgram("harm_r_testRenderProgram", "", CVAR_RENDERER, "test render program", idArgCompletionDecl_f<DECLTYPE_RENDERPROGRAM>);
 #endif
 

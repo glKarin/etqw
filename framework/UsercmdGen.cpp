@@ -45,7 +45,7 @@ void usercmd_t::ByteSwap(void)
 }
 
 #ifdef _SPLASHDAMAGE //karin: compat for DOOM3
-#include "splashdamage/framework/KeyInputManager_Local.h"
+#include "framework/KeyInputManager_Local.h"
 
 bool operator==(const userButtons_t &a, const userButtons_t &b) {
 	return 

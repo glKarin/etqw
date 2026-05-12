@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 #ifdef _SPLASHDAMAGE //karin: imposter
-#include "splashdamage/renderer/ImposterGeometry.h"
+#include "renderer/ImposterGeometry.h"
 
 static idCVar harm_r_skipImposter("harm_r_skipImposter", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip imposter for static model");
 #endif

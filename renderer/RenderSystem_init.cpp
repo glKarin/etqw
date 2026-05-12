@@ -32,8 +32,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 
 #ifdef _SPLASHDAMAGE
-#include "splashdamage/renderer/RenderProgramManager.h"
-#include "splashdamage/framework/CmdSystemDeclCompletion.h"
+#include "renderer/RenderProgramManager.h"
+#include "framework/CmdSystemDeclCompletion.h"
+#include "renderer/ImposterGeometry.h"
 #endif
 
 // functions that are not called every frame
@@ -2571,6 +2572,9 @@ void idRenderSystemLocal::Shutdown(void)
 	// free the vertex cache, which should have nothing allocated now
 	vertexCache.Shutdown();
 
+#ifdef _SPLASHDAMAGE
+	imposterGeometryManager->Shutdown();
+#endif
 	R_ShutdownTriSurfData();
 
 	RB_ShutdownDebugTools();

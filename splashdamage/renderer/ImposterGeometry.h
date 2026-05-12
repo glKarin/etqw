@@ -54,6 +54,7 @@ public:
                                 //~sdImposterGeometryManager(void);
     void                        Init(void);
     void                        Shutdown(void);
+    void                        Clear(void);
     const sdImposterGeometry    *Find(const char *name);
     const sdImposterGeometry    *Find(const sdDeclImposter *imposter);
     const sdImposterGeometry    *Get(const char *name);
