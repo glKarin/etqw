@@ -1291,6 +1291,9 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 	drawSurf->material = shader;
 	drawSurf->scissorRect = scissor;
 	drawSurf->sort = shader->GetSort() + tr.sortOffset;
+#ifdef _SPLASHDAMAGE //karin: entity sortOffset
+	drawSurf->sort += renderEntity->sortOffset;
+#endif
 	drawSurf->dsFlags = 0;
 
 	// bumping this offset each time causes surfaces with equal sort orders to still
