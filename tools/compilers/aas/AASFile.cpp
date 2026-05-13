@@ -200,7 +200,11 @@ idAASSettings::idAASSettings(void)
 	noOptimize = false;
 	allowSwimReachabilities = false;
 	allowFlyReachabilities = false;
+#ifdef _SPLASHDAMAGE
+	fileExtension = "aas_player";
+#else
 	fileExtension = "aas48";
+#endif
 	// physics settings
 	gravity = idVec3(0, 0, -1066);
 	gravityDir = gravity;
@@ -220,7 +224,7 @@ idAASSettings::idAASSettings(void)
 	type = AAS_PLAYER;
 	boundingBox = idBounds(idVec3(-16, -16, 0), idVec3(16, 16, 72));
 	primitiveModeBrush = AAS_PRIMITIVE_MODE_DEFAULT;
-	primitiveModePatch = AAS_PRIMITIVE_MODE_EXPLICIT;
+	primitiveModePatch = AAS_PRIMITIVE_MODE_NEVER;
 	primitiveModeModel = AAS_PRIMITIVE_MODE_NEVER;
 	primitiveModeTerrain = AAS_PRIMITIVE_MODE_ALWAYS;
 	minHighCeiling = 80.0f;
@@ -228,9 +232,9 @@ idAASSettings::idAASSettings(void)
 	waterSpeed = 150.0f;
 	ladderSpeed = 50.0f;
 	wallCornerEdgeRadius = 0.0f;
-	ledgeCornerEdgeRadius = 0.0f;
+	ledgeCornerEdgeRadius = 16.0f;
 	obstaclePVSRadius = 1024.0f;
-	tt_startLadderClimb = 200;
+	tt_startLadderClimb = 100;
 #endif
 }
 
@@ -1751,38 +1755,32 @@ idAASSettings::ReadFromFileBinary
 */
 bool idAASSettings::ReadFromFileBinary(idFile *file)
 {
-	idBounds bounds;
+	file->ReadInt(type);
+#if 0
+	if (type != AAS_PLAYER && type != AAS_VEHICLE)
+	{
+		common->Warning("AASB file '%s' has invalid type %d", name.c_str(), type);
+		return false;
+	}
+#endif
 
 	file->ReadString(fileExtension);
 
 	numBoundingBoxes = 0;
 
-	file->ReadFloat(bounds[0][0]);
-	file->ReadFloat(bounds[0][1]);
-	file->ReadFloat(bounds[0][2]);
-	file->ReadFloat(bounds[1][0]);
-	file->ReadFloat(bounds[1][1]);
-	file->ReadFloat(bounds[1][2]);
+	file->ReadVec3(boundingBox[0]);
+	file->ReadVec3(boundingBox[1]);
 
-	boundingBoxes[numBoundingBoxes++] = bounds;
-	boundingBox = bounds;
+	boundingBoxes[numBoundingBoxes++] = boundingBox;
 
 	file->ReadInt(primitiveModeBrush);
 	file->ReadInt(primitiveModePatch);
 	file->ReadInt(primitiveModeModel);
 	file->ReadInt(primitiveModeTerrain);
 
-	file->ReadFloat(gravity[0]);
-	file->ReadFloat(gravity[1]);
-	file->ReadFloat(gravity[2]);
-
-	file->ReadFloat(gravityDir[0]);
-	file->ReadFloat(gravityDir[1]);
-	file->ReadFloat(gravityDir[2]);
-
-	file->ReadFloat(invGravityDir[0]);
-	file->ReadFloat(invGravityDir[1]);
-	file->ReadFloat(invGravityDir[2]);
+	file->ReadVec3(gravity);
+	file->ReadVec3(gravityDir);
+	file->ReadVec3(invGravityDir);
 
 	file->ReadFloat(maxStepHeight);
 	file->ReadFloat(maxBarrierHeight);
@@ -1837,7 +1835,7 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 	idStr binName(name);
 	binName.Append("b");
 
-	common->Printf("[Load AASB]\n");
+	common->Printf("[Load AAS Binary]\n");
 	common->Printf("loading %s\n", binName.c_str());
 
 	idFile *file = fileSystem->OpenFileRead(binName.c_str());
@@ -1871,28 +1869,16 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 	}
 #endif
 
-	//karin: 3. read type
-	int type;
-	file->ReadInt(type);
-#if 0
-	if (type != 0 && type != 1)
-	{
-		common->Warning("AASB file '%s' has invalid type %d", name.c_str(), type);
-		fileSystem->CloseFile(file);
-		return false;
-	}
-#endif
-
 	// clear the file in memory
 	Clear();
 
-	//karin: 4. parse settings
+	//karin: 3. parse settings
 	if (!settings.ReadFromFileBinary(file)) {
 		fileSystem->CloseFile(file);
 		return false;
 	}
 
-	//karin: 5. parse the file
+	//karin: 4. parse the file
 	if (!ParsePlanesBinary(file))
 		return false;
 
@@ -2176,12 +2162,12 @@ idAASFileLocal::ParseReachabilityNamesBinary
 */
 bool idAASFileLocal::ParseReachabilityNamesBinary(idFile *file)
 {
-	int numIndexes, i;
+	int numNames, i;
 
-	file->ReadInt(numIndexes);
-	reachabilityNames.SetNum(numIndexes);
+	file->ReadInt(numNames);
+	reachabilityNames.SetNum(numNames);
 
-	for (i = 0; i < numIndexes; i++) {
+	for (i = 0; i < numNames; i++) {
 		file->Read(reachabilityNames[i].name, sizeof(reachabilityNames[i].name));
 		file->ReadInt(reachabilityNames[i].index);
 	}
