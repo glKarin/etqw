@@ -162,7 +162,7 @@ void idRenderEntityLocal::FreeInstanceList(void) {
 void idRenderEntityLocal::CreateInstanceList(void) {
 	const sdInstInfo *inst;
 
-	if ((!parms.flags.pushByInstances && !parms.flags.pushByCenter) || parms.numInsts == 0 || !parms.insts) {
+	if (!parms.flags.pushByInstances || parms.numInsts == 0 || !parms.insts) {
 		FreeInstanceList();
 		return;
 	}
@@ -187,6 +187,7 @@ void idRenderEntityLocal::CreateInstanceList(void) {
 		// re.shaderParms[SHADERPARM_ALPHA] = (float)inst->inst.color[3] / 255.0f;
 		re.numInsts = 0;
 		re.insts = NULL;
+		re.flags.pushByOrigin = false;
 		re.flags.pushByCenter = false;
 		re.flags.pushByInstances = false;
 		re.flags.overridenBounds = false;
@@ -219,6 +220,7 @@ void idRenderEntityLocal::UpdateInstanceList(void) {
 		// re.shaderParms[SHADERPARM_ALPHA] = (float)inst->inst.color[3] / 255.0f;
 		re.numInsts = 0;
 		re.insts = NULL;
+		re.flags.pushByOrigin = false;
 		re.flags.pushByCenter = false;
 		re.flags.pushByInstances = false;
 		re.flags.overridenBounds = false;

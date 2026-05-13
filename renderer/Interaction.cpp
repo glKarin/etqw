@@ -1409,10 +1409,17 @@ void idInteraction::AddActiveInteraction(void)
 
 	//karin: check visible distance range
 	if ((entityDef->parms.minVisDist > 0.0f || entityDef->parms.maxVisDist > 0.0f)
-		&& entityDef->parms.flags.disableLODs
+		//&& entityDef->parms.flags.disableLODs
 		&& !entityDef->parms.imposter //karin: using imposter if too far
 		&& !harm_r_skipVisDistCheck.GetBool()) {
-		float distance = tr.viewDef->renderView.vieworg.Dist(entityDef->parms.origin);
+		idVec3 origin;
+		if (entityDef->parms.hModel && !idStr::Icmpn(entityDef->parms.hModel->Name(), "_lodentity_", 11))
+		{
+			origin = entityDef->parms.flags.pushByCenter ? entityDef->parms.origin : entityDef->parms.bounds.GetCenter();
+		}
+		else
+			origin = entityDef->parms.origin;
+		float distance = tr.viewDef->renderView.vieworg.Dist(origin);
 		if (entityDef->parms.minVisDist > 0.0f && distance < entityDef->parms.minVisDist)
 			return;
 		if (entityDef->parms.maxVisDist > 0.0f && distance > entityDef->parms.maxVisDist)

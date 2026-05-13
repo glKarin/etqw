@@ -1298,6 +1298,8 @@ extern idCVar r_screenshotFormat;
 extern idCVar r_screenshotJpgQuality;
 extern idCVar r_screenshotPngCompression;
 
+extern idCVar harm_r_debugDistance;
+
 #ifdef _D3BFG_CULLING
 extern idCVar harm_r_occlusionCulling;
 extern idCVar r_useLightPortalCulling;		// 0 = none, 1 = box, 2 = exact clip of polyhedron faces, 3 MVP to plane culling

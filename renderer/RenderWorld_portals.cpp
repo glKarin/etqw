@@ -799,10 +799,17 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 
 		//karin: check visible distance range
 		if ((entity->parms.minVisDist > 0.0f || entity->parms.maxVisDist > 0.0f)
-			&& entity->parms.flags.disableLODs
+			//&& entity->parms.flags.disableLODs
 			&& !entity->parms.imposter //karin: using imposter if too far
 			&& !harm_r_skipVisDistCheck.GetBool()) {
-			float distance = tr.viewDef->renderView.vieworg.Dist(entity->parms.origin);
+			idVec3 origin;
+			if (entity->parms.hModel && !idStr::Icmpn(entity->parms.hModel->Name(), "_lodentity_", 11))
+			{
+				origin = entity->parms.flags.pushByCenter ? entity->parms.origin : entity->parms.bounds.GetCenter();
+			}
+			else
+				origin = entity->parms.origin;
+			float distance = tr.viewDef->renderView.vieworg.Dist(origin);
 			if (entity->parms.minVisDist > 0.0f && distance < entity->parms.minVisDist)
 				continue;
 			if (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist)

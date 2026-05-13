@@ -670,7 +670,6 @@ static void RB_SetBuiltinProgramEnvironment(void)
 void R_AddCopyParmsCmd(const viewDef_t *view)
 {
 	materialStageBuiltinUniform_s builtinUniforms;
-	idImage *img;
 	const sdDeclAtmosphere *atmosphere;
 	const sdDeclAmbientCubeMap *amb;
 
