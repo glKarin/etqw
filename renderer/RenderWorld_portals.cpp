@@ -814,6 +814,21 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 				continue;
 			if (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist)
 				continue;
+			if (entity->parms.maxVisDist > entity->parms.minVisDist && entity->parms.visDistFalloff > 0.0f)
+			{
+				float range = entity->parms.maxVisDist - entity->parms.minVisDist;
+				float fadeRange = range * entity->parms.visDistFalloff;
+				float nofadeRange = range - fadeRange;
+				distance -= entity->parms.minVisDist;
+				if (distance > nofadeRange)
+				{
+					float frac = (distance - nofadeRange) / fadeRange;
+					entity->parms.shaderParms[SHADERPARM_RED] *= frac;
+					entity->parms.shaderParms[SHADERPARM_GREEN] *= frac;
+					entity->parms.shaderParms[SHADERPARM_BLUE] *= frac;
+					entity->parms.shaderParms[SHADERPARM_ALPHA] *= frac;
+				}
+			}
 		}
 #endif
 		// check for completely suppressing the model

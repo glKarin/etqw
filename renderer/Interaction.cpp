@@ -426,10 +426,11 @@ static srfTriangles_t *R_CreateLightTris(const idRenderEntityLocal *ent,
 	if (r_lightAllBackFaces.GetBool() || light->lightShader->LightEffectsBackSides()
 		|| shader->ReceivesLightingOnBackSides()
 #ifdef _SPLASHDAMAGE
-	    || ent->parms.flags.noSelfShadow || ent->parms.flags.noShadow)
+	    || ent->parms.flags.noSelfShadow || ent->parms.flags.noShadow
 #else
-	    || ent->parms.noSelfShadow || ent->parms.noShadow)
+	    || ent->parms.noSelfShadow || ent->parms.noShadow
 #endif
+	)
 	{
 		includeBackFaces = true;
 	} else {

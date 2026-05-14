@@ -1254,22 +1254,31 @@ bool idAASFileLocal::ParseAreas(idLexer &src)
 	for (i = 0; i < numAreas; i++) {
 		src.ParseInt();
 		src.ExpectTokenString("(");
+#ifdef _SPLASHDAMAGE
+		area.travelFlags = src.ParseInt();
+		area.flags = src.ParseInt();
+		area.numEdges = src.ParseInt();
+		area.firstEdge = src.ParseInt();
+		area.clusterAreaNum = src.ParseInt();
+		area.cluster = src.ParseInt();
+		area.obstaclePVSOffset = src.ParseInt();
+#else
 		area.flags = src.ParseInt();
 		area.contents = src.ParseInt();
-#ifdef _SPLASHDAMAGE
-		area.firstEdge = src.ParseInt();
-		area.numEdges = src.ParseInt();
-#else
 		area.firstFace = src.ParseInt();
 		area.numFaces = src.ParseInt();
-#endif
 		area.cluster = src.ParseInt();
 		area.clusterAreaNum = src.ParseInt();
+#endif
         area.reach = NULL;
         area.rev_reach = NULL;
         area.bounds.Zero();
         area.center.Zero();
+#ifdef _SPLASHDAMAGE
+		area.contents = area.flags;
+#else
         area.travelFlags = 0;
+#endif
 #ifdef _RAVEN // quake4 aas file
 // jmarshall - AAS 1.08 
 		area.numFeatures = src.ParseInt();
@@ -1913,11 +1922,6 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 	if (!ParseReachabilityNamesBinary(file))
 		return false;
 
-	/*for (int i = 0; i < areas.Num(); ++i) {
-		aasArea_t *area = &areas[i];
-		//area->travelFlags = AreaContentsTravelFlags(reach->fromAreaNum);
-	}*/
-
 	LinkReachability();
 
 	FlagNoPushAreas();
@@ -2042,7 +2046,6 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		file->ReadUnsignedShort(uh);
 		area.travelFlags = uh;
 		file->ReadUnsignedShort(area.flags);
-		area.contents = 0;
 		file->ReadInt(area.numEdges);
 		file->ReadInt(area.firstEdge);
 		file->ReadShort(area.cluster);
@@ -2051,6 +2054,7 @@ bool idAASFileLocal::ParseAreasBinary(idFile *file)
 		file->Seek(4 * 2, FS_SEEK_CUR); // 2 32bits pointers
 		area.reach = NULL;
 		area.rev_reach = NULL;
+		area.contents = area.flags;
 		area.bounds.Zero();
 		area.center.Zero();
 		// compat for DOOM3
