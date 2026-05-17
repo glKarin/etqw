@@ -438,6 +438,7 @@ class idVec3
 		idVec3(void);
 		explicit idVec3(const float x, const float y, const float z);
 #ifdef _SPLASHDAMAGE
+		explicit //karin: change to explicit for decrement code error
 		idVec3(const float v);
 #endif
 

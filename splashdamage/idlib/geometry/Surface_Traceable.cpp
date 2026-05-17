@@ -237,7 +237,7 @@ void idSurface_Traceable::GenerateIntersectionDrawVert( const idVec3& intersecti
 		//dv.tangents[1][ i ] = a * v0->tangents[1][ i ] + b * v1->tangents[1][ i ] + c * v2->tangents[1][ i ];
 	}
 	float sign = a * v0->GetBiTangentSign() + b * v1->GetBiTangentSign() + c * v2->GetBiTangentSign();
-	dv.SetBiTangent(sign);
+	dv.SetBiTangentSign(sign);
 #else
 	for ( int i = 0; i < 4; i++ ) {
 		dv._tangent[ i ] = a * v0->_tangent[ i ] + b * v1->_tangent[ i ] + c * v2->_tangent[ i ];

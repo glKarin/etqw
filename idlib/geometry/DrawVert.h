@@ -117,6 +117,9 @@ class idDrawVert
 	    const idVec3 	GetBiTangent( void ) const;			// derived from normal, tangent, and tangent flag
 	    void			SetBiTangent( float x, float y, float z );
 	    void			SetBiTangent( const idVec3 &t );
+	    void			SetBiTangent( float v ) {
+			SetBiTangentSign(v);
+		}
 	    float			GetBiTangentSign( void ) const;
 	    void			SetBiTangentSign( float sign );		// either 1.0f or -1.0f
 	    float			GetSTIdx( int idx ) const;

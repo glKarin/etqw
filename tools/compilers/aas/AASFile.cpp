@@ -1889,38 +1889,76 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 
 	//karin: 4. parse the file
 	if (!ParsePlanesBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseVerticesBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseEdgesBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 	if (!ParseIndexBinary(file, edgeIndex))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseReachabilitiesBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseAreasBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseNodesBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParsePortalsBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 	if (!ParseIndexBinary(file, portalIndex))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseClustersBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseObstaclePVSsBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
 
 	if (!ParseReachabilityNamesBinary(file))
+	{
+		fileSystem->CloseFile(file);
 		return false;
+	}
+
+	fileSystem->CloseFile(file);
 
 	LinkReachability();
 
@@ -2036,15 +2074,13 @@ idAASFileLocal::ParseAreasBinary
 bool idAASFileLocal::ParseAreasBinary(idFile *file)
 {
 	int numAreas, i;
-	unsigned short uh;
 
 	file->ReadInt(numAreas);
 	areas.SetNum(numAreas);
 
 	for (i = 0; i < numAreas; i++) {
 		aasArea_t &area = areas[i];
-		file->ReadUnsignedShort(uh);
-		area.travelFlags = uh;
+		file->ReadUnsignedShort(area.travelFlags);
 		file->ReadUnsignedShort(area.flags);
 		file->ReadInt(area.numEdges);
 		file->ReadInt(area.firstEdge);
@@ -2212,6 +2248,8 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 
 		newReach = &reachabilities[j];
 		newReach->CopyBase(reach);
+		newReach->next = NULL;
+		newReach->rev_next = NULL;
 	}
 
 	return true;

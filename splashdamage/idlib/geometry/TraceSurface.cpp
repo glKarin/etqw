@@ -394,7 +394,7 @@ ID_INLINE float sdTraceSurface::TraceToMeshFace( const int faceNum, const idVec3
 		//dv.tangents[1][ i ] = bary[0] * v0.tangents[1][ i ] + bary[1] * v1.tangents[1][ i ] + c * v2.tangents[1][ i ];
 	}
 	float sign = bary[0] * v0.GetBiTangentSign() + bary[1] * v1.GetBiTangentSign() + bary[2] * v2.GetBiTangentSign();
-	dv.SetBiTangent(sign);
+	dv.SetBiTangentSign(sign);
 #else
 	for ( i = 0; i < 4; i++ ) {
 		dv._tangent[i] = bary[0] * v0._tangent[i] + bary[1] * v1._tangent[i] + bary[2] * v2._tangent[i];

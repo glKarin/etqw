@@ -4102,6 +4102,15 @@ bool idBotThreadData::Nav_IsDirectPath( int aasType, const playerTeamTypes_t& pl
 	if ( areaNum == NULL_AREANUM ) {
 		areaNum = aas->PointReachableAreaNum( origin, aas->GetSettings()->boundingBox, AAS_AREA_REACHABLE_WALK, 0 );
 	}
+	if(aasType == AAS_VEHICLE)
+	{
+		idPlayer *player = gameLocal.GetLocalViewPlayer();
+		gameRenderWorld->DebugCircle(colorGreen, origin, idVec3( 0, 0, 1 ), 32.0f, 6);
+		gameRenderWorld->DebugBounds( colorRed, aas->GetSettings()->boundingBox, origin, mat3_identity );
+		gameRenderWorld->DrawText( va( "Area: %d", areaNum ), origin+idVec3(0,0,80), bot_drawActionSize.GetFloat(), colorBlue, player->GetViewAxis() );
+		gameRenderWorld->DebugCircle(colorBlue, end, idVec3( 0, 0, 1 ), 50.0f, 6);
+		ID_BEGIN_DBG_QUIET();
+	}
 
 	aasTraceFloor_t trace;
 
@@ -4113,6 +4122,14 @@ bool idBotThreadData::Nav_IsDirectPath( int aasType, const playerTeamTypes_t& pl
 
 	aas->TraceFloor( trace, origin, areaNum, end, travelFlags );
 
+	if(aasType == AAS_VEHICLE)
+	{
+		idPlayer *player = gameLocal.GetLocalViewPlayer();
+		gameRenderWorld->DebugCircle(colorRed, trace.endpos, idVec3( 0, 0, 1 ), 80.0f, 6);
+		gameRenderWorld->DrawText( va( "Frac: %f", trace.fraction ), origin+idVec3(0,0,120), bot_drawActionSize.GetFloat(), colorBlue, player->GetViewAxis() );
+		gameRenderWorld->DebugArrow( colorRed, origin, trace.endpos, 5 );
+		ID_END_DBG_QUIET();
+	}
 	return trace.fraction == 1.0f;
 }
 
