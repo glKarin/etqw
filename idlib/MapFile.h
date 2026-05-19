@@ -329,13 +329,7 @@ class idMapFile
 		// which is what the game and dmap want, but the editor will want to always
 		// load a .map file
 #ifdef _SPLASHDAMAGE
-	    bool					ParseBuffer( const idStr& buffer, const idStr& name, bool moveFuncGroups = true );
-	    bool					WriteBuffer( idStr& buffer );
-	
 	    bool					Parse( const char *filename, bool ignoreRegion = false, bool osPath = false, bool moveFuncGroups = true, bool ignoreEntities = false, const char* onlyEntitiesOfClass = NULL );
-	
-	    bool					ParseBotEntities( const char *filename );
-	    
 #else
 		bool					Parse(const char *filename, bool ignoreRegion = false, bool osPath = false);
 #endif
@@ -378,6 +372,11 @@ class idMapFile
 			return hasPrimitiveData;
 		}
 #ifdef _SPLASHDAMAGE
+	    bool					ParseBuffer( const idStr& buffer, const idStr& name, bool moveFuncGroups = true );
+	    bool					WriteBuffer( idStr& buffer );
+	
+	    bool					ParseBotEntities( const char *filename );
+	    
 	    float					GetVersion() {
 	        return version;
 	    }

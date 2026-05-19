@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#ifndef __IMAGE_H__
+#ifndef __IMAGE_H__ // add ifndef
 #define __IMAGE_H__
 
 /*

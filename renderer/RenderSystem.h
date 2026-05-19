@@ -301,21 +301,6 @@ class idRenderSystem
 		// texture filter / mipmapping / repeat won't be modified by the upload
 		// returns false if the image wasn't found
 		virtual bool			UploadImage(const char *imageName, const byte *data, int width, int height) = 0;
-#ifdef _SPLASHDAMAGE
-    	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height, bool generateMipMaps/* = false*/, bool copy = true ) = 0;
-    	
-    	virtual void			SyncRenderSystem( void )  = 0;
-    	
-    	virtual int				GetNumMSAAModes( void ) const = 0;
-    	virtual const char *	GetMSAAMode( int idx, int &val ) const = 0;
-	    virtual void			LockThreads( void ) = 0;
-	    virtual void			UnlockThreads( void ) = 0;
-    	virtual int				GetSyncNum( void ) = 0;
-	    
-	    virtual int				RegisterPtr( void *ptr ) = 0;
-	    virtual void			UnregisterPtr( int uid ) = 0;
-    	virtual void*			PtrForUID( int uid ) = 0;
-#endif
 
 #ifdef _RAVEN
 // jnewquist: Track texture usage during cinematics for streaming purposes
@@ -346,6 +331,20 @@ class idRenderSystem
 		virtual void EndFrame(byte *data, int *frontEndMsec, int *backEndMsec) = 0;
 #endif
 #ifdef _SPLASHDAMAGE
+    	virtual bool			UploadImage( const char* imageName, const byte* data, int width, int height, bool generateMipMaps/* = false*/, bool copy = true ) = 0;
+    	
+    	virtual void			SyncRenderSystem( void )  = 0;
+    	
+    	virtual int				GetNumMSAAModes( void ) const = 0;
+    	virtual const char *	GetMSAAMode( int idx, int &val ) const = 0;
+	    virtual void			LockThreads( void ) = 0;
+	    virtual void			UnlockThreads( void ) = 0;
+    	virtual int				GetSyncNum( void ) = 0;
+	    
+	    virtual int				RegisterPtr( void *ptr ) = 0;
+	    virtual void			UnregisterPtr( int uid ) = 0;
+    	virtual void*			PtrForUID( int uid ) = 0;
+    	
     	virtual class idRenderModel*		InstantiateDynamicModel( class idRenderModel* model, struct renderEntity_s* ent ) = 0;
     	virtual bool			IsSMPEnabled( void ) = 0;
 #endif

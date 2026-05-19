@@ -346,7 +346,7 @@ static void R_BlackImage(idImage *image)
 	                     TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT);
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: globals built-in images
 static void R_GrayImage(idImage *image)
 {
 	byte	data[DEFAULT_SIZE][DEFAULT_SIZE][4];
@@ -2328,7 +2328,7 @@ void idImageManager::Init()
 	normalCubeMapImage = ImageFromFunction("_normalCubeMap", makeNormalizeVectorCubeMap);
 	noFalloffImage = ImageFromFunction("_noFalloff", R_CreateNoFalloffImage);
 	ImageFromFunction("_quadratic", R_QuadraticImage);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: globals built-in images
 	grayImage = ImageFromFunction("_gray", R_GrayImage);
 	blackCubeMapImage = ImageFromFunction("_blackCubeMap", R_MakeBlackCubeMap);
 	postProcessBuffers[0] = ImageFromFunction("_postProcessBuffer_0", R_RGBA8Image);
@@ -2656,7 +2656,7 @@ void idImageManager::PrintMemInfo(MemInfo_t *mi)
 	fileSystem->CloseFile(f);
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: export
 void R_GetCubeVector(int i, int cubesize, int x, int y, float *vector) {
 	getCubeVector(i, cubesize, x, y, vector);
 }

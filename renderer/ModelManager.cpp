@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "Model_local.h"
 #include "tr_local.h"	// just for R_FreeWorldInteractions and R_CreateWorldInteractions
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: clust model
 #include "renderer/Model_clust.h"
 #endif
 
@@ -391,7 +391,7 @@ idRenderModel *idRenderModelManagerLocal::GetModel(const char *modelName, bool c
 		model = new hhRenderModelBeam;
 		model->InitFromFile(modelName);
 #endif
-#ifdef _SPLASHDAMAGE //karin: binary modelb/BSE model
+#ifdef _SPLASHDAMAGE //karin: binary modelb/BSE/clust model
 	} else if (extension.Icmp("modelb") == 0) {
 		model = new idRenderModelStatic;
 		model->InitFromFile(modelName);

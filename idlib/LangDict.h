@@ -58,18 +58,18 @@ class idLangDict
 		bool					Load(const char *fileName, bool clear = true);
 		void					Save(const char *fileName);
 
+		const char 			*AddString(const char *str);
 #ifdef _SPLASHDAMAGE
     	const wchar_t*			GetString( const char *str ) const;
-
-    	const idLangKeyValue*	FindKeyValue( const char* str ) const;
-		const char 				*GetStringMb(const char *str) const;
 #else
 		const char 			*GetString(const char *str) const;
 #endif
-		const char 			*AddString(const char *str);
 
 		// adds the value and key as passed (doesn't generate a "#str_xxxxx" key or ensure the key/value pair is unique)
 #ifdef _SPLASHDAMAGE
+    	const idLangKeyValue*	FindKeyValue( const char* str ) const;
+		const char 				*GetStringMb(const char *str) const;
+
     	void					AddKeyVal( const char* key, const wchar_t* val );
 #endif
 		void					AddKeyVal(const char *key, const char *val);

@@ -87,6 +87,6 @@ public:
     int              mPlayCount;                 // how many times we*ve played (runtime, not parsed)
     int              mLoopCount;                 // loops before auto-stop
 #ifdef _SPLASHDAMAGE
-	float					mCutOffDistance;
+	float			 mCutOffDistance;
 #endif
 };

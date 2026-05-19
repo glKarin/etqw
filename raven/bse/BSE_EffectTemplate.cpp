@@ -318,11 +318,11 @@ bool rvDeclEffect::Parse(const char* text, int textLength, bool noCaching)
 {
     idLexer lexer;
     lexer.LoadMemory(text, textLength, GetFileName(), GetLineNum());
-    lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS
 #ifdef _SPLASHDAMAGE //karin: allow '/' in name without quota
-    | LEXFL_ALLOWPATHNAMES
+    lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWPATHNAMES);
+#else
+    lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS);
 #endif
-        );
 
     // the first “{”
     if (!lexer.SkipUntilString("{"))

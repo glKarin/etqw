@@ -736,7 +736,7 @@ void idGuiModel::DrawStretchTri(idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVe
 	memcpy(&verts[numVerts], tempVerts, vertCount * sizeof(verts[0]));
 }
 
-#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
+#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel only used on renderer
 
 sdGuiModel::sdGuiModel(void)
 	: idGuiModel()

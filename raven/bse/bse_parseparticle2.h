@@ -224,12 +224,12 @@ public:
     // ── optional entityDef attachment (for spawned rigid-bodys etc.) ──────
     idStr       mEntityDefName;
 #ifdef _SPLASHDAMAGE
-	int			mTrailRepeat;
-	float					mWindDeviationAngle;
-	float					mTrailScale;							// Width of the motion trails will be particleSize scaled by this
-	byte					mNumFrames;
-	float					mPhysicsDistance;
-	//rvParticleParms			*mpSpawnWindStrength;
-	//rvParticleParms			*mpSpawnFriction;
+	int					mTrailRepeat;
+	float				mWindDeviationAngle;
+	float				mTrailScale;							// Width of the motion trails will be particleSize scaled by this
+	byte				mNumFrames;
+	float				mPhysicsDistance;
+	//rvParticleParms	*mpSpawnWindStrength;
+	//rvParticleParms	*mpSpawnFriction;
 #endif
 };

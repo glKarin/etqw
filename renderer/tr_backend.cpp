@@ -620,7 +620,7 @@ const void	RB_SwapBuffers(const void *data)
         }
         else
 #endif
-        qglFinish();
+		qglFinish();
 	}
 
 	RB_LogComment("***************** RB_SwapBuffers *****************\n\n\n");

@@ -71,12 +71,12 @@ class idGuiModel
 		idList<guiModelSurface_t>	surfaces;
 		idList<glIndex_t>		indexes;
 		idList<idDrawVert>	verts;
-#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
+#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel only used on renderer
 		friend class sdGuiModel;
 #endif
 };
 
-#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel source code are unused
+#ifdef _SPLASHDAMAGE //karin: using sdGuiModel on sdDeviceContext, so idGuiModel only used on renderer
 class sdGuiModel : public idGuiModel
 {
 public:

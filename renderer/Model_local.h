@@ -243,7 +243,7 @@ class idMD5Mesh
 		int							NumVerts(void) const;
 		int							NumTris(void) const;
 		int							NumWeights(void) const;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: md5 binary mesh parsing
 		struct binaryVert_t {
 			idVec2 st;
 			byte color[4];

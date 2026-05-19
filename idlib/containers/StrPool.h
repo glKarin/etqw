@@ -79,16 +79,15 @@ class idStrPool
 {
 	public:
 #ifdef _SPLASHDAMAGE
-    	idStrPool( int newgranularity = 16 )
-#else
-		idStrPool() 
-#endif
-		{
+    	idStrPool( int newgranularity = 16 ) {
 			caseSensitive = true;
-#ifdef _SPLASHDAMAGE
         	pool.SetGranularity( newgranularity );
-#endif
 		}
+#else
+		idStrPool() {
+			caseSensitive = true;
+		}
+#endif
 
 		void				SetCaseSensitive(bool caseSensitive);
 

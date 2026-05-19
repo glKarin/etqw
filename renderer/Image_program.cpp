@@ -571,11 +571,9 @@ static bool R_ParseImageProgram_r(idLexer &src, byte **pic, int *width, int *hei
 		R_ParseImageProgram_r(src, pic, width, height, timestamps, depth);
 		return true;
 	}
-#ifdef _SPLASHDAMAGE //karin: image program stage parms
-
-	AppendToken(token);
-
 #endif
+	AppendToken(token);
+#ifdef _SPLASHDAMAGE //karin: image program stage parms
 	if (!token.Icmp("premultiplyAlpha")) {
 		MatchAndAppendToken(src, "(");
 		if (!R_ParseImageProgram_r(src, pic, width, height, timestamps, depth)) {
@@ -891,7 +889,7 @@ void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, I
 #ifdef _SPLASHDAMAGE //karin: image program stage parms
 	stageParms.Clear();
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 	idParser src;
 #else
 	idLexer src;
@@ -916,13 +914,13 @@ void R_LoadImageProgram(const char *name, byte **pic, int *width, int *height, I
 R_ParsePastImageProgram
 ===================
 */
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 const char *R_ParsePastImageProgram(idParser &src)
 #else
 const char *R_ParsePastImageProgram(idLexer &src)
 #endif
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: image program stage parms
 	stageParms.Clear();
 #endif
 	parseBuffer[0] = 0;

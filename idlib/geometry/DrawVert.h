@@ -36,9 +36,6 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
-#ifdef _SPLASHDAMAGExxx
-#pragma pack( push, 1 )
-#endif
 
 class idDrawVert
 {
@@ -135,10 +132,6 @@ class idDrawVert
 	    bool			operator==( const idDrawVert& rhs ) const;
 #endif
 };
-
-#ifdef _SPLASHDAMAGExxx
-#pragma pack( pop )
-#endif
 
 #ifdef _SPLASHDAMAGE
 #define ST_TO_FLOAT	1.0f / 4096.0f
@@ -238,8 +231,6 @@ ID_INLINE void idDrawVert::Clear(void)
 	color[0] = color[1] = color[2] = color[3] = 0;
 #endif
 }
-
-
 
 ID_INLINE void idDrawVert::Lerp(const idDrawVert &a, const idDrawVert &b, const float f)
 {
