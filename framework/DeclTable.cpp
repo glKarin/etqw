@@ -125,7 +125,7 @@ bool idDeclTable::Parse(const char *text, const int textLength, bool noCaching)
 bool idDeclTable::Parse(const char *text, const int textLength)
 #endif
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 	idParser src;
 #else
 	idLexer src;

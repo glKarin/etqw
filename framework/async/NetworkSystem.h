@@ -143,6 +143,13 @@ class idNetworkSystem
 		virtual int				ServerGetClientOutgoingRate(int clientNum);
 		virtual int				ServerGetClientIncomingRate(int clientNum);
 		virtual float			ServerGetClientIncomingPacketLoss(int clientNum);
+
+		virtual void			ClientSendReliableMessage(const idBitMsg &msg);
+		virtual int				ClientGetPrediction(void);
+		virtual int				ClientGetTimeSinceLastPacket(void);
+		virtual int				ClientGetOutgoingRate(void);
+		virtual int				ClientGetIncomingRate(void);
+		virtual float			ClientGetIncomingPacketLoss(void);
 #ifdef _SPLASHDAMAGE
     	virtual void			ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info );
     	virtual void			ServerGetClientNetId( int clientNum, sdNetClientId& netClientId );
@@ -152,15 +159,7 @@ class idNetworkSystem
     	virtual int				AllocateClientSlotForBot( int maxPlayersOnServer );
     	virtual int				ServerSetBotUserCommand( int clientNum, int frameNum, const usercmd_t& cmd );
     	virtual int				ServerSetBotUserName( int clientNum, const char* playerName );
-#endif
-
-		virtual void			ClientSendReliableMessage(const idBitMsg &msg);
-		virtual int				ClientGetPrediction(void);
-		virtual int				ClientGetTimeSinceLastPacket(void);
-		virtual int				ClientGetOutgoingRate(void);
-		virtual int				ClientGetIncomingRate(void);
-		virtual float			ClientGetIncomingPacketLoss(void);
-#ifdef _SPLASHDAMAGE
+    	
     	virtual void			WriteClientUserCmds( int clientNum, idBitMsg& msg );
     	virtual void			ReadClientUserCmds( int clientNum, const idBitMsg& msg );
 	    virtual bool			IsDedicated( void );
@@ -201,6 +200,10 @@ class idNetworkSystem
 		virtual const idDict&	RepeaterGetClientInfo( int clientNum );
 		virtual void			SetClientRepeaterUserOrigin( const repeaterUserOrigin_t& origin );
 #endif // SD_SUPPORT_REPEATER
+
+#if !defined( SD_PUBLIC_TOOLS )
+    	virtual bool			HTTPEnable( bool enable );
+#endif // !SD_PUBLIC_TOOLS
 #endif
 
 #ifdef _RAVEN
@@ -228,11 +231,6 @@ class idNetworkSystem
 		virtual void			RemoveFriend(int clientNum);
 #endif
 
-#ifdef _SPLASHDAMAGE
-#if !defined( SD_PUBLIC_TOOLS )
-    	virtual bool			HTTPEnable( bool enable );
-#endif // !SD_PUBLIC_TOOLS
-#endif
 };
 
 extern idNetworkSystem 	*networkSystem;

@@ -251,12 +251,6 @@ class idFileSystem
 		// 'mods' contains the directory names to be passed to fs_game
 		// 'descriptions' contains a free form string to be used in the UI
 		virtual idModList 		*ListMods(void) = 0;
-#ifdef _SPLASHDAMAGE
-	    // Returns a list of metadata specified in addon.conf (and pakmeta.conf)
-	    virtual sdAddonMetaDataList* ListAddonMetaData( const char* metaDataTag ) = 0;
-	    // Frees the given metadata list
-	    virtual void			FreeAddonMetaDataList( sdAddonMetaDataList* list ) = 0;
-#endif
 		// Frees the given mod list
 		virtual void			FreeModList(idModList *modList) = 0;
 		// Lists files with the given extension in the given directory.
@@ -278,14 +272,6 @@ class idFileSystem
 		virtual const char 	*RelativePathToOSPath(const char *relativePath, const char *basePath = "fs_devpath") = 0;
 		// Builds a full OS path from the given components.
 		virtual const char 	*BuildOSPath(const char *base, const char *game, const char *relativePath) = 0;
-#ifdef _SPLASHDAMAGE
-	    // Returns a full OS path where the initial base of the file system exists
-	    virtual const char *	GetBasePath() const = 0;
-	    // Returns a full OS path where user visible files can be written to
-	    virtual const char *	GetUserPath() const = 0;
-	    // Returns the current game path
-	    virtual const char *	GetGamePath() const = 0;
-#endif
 		// Creates the given OS path for as far as it doesn't exist already.
 		virtual void			CreateOSPath(const char *OSPath) = 0;
 		// Returns true if a file is in a pak file.
@@ -354,19 +340,11 @@ class idFileSystem
 		virtual void			FindDLL(const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum
 		= false // karin: for compat with dhewm3
 		) = 0;
-#ifdef _SPLASHDAMAGE
-    	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck ) = 0;
-#endif
 		// case sensitive filesystems use an internal directory cache
 		// the cache is cleared when calling OpenFileWrite and RemoveFile
 		// in some cases you may need to use this directly
 		virtual void			ClearDirCache(void) = 0;
 
-#ifdef _SPLASHDAMAGE
-    	virtual class idFile_Memory*	OpenMemoryFile( const char* name ) = 0;
-
-    	virtual class idFile_Buffered* OpenBufferedFile( idFile* file ) = 0;
-#endif
 		// is D3XP installed? even if not running it atm
 		virtual bool			HasD3XP(void) = 0;
 		// are we using D3XP content ( through a real d3xp run or through a double mod )
@@ -409,6 +387,23 @@ class idFileSystem
 #endif
 
 #ifdef _SPLASHDAMAGE
+	    // Returns a list of metadata specified in addon.conf (and pakmeta.conf)
+	    virtual sdAddonMetaDataList* ListAddonMetaData( const char* metaDataTag ) = 0;
+	    // Frees the given metadata list
+	    virtual void			FreeAddonMetaDataList( sdAddonMetaDataList* list ) = 0;
+	    // Returns a full OS path where the initial base of the file system exists
+	    virtual const char *	GetBasePath() const = 0;
+	    // Returns a full OS path where user visible files can be written to
+	    virtual const char *	GetUserPath() const = 0;
+	    // Returns the current game path
+	    virtual const char *	GetGamePath() const = 0;
+	    
+    	virtual void			FindDLL( const char *basename, char dllPath[ MAX_OSPATH ], bool updateChecksum, bool pureCheck ) = 0;
+    	
+    	virtual class idFile_Memory*	OpenMemoryFile( const char* name ) = 0;
+
+    	virtual class idFile_Buffered* OpenBufferedFile( idFile* file ) = 0;
+    	
 	    // is the pack currently referenced?
 	    virtual bool			IsAddonPackReferenced( const char* pak ) = 0;
 	    // ensure that the pack is loaded after the next pure restart

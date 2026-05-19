@@ -164,7 +164,7 @@ bool idSoundShader::Parse(const char *text, const int textLength, bool noCaching
 bool idSoundShader::Parse(const char *text, const int textLength)
 #endif
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 	idParser src;
 
 	src.SetFlags(DECL_LEXER_FLAGS);
@@ -194,7 +194,7 @@ bool idSoundShader::Parse(const char *text, const int textLength)
 idSoundShader::ParseShader
 ===============
 */
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 bool idSoundShader::ParseShader(idParser &src)
 #else
 bool idSoundShader::ParseShader(idLexer &src)

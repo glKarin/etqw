@@ -157,7 +157,7 @@ void idSysLocal::DLL_GetFileName(const char *baseName, char *dllName, int maxLen
 #endif
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: return a event heap pointer
 const sdSysEvent* idSysLocal::GenerateMouseButtonEvent(int button, bool down)
 {
 	sysEvent_t *ev = new sysEvent_t;
@@ -264,7 +264,7 @@ const char *Sys_TimeStampToStr(ID_TIME_T timeStamp)
 	return timeString;
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: sysEvent
 #if 0 //karin: make as POD
 sysEvent_s::~sysEvent_s( void ) {
 	//Mem_Free( evPtr ); //karin: as return value or copy, so using FreeData/FreeEvent to manual delete, or declare operator=/constructor

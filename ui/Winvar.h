@@ -245,7 +245,7 @@ class idWinStr : public idWinVar
 				guiDict->Set(GetName(), data);
 			}
 		}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: unuse id's GUI in ETQW
 		virtual void Set(const wchar_t *val) {
 			data = WStrToStr(val);
 

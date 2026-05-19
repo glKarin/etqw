@@ -65,7 +65,7 @@ bool idDeclEntityDef::Parse(const char *text, const int textLength, bool noCachi
 bool idDeclEntityDef::Parse(const char *text, const int textLength)
 #endif
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 	idParser src;
 #else
 	idLexer src;

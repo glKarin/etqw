@@ -81,8 +81,8 @@ class idCmdSystemLocal : public idCmdSystem
 			return commands;
 		}
 #ifdef _SPLASHDAMAGE
-		virtual void		PushFrameCommand( const char* command );
-		virtual void		ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName );
+		virtual void			PushFrameCommand( const char* command );
+		virtual void			ArgCompletion_DeclName( const idCmdArgs &args, argCompletionCallback_t, const char* typeName );
 #endif
 
 	private:

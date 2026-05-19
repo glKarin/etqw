@@ -1185,7 +1185,7 @@ float idSoundSystemLocal::dB2Scale(const float val) const
 	}
 
 	int ival = (int)((val + 60.0f) * 10.0f);
-#ifdef _SPLASHDAMAGE //karin: TODO memory broken? ival == INT_MIN
+#ifdef _SPLASHDAMAGExxx //karin: TODO memory broken? ival == INT_MIN
 	return volumesDB[ival % 1200];
 #else
 	return volumesDB[ival];

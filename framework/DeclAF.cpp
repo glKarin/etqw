@@ -1596,7 +1596,7 @@ bool idDeclAF::Parse(const char *text, const int textLength)
 #endif
 {
 	int i, j;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
 	idParser src;
 #else
 	idLexer src;

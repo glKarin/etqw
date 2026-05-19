@@ -182,7 +182,7 @@ keyname_t keynames[] = {
 
 static const int	MAX_KEYS = 256;
 
-#if !defined(_SPLASHDAMAGE) //karin: move to .h
+#if !defined(_SPLASHDAMAGE) //karin: move to header
 class idKey
 {
 	public:

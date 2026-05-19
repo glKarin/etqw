@@ -148,7 +148,7 @@ class idUserInterfaceLocal : public idUserInterface
     private:
         int                         translateFont;
 #endif
-#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+#ifdef _SPLASHDAMAGE //karin: unuse id's GUI in ETQW
 		virtual void				SetStateString(const char *varName, const wchar_t *value) {
 			idStr tmp = WStrToStr(value);
 			SetStateString(varName, tmp.c_str());

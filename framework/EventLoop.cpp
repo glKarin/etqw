@@ -209,7 +209,7 @@ int idEventLoop::RunEventLoop(bool commandExecution)
         if(R_ImGui_IsRunning())
         {
             if(ImGui_HandleEvent(&ev))
-                continue;
+            	continue;
         }
 #endif
 
