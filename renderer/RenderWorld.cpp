@@ -169,7 +169,7 @@ idRenderWorldLocal::idRenderWorldLocal()
 	numAppendPortalAreas = 0;
 #endif
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: atmosphere
 	atmosphere = NULL;
 #endif
 }
@@ -461,7 +461,7 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 		// if the shape of the light stays the same, we don't need to dump
 		// any of our derived data, because shader parms are calculated every frame
 		if (rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
-			rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
+		    rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
 #ifdef _SPLASHDAMAGE
 			rlight->flags.noShadows == light->parms.flags.noShadows && rlight->origin == light->parms.origin &&
 			rlight->flags.parallel == light->parms.flags.parallel && rlight->flags.pointLight == light->parms.flags.pointLight &&
@@ -843,7 +843,7 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 	parms->initialViewAreaOrigin = renderView->vieworg;
 	parms->floatTime = parms->renderView.time * 0.001f;
 	parms->renderWorld = this;
-#ifdef _SPLASHDAMAGE //karin: custom stage shader parms
+#ifdef _SPLASHDAMAGE //karin: custom stage shader parms to backend
 	R_AddCopyParmsCmd(parms);
 #endif
 
@@ -2545,7 +2545,7 @@ const idMaterial *R_RemapShaderBySkin(const idMaterial *shader, const idDeclSkin
 	return skin->RemapShaderBySkin(shader);
 }
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 
 #ifdef _RAVEN_FX
 #define ASSERT_EFFECT_HANDLE(effectHandle) \

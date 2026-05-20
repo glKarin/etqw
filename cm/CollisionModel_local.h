@@ -238,7 +238,7 @@ typedef struct cm_model_s
 	virtual const char *	GetName( void ) const;
 #endif
 
-#ifdef _RAVEN // quake4 trm
+#ifdef _RAVEN
 	virtual bool			GetBounds( idBounds &bounds ) const;
 	virtual bool			GetContents( int &contents ) const;
 	virtual bool			GetVertex( int vertexNum, idVec3 &vertex ) const;

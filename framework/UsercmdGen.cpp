@@ -44,7 +44,7 @@ void usercmd_t::ByteSwap(void)
 	sequence = LittleLong(sequence);
 }
 
-#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+#ifdef _SPLASHDAMAGE //karin: compat for DOOM3 source code
 #include "framework/KeyInputManager_Local.h"
 
 bool operator==(const userButtons_t &a, const userButtons_t &b) {
@@ -98,7 +98,7 @@ bool usercmd_t::operator==(const usercmd_t &rhs) const
 
 const int KEY_MOVESPEED	= 127;
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: move to header
 typedef enum {
 	UB_NONE,
 
@@ -668,7 +668,7 @@ void idUsercmdGenLocal::KeyMove(void)
 	cmd.rightmove = idMath::ClampChar(side);
 	cmd.upmove = idMath::ClampChar(up);
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGExxx
 	//game->KeyMove(cmd.forwardmove, cmd.rightmove, cmd.upmove, cmd);
 #endif
 }
@@ -819,16 +819,6 @@ void idUsercmdGenLocal::JoystickMove(void)
 
 	cmd.upmove = idMath::ClampChar(cmd.upmove + joystickAxis[AXIS_UP]);
 }
-
-#ifdef _SPLASHDAMAGE //karin: client cmd buttons
-void idUsercmdGenLocal::ClientCmdButtons(void)
-{
-	cmd.clientButtons.showScores = ButtonState(UB_SHOWSCORES);
-	cmd.clientButtons.voice = ButtonState(UB_VOICE);
-	cmd.clientButtons.teamVoice = ButtonState(UB_TEAMVOICE);
-	cmd.clientButtons.fireteamVoice = ButtonState(UB_FIRETEAMVOICE);
-}
-#endif
 
 /*
 ==============
@@ -1356,3 +1346,13 @@ usercmd_t idUsercmdGenLocal::GetDirectUsercmd(void)
 
 	return cmd;
 }
+
+#ifdef _SPLASHDAMAGE //karin: client cmd buttons
+void idUsercmdGenLocal::ClientCmdButtons(void)
+{
+	cmd.clientButtons.showScores = ButtonState(UB_SHOWSCORES);
+	cmd.clientButtons.voice = ButtonState(UB_VOICE);
+	cmd.clientButtons.teamVoice = ButtonState(UB_TEAMVOICE);
+	cmd.clientButtons.fireteamVoice = ButtonState(UB_FIRETEAMVOICE);
+}
+#endif

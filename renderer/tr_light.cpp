@@ -1128,7 +1128,6 @@ static void R_ClearEntityDefImposterModel(idRenderEntityLocal *def)
 		def->imposterModel = NULL;
 	}
 }
-
 #endif
 
 /*
@@ -1426,7 +1425,7 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEntity_t *space, const r
 		oldFloatTime = tr.viewDef->floatTime;
 		oldTime = tr.viewDef->renderView.time;
 
-#if defined(_RAVEN)
+#ifdef _RAVEN
 		tr.viewDef->floatTime = tr.viewDef->renderView.time * 0.001;
 #else
 		tr.viewDef->floatTime = game->GetTimeGroupTime(1) * 0.001;
@@ -1838,7 +1837,7 @@ void R_RemoveUnecessaryViewLights(void)
 #include "tr/tr_lightmatrix.cpp"
 #endif
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 #ifdef _RAVEN_BSE
 idRenderModel * R_EffectDefDynamicModel(rvRenderEffectLocal *def)
 {
@@ -1991,16 +1990,13 @@ void R_AddDrawSurf(const srfTriangles_t *tri, const viewEffect_s *space, const r
     espace->entityDef->parms.axis = space->effectDef->parms.axis;
 #ifdef _SPLASHDAMAGE
     espace->entityDef->parms.referenceSound = space->effectDef->parms.referenceSound;
+    espace->entityDef->parms.flags.weaponDepthHack = space->effectDef->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
 #else
     espace->entityDef->parms.referenceSoundHandle = space->effectDef->parms.referenceSoundHandle;
     espace->entityDef->parms.weaponDepthHackInViewID = space->effectDef->parms.weaponDepthHackInViewID;
-#endif
-	espace->entityDef->parms.modelDepthHack = space->effectDef->parms.modelDepthHack;
-#ifdef _SPLASHDAMAGE
-    espace->entityDef->parms.flags.weaponDepthHack = space->effectDef->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
-#else
     espace->entityDef->parms.weaponDepthHack = space->effectDef->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
 #endif
+	espace->entityDef->parms.modelDepthHack = space->effectDef->parms.modelDepthHack;
     memcpy(espace->entityDef->parms.shaderParms, space->effectDef->parms.shaderParms, sizeof(espace->entityDef->parms.shaderParms));
 #endif
     drawSurf->space = (viewEntity_s *)espace;

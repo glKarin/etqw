@@ -135,7 +135,7 @@ typedef enum {
 #ifdef _HUMANHEAD
     DECL_BEAM, // HUMANHEAD CJR
 #endif
-#ifdef _SPLASHDAMAGE //karin: increment num decl types
+#ifdef _SPLASHDAMAGE //karin: increment num decl types, but I think it should be dynamic-length
 	DECL_MAX_TYPES			= 96
 #else
 	DECL_MAX_TYPES			= 32

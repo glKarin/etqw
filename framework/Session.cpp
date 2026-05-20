@@ -1165,14 +1165,15 @@ void idSessionLocal::StartPlayingRenderDemo(idStr demoName)
 
 	// bring up the loading screen manually, since demos won't
 	// call ExecuteMapChange()
+#if !defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 #ifdef _RAVEN // quake4 loading gui
 	if(IsMultiplayer())
 		guiLoading = uiManager->FindGui( "guis/loading/mplevel.gui", true, false, true );
 	else
 		guiLoading = uiManager->FindGui( "guis/loading/generic.gui", true, false, true );
-#elif defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 #else
 	guiLoading = uiManager->FindGui("guis/map/loading.gui", true, false, true);
+#endif
 #endif
 #ifdef _SPLASHDAMAGE //karin: level loading UI
 	game->UpdateLevelLoadScreen(common->GetLanguageDict()->GetString("#str_02087"));
@@ -1195,7 +1196,7 @@ void idSessionLocal::StartPlayingRenderDemo(idStr demoName)
 	insideExecuteMapChange = true;
 	UpdateScreen();
 	insideExecuteMapChange = false;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: level loading UI
 	game->UpdateLevelLoadScreen(L"");
 #else
 	guiLoading->SetStateString("demo", "");
@@ -1230,7 +1231,7 @@ void idSessionLocal::TimeRenderDemo(const char *demoName, bool twice)
 
 	if (twice && readDemo) {
 		// cycle through once to precache everything
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: level loading UI
 		game->UpdateLevelLoadScreen(common->GetLanguageDict()->GetString("#str_04852"));
 #else
 		guiLoading->SetStateString("demo", common->GetLanguageDict()->GetString("#str_04852"));
@@ -1244,7 +1245,7 @@ void idSessionLocal::TimeRenderDemo(const char *demoName, bool twice)
 			AdvanceRenderDemo(true);
 		}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: level loading UI
 		game->UpdateLevelLoadScreen(L"");
 #else
 		guiLoading->SetStateString("demo", "");
@@ -1532,13 +1533,13 @@ void idSessionLocal::StartNewGame(const char *mapName, bool devmap)
 idSessionLocal::GetAutoSaveName
 ===============
 */
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 idStr idSessionLocal::GetAutoSaveName(const char *_mapName) const
 #else
 idStr idSessionLocal::GetAutoSaveName(const char *mapName) const
 #endif
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 	idStr mapName = _mapName;
 #endif
 #ifdef _RAVEN //k: quake4 map entity filter
@@ -1564,7 +1565,7 @@ idStr idSessionLocal::GetAutoSaveName(const char *mapName) const
 	}
 
 	// Fixme: Localization
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 	return va("^3AutoSave:^0 %s", mapName.c_str());
 #else
 	return va("^3AutoSave:^0 %s", mapName);
@@ -1592,7 +1593,7 @@ void idSessionLocal::MoveToNewMap(const char *mapName)
 
 	ExecuteMapChange();
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: hide main menu
 	game->HideMainMenu();
 #else
 #ifdef _RAVEN //karin: pause when finished loading
@@ -1746,11 +1747,12 @@ void idSessionLocal::StartPlayingCmdDemo(const char *demoName)
 		return;
 	}
 
+#if !defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 #ifdef _RAVEN // quake4 loading gui
     guiLoading = uiManager->FindGui("guis/loading/generic.gui", true, false, true);
-#elif defined(_SPLASHDAMAGE)
 #else
 	guiLoading = uiManager->FindGui("guis/map/loading.gui", true, false, true);
+#endif
 #endif
 	//cmdDemoFile->Read(&loadGameTime, sizeof(loadGameTime));
 
@@ -1842,7 +1844,7 @@ idSessionLocal::LoadLoadingGui
 */
 void idSessionLocal::LoadLoadingGui(const char *mapName)
 {
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 	// load / program a gui to stay up on the screen while loading
 	idStr stripped = mapName;
 	stripped.StripFileExtension();
@@ -2022,7 +2024,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	if (IsMultiplayer()) {
 		// make sure the mp GUI isn't up, or when players get back in the
 		// map, mpGame's menu and the gui will be out of sync.
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: hide menu
 		game->HideMainMenu();
 #else
 		SetGUI(NULL, NULL);
@@ -2101,7 +2103,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	subtitleTextScaleInited = false; // reload subtitles's text scale
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: begin game level load
 	game->BeginLevelLoad();
 #endif
 	uiManager->BeginLevelLoad();
@@ -2175,11 +2177,10 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 	}
 
 	// load and spawn all other entities ( from a savegame possibly )
+#if !defined(_SPLASHDAMAGE) //karin: MP game only
 	if (loadingSaveGame && savegameFile) {
 #ifdef _RAVEN
 		if (game->InitFromSaveGame(fullMapName + ".map", rw, savegameFile) == false)
-#elif defined(_SPLASHDAMAGE) //karin: online game only
-		if (false)
 #else
 		if (game->InitFromSaveGame(fullMapName + ".map", rw, sw, savegameFile) == false)
 #endif
@@ -2199,7 +2200,10 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 			game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
 		}
-	} else {
+	} 
+	else 
+#endif
+	{
 		game->SetServerInfo(mapSpawnData.serverInfo);
 #ifdef _RAVEN
 		game->InitFromNewMap(fullMapName + ".map", rw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
@@ -2210,6 +2214,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		game->InitFromNewMap(fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds());
 #endif
 	}
+
 	if (!idAsyncNetwork::IsActive() && !loadingSaveGame) {
 #ifdef _SPLASHDAMAGE
 		game->SetClientNum(GetLocalClientNum(), idAsyncNetwork::server.IsActive());
@@ -2232,7 +2237,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 		SetBytesNeededForMapLoad(mapString.c_str(), fileSystem->GetReadCount());
 	}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: end game level load
 	game->EndLevelLoad();
 #endif
 	uiManager->EndLevelLoad();
@@ -2316,7 +2321,7 @@ void idSessionLocal::ExecuteMapChange(bool noFadeWipe)
 
 	// stop drawing the laoding screen
 	insideExecuteMapChange = false;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: hide level loading GUI
 	game->HideLevelLoadScreen();
 #endif
 
@@ -2349,7 +2354,7 @@ void LoadGame_f(const idCmdArgs &args)
 	console->Close();
 
 	if (args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick") == 0) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 		idStr saveName = WStrToStr(common->GetLanguageDict()->GetString("#str_07178"));
 #else
 		idStr saveName = common->GetLanguageDict()->GetString("#str_07178");
@@ -2368,7 +2373,7 @@ SaveGame_f
 void SaveGame_f(const idCmdArgs &args)
 {
 	if (args.Argc() < 2 || idStr::Icmp(args.Argv(1), "quick") == 0) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 		idStr saveName;
 		saveName = common->GetLanguageDict()->GetString("#str_07178");
 #else
@@ -2565,8 +2570,9 @@ idSessionLocal::SaveGame
 */
 bool idSessionLocal::SaveGame(const char *saveName, bool autosave)
 {
-#ifdef _SPLASHDAMAGE
-	return true;
+#ifdef _SPLASHDAMAGE //karin: don't need save game in MP game
+	common->Printf("Not support in MP-game.\n");
+	return false;
 #else
 #ifdef	ID_DEDICATED
 	common->Printf("Dedicated servers cannot save games.\n");
@@ -2773,6 +2779,10 @@ idSessionLocal::LoadGame
 */
 bool idSessionLocal::LoadGame(const char *saveName)
 {
+#ifdef _SPLASHDAMAGE //karin: don't need load game in MP game
+	common->Printf("Not support in MP-game.\n");
+	return false;
+#else
 #ifdef	ID_DEDICATED
 	common->Printf("Dedicated servers cannot load games.\n");
 	return false;
@@ -2888,6 +2898,7 @@ bool idSessionLocal::LoadGame(const char *saveName)
 
 	return true;
 #endif
+#endif
 }
 
 /*
@@ -2906,7 +2917,12 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	{
 		console->Close();
 
-#if !defined(_SPLASHDAMAGE) //karin: escape key in game
+#ifdef _SPLASHDAMAGE //karin: scape key in game
+		if(!mapSpawned) {
+			StartMenu();
+			return true;
+		}
+#else
 		if (game) {
 			idUserInterface	*gui = NULL;
 			escReply_t		op;
@@ -2922,11 +2938,6 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 
 		StartMenu();
 		return true;
-#else
-		if(!mapSpawned) {
-			StartMenu();
-			return true;
-		}
 #endif
 	}
 
@@ -3149,7 +3160,7 @@ void idSessionLocal::PacifierUpdate()
 
 	lastPacifierTime = time;
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: tell game to update loading GUI
 	game->PacifierUpdate();
 #else
 	if (guiLoading && bytesNeededForMapLoad) {
@@ -3182,7 +3193,7 @@ void idSessionLocal::Draw()
 	bool fullConsole = false;
 
 	if (insideExecuteMapChange) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: tell game to draw loading GUI
 		game->DrawLoadScreen();
 #else
 		if (guiLoading) {
@@ -3258,7 +3269,7 @@ void idSessionLocal::Draw()
 		if (writeDemo) {
 			renderSystem->WriteDemoPics();
 		}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: tell game draw main menu if actived
 	} else if (game->IsMainMenuActive()) {
 		game->DrawMainMenu();
 #endif
@@ -3503,7 +3514,7 @@ void idSessionLocal::Frame()
 			SetCDKeyGuiVars();
 		}
 	}
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: response to GUI event of game
 	networkService->RunFrame();
 	if(game->GetUpdateResponse() != UPDATE_GUI_NONE)
 	{
@@ -3690,7 +3701,7 @@ void idSessionLocal::RunGameTic()
 #ifdef _RAVEN
 	// rw->DebugClear(0); // clear debug draw(version 1)
 	gameReturn_t	ret = game->RunFrame(&cmd, 0, true, 0); // jmarshall: serverGameFrame isn't used
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: game elapsed time
 	int elapsedTime = start - gameTime;
 	gameTime = start;
 	game->RunFrame(&cmd, elapsedTime);
@@ -3826,7 +3837,7 @@ void idSessionLocal::Init()
 	cmdSystem->AddCommand("writePrecache", Sess_WritePrecache_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "writes precache commands");
 
 #ifndef	ID_DEDICATED
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: map completion
 	cmdSystem->AddCommand("map", Session_Map_f, CMD_FL_SYSTEM, "loads a map", idCmdSystem::ArgCompletion_EntitiesName);
 	cmdSystem->AddCommand("devmap", Session_DevMap_f, CMD_FL_SYSTEM, "loads a map in developer mode", idCmdSystem::ArgCompletion_EntitiesName);
 	cmdSystem->AddCommand("testmap", Session_TestMap_f, CMD_FL_SYSTEM, "tests a map", idCmdSystem::ArgCompletion_EntitiesName);
@@ -3900,7 +3911,7 @@ void idSessionLocal::Init()
 	bse->Init();
 #endif
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: all GUIs not in engine
 	// we have a single instance of the main menu
 #ifndef ID_DEMO_BUILD
 	guiMainMenu = uiManager->FindGui("guis/mainmenu.gui", true, false, true);
@@ -3914,7 +3925,7 @@ void idSessionLocal::Init()
 #if !defined(_HUMANHEAD)
 	guiGameOver = uiManager->FindGui("guis/gameover.gui", true, false, true);
 #endif
-#endif
+
 #ifdef _HUMANHEAD
 	guiSubtitles = uiManager->FindGui("guis/subtitles.gui", true, false, true);
 	if(guiSubtitles)
@@ -3939,7 +3950,7 @@ void idSessionLocal::Init()
 		}
 	}
 #endif
-#if !defined(_SPLASHDAMAGE)
+
 	guiMsg = uiManager->FindGui("guis/msg.gui", true, false, true);
 	guiTakeNotes = uiManager->FindGui("guis/takeNotes.gui", true, false, true);
 	guiIntro = uiManager->FindGui("guis/intro.gui", true, false, true);
@@ -3991,7 +4002,7 @@ idSessionLocal::SetPlayingSoundWorld
 */
 void idSessionLocal::SetPlayingSoundWorld()
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: sound world of menu/game
 	if (game->IsMainMenuActive()) 
 #else
 	if (guiActive && (guiActive == guiMainMenu || guiActive == guiIntro || guiActive == guiLoading || (guiActive == guiMsg && !mapSpawned))) 

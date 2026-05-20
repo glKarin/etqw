@@ -4678,71 +4678,6 @@ bool idCollisionModelManagerLocal::TrmFromModel(const char *modelName, idTraceMo
 #endif
 }
 
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-/*
-================
-idCollisionModelManagerLocal::BuildModels
-================
-*/
-void idCollisionModelManagerLocal::BuildModels(const idMapFile *mapFile, bool forceCreateMap)
-{
-	int i;
-	const idMapEntity *mapEnt;
-
-	idTimer timer;
-	timer.Start();
-
-	if (forceCreateMap || !LoadCollisionModelFile(mapFile->GetName(), mapFile->GetGeometryCRC())) {
-
-		if (!mapFile->GetNumEntities()) {
-			return;
-		}
-
-		// load the .proc file bsp for data optimisation
-		LoadProcBSP(mapFile->GetName());
-
-		// convert brushes and patches to collision data
-		for (i = 0; i < mapFile->GetNumEntities(); i++) {
-			mapEnt = mapFile->GetEntity(i);
-
-			if (numModels >= MAX_SUBMODELS) {
-				common->Error("idCollisionModelManagerLocal::BuildModels: more than %d collision models", MAX_SUBMODELS);
-				break;
-			}
-
-			models[numModels] = CollisionModelForMapEntity(mapEnt);
-
-			if (models[ numModels]) {
-				numModels++;
-			}
-
-#ifdef _RAVENxxx //???
-			if (numInlinedProcClipModels && numModels == PROC_CLIPMODEL_INDEX_START) {
-				numModels += numInlinedProcClipModels;
-			}
-#endif
-		}
-
-		// free the proc bsp which is only used for data optimization
-		Mem_Free(procNodes);
-		procNodes = NULL;
-
-		// write the collision models to a file
-		WriteCollisionModelsToFile(mapFile->GetName(), 0, numModels, mapFile->GetGeometryCRC());
-	}
-
-	timer.Stop();
-
-	// print statistics on collision data
-	cm_model_t model;
-	AccumulateModelInfo(&model);
-	common->Printf("collision data:\n");
-	common->Printf("%6i models\n", numModels);
-	PrintModelInfo(&model);
-	common->Printf("%.0f msec to load collision data.\n", timer.Milliseconds());
-}
-#endif
-
 #ifdef _RAVEN
 /*
 ================
@@ -4965,6 +4900,125 @@ cmHandle_t idCollisionModelManagerLocal::ModelFromTrm(const char* mapName, const
 
 	return handle;
 }
+
+bool cm_model_t::GetBounds( idBounds &bounds ) const
+{
+	bounds = this->bounds;
+	return true;
+}
+
+bool cm_model_t::GetContents( int &contents ) const
+{
+	contents = this->contents;
+	return true;
+}
+
+bool cm_model_t::GetVertex( int vertexNum, idVec3 &vertex ) const
+{
+	if (vertexNum < 0 || vertexNum >= numVertices) {
+		common->Printf("idCollisionModelManagerLocal::GetModelVertex: invalid vertex number\n");
+		return false;
+	}
+
+	vertex = vertices[vertexNum].p;
+	return true;
+}
+
+bool cm_model_t::GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const
+{
+	edgeNum = abs(edgeNum);
+
+	if (edgeNum >= numEdges) {
+		common->Printf("idCollisionModelManagerLocal::GetModelEdge: invalid edge number\n");
+		return false;
+	}
+
+	start = vertices[edges[edgeNum].vertexNum[0]].p;
+	end = vertices[edges[edgeNum].vertexNum[1]].p;
+
+	return true;
+}
+
+bool cm_model_t::GetPolygon( int polygonNum, idFixedWinding &winding ) const
+{
+	int i, edgeNum;
+	cm_polygon_t *poly;
+
+	poly = *reinterpret_cast<cm_polygon_t **>(&polygonNum);
+	winding.Clear();
+
+	for (i = 0; i < poly->numEdges; i++) {
+		edgeNum = poly->edges[i];
+		winding += vertices[ edges[abs(edgeNum)].vertexNum[INTSIGNBITSET(edgeNum)] ].p;
+	}
+
+	return true;
+}
+#endif
+
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+/*
+================
+idCollisionModelManagerLocal::BuildModels
+================
+*/
+void idCollisionModelManagerLocal::BuildModels(const idMapFile *mapFile, bool forceCreateMap)
+{
+	int i;
+	const idMapEntity *mapEnt;
+
+	idTimer timer;
+	timer.Start();
+
+	if (forceCreateMap || !LoadCollisionModelFile(mapFile->GetName(), mapFile->GetGeometryCRC())) {
+
+		if (!mapFile->GetNumEntities()) {
+			return;
+		}
+
+		// load the .proc file bsp for data optimisation
+		LoadProcBSP(mapFile->GetName());
+
+		// convert brushes and patches to collision data
+		for (i = 0; i < mapFile->GetNumEntities(); i++) {
+			mapEnt = mapFile->GetEntity(i);
+
+			if (numModels >= MAX_SUBMODELS) {
+				common->Error("idCollisionModelManagerLocal::BuildModels: more than %d collision models", MAX_SUBMODELS);
+				break;
+			}
+
+			models[numModels] = CollisionModelForMapEntity(mapEnt);
+
+			if (models[ numModels]) {
+				numModels++;
+			}
+
+#ifdef _RAVENxxx //???
+			if (numInlinedProcClipModels && numModels == PROC_CLIPMODEL_INDEX_START) {
+				numModels += numInlinedProcClipModels;
+			}
+#endif
+		}
+
+		// free the proc bsp which is only used for data optimization
+		Mem_Free(procNodes);
+		procNodes = NULL;
+
+		// write the collision models to a file
+		WriteCollisionModelsToFile(mapFile->GetName(), 0, numModels, mapFile->GetGeometryCRC());
+	}
+
+	timer.Stop();
+
+	// print statistics on collision data
+	cm_model_t model;
+	AccumulateModelInfo(&model);
+	common->Printf("collision data:\n");
+	common->Printf("%6i models\n", numModels);
+	PrintModelInfo(&model);
+	common->Printf("%.0f msec to load collision data.\n", timer.Milliseconds());
+}
 #endif
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
@@ -5122,65 +5176,7 @@ void idCollisionModelManagerLocal::ClearModel(cm_model_t *model)
 	model->brushes.Clear();
 #endif
 }
-#endif
 
-#ifdef _RAVEN
-bool cm_model_t::GetBounds( idBounds &bounds ) const
-{
-	bounds = this->bounds;
-	return true;
-}
-
-bool cm_model_t::GetContents( int &contents ) const
-{
-	contents = this->contents;
-	return true;
-}
-
-bool cm_model_t::GetVertex( int vertexNum, idVec3 &vertex ) const
-{
-	if (vertexNum < 0 || vertexNum >= numVertices) {
-		common->Printf("idCollisionModelManagerLocal::GetModelVertex: invalid vertex number\n");
-		return false;
-	}
-
-	vertex = vertices[vertexNum].p;
-	return true;
-}
-
-bool cm_model_t::GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const
-{
-	edgeNum = abs(edgeNum);
-
-	if (edgeNum >= numEdges) {
-		common->Printf("idCollisionModelManagerLocal::GetModelEdge: invalid edge number\n");
-		return false;
-	}
-
-	start = vertices[edges[edgeNum].vertexNum[0]].p;
-	end = vertices[edges[edgeNum].vertexNum[1]].p;
-
-	return true;
-}
-
-bool cm_model_t::GetPolygon( int polygonNum, idFixedWinding &winding ) const
-{
-	int i, edgeNum;
-	cm_polygon_t *poly;
-
-	poly = *reinterpret_cast<cm_polygon_t **>(&polygonNum);
-	winding.Clear();
-
-	for (i = 0; i < poly->numEdges; i++) {
-		edgeNum = poly->edges[i];
-		winding += vertices[ edges[abs(edgeNum)].vertexNum[INTSIGNBITSET(edgeNum)] ].p;
-	}
-
-	return true;
-}
-#endif
-
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 cm_model_t::cm_model_t(void)
 {
 	bounds.Zero();

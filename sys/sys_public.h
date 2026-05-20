@@ -207,7 +207,7 @@ enum sysPath_t {
     PATH_EXE
 };
 #endif
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: defined on common/common.h
 typedef enum {
 	CPUID_NONE							= 0x00000,
 	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)

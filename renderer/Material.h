@@ -680,6 +680,7 @@ typedef enum {
 	CONTENTS_AREAPORTAL			= BIT(20),	// portal separating renderer areas
 	CONTENTS_NOCSG				= BIT(21),	// don't cut this brush with CSG operations in the editor
 #endif
+
 	CONTENTS_REMOVE_UTIL		= ~(CONTENTS_AREAPORTAL|CONTENTS_NOCSG)
 } contentsFlags_t;
 
@@ -1111,6 +1112,9 @@ class idMaterial : public idDecl
 		//------------------------------------------------------------------
 
 		// gets an image for the editor to use
+#ifdef _ETQW //karin: called in game, make virtual
+		virtual 
+#endif
 		idImage 			*GetEditorImage(void) const;
 		int					GetImageWidth(void) const;
 		int					GetImageHeight(void) const;
@@ -1344,40 +1348,5 @@ class idMaterial : public idDecl
 };
 
 typedef idList<const idMaterial *> idMatList;
-
-#ifdef _ETQW //karin: call in game
-/*
-==============
-idMaterial::GetEditorImage
-==============
-*/
-ID_INLINE idImage *idMaterial::GetEditorImage(void) const
-{
-	if (editorImage) {
-		return editorImage;
-	}
-
-	// if we don't have an editorImageName, use the first stage image
-	if (!editorImageName.Length()) {
-		// _D3XP :: First check for a diffuse image, then use the first
-		if (numStages && stages) {
-			int i;
-
-			for (i = 0; i < numStages; i++) {
-				if (stages[i].lighting == SL_DIFFUSE) {
-					editorImage = stages[i].texture.image;
-					break;
-				}
-			}
-
-			if (!editorImage) {
-				editorImage = stages[0].texture.image;
-			}
-		}
-	}
-
-	return editorImage;
-}
-#endif
 
 #endif /* !__MATERIAL_H__ */
