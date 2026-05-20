@@ -145,8 +145,8 @@ public:
 #include <typeinfo>
 #include <errno.h>
 #include <math.h>
-#ifdef _SPLASHDAMAGE
-#include <wchar.h>	// wmemset
+#ifdef _SPLASHDAMAGE //karin: wmemset
+#include <wchar.h>
 #include "idlib/LibOS.h"
 #endif
 
@@ -242,7 +242,7 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 
 // user interfaces
 #include "../ui/ListGUI.h"
-#if !defined(_ETQW) //karin: sdUserInterface* on ETQW
+#if !defined(_ETQW) //karin: sdUserInterface* on ETQW game
 #include "../ui/UserInterface.h"
 #endif
 
@@ -389,7 +389,7 @@ const float MAX_BOUND_SIZE = 65536.0f;
     #include "../prey/Game_local.h"
 #endif
 
-#elif defined(_SPLASHDAMAGE)
+#elif defined(_SPLASHDAMAGE) //karin: ETQW has game/precompiled.h self
 #else
 
     #if defined(_CDOOM)

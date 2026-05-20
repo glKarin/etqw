@@ -810,7 +810,7 @@ void idSessionLocal::HandleMainMenuCommands(const char *menuCommand)
 				dict = fileSystem->GetMapDecl(i);
 
 				if (dict && dict->GetBool(gametype)) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wchar
 					idStr mapName = dict->GetString("name");
 #else
 					const char *mapName = dict->GetString("name");

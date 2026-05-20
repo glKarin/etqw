@@ -383,7 +383,11 @@ bool idCollisionModelManagerLocal::WriteCollisionModelForMapEntity(const idMapEn
 
 	if (!fp) {
 		common->Printf("idCollisionModelManagerLocal::WriteCollisionModelForMapEntity: Error opening file %s\n", name.c_str());
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: free model memory actually
+		FreeModel_memory(model);
+#else
 		FreeModel(model);
+#endif
 		return false;
 	}
 
@@ -405,7 +409,11 @@ bool idCollisionModelManagerLocal::WriteCollisionModelForMapEntity(const idMapEn
 		TrmFromModel(model, trm);
 	}
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: free model memory actually
+	FreeModel_memory(model);
+#else
 	FreeModel(model);
+#endif
 
 	return true;
 }

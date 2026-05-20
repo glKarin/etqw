@@ -309,7 +309,6 @@ class idParser
 		static define_t *FindDefine(define_t *defines, const char *name);
 		static define_t *DefineFromString(const char *string);
 		define_t 		*CopyFirstDefine(void);
-
 		int				Directive_include(void);
 #ifdef _SPLASHDAMAGE
     	int				Directive_define( bool isTemplate );
@@ -336,7 +335,6 @@ class idParser
 		int				Directive_eval(void);
 		int				Directive_evalfloat(void);
 		int				ReadDirective(void);
-		
 #ifdef _SPLASHDAMAGE
 	    int				DollarDirective_if_def( int type );
 	    int				DollarDirective_ifdef( void );

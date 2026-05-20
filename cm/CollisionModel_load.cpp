@@ -728,7 +728,11 @@ void idCollisionModelManagerLocal::FreeMap(void)
 			continue;
 		}
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: free model memory actually
+		FreeModel_memory(models[i]);
+#else
 		FreeModel(models[i]);
+#endif
 	}
 
 	FreeTrmModelStructure();
@@ -763,7 +767,11 @@ void idCollisionModelManagerLocal::FreeTrmModelStructure(void)
 
 	models[MAX_SUBMODELS]->node->polygons = NULL;
 	models[MAX_SUBMODELS]->node->brushes = NULL;
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: free model memory actually
+	FreeModel_memory(models[MAX_SUBMODELS]);
+#else
 	FreeModel(models[MAX_SUBMODELS]);
+#endif
 }
 
 

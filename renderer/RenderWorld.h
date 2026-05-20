@@ -463,13 +463,13 @@ typedef struct renderLight_s {
 	bool					pointLight;			// otherwise a projection light (should probably invert the sense of this, because points are way more common)
 	bool					parallel;			// lightCenter gives the direction to the light at infinity
 #endif
+	idVec3					lightRadius;		// xyz radius for point lights
+	idVec3					lightCenter;		// offset the lighting direction for shading and
+	// shadows, relative to origin
 
 #ifdef _HUMANHEAD
 	bool					lowSkippable;		// HUMANHEAD bjk: True if skippable in low quality
 #endif
-	idVec3					lightRadius;		// xyz radius for point lights
-	idVec3					lightCenter;		// offset the lighting direction for shading and
-	// shadows, relative to origin
 
 	// frustum definition for projected lights, all reletive to origin
 	// FIXME: we should probably have real plane equations here, and offer
@@ -486,19 +486,19 @@ typedef struct renderLight_s {
 #ifdef _SPLASHDAMAGE
     int						numPrelightModels;
     idRenderModel *			prelightModels[ MAX_PRELIGHTS ];
+    int						maxVisDist;
 #endif
 	idRenderModel 			*prelightModel;
 
 	// muzzle flash lights will not cast shadows from player and weapon world models
 	int						lightId;
 
+
 #ifdef _SPLASHDAMAGE
-    int						maxVisDist;
     const idMaterial *		material;			// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
 #else
 	const idMaterial 		*shader;				// NULL = either lights/defaultPointLight or lights/defaultProjectedLight
 #endif
-
 	float					shaderParms[MAX_ENTITY_SHADER_PARMS];		// can be used in any way by shader
 #ifdef _RAVEN
 // RAVEN BEGIN
@@ -621,7 +621,15 @@ typedef struct renderView_s {
     idVec3					lastViewOrg;
 #endif
 
-#if !defined(_SPLASHDAMAGE)
+#ifdef _SPLASHDAMAGE
+    struct renderViewFlags_t {
+        bool				cramZNear			: 1;	// for cinematics, we want to set ZNear much lower
+        bool				forceUpdate			: 1;	// for an update
+        bool				forceViewIDOnly		: 1;	// only render entities with a matching viewID
+        bool				forceDefsVisible	: 1;
+    };
+    renderViewFlags_t		flags;
+#else
 	bool					cramZNear;			// for cinematics, we want to set ZNear much lower
 	bool					forceUpdate;		// for an update
 #endif
@@ -645,16 +653,7 @@ typedef struct renderView_s {
     float					foliageDepthHack;
     
     int						forceClear;
-
-    struct renderViewFlags_t {
-        bool				cramZNear			: 1;	// for cinematics, we want to set ZNear much lower
-        bool				forceUpdate			: 1;	// for an update
-        bool				forceViewIDOnly		: 1;	// only render entities with a matching viewID
-        bool				forceDefsVisible	: 1;
-    };
-    renderViewFlags_t		flags;
 #endif
-
 } renderView_t;
 
 

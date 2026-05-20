@@ -287,7 +287,6 @@ void idMaterial::FreeData()
 	}
 }
 
-#if !defined(_ETQW) //karin: call in game
 /*
 ==============
 idMaterial::GetEditorImage
@@ -329,7 +328,6 @@ idImage *idMaterial::GetEditorImage(void) const
 
 	return editorImage;
 }
-#endif
 
 
 // info parms
@@ -349,13 +347,13 @@ static infoParm_t	infoParms[] = {
 	{"monsterclip",	0,	0,	CONTENTS_MONSTERCLIP },	// solid to monsters
 #endif
 	{"moveableclip",0,	0,	CONTENTS_MOVEABLECLIP },// solid to moveable entities
-{"ikclip",		0,	0,	CONTENTS_IKCLIP },		// solid to IK
+	{"ikclip",		0,	0,	CONTENTS_IKCLIP },		// solid to IK
 #ifdef _SPLASHDAMAGE
 	{"slidemover",		0,	0,	CONTENTS_SLIDEMOVER },
 #else
 	{"blood",		0,	0,	CONTENTS_BLOOD },		// used to detect blood decals
 #endif
-{"trigger",		0,	0,	CONTENTS_TRIGGER },		// used for triggers
+	{"trigger",		0,	0,	CONTENTS_TRIGGER },		// used for triggers
 #if !defined(_SPLASHDAMAGE)
 	{"aassolid",	0,	0,	CONTENTS_AAS_SOLID },	// solid for AAS
 #endif
@@ -428,7 +426,7 @@ static infoParm_t	infoParms[] = {
 	{"sightClip",	0,	0,	CONTENTS_SIGHTCLIP },
 #endif
 
-#ifdef _SPLASHDAMAGE //k: ETQW material flags
+#ifdef _SPLASHDAMAGE //karin: ETQW material flags
 	{"vehicleclip",	0,	0,	CONTENTS_VEHICLECLIP },
 	{"explosionclip",	0,	0,	CONTENTS_EXPLOSIONSOLID },
 	{"rendermodelclip",	0,	0,	CONTENTS_RENDERMODEL },
@@ -730,7 +728,6 @@ int idMaterial::EmitOp(int a, int b, expOpType_t opType)
 idMaterial::ParseEmitOp
 =================
 */
-
 #ifdef _SPLASHDAMAGE
 int idMaterial::ParseEmitOp(idParser &src, int a, expOpType_t opType, int priority)
 #else
@@ -1762,7 +1759,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			cubeMap = CF_NATIVE;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: setup image program stage parms
 			SETUP_STAGE_PROGRAM_PARMS();
 			if (!imageBinding)
 			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
@@ -1774,7 +1771,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			cubeMap = CF_CAMERA;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: setup image program stage parms
 			SETUP_STAGE_PROGRAM_PARMS();
 			if (!imageBinding)
 			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
@@ -2110,7 +2107,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		}
 
 		if (!token.Icmp("if")) {
-#ifdef _SPLASHDAMAGE //karin: if cvar
+#ifdef _SPLASHDAMAGE //karin: if cvar condition
 			idToken t;
 			src.ReadToken(&t);
 			if(!idStr::Icmp(t, "cvar")) {
@@ -2155,8 +2152,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		if (!token.Icmp("program")) {
 			if (src.ReadTokenOnLine(&token)) {
 				token.StripFileExtension();
-				newStage.vertexProgram = -1;
-				newStage.fragmentProgram = -1;
 				spd.declRenderProgram = static_cast<const sdDeclRenderProgram *>(declManager->FindType(DECL_RENDERPROGRAM, token.c_str(), false));
 				if(!isInteractionProgram) {
 					if(spd.declRenderProgram)
@@ -2175,8 +2170,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				newStage.vertexProgram = R_FindARBProgram(GL_VERTEX_PROGRAM_ARB, token.c_str());
 				newStage.fragmentProgram = R_FindARBProgram(GL_FRAGMENT_PROGRAM_ARB, token.c_str());
 #else
-				newStage.vertexProgram = -1;
-				newStage.fragmentProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
 				{
                     token.StripFileExtension();
@@ -2203,7 +2196,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #if !defined(GL_ES_VERSION_2_0)
 				newStage.fragmentProgram = R_FindARBProgram(GL_FRAGMENT_PROGRAM_ARB, token.c_str());
 #else
-				newStage.fragmentProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
                 {
                     token.StripFileExtension();
@@ -2225,7 +2217,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #if !defined(GL_ES_VERSION_2_0)
 				newStage.vertexProgram = R_FindARBProgram(GL_VERTEX_PROGRAM_ARB, token.c_str());
 #else
-				newStage.vertexProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
                 {
                     token.StripFileExtension();
@@ -2261,8 +2252,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				newStage.vertexProgram = R_FindARBProgram(GL_VERTEX_PROGRAM_ARB, "megaTexture.vfp");
 				newStage.fragmentProgram = R_FindARBProgram(GL_FRAGMENT_PROGRAM_ARB, "megaTexture.vfp");
 #else
-				newStage.vertexProgram = -1;
-				newStage.fragmentProgram = -1;
                 //if(SHADER_HANDLE_IS_INVALID(newStage.glslProgram))
                 {
                     const shaderProgram_t *shaderProgram = shaderManager->Find("megaTexture");
@@ -2304,8 +2293,6 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
          * e.g. programGLSL fog.vert fog.frag -> programGLSL fog.vert fog.frag fog
          */
         if (!token.Icmp("programGLSL")) {
-            newStage.vertexProgram = -1;
-            newStage.fragmentProgram = -1;
             ParseGLSLProgram(src, &newStage);
 
             continue;
@@ -2581,7 +2568,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 #if !defined(GL_ES_VERSION_2_0)
 	if (newStage.fragmentProgram || newStage.vertexProgram)
 #else
-	if (/*newStage.fragmentProgram || newStage.vertexProgram || */newStage.glslProgram
+	if (newStage.fragmentProgram || newStage.vertexProgram || newStage.glslProgram
 #ifdef _SPLASHDAMAGE //karin: check newStage
 			&& !spd.declRenderProgram
 #endif
@@ -3159,7 +3146,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 		// foglight
 		else if (!token.Icmp("fogLight")) {
 			fogLight = true;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: fogLight has extras parms
 			src.SkipRestOfLine();
 #endif
 			continue;
@@ -3556,7 +3543,7 @@ bool idMaterial::Parse(const char *text, const int textLength, bool noCaching)
 bool idMaterial::Parse(const char *text, const int textLength)
 #endif
 {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: idParser instead of idLexer
 	idParser	src;
 #else
 	idLexer	src;
@@ -3573,11 +3560,6 @@ bool idMaterial::Parse(const char *text, const int textLength)
 	src.SetFlags(DECL_LEXER_FLAGS);
 #endif
 	src.SkipUntilString("{");
-#ifdef _SPLASHDAMAGExxx
-	src.AddIncludes(GetIncludeDependencies());
-	if (GetFileLevelIncludeDependencies())
-		src.AddIncludes(*GetFileLevelIncludeDependencies());
-#endif
 
 	// reset to the unparsed state
 	CommonInit();

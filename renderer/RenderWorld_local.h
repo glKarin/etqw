@@ -193,9 +193,11 @@ class idRenderWorldLocal : public idRenderWorld
 
 // jscott: handling of effects
         virtual bool			EffectDefHasSound(const renderEffect_s* reffect);
+		virtual const class rvRenderEffectLocal* GetEffectDef(qhandle_t effectHandle) const;
 #endif
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#ifdef _RAVEN_BSE
         void                    MarkEffectDef(int effectHandle);
         void                    PushEffectDef(int effectHandle);
         void                    AddAreaEffectRefs(int areaNum, const struct portalStack_s *ps);
@@ -203,6 +205,7 @@ class idRenderWorldLocal : public idRenderWorld
         void					PushPolytopeIntoTree_r(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints, int nodeNum);
 
         void					PushPolytopeIntoTree(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints);
+#endif
 
 	    idList<rvRenderEffectLocal*>	effectDefs;
 #endif
@@ -215,7 +218,6 @@ class idRenderWorldLocal : public idRenderWorld
 		virtual qhandle_t		AddEffectDef(const renderEffect_t* reffect, int time);
 		virtual bool			UpdateEffectDef(qhandle_t effectHandle, const renderEffect_t* reffect, int time);
 		virtual void			StopEffectDef(qhandle_t effectHandle);
-		virtual const class rvRenderEffectLocal* GetEffectDef(qhandle_t effectHandle) const;
 		virtual void			FreeEffectDef(qhandle_t effectHandle);
 		// RAVEN END
 #endif

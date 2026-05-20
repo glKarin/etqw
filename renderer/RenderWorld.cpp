@@ -2592,6 +2592,7 @@ rvRenderEffectLocal::~rvRenderEffectLocal()
 }
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#ifdef _RAVEN_BSE
 
 #define ASSERT_EFFECT_HANDLE(effectHandle) \
 	if (effectHandle < 0 || effectHandle > LUDICROUS_INDEX) { \
@@ -3358,6 +3359,7 @@ void idRenderWorldLocal::AddEffectRefToArea(rvRenderEffectLocal *reffect, portal
     area->effectRefs.areaNext = elef;
 }
 #endif
+#endif
 
 /*
 ===================
@@ -3594,7 +3596,9 @@ void idRenderWorldLocal::StopEffectDef(qhandle_t effectHandle) {
     }
 #endif
 }
+#endif
 
+#ifdef _RAVEN
 const class rvRenderEffectLocal* idRenderWorldLocal::GetEffectDef(qhandle_t effectHandle) const { 
 #ifdef _RAVEN_FX
 	ASSERT_EFFECT_HANDLE(effectHandle);
@@ -3630,9 +3634,7 @@ const class rvRenderEffectLocal* idRenderWorldLocal::GetEffectDef(qhandle_t effe
 	return NULL;
 #endif
 }
-#endif
 
-#ifdef _RAVEN
 bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
 #ifdef _RAVEN_FX
     return bse->CheckDefForSound(reffect);

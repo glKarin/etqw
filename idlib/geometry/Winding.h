@@ -223,7 +223,8 @@ ID_INLINE idWinding::idWinding( const idPlane &plane, const float radius )
 }
 #endif
 
-ID_INLINE idWinding::idWinding(const idVec3 &normal, const float dist) {
+ID_INLINE idWinding::idWinding(const idVec3 &normal, const float dist)
+{
 	numPoints = allocedSize = 0;
 	p = NULL;
 	BaseForPlane(normal, dist);
