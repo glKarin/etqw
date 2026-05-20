@@ -2459,7 +2459,7 @@ void idRenderSystemLocal::Clear(void)
 	shuttleView = false;
 	lastRenderSkybox = -1;
 #endif
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: sdGuiModel
 	gameGuiModel = NULL;
 #endif
 }
@@ -2496,7 +2496,7 @@ void idRenderSystemLocal::Init(void)
 	demoGuiModel = new idGuiModel;
 	demoGuiModel->Clear();
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: sdGuiModel
 	gameGuiModel = new sdGuiModel;
 	gameGuiModel->Clear();
 #endif
@@ -2574,7 +2574,7 @@ void idRenderSystemLocal::Shutdown(void)
 	// free the vertex cache, which should have nothing allocated now
 	vertexCache.Shutdown();
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: imposter model
 	imposterGeometryManager->Shutdown();
 #endif
 	R_ShutdownTriSurfData();
@@ -2583,7 +2583,7 @@ void idRenderSystemLocal::Shutdown(void)
 
 	delete guiModel;
 	delete demoGuiModel;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: sdGuiModel
 	delete gameGuiModel;
 #endif
 

@@ -3414,11 +3414,7 @@ void idFileSystemLocal::Restart(void)
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
-#ifdef _SPLASHDAMAGE
-	if (ReadFile("public.cfg", NULL, NULL) <= 0) {
-		common->FatalError("Couldn't load default.cfg");
-	}
-#else
+#if !defined(_SPLASHDAMAGE) //karin: multi user profile in ETQW
 	if (ReadFile("default.cfg", NULL, NULL) <= 0) {
 		common->FatalError("Couldn't load default.cfg");
 	}
@@ -3486,7 +3482,7 @@ void idFileSystemLocal::Shutdown(bool reloading)
 	cmdSystem->RemoveCommand("touchFile");
 
 	mapDict.Clear();
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: free map meta data
 	addonMetaDataNames.Clear();
 	addonMetaDataList.DeleteContents(true);
 #endif
@@ -5184,7 +5180,7 @@ idFile * idFileSystemLocal::GetNewFileMemory( void )
 }
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: map meta data
 void idFileSystemLocal::InitMetaConf(const char *type)
 {
 	searchpath_t 	*search;

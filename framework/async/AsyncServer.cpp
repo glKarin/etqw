@@ -968,7 +968,7 @@ void idAsyncServer::SendReliableMessage(int clientNum, const idBitMsg &msg)
 	if (clientNum == localClientNum) {
 		return;
 	}
-#ifdef _SPLASHDAMAGE //karin: jmarshall's Quake4 bot
+#ifdef _SPLASHDAMAGE //karin: bot fake client
 	if (ClientIsBot(clientNum))
 		return;
 #endif
@@ -997,7 +997,7 @@ void idAsyncServer::CheckClientTimeouts(void)
 		if (i == localClientNum) {
 			continue;
 		}
-#ifdef _SPLASHDAMAGE //karin: jmarshall's Quake4 bot
+#ifdef _SPLASHDAMAGE //karin: bot fake client
 		if (ClientIsBot(client))
 			return;
 #endif
@@ -2005,11 +2005,9 @@ void idAsyncServer::ProcessConnectMessage(const netadr_t from, const idBitMsg &m
 			}
 
 #ifdef _SPLASHDAMAGE //karin: wchar
-		{
 			idWStr tmp = common->GetLanguageDict()->GetString(msg);
-
+	
 			common->DPrintf("%s: %ls\n", Sys_NetAdrToString(from), tmp.c_str());
-		}
 #else
 			l_msg = common->GetLanguageDict()->GetString(msg);
 

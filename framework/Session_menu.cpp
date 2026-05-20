@@ -2153,7 +2153,7 @@ void idSessionLocal::HandleLoadingCommands(const char *menuCommand)
 
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: message box with char/wchar
 const char * idSessionLocal::MessageBox(msgBoxType_t type, const wchar_t *message, const wchar_t *title, bool wait, const char *fire_yes, const char *fire_no, bool network)
 {
 	idStr msg = WStrToStr(message);

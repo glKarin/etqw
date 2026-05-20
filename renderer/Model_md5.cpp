@@ -1209,7 +1209,8 @@ int idRenderModelMD5::GetSurfaceMask(const char *name) const
 	return  0;
 }
 #endif
-#ifdef _SPLASHDAMAGE //karin: using mesh name on md5mesh version 11
+
+#ifdef _SPLASHDAMAGE //karin: md5b parsing
 int idRenderModelMD5::FindSurfaceId( const char *surfaceName ) {
 	int i;
 	const idMD5Mesh			*mesh;

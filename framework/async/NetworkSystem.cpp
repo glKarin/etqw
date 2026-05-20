@@ -31,8 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "NetworkSystem.h"
 
-#include "AsyncNetwork.h"
-
 idNetworkSystem		networkSystemLocal;
 idNetworkSystem 	*networkSystem = &networkSystemLocal;
 
@@ -323,6 +321,7 @@ void idNetworkSystem::RemoveFriend(int clientNum) { (void)clientNum; }
 #ifdef _SPLASHDAMAGE
 #include "../Session_local.h"
 #include "sdnet/SDNet.h"
+
 void idNetworkSystem::ServerGetClientNetworkInfo( int clientNum, clientNetworkAddress_t& info ) {
 	const netadr_t &addr = idAsyncNetwork::server.clients[clientNum].channel.GetRemoteAddress();
 	memcpy(&info.ip[0], &addr.ip[0], sizeof(info.ip));

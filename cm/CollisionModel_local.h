@@ -234,6 +234,10 @@ typedef struct cm_model_s
 	cm_model_t(void);
 #endif
 
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+	virtual const char *	GetName( void ) const;
+#endif
+
 #ifdef _RAVEN // quake4 trm
 	virtual bool			GetBounds( idBounds &bounds ) const;
 	virtual bool			GetContents( int &contents ) const;
@@ -241,11 +245,6 @@ typedef struct cm_model_s
 	virtual bool			GetEdge( int edgeNum, idVec3 &start, idVec3 &end ) const;
 	virtual bool			GetPolygon( int polygonNum, idFixedWinding &winding ) const;
 #endif
-
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-	virtual const char *	GetName( void ) const;
-#endif
-
 #ifdef _SPLASHDAMAGE
 	virtual const idBounds&		GetBounds( void ) const;
 	virtual void				GetBounds( idBounds& bounds, int surfaceMask, bool inclusive ) const;

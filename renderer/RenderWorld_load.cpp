@@ -686,8 +686,6 @@ bool idRenderWorldLocal::InitFromMap(const char *name)
 #ifdef _SPLASHDAMAGE //karin: parse binary procb file
 	if (InitFromMap_Binary(name)) {
 		return true;
-	} else {
-		common->Printf("idRenderWorldLocal::InitFromMap: unable to load binary proc file '%s', try ascii proc file.\n", filename.c_str());
 	}
 #endif
 

@@ -1639,11 +1639,11 @@ bool idAsyncClient::ValidatePureServerChecksums(const netadr_t from, const idBit
 		}
 		case PURE_NODLL:
 #ifdef _SPLASHDAMAGE //karin: wchar
-		{
-			wchar_t tmp[1024] = {0};
-			idWStr::snPrintf(tmp, 1024, common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
-			common->Printf("%ls", tmp);
-		}
+			{
+				wchar_t tmp[1024] = {0};
+				idWStr::snPrintf(tmp, 1024, common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
+				common->Printf("%ls", tmp);
+			}
 #else
 			common->Printf(common->GetLanguageDict()->GetString("#str_07211"), Sys_NetAdrToString(from));
 #endif

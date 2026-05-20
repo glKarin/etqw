@@ -798,11 +798,6 @@ bool idCollisionModelManagerLocal::LoadCollisionModelFile(const char *name, unsi
 	if (LoadCollisionModelFile_Binary(name, mapFileCRC)) {
 		return true;
 	}
-	/*
-	else {
-		common->Printf("LoadCollisionModelFile: unable to load binary cm file '%s', try ascii cm file.\n", fileName.c_str());
-	}
-	*/
 #endif
 	src = new idLexer(fileName);
 	src->SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NODOLLARPRECOMPILE);

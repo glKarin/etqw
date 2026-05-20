@@ -1227,7 +1227,7 @@ void idRenderWorldLocal::FindViewLightsAndEntities(void)
 	// clear the visible lightDef and entityDef lists
 	tr.viewDef->viewLights = NULL;
 	tr.viewDef->viewEntitys = NULL;
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE) // particle
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
     tr.viewDef->viewEffects = NULL;
 #endif

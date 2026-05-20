@@ -3670,6 +3670,17 @@ void idRenderWorldLocal::RestartEffectDef( qhandle_t effectHandle ) {
 }
 
 void idRenderWorldLocal::FreeStoppedEffectDefs( void ) {
+	rvRenderEffectLocal *effect;
+
+	for(int i = 0; i < effectDefs.Num(); i++)
+	{
+		effect = effectDefs[i];
+		if(effect)
+		{
+			if(effect->effect->mFlags & EFLAG_STOPPED)
+				FreeEffectDef(i);
+		}
+	}
 }
 
 qhandle_t idRenderWorldLocal::AddOcclusionTestDef( const occlusionTest_t *occtest ) {

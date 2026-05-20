@@ -310,7 +310,7 @@ void idImage::SetImageFilterAndRepeat() const
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			break;
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: clamp texture single axis
 		case TR_CLAMP_X:
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -961,7 +961,7 @@ void idImage::GenerateCubeImage(const byte *pic[6], int size,
 ImageProgramStringToFileCompressedFileName
 ================
 */
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: generated compressed image file name
 void iImageProgramStringToCompressedFileName(const char *imageProg, char *fileName)
 {
   int v4; // eax
@@ -2138,7 +2138,7 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 		}
 
 		R_LoadImageProgram(imgName, &pic, &width, &height, &timestamp, &depth);
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: load DXT to raw RGBA 
 		if (pic == NULL) {
 			char filename[MAX_IMAGE_NAME];
 			ImageProgramStringToCompressedFileName(imgName, filename);

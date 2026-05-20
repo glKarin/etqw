@@ -1512,11 +1512,11 @@ void idInteraction::AddActiveInteraction(void)
 						                vEntity, lightDef, shader, lightScissor, false);
 					} else if (
 #ifdef _SPLASHDAMAGE
-						!lightDef->parms.flags.noShadows
+						!lightDef->parms.flags.noShadows && sint->shader->TestMaterialFlag(MF_NOSELFSHADOW)
 #else
-						!lightDef->parms.noShadows
+						!lightDef->parms.noShadows && sint->shader->TestMaterialFlag(MF_NOSELFSHADOW)
 #endif
-						&& sint->shader->TestMaterialFlag(MF_NOSELFSHADOW)) {
+					) {
 						R_LinkLightSurf(&vLight->localInteractions, lightTris,
 						                vEntity, lightDef, shader, lightScissor, false);
 					} else {

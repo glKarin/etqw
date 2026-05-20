@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../renderer/imgui/r_imgui.h"
 #endif
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: engine to game interface
 #include "decllib/declLocStr.h"
 #include "framework/AdManager.h"
 #include "framework/NotificationSystem.h"
@@ -43,6 +43,12 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/DeviceContext.h"
 #include "renderer/FontManager.h"
 #include "sdnet/SDNet.h"
+
+static idStrPool *globalKeyPool;
+static idStrPool *globalValuePool;
+
+static stringDataAllocator_t globalStringDataAllocator;
+static wideStringDataAllocator_t globalWideStringDataAllocator;
 #endif
 
 #define	MAX_PRINT_MSG_SIZE	4096
@@ -57,14 +63,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef __ANDROID__
 idCVar harm_g_normalizeMovementDirection("harm_g_normalizeMovementDirection", "0", CVAR_GAME | CVAR_BOOL, "Re-normalize player/walker movement direction");
 extern bool smooth_joystick;
-#endif
-
-#ifdef _SPLASHDAMAGE //karin: engine to game interface
-static idStrPool *globalKeyPool;
-static idStrPool *globalValuePool;
-
-static stringDataAllocator_t globalStringDataAllocator;
-static wideStringDataAllocator_t globalWideStringDataAllocator;
 #endif
 
 extern void GLimp_Startup(void);
@@ -2024,7 +2022,7 @@ void idCommonLocal::LocalizeSpecificMapData(const char *fileName, idLangDict &la
 					const char *temp = ent->epairs.GetString(kv->key);
 
 					if (temp && *temp) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: wstr to str
 						idStr val = WStrToStr(kv->value);
 #else
 						idStr val = kv->value;
@@ -2881,7 +2879,7 @@ void idCommonLocal::PrintLoadingMessage(const char *msg)
 	int len = strlen(msg);
 #ifdef _RAVEN // quake4 bigchar font
 	renderSystem->DrawSmallStringExt((640 - len * SMALLCHAR_WIDTH) / 2, 410, msg, idVec4(0.94f, 0.62f, 0.05f, 1.0f), true, declManager->FindMaterial("fonts/english/bigchars"));
-#elif defined(_SPLASHDAMAGE) //karin: text color
+#elif defined(_SPLASHDAMAGE) //karin: splash text color
 	renderSystem->DrawSmallStringExt((640 - len * SMALLCHAR_WIDTH) / 2, 410, msg, idVec4(1.0f, 0.5f, 0.0f, 0.85f), true, declManager->FindMaterial("textures/bigchars"));
 #else
 	renderSystem->DrawSmallStringExt((640 - len * SMALLCHAR_WIDTH) / 2, 410, msg, idVec4(0.0f, 0.81f, 0.94f, 1.0f), true, declManager->FindMaterial("textures/bigchars"));
@@ -3604,11 +3602,6 @@ void idCommonLocal::Init(int argc, const char **argv, const char *cmdline)
 #endif
 
 		//Com_CheckVersion();
-
-#ifdef _SPLASHDAMAGExxx //karin: check update for GUI
-		cmdSystem->BufferCommandText(CMD_EXEC_APPEND, "checkNewVersion");
-#endif
-
 		com_fullyInitialized = true;
 	}
 

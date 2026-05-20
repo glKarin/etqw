@@ -817,7 +817,7 @@ void idRenderModelStatic::FinishSurfaces()
 
 		for (int j = 0 ; j < tri->numIndexes ; j += 3) {
 			float	area = idWinding::TriangleArea(tri->verts[tri->indexes[j]].xyz,
-			tri->verts[tri->indexes[j+1]].xyz,  tri->verts[tri->indexes[j+2]].xyz);
+			                                       tri->verts[tri->indexes[j+1]].xyz,  tri->verts[tri->indexes[j+2]].xyz);
 #ifdef _SPLASHDAMAGE
 			const_cast<idMaterial *>(surf->material)->AddToSurfaceArea(area);
 #else
@@ -3778,7 +3778,7 @@ bool idRenderModelStatic::ConvertMD5MeshToModelSurfaces( const idMd5MeshFile* md
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                	modelSurf = &this->surfaces[j];
+                    modelSurf = &this->surfaces[j];
 #ifdef _SPLASHDAMAGE
                     im2 = modelSurf->material;
 #else
@@ -3795,7 +3795,7 @@ bool idRenderModelStatic::ConvertMD5MeshToModelSurfaces( const idMd5MeshFile* md
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-            	mergeTo[i] = j;
+                mergeTo[i] = j;
 #ifdef _SPLASHDAMAGE
                 surf.material = im1;
 #else
@@ -4174,7 +4174,7 @@ bool idRenderModelStatic::ConvertPSKToModelSurfaces( const idModelPsk* psk )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                	modelSurf = &this->surfaces[j];
+                    modelSurf = &this->surfaces[j];
 #ifdef _SPLASHDAMAGE
                     im2 = modelSurf->material;
 #else
@@ -4191,7 +4191,7 @@ bool idRenderModelStatic::ConvertPSKToModelSurfaces( const idModelPsk* psk )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-            	mergeTo[i] = j;
+                mergeTo[i] = j;
 #ifdef _SPLASHDAMAGE
                 surf.material = im1;
 #else
@@ -4567,7 +4567,7 @@ bool idRenderModelStatic::ConvertIQMToModelSurfaces( const idModelIqm* iqm )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                	modelSurf = &this->surfaces[j];
+                    modelSurf = &this->surfaces[j];
 #ifdef _SPLASHDAMAGE
                     im2 = modelSurf->material;
 #else
@@ -4584,7 +4584,7 @@ bool idRenderModelStatic::ConvertIQMToModelSurfaces( const idModelIqm* iqm )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-            	mergeTo[i] = j;
+                mergeTo[i] = j;
 #ifdef _SPLASHDAMAGE
                 surf.material = im1;
 #else
@@ -4954,7 +4954,7 @@ bool idRenderModelStatic::ConvertSMDToModelSurfaces( const idModelSmd* smd )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                	modelSurf = &this->surfaces[j];
+                    modelSurf = &this->surfaces[j];
 #ifdef _SPLASHDAMAGE
                     im2 = modelSurf->material;
 #else
@@ -4971,7 +4971,7 @@ bool idRenderModelStatic::ConvertSMDToModelSurfaces( const idModelSmd* smd )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-            	mergeTo[i] = j;
+                mergeTo[i] = j;
 #ifdef _SPLASHDAMAGE
                 surf.material = im1;
 #else
@@ -5341,7 +5341,7 @@ bool idRenderModelStatic::ConvertGLTFToModelSurfaces( const idModelGLTF* gltf )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                	modelSurf = &this->surfaces[j];
+                    modelSurf = &this->surfaces[j];
 #ifdef _SPLASHDAMAGE
                     im2 = modelSurf->material;
 #else
@@ -5358,7 +5358,7 @@ bool idRenderModelStatic::ConvertGLTFToModelSurfaces( const idModelGLTF* gltf )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-            	mergeTo[i] = j;
+                mergeTo[i] = j;
 #ifdef _SPLASHDAMAGE
                 surf.material = im1;
 #else
@@ -5738,7 +5738,7 @@ bool idRenderModelStatic::ConvertFBXToModelSurfaces( const idModelFbx* fbx )
             {
                 for( j = 0; j < this->NumSurfaces(); j++ )
                 {
-                	modelSurf = &this->surfaces[j];
+                    modelSurf = &this->surfaces[j];
 #ifdef _SPLASHDAMAGE
                     im2 = modelSurf->material;
 #else
@@ -5755,7 +5755,7 @@ bool idRenderModelStatic::ConvertFBXToModelSurfaces( const idModelFbx* fbx )
             if( j == this->NumSurfaces() )
             {
                 // didn't merge
-            	mergeTo[i] = j;
+                mergeTo[i] = j;
 #ifdef _SPLASHDAMAGE
                 surf.material = im1;
 #else
