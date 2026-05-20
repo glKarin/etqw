@@ -1112,7 +1112,7 @@ class idMaterial : public idDecl
 		//------------------------------------------------------------------
 
 		// gets an image for the editor to use
-#ifdef _ETQW //karin: called in game, make virtual
+#ifdef _SPLASHDAMAGE //karin: called in game, make virtual
 		virtual 
 #endif
 		idImage 			*GetEditorImage(void) const;
