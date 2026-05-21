@@ -304,6 +304,7 @@ idAASBuild::GetAreaForLeafNode
 */
 bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 {
+#if !defined(_SPLASHDAMAGE) //karin: only used in tools
 	int s, faceNum;
 	idBrushBSPPortal *p;
 	aasArea_t area;
@@ -316,11 +317,6 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 	area.flags = node->GetFlags();
 	area.cluster = area.clusterAreaNum = 0;
 	area.contents = node->GetContents();
-#ifdef _SPLASHDAMAGE
-	area.firstEdge = file->edgeIndex.Num();
-	area.numEdges = 0;
-#endif
-	// compat for DOOM3
 	area.firstFace = file->faceIndex.Num();
 	area.numFaces = 0;
 	area.reach = NULL;
@@ -329,10 +325,6 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
     area.center.Zero();
     area.travelFlags = 0;
 
-#ifdef _SPLASHDAMAGE //karin: only used in tools
-	// TODO
-	common->Error("Disable idAASBuild::GetAreaForLeafNode(%d)", node->GetAreaNum());
-#else
 	for (p = node->GetPortals(); p; p = p->Next(s)) {
 		s = (p->GetNode(1) == node);
 
@@ -354,13 +346,16 @@ bool idAASBuild::GetAreaForLeafNode(idBrushBSPNode *node, int *areaNum)
 		*areaNum = 0;
 		return false;
 	}
-#endif
 
 	*areaNum = -file->areas.Num();
 	node->SetAreaNum(file->areas.Num());
 	file->areas.Append(area);
 
 	DisplayRealTimeString("\r%6d", file->areas.Num());
+#else
+	// TODO
+	common->Error("Disable idAASBuild::GetAreaForLeafNode(%d)", node->GetAreaNum());
+#endif
 
 	return true;
 }

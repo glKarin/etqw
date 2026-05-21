@@ -96,6 +96,7 @@ idAASCluster::FloodClusterAreas_r
 */
 bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 {
+#if !defined(_SPLASHDAMAGE) //karin: only used in tools
 	aasArea_t *area;
 	aasFace_t *face;
 	int faceNum, i;
@@ -123,10 +124,6 @@ bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 	area->cluster = clusterNum;
 
 	if (!noFaceFlood) {
-#ifdef _SPLASHDAMAGE //karin: only used in tools
-		// TODO
-		common->Error("Disable idAASCluster::FloodClusterAreas_r(%d, %d)", areaNum, clusterNum);
-#else
 		// use area faces to flood into adjacent areas
 		for (i = 0; i < area->numFaces; i++) {
 			faceNum = abs(file->faceIndex[area->firstFace + i]);
@@ -146,7 +143,6 @@ bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 				}
 			}
 		}
-#endif
 	}
 
 	// use the reachabilities to flood into other areas
@@ -162,6 +158,10 @@ bool idAASCluster::FloodClusterAreas_r(int areaNum, int clusterNum)
 			return false;
 		}
 	}
+#else
+	// TODO
+	common->Error("Disable idAASCluster::FloodClusterAreas_r(%d, %d)", areaNum, clusterNum);
+#endif
 
 	return true;
 }
@@ -435,6 +435,7 @@ idAASCluster::RemoveInvalidPortals
 */
 void idAASCluster::RemoveInvalidPortals(void)
 {
+#if !defined(_SPLASHDAMAGE) //karin: only used in tools
 	int i, j, k, face1Num, face2Num, otherAreaNum, numOpenAreas, numInvalidPortals;
 	aasFace_t *face1, *face2;
 
@@ -447,10 +448,6 @@ void idAASCluster::RemoveInvalidPortals(void)
 
 		numOpenAreas = 0;
 
-#ifdef _SPLASHDAMAGE //karin: only used in tools
-		// TODO
-		common->Error("Disable idAASReach::RemoveInvalidPortals()");
-#else
 		for (j = 0; j < file->areas[i].numFaces; j++) {
 			face1Num = file->faceIndex[ file->areas[i].firstFace + j ];
 			face1 = &file->faces[ abs(face1Num)];
@@ -461,11 +458,7 @@ void idAASCluster::RemoveInvalidPortals(void)
 			}
 
 			for (k = 0; k < j; k++) {
-#ifdef _SPLASHDAMAGE
-				face2Num = file->faceIndex[ file->areas[i].firstEdge + k ];
-#else
 				face2Num = file->faceIndex[ file->areas[i].firstFace + k ];
-#endif
 				face2 = &file->faces[ abs(face2Num)];
 
 				if (otherAreaNum == face2->areas[ face2Num < 0 ]) {
@@ -481,7 +474,6 @@ void idAASCluster::RemoveInvalidPortals(void)
 				numOpenAreas++;
 			}
 		}
-#endif
 
 		if (numOpenAreas <= 1) {
 			file->areas[i].contents &= AREACONTENTS_CLUSTERPORTAL;
@@ -490,6 +482,10 @@ void idAASCluster::RemoveInvalidPortals(void)
 	}
 
 	common->Printf("\r%6d invalid portals removed\n", numInvalidPortals);
+#else
+	// TODO
+	common->Error("Disable idAASReach::RemoveInvalidPortals()");
+#endif
 }
 
 /*

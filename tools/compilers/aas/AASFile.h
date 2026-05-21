@@ -53,10 +53,9 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
+#ifdef _SPLASHDAMAGE
 // travel flags
 #define TFL_INVALID							BIT(0)		// invalid
-
-#ifdef _SPLASHDAMAGE
 #define TFL_INVALID_GDF						BIT(1)		// not valid for GDF
 #define TFL_INVALID_STROGG					BIT(2)		// not valid for STROGG
 #define TFL_AIR								BIT(3)		// travel through air
@@ -152,6 +151,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #else
 // travel flags
+#define TFL_INVALID					BIT(0)		// not valid
 #define TFL_WALK					BIT(1)		// walking
 #define TFL_CROUCH					BIT(2)		// crouching
 #define TFL_WALKOFFLEDGE			BIT(3)		// walking of a ledge
@@ -371,6 +371,7 @@ typedef struct aasArea_s {
 #endif
 	idReachability 			*reach;				// reachabilities that start from this area
 	idReachability 			*rev_reach;			// reachabilities that lead to this area
+
 #ifdef _RAVEN
 	float						ceiling;			// top of the area
 	// cdr: AASTactical
@@ -515,7 +516,6 @@ class idAASSettings
 		bool						generateTacticalFeatures;
 // RAVEN END
 #endif
-
 #ifdef _SPLASHDAMAGE
 		enum type_t {
 			AAS_PLAYER,

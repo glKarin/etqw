@@ -724,7 +724,7 @@ idAASFileLocal::~idAASFileLocal(void)
 	for (i = 0; i < areas.Num(); i++) {
 		for (reach = areas[i].reach; reach; reach = next) {
 			next = reach->next;
-#if !defined(_SPLASHDAMAGE) //karin: allocated in idList
+#if !defined(_SPLASHDAMAGE) //karin: allocated by idList
 			delete reach;
 #endif
 		}
@@ -2222,13 +2222,14 @@ idAASFileLocal::ParseReachabilitiesBinary
 */
 bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 {
-	int num, j;
-	idReachability reach, *newReach;
+	int num, i;
 
 	file->ReadInt(num);
 
 	reachabilities.SetNum(num);
-	for (j = 0; j < num; j++) {
+	for (i = 0; i < num; i++) {
+		idReachability &reach = reachabilities[i];
+
 		file->ReadUnsignedShort(reach.travelFlags);
 		file->ReadUnsignedShort(reach.travelTime);
 		file->ReadUnsignedShort(reach.fromAreaNum);
@@ -2246,10 +2247,8 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 		reach.travelType = 0;
 		reach.edgeNum = 0;
 
-		newReach = &reachabilities[j];
-		newReach->CopyBase(reach);
-		newReach->next = NULL;
-		newReach->rev_next = NULL;
+		reach.next = NULL;
+		reach.rev_next = NULL;
 	}
 
 	return true;
@@ -2315,9 +2314,9 @@ void idAASFileLocal::LinkReachability(void)
   int v2; // edx
   int v3; // eax
   int v4; // ebx
-  aasReachability_t *list; // eax
+  aasReachability_t *reach_list; // eax
   int fromAreaNum; // esi
-  aasReachability_t *v7; // eax
+  aasReachability_t *reach_v7; // eax
   int toAreaNum; // edx
 
   v1 = 0;
@@ -2327,8 +2326,8 @@ void idAASFileLocal::LinkReachability(void)
     v3 = 0;
     do
     {
-      this->areas[v3].reach = 0;
-      this->areas[v3].rev_reach = 0;
+      this->areas[v3].reach = NULL;
+      this->areas[v3].rev_reach = NULL;
       ++v2;
       ++v3;
     }
@@ -2339,15 +2338,15 @@ void idAASFileLocal::LinkReachability(void)
     v4 = 0;
     do
     {
-      list = this->reachabilities.Ptr();
-      fromAreaNum = list[v4].fromAreaNum;
-      v7 = &list[v4];
-      v7->next = this->areas[fromAreaNum].reach;
-      this->areas[fromAreaNum].reach = v7;
-      toAreaNum = v7->toAreaNum;
-      v7->rev_next = this->areas[toAreaNum].rev_reach;
+      reach_list = this->reachabilities.Ptr();
+      fromAreaNum = reach_list[v4].fromAreaNum;
+      reach_v7 = &reach_list[v4];
+      reach_v7->next = this->areas[fromAreaNum].reach;
+      this->areas[fromAreaNum].reach = reach_v7;
+      toAreaNum = reach_v7->toAreaNum;
+      reach_v7->rev_next = this->areas[toAreaNum].rev_reach;
       ++v1;
-      this->areas[toAreaNum].rev_reach = v7;
+      this->areas[toAreaNum].rev_reach = reach_v7;
       ++v4;
     }
     while ( v1 < this->reachabilities.Num() );
@@ -2356,57 +2355,52 @@ void idAASFileLocal::LinkReachability(void)
 
 void idAASFileLocal::FlagNoPushAreas(void)
 {
-  aasArea_t *v1; // esi
+  aasArea_t *area_v1; // esi
   int v2; // edi
-  int *list; // ebx
-  aasEdge_t *v4; // ebp
+  int *edgeIndex_list; // ebx
+  aasEdge_t *edge_v4; // ebp
 #define __int64 int64_t
   __int64 v5; // rax
-  bool (*PushPointIntoArea)(int, idVec3 *); // edx
-  int v7; // [esp+8h] [ebp-1Ch]
-  int v8; // [esp+Ch] [ebp-18h]
-  idAASFileLocal *v9; // [esp+10h] [ebp-14h]
-  idVec3 *v10; // [esp+14h] [ebp-10h]
+  int areaNum_v7; // [esp+8h] [ebp-1Ch]
+  int areaNum_v8; // [esp+Ch] [ebp-18h]
+  idVec3 *vertex_v10; // [esp+14h] [ebp-10h]
   float v11; // [esp+14h] [ebp-10h]
   idVec3 v12; // v12 v13 v14
-  //float v12; // [esp+18h] [ebp-Ch] BYREF
-  //float v13; // [esp+1Ch] [ebp-8h]
-  //float v14; // [esp+20h] [ebp-4h]
 
   idVec3 *_v5_1;
-  v9 = this;
-  v7 = 0;
+  areaNum_v7 = 0;
   if ( this->areas.Num() > 0 )
   {
-    v8 = 0;
+    areaNum_v8 = 0;
     do
     {
-      v1 = &this->areas[v8];
+      area_v1 = &this->areas[areaNum_v8];
       v2 = 0;
       v12 = vec3_zero;
-      if ( v1->numEdges > 0 )
+      if ( area_v1->numEdges > 0 )
       {
-        list = this->edgeIndex.Ptr();
-        v4 = this->edges.Ptr();
-        v10 = this->vertices.Ptr();
+        edgeIndex_list = this->edgeIndex.Ptr();
+        edge_v4 = this->edges.Ptr();
+        vertex_v10 = this->vertices.Ptr();
         do
         {
-          int _v5_0 = list[v2 + v1->firstEdge];
+          int _v5_0 = edgeIndex_list[v2 + area_v1->firstEdge];
           //_v5 = &v10[v4[(HIDWORD(v5) ^ v5) - HIDWORD(v5)].vertexNum[(unsigned int)list[v2 + v1->firstEdge] >> 31]];
-          _v5_1 = &v10[v4[abs(_v5_0)].vertexNum[(unsigned int)list[v2 + v1->firstEdge] >> 31]];
+          _v5_1 = &vertex_v10[ edge_v4[abs(_v5_0)].vertexNum[(unsigned int)_v5_0 >> 31] ];
           ++v2;
           v12 = *_v5_1 + v12;
         }
-        while ( v2 < v1->numEdges );
+        while ( v2 < area_v1->numEdges );
       }
-      v11 = 1.0 / (double)v1->numEdges;
+      v11 = 1.0 / (double)area_v1->numEdges;
       v12 = v11 * v12;
-      if ( this->PushPointIntoArea(v7, v12) )
-        v1->flags |= AAS_AREA_NOPUSH; //0x10u;
-      ++v8;
-      ++v7;
+    	//v12 = AreaCenter(areaNum_v8);
+      if ( this->PushPointIntoArea(areaNum_v7, v12) )
+        area_v1->flags |= AAS_AREA_NOPUSH; //0x10u;
+      ++areaNum_v8;
+      ++areaNum_v7;
     }
-    while ( v7 < v9->areas.Num() );
+    while ( areaNum_v7 < this->areas.Num() );
   }
 }
 

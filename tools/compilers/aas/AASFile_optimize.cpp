@@ -46,6 +46,7 @@ idAASFileLocal::Optimize
 */
 void idAASFileLocal::Optimize(void)
 {
+#if !defined(_SPLASHDAMAGE) //karin: only used in tools
 	int i, j, k, faceNum, edgeNum, areaFirstFace, faceFirstEdge;
 	aasArea_t *area;
 	aasFace_t *face;
@@ -75,44 +76,6 @@ void idAASFileLocal::Optimize(void)
 	for (i = 0; i < areas.Num(); i++) {
 		area = &areas[i];
 
-#ifdef _SPLASHDAMAGE //karin: only used in tools
-		common->Error("Disable idAASFileLocal::Optimize()");
-		// store edges
-		faceFirstEdge = newEdgeIndex.Num();
-
-		for (k = 0; k < area->numEdges; k++) {
-			edgeNum = edgeIndex[ area->firstEdge + k ];
-			edge = &edges[ abs(edgeNum)];
-
-			if (!edgeRemap[ abs(edgeNum)]) {
-				if (edgeNum < 0) {
-					edgeRemap[ abs(edgeNum)] = -newEdges.Num();
-				} else {
-					edgeRemap[ abs(edgeNum)] = newEdges.Num();
-				}
-
-				// remap vertices if not yet remapped
-				if (vertexRemap[ edge->vertexNum[0] ] == -1) {
-					vertexRemap[ edge->vertexNum[0] ] = newVertices.Num();
-					newVertices.Append(vertices[ edge->vertexNum[0] ]);
-				}
-
-				if (vertexRemap[ edge->vertexNum[1] ] == -1) {
-					vertexRemap[ edge->vertexNum[1] ] = newVertices.Num();
-					newVertices.Append(vertices[ edge->vertexNum[1] ]);
-				}
-
-				newEdges.Append(*edge);
-				newEdges[ newEdges.Num()-1 ].vertexNum[0] = vertexRemap[ edge->vertexNum[0] ];
-				newEdges[ newEdges.Num()-1 ].vertexNum[1] = vertexRemap[ edge->vertexNum[1] ];
-			}
-
-			newEdgeIndex.Append(edgeRemap[ abs(edgeNum)]);
-		}
-
-		area->firstEdge = faceFirstEdge;
-		area->numEdges = newEdgeIndex.Num() - faceFirstEdge;
-#else
 		areaFirstFace = newFaceIndex.Num();
 
 		for (j = 0; j < area->numFaces; j++) {
@@ -179,7 +142,6 @@ void idAASFileLocal::Optimize(void)
 
 		area->firstFace = areaFirstFace;
 		area->numFaces = newFaceIndex.Num() - areaFirstFace;
-#endif
 
 		// remap the reachability edges
 		for (reach = area->reach; reach; reach = reach->next) {
@@ -193,4 +155,8 @@ void idAASFileLocal::Optimize(void)
 	edgeIndex = newEdgeIndex;
 	faces = newFaces;
 	faceIndex = newFaceIndex;
+#else
+	// TODO
+	common->Error("Disable idAASFileLocal::Optimize()");
+#endif
 }
