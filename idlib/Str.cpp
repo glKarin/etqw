@@ -3264,7 +3264,7 @@ void idStr::StripWhitespace(idStr &str)
 	str.StripLeading(' ');
 }
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: for convert from vchar string
 void idStr::operator=(const wchar_t *text) {
 	idStr tmp = WStrToStr(text);
 	operator=(tmp.c_str());

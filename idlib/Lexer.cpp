@@ -489,6 +489,7 @@ int idLexer::ReadWhiteSpace(void)
 
 				idLexer::line++;
 				idLexer::script_p++;
+
 				if (!*idLexer::script_p) {
 					return 0;
 				}
@@ -693,7 +694,6 @@ int idLexer::ReadString(idToken *token, int quote)
                 token->AppendDirty( '\\' );
             }
 #endif
-
 			if (!idLexer::ReadEscapeCharacter(&ch)) {
 				return 0;
 			}

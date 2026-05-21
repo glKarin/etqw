@@ -700,7 +700,7 @@ void idSurface_Patch::SubdivideExplicit(int horzSubdivisions, int vertSubdivisio
         }
 #endif
 #else
-        for (i = 0; i < width * height; i++) {
+		for (i = 0; i < width * height; i++) {
 			verts[i].normal.Normalize();
 		}
 #endif

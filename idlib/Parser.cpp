@@ -2017,6 +2017,7 @@ int idParser::EvaluateTokens(idToken *tokens, signed/* 64long */ int *intvalue, 
 					v->intvalue = 0;
 					v->floatvalue = 0;
 				}
+
 #ifdef _SPLASHDAMAGE
             	v->type = value_t::TYPE_INT;
 #endif
@@ -4816,6 +4817,7 @@ int idParser::DollarDirective_elif( void )
     return true;
 }
 
+//karin: for debug
 void OutputTextSource(idParser &src, sdStringBuilder_Heap &buf) {
 	idToken token2;
 	int intent = 0;

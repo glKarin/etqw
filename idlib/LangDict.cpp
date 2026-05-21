@@ -384,7 +384,7 @@ const char *idLangDict::GetString(const char *str) const
 
 	for (int i = hash.First(hashKey); i != -1; i = hash.Next(i)) {
 		if (args[i].key.Cmp(str) == 0) {
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: TODO compat mb string
 			return (const char *)args[i].value.c_str();
 #else
 			return args[i].value;
@@ -474,7 +474,8 @@ const idLangKeyValue *idLangDict::GetKeyVal(int i) const
 idLangDict::AddKeyVal
 ============
 */
-void idLangDict::AddKeyVal(const char *key, const char *val) {
+void idLangDict::AddKeyVal(const char *key, const char *val)
+{
 	idLangKeyValue kv;
 	kv.key = key;
 #ifdef _SPLASHDAMAGE
@@ -482,9 +483,9 @@ void idLangDict::AddKeyVal(const char *key, const char *val) {
 #else
 	kv.value = val;
 #ifdef _WCHAR_LANG
-	bool isUtf8 = idStr::IsValidUTF8(val, (int)strlen(val));
-	if(isUtf8)
-		kv.value.ConvertToUTF8();
+    bool isUtf8 = idStr::IsValidUTF8(val, (int)strlen(val));
+    if(isUtf8)
+        kv.value.ConvertToUTF8();
 #endif
 #endif
 	assert(kv.key.Cmpn(STRTABLE_ID, STRTABLE_ID_LENGTH) == 0);

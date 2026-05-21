@@ -89,8 +89,7 @@ class idVec2
 		bool			operator!=(const idVec2 &a) const;						// exact compare, no epsilon
 
 #ifdef _SPLASHDAMAGE
-    	bool			IsZero( void ) const;
-    	
+    	bool			IsZero( void ) const;	
 #endif
 		float			Length(void) const;
 		float			LengthFast(void) const;
@@ -111,10 +110,10 @@ class idVec2
 		void			Lerp(const idVec2 &v1, const idVec2 &v2, const float l);
 		
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-// RAVEN BEGIN
-// jscott: Ensures second element greater than first
-    void			EnsureIncremental( void );
-// RAVEN END
+	// RAVEN BEGIN
+	// jscott: Ensures second element greater than first
+	    void			EnsureIncremental( void );
+	// RAVEN END
 #endif
 };
 
@@ -1262,7 +1261,6 @@ ID_INLINE bool idVec3::IsZero( void ) const {
 #endif
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-
 ID_INLINE bool idVec3::IsZero( void ) const {
     return ( ( ( *( const unsigned int * ) &( x ) ) | ( *( const unsigned int * ) &( y ) ) | ( *( const unsigned int * ) &( z ) ) ) & ~( 1<<31 ) ) == 0;
 }
@@ -1818,7 +1816,6 @@ ID_INLINE float *idVec5::ToFloatPtr(void)
 }
 
 #ifdef _SPLASHDAMAGE
-
 ID_INLINE const idVec2 &idVec5::ToVec2( void ) const
 {
     return *reinterpret_cast<const idVec2 *>(&s);

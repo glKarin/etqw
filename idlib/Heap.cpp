@@ -2764,4 +2764,8 @@ void Mem_EnableLeakTest(const char *name)
 	idStr::Copynz(mem_leakName, name, sizeof(mem_leakName));
 }
 
+#ifdef _SPLASHDAMAGE
+#pragma warning( pop )
+#endif
+
 #endif /* !ID_DEBUG_MEMORY */

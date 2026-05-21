@@ -500,7 +500,9 @@ int idWinding::Split(const idPlane &plane, const float epsilon, idWinding **fron
 		if (sides[i] == SIDE_FRONT) {
 			f->p[f->numPoints] = *p1;
 			f->numPoints++;
-        } else if ( sides[i] == SIDE_BACK ) { // ETQW: if -> else if
+		}
+
+		if (sides[i] == SIDE_BACK) {
 			b->p[b->numPoints] = *p1;
 			b->numPoints++;
 		}

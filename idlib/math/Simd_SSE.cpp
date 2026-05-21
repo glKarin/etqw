@@ -40,7 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 //                                                        E
 //===============================================================
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGExxx //karin: keep DOOM3 format
 #define DRAWVERT_ST_OFFSET			(56)
 #define DRAWVERT_TANGENT0_OFFSET	(32)
 #define DRAWVERT_TANGENT1_OFFSET	(44)

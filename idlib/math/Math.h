@@ -68,7 +68,7 @@ If you have questions concerning this license or the applicable additional terms
 #define DEG2RAD(a)				( (a) * idMath::M_DEG2RAD )
 #define RAD2DEG(a)				( (a) * idMath::M_RAD2DEG )
 
-#if !defined(_SPLASHDAMAGE)
+#if !defined(_SPLASHDAMAGE) //karin: make static const var
 #define SEC2MS(t)				( idMath::FtoiFast( (t) * idMath::M_SEC2MS ) )
 #define MS2SEC(t)				( (t) * idMath::M_MS2SEC )
 #endif
@@ -135,6 +135,7 @@ template< typename T > ID_INLINE float UPSToMPH( const T value )
 #define FLOATNOTZERO(f)			((*(const unsigned int *)&(f)) & ~(1<<31) )
 #define INTSIGNBITSET(i)		(((const unsigned int)(i)) >> 31)
 #define INTSIGNBITNOTSET(i)		((~((const unsigned int)(i))) >> 31)
+
 #ifdef _SPLASHDAMAGE
 #define SHORTSIGNBITSET(i)		(((const unsigned int)(i)) >> 15)
 #define SHORTSIGNBITNOTSET(i)	((~((const unsigned int)(i))) >> 15)
@@ -361,8 +362,8 @@ class idMath
 
 		static signed char			ClampChar(int i);
 		static signed short			ClampShort(int i);
-	    static int					ClampInt( int minValue, int maxValue, int value );
-	    static float				ClampFloat( float minValue, float maxValue, float value );
+		static int					ClampInt(int minValue, int maxValue, int value);
+		static float				ClampFloat(float minValue, float maxValue, float value);
 
 		static float				AngleNormalize360(float angle);
 		static float				AngleNormalize180(float angle);
@@ -1380,24 +1381,24 @@ ID_INLINE signed short idMath::ClampShort(int i)
 	return i;
 }
 
-ID_INLINE int idMath::ClampInt( int minValue, int maxValue, int value )
+ID_INLINE int idMath::ClampInt(int minValue, int maxValue, int value)
 {
-    if ( value < minValue ) {
-        return minValue;
+	if (value < minValue) {
+		return minValue;
 	}
-    if ( value > maxValue ) {
-        return maxValue;
+	if (value > maxValue) {
+		return maxValue;
 	}
 
 	return value;
 }
 
-ID_INLINE float idMath::ClampFloat( float minValue, float maxValue, float value )
+ID_INLINE float idMath::ClampFloat(float minValue, float maxValue, float value)
 {
-    if ( value < minValue ) {
+    if (value < minValue) {
         return minValue;
 	}
-    if ( value > maxValue ) {
+    if (value > maxValue) {
         return maxValue;
 	}
 
@@ -1585,4 +1586,5 @@ public:
 
 // RAVEN END
 #endif
+
 #endif /* !__MATH_MATH_H__ */

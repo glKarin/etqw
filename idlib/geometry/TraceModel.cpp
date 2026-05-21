@@ -30,6 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "TraceModel.h"
+
 #ifdef _SPLASHDAMAGE
 #include "../../renderer/Material.h"
 #endif
@@ -1806,7 +1807,6 @@ void idTraceModel::GetMassProperties(const float density, float &mass, idVec3 &c
 }
 
 #ifdef _SPLASHDAMAGE
-
 /*
 ============
 idTraceModel::ClearUnused
