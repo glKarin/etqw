@@ -40,6 +40,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE 
 #include "sdnet/SDNet.h"
 #include "framework/KeyInputManager_Local.h"
+#include "../etqw/Common.h"
 #endif
 
 #ifdef _RAVEN
@@ -2917,10 +2918,26 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 	{
 		console->Close();
 
-#ifdef _SPLASHDAMAGE //karin: scape key in game
+#ifdef _SPLASHDAMAGE //karin: escape key in game
 		if(!mapSpawned) {
 			StartMenu();
 			return true;
+		}
+		else
+		{
+			//karin: escape in game, hardcode
+			sysEvent_t ev;
+			ev.Memset();
+			ev.evType = SE_GUI;
+			ev.evValue = ULI_MENU_EVENT_CANCEL;
+			//game->HandleLocalImpulse(ULI_MENU_EVENT_CANCEL, true);
+			if(game->HandleGuiEvent(&ev))
+				return true;
+			else // force show menu if not handle
+			{
+				StartMenu();
+				return true;
+			}
 		}
 #else
 		if (game) {
@@ -2997,7 +3014,8 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 		}
 	}
 
-	(void)game->HandleGuiEvent(event);
+	if(game->HandleGuiEvent(event))
+		return true;
 #else
 	if (event->evType == SE_KEY && event->evValue2 == 1) {
 		idKeyInput::ExecKeyBinding(event->evValue);
@@ -3204,6 +3222,7 @@ void idSessionLocal::Draw()
 			guiMsg->Redraw(com_frameTime);
 		}
 #endif
+#if !defined(_SPLASHDAMAGE) //karin: all guis in game
 	} else if (guiTest) {
 		// if testing a gui, clear the screen and draw it
 		// clear the background, in case the tested gui is transparent
@@ -3223,11 +3242,7 @@ void idSessionLocal::Draw()
 
 		// draw the menus full screen
 		if (guiActive == guiTakeNotes && !com_skipGameDraw.GetBool()) {
-#ifdef _SPLASHDAMAGE
-			game->Draw();
-#else
 			game->Draw(GetLocalClientNum());
-#endif
 #ifdef _HUMANHEAD
 			if(guiSubtitles)
 				guiSubtitles->Redraw(com_frameTime);
@@ -3235,9 +3250,14 @@ void idSessionLocal::Draw()
 		}
 
 		guiActive->Redraw(com_frameTime);
+#endif
 	} else if (readDemo) {
 		rw->RenderScene(&currentDemoRenderView);
 		renderSystem->DrawDemoPics();
+#ifdef _SPLASHDAMAGE //karin: tell game draw main menu if actived, must before next condition, because mapSpawned maybe true
+	} else if (game->IsMainMenuActive()) {
+		game->DrawMainMenu();
+#endif
 	} else if (mapSpawned) {
 		bool gameDraw = false;
 
@@ -3269,10 +3289,6 @@ void idSessionLocal::Draw()
 		if (writeDemo) {
 			renderSystem->WriteDemoPics();
 		}
-#ifdef _SPLASHDAMAGE //karin: tell game draw main menu if actived
-	} else if (game->IsMainMenuActive()) {
-		game->DrawMainMenu();
-#endif
 	} else {
 #if ID_CONSOLE_LOCK
 

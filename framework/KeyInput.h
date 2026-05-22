@@ -221,6 +221,18 @@ class idKeyInput
 		static const char 	*BindingFromKey(const char *key);
 		static bool			KeyIsBoundTo(int keyNum, const char *binding);
 		static void			WriteBindings(idFile *f);
+
+		class Modifier {
+			static bool			Shift(void) {
+				return IsDown(K_SHIFT);
+			}
+			static bool			Ctrl(void) {
+				return IsDown(K_CTRL);
+			}
+			static bool			Alt(void) {
+				return IsDown(K_ALT);
+			}
+		};
 };
 
 #ifdef _SPLASHDAMAGE

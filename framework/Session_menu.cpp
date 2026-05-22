@@ -37,6 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _SPLASHDAMAGE
 #include "decllib/declLocStr.h"
+#include "../etqw/Common.h"
 #endif
 
 idCVar	idSessionLocal::gui_configServerRate("gui_configServerRate", "0", CVAR_GUI | CVAR_ARCHIVE | CVAR_ROM | CVAR_INTEGER, "");
@@ -1471,6 +1472,47 @@ void idSessionLocal::MenuEvent(const sysEvent_t *event)
 	if (!game->IsMainMenuActive()) {
 		return;
 	}
+
+	//karin: convert to gui event if key down, hardcode
+	if(event->evType == SE_KEY && event->evValue2 == 1)
+	{
+		int value; //karin: see in guis/UIWindow.cpp
+		switch(event->evValue)
+		{
+			case K_ESCAPE: // escape/space: cancel/back
+			case K_SPACE:
+				value = ULI_MENU_EVENT_CANCEL;
+				break;
+			case K_ENTER: // enters: ok
+			case K_KP_ENTER:
+				value = ULI_MENU_EVENT_ACCEPT;
+				break;
+			case K_RIGHTARROW: // right/down: nav to next
+			case K_DOWNARROW:
+				value = ULI_MENU_EVENT_NAV_FORWARD;
+				break;
+			case K_LEFTARROW: // left/up: nav to previous
+			case K_UPARROW:
+				value = ULI_MENU_EVENT_NAV_BACKWARD;
+				break;
+			case K_TAB: // tab: nav to next | shift+tab: nav to previous
+				value = idKeyInput::IsDown(K_SHIFT) ? ULI_MENU_EVENT_NAV_BACKWARD : ULI_MENU_EVENT_NAV_FORWARD;
+			break;
+			default:
+				value = -1;
+				break;
+		}
+		if(value != -1)
+		{
+			sysEvent_t ev;
+			ev.Memset();
+			ev.evType = SE_GUI;
+			ev.evValue = value;
+			if(game->HandleGuiEvent(&ev))
+				return;
+		}
+	}
+
 	(void)game->HandleGuiEvent(event);
 #else
 	const char	*menuCommand;
@@ -1507,7 +1549,12 @@ void idSessionLocal::GuiFrameEvents()
 
 	// stop generating move and button commands when a local console or menu is active
 	// running here so SP, async networking and no game all go through it
-	if (console->Active() || guiActive) {
+#ifdef _SPLASHDAMAGE //karin: main menu gui visible
+	if (console->Active() || game->IsMainMenuActive())
+#else
+	if (console->Active() || guiActive)
+#endif
+	{
 		usercmdGen->InhibitUsercmd(INHIBIT_SESSION, true);
 	} else {
 		usercmdGen->InhibitUsercmd(INHIBIT_SESSION, false);
@@ -1741,6 +1788,7 @@ idSessionLocal::DownloadProgressBox
 */
 void idSessionLocal::DownloadProgressBox(backgroundDownload_t *bgl, const char *title, int progress_start, int progress_end)
 {
+#if !defined(_SPLASHDAMAGE)
 	int dlnow = 0, dltotal = 0;
 	int startTime = Sys_Milliseconds();
 	int lapsed;
@@ -1750,7 +1798,6 @@ void idSessionLocal::DownloadProgressBox(backgroundDownload_t *bgl, const char *
 		return;
 	}
 
-#if !defined(_SPLASHDAMAGE)
 	guiMsg->SetStateString("visible_msgbox", "1");
 	guiMsg->SetStateString("visible_waitbox", "0");
 

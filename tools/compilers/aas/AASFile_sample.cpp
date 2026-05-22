@@ -151,11 +151,7 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 	for (i = 0; i < area->numEdges; i++) {
 		int edgeNum = edgeIndex[area->firstEdge + i];
 
-		if (!(edges[abs(edgeNum)].flags & FACE_FLOOR)) {
-			continue;
-		}
-
-		center += FaceCenter(abs(edgeNum));
+		center += EdgeCenter(abs(edgeNum));
 		_numEdges++;
 	}
 
@@ -523,7 +519,7 @@ typedef struct aasTraceStack_s {
 
 bool idAASFileLocal::Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 &end) const
 {
-#ifdef _SPLASHDAMAGExxx
+#ifdef _SPLASHDAMAGE
 	return Trace(&trace, &start, &end);
 #else
 	int side, nodeNum, tmpPlaneNum;
