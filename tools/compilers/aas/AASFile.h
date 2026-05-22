@@ -691,9 +691,15 @@ class idAASFile
 		}
 		
 #ifdef _SPLASHDAMAGE
+		int							GetNumObstaclePVS() const {
+			return obstaclePVS.Num();
+		}
 	    const aasObstaclePVS_t &	GetObstaclePVS( int index ) const {
 	        return obstaclePVS[index];
-	    }
+		}
+		int							GetNumReachabilities() const {
+			return reachabilities.Num();
+		}
 	    const aasReachability_t &	GetReachability( int index ) const {
 	        return reachabilities[index];
 	    }
@@ -747,22 +753,22 @@ class idAASFile
 		virtual bool				Trace(aasTrace_t &trace, const idVec3 &start, const idVec3 &end) const = 0;
 		virtual void				PrintInfo(void) const = 0;
 #ifdef _RAVEN
-	// RAVEN BEGIN
+		// RAVEN BEGIN
 		// cdr: AASTactical
-	virtual void					ClearTactical(void) = 0;
+		virtual void					ClearTactical(void) = 0;
 
-	virtual	int						GetNumFeatureIndexes(void) const = 0;
-	virtual	aasIndex_t& GetFeatureIndex(int index) = 0;
-	virtual int						AppendFeatureIndex(aasIndex_t& featureIdx) = 0;
+		virtual	int						GetNumFeatureIndexes(void) const = 0;
+		virtual	aasIndex_t& GetFeatureIndex(int index) = 0;
+		virtual int						AppendFeatureIndex(aasIndex_t& featureIdx) = 0;
 
-	virtual	int						GetNumFeatures(void) const = 0;
-	virtual	aasFeature_t& GetFeature(int index) = 0;
-	virtual int						AppendFeature(aasFeature_t& cluster) = 0;
+		virtual	int						GetNumFeatures(void) const = 0;
+		virtual	aasFeature_t& GetFeature(int index) = 0;
+		virtual int						AppendFeature(aasFeature_t& cluster) = 0;
 
-// jscott: added
-	virtual size_t					GetMemorySize( void ) = 0;
-	virtual bool					IsDummyFile( unsigned int mapFileCRC ) = 0;
-	// RAVEN END
+		// jscott: added
+		virtual size_t					GetMemorySize( void ) = 0;
+		virtual bool					IsDummyFile( unsigned int mapFileCRC ) = 0;
+		// RAVEN END
 #endif
 
 	protected:
