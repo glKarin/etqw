@@ -3812,9 +3812,13 @@ int idRenderWorldLocal::GetAreaPortalFlags( int areaNum ) const {
 }
 
 void idRenderWorldLocal::SetAreaAmbientCubeMap( int areaNum, const sdDeclAmbientCubeMap *cubeMapDecl ) {
+	if (areaNum < 0 || areaNum >= numPortalAreas)
+		return;
+	portalAreas[areaNum].cubeMapDecl = cubeMapDecl;
 }
 
 void idRenderWorldLocal::SetCubemapSunProperties( const sdDeclAmbientCubeMap *cubeMapDecl, const idVec3 &sunDir, const idVec3 &sunColor ) {
+	(const_cast<sdDeclAmbientCubeMap *>(cubeMapDecl))->SetSunParameters(sunDir, sunColor);
 }
 
 bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle, const idVec3 &start, const idVec3 &end, const float radius, int surfCollision ) const {

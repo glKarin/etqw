@@ -855,6 +855,9 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 		entity->parms.weaponDepthHack = entity->parms.weaponDepthHackInViewID == tr.viewDef->renderView.viewID;
 #endif
 		vEnt = R_SetEntityDefViewEntity(entity);
+#ifdef _SPLASHDAMAGE //karin: copy area ambient to viewEntity
+		vEnt->areaAmbient = area->cubeMapDecl;
+#endif
 
 		// possibly expand the scissor rect
 		vEnt->scissorRect.Union(ps->rect);
@@ -1018,6 +1021,24 @@ bool idRenderWorldLocal::CullLightByPortals(const idRenderLightLocal *light, con
 	return false;
 }
 
+#ifdef _SPLASHDAMAGE //karin: light with special areas
+idCVar harm_r_lightSingleArea("harm_r_lightSingleArea", "0", CVAR_BOOL | CVAR_RENDERER, "Ignore other areas of light");
+static bool R_IsAreaNumNotInLightArea(const idRenderLightLocal *light, int areaNum)
+{
+	if(!harm_r_lightSingleArea.GetBool())
+	{
+		for(int i = 1; i < light->parms.numAreas; i++)
+		{
+			if(tr.viewDef->connectedAreas[light->parms.areas[i]])
+			{
+				return false;
+			}
+		}
+	}
+
+	return (light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]);
+}
+#endif
 /*
 ===================
 AddAreaLightRefs
@@ -1076,10 +1097,12 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
         	if (r_useLightAreaCulling.GetInteger() &&
 #ifdef _SPLASHDAMAGE
                 !light->parms.flags.noShadows && light->lightShader->LightCastsShadows() &&
+				//R_IsAreaNumNotInLightArea(light, areaNum)
+                light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]
 #else
                 !light->parms.noShadows && light->lightShader->LightCastsShadows() &&
-#endif
                 light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]
+#endif
                     ) {
                 // a light that doesn't cast shadows will still light even if it is behind a door
                 //k assert( !light->parms.noShadows && light->lightShader->LightCastsShadows() );
@@ -1103,10 +1126,13 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
         	if (r_useLightCulling.GetInteger() >= 3 &&
 #ifdef _SPLASHDAMAGE
             !light->parms.flags.noShadows && light->lightShader->LightCastsShadows()
+			//&& R_IsAreaNumNotInLightArea(light, areaNum)
+            && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]
 #else
             !light->parms.noShadows && light->lightShader->LightCastsShadows()
+            && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]
 #endif
-            && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]) {
+			) {
             continue;
         }
 #ifdef _D3BFG_CULLING

@@ -116,6 +116,7 @@ void idRenderWorldLocal::FreeWorld()
 	localModels.Clear();
 #ifdef _SPLASHDAMAGE //karin: only free imposter model
 	imposterGeometryManager->Clear();
+	atmosphere = NULL;
 #endif
 
 	areaReferenceAllocator.Shutdown();

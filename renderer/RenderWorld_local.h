@@ -78,6 +78,7 @@ typedef struct portalArea_s {
 #endif
 #ifdef _SPLASHDAMAGE
 	int				portalFlags;
+	const sdDeclAmbientCubeMap *cubeMapDecl;
 #endif
 } portalArea_t;
 
