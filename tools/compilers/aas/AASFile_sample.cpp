@@ -131,6 +131,9 @@ idAASFileLocal::AreaReachableGoal
 */
 idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 {
+#ifdef _SPLASHDAMAGE
+	return AreaCenter(areaNum);
+#else
 	int i, faceNum, numFaces;
 	const aasArea_t *area;
 	idVec3 center;
@@ -145,7 +148,6 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 
 	center = vec3_origin;
 
-#ifdef _SPLASHDAMAGE
 	int _numEdges = 0;
 
 	for (i = 0; i < area->numEdges; i++) {
@@ -158,7 +160,6 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 	if (_numEdges > 0) {
 		center /= _numEdges;
 	}
-#else
 	numFaces = 0;
 
 	for (i = 0; i < area->numFaces; i++) {
@@ -175,7 +176,6 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 	if (numFaces > 0) {
 		center /= numFaces;
 	}
-#endif
 
 	center[2] += 1.0f;
 	end = center;
@@ -183,6 +183,7 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 	Trace(trace, center, end);
 
 	return trace.endpos;
+#endif
 }
 
 /*
@@ -315,9 +316,9 @@ int idAASFileLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &
 	v13.v0 = this->settings.boundingBox[1].z - this->settings.boundingBox[0].z;
 	v13.excludeTravelFlags = excludeTravelFlags;
 	v13.v1 = 24.0f;
-	v13.distance1 = 1.0e30f;
+	v13.distance1 = idMath::INFINITY;
 	v13.areaFlags = areaFlags;
-	v13.distance2 = 1.0e30f;
+	v13.distance2 = idMath::INFINITY;
 	v13.areaNum1 = 0;
 	v13.areaNum2 = 0;
 	idAASFileLocal::PointBestReachableAreaNum(&origin, &v13);
@@ -818,7 +819,7 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
   float v32; // [esp+8h] [ebp-98h]
   float rightLengthInv_v33; // [esp+8h] [ebp-98h]
   float dist_v34; // [esp+8h] [ebp-98h]
-  char b_v35; // [esp+Fh] [ebp-91h]
+  char cilpped_v35; // [esp+Fh] [ebp-91h]
   float normalX_v36; // [esp+10h] [ebp-90h]
   float normalY_v37; // [esp+10h] [ebp-90h]
   float normalZ_v38; // [esp+10h] [ebp-90h]
@@ -849,12 +850,12 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
 
 	idVec3 v16_19_20;
 
-  maxDistance_v57 = 1.0e30f;
+  maxDistance_v57 = idMath::INFINITY;
   originPoint_v82 = point;
   lastPoint_v81 = point;
   ret_v4 = false;
   area_v5 = &this->areas[areaNum];
-  b_v35 = 0;
+  cilpped_v35 = 0;
   v43 = 0;
   v56 = area_v5;
   edgeIndexNum_v53 = 0;
@@ -885,7 +886,7 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
     rightLengthSqr_v30 = right_v58.LengthSqr();
     rightLength_v31 = sqrt(rightLengthSqr_v30);
     rightLength_v14 = rightLength_v31;
-    if ( rightLength_v31 >= 0.0000001f )
+    if ( rightLength_v31 >= idMath::FLT_EPSILON )
     {
       rightLengthInv_v33 = 1.0f / rightLength_v14;
       rightNormalized_v44 = rightLengthInv_v33 * right_v58;
@@ -994,15 +995,15 @@ LABEL_44:
     }
     dist_v34 = point * v16_19_20 + v52;
     v27 = dist_v34;
-    if ( dist_v34 < 0.0f )
+    if ( dist_v34 < 0.0f ) // in back
     {
-      b_v35 = 1;
+      cilpped_v35 = 1;
       v70 = v16_19_20 * v27;
       point = point - v70;
       dist_v34 = 0.0f;
     }
     dist_v40 = fabs(dist_v34);
-    if ( dist_v40 < 0.1f )
+    if ( dist_v40 < 0.1f ) // in plane
     {
       vertexLT0ToGE0_v67 = *edgeVertexGE0_v13 - *edgeVertexLT0_p_x;
       vertexLT0ToPoint_v64 = point - *edgeVertexLT0_p_x;
@@ -1015,7 +1016,7 @@ LABEL_44:
           v43 = 1;
       }
     }
-    ret_v4 = b_v35;
+    ret_v4 = cilpped_v35;
     area_v5 = v56;
 LABEL_53:
     ++edgeIndexNum_v53;
@@ -1236,11 +1237,11 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(floorEdgeSplitPoint_t* minSplit,
     // 初始化分割点
     minSplit->point.Zero();
     minSplit->edgeIndex = 0;
-    minSplit->distance = 1.0e30f;  // 初始化为很大的值
+    minSplit->distance = idMath::INFINITY;  // 初始化为很大的值
 
     maxSplit->point.Zero();
     maxSplit->edgeIndex = 0;
-    maxSplit->distance = -1.0e30f; // 初始化为很小的值
+    maxSplit->distance = -idMath::INFINITY; // 初始化为很小的值
 
     const aasArea_t* area = &areas[areaNum];
 
@@ -1333,7 +1334,7 @@ bool idAASFileLocal::TraceFloor(aasTraceFloor_t& trace, const idVec3& start,
     trace.lastEdgeNum = 0;
 
 	idList<aasArea_t> &areas = (idList<aasArea_t> &)this->areas;
-	idList<int> &floorIndex = (idList<int> &)this->floorIndex;
+	idList<int> &searchAreaList = (idList<int> &)this->searchAreaList;
     // 计算运动方向向量
     float dx = end.x - start.x;
     float dy = end.y - start.y;
@@ -1411,17 +1412,17 @@ bool idAASFileLocal::TraceFloor(aasTraceFloor_t& trace, const idVec3& start,
     }
 
     // 清除之前的搜索标记
-    for (int i = 0; i < floorIndex.Num(); ++i) {
-        areas[floorIndex[i]].flags &= ~0x8000u;
+    for (int i = 0; i < searchAreaList.Num(); ++i) {
+        areas[searchAreaList[i]].flags &= ~0x8000u;
     }
-    floorIndex.Clear();
+    searchAreaList.Clear();
 
     // 追踪主循环
     int currentAreaNum = startAreaNum;
 
     while (true) {
         // 将当前区域加入搜索列表
-        floorIndex.Append(currentAreaNum);
+        searchAreaList.Append(currentAreaNum);
         areas[currentAreaNum].flags |= 0x8000u;
 
         // 更新追踪结果位置
@@ -1448,7 +1449,7 @@ bool idAASFileLocal::TraceFloor(aasTraceFloor_t& trace, const idVec3& start,
 
         // 遍历当前区域的可达性
         aasReachability_t* reach = (aasReachability_t*)areas[currentAreaNum].reach;
-        int searchStart = floorIndex.Num();
+        int searchStart = searchAreaList.Num();
         bool foundNextArea = false;
 
         while (reach != nullptr) {
@@ -1461,14 +1462,14 @@ bool idAASFileLocal::TraceFloor(aasTraceFloor_t& trace, const idVec3& start,
                 if ((nextArea->travelFlags & ~travelFlags) == 0 &&
                     (nextArea->flags & 0x8000u) == 0) {
                     // 获取下一个区域的分割点
-                    floorIndex.Append(nextAreaNum);
+                    searchAreaList.Append(nextAreaNum);
                     nextArea->flags |= 0x8000u;
 
                     hasSplit = GetFloorEdgeSplitPoints(&minSplit, &maxSplit,
                                                        nextAreaNum, &splitPlane, &refPlane);
 
                     // 检查分割点是否有效
-                    if (minSplit.distance < 1.0e30f && maxSplit.distance >= 0.1f) {
+                    if (minSplit.distance < idMath::INFINITY && maxSplit.distance >= 0.1f) {
                         // 计算步长
                         float stepX = trace.endpos.x - minSplit.point.x;
                         float stepY = trace.endpos.y - minSplit.point.y;
@@ -1542,10 +1543,10 @@ bool idAASFileLocal::TraceFloor(aasTraceFloor_t& trace, const idVec3& start,
     trace.lastAreaNum = currentAreaNum;
 
     // 清除搜索标记
-    for (int i = 0; i < floorIndex.Num(); ++i) {
-        areas[floorIndex[i]].flags &= ~0x8000u;
+    for (int i = 0; i < searchAreaList.Num(); ++i) {
+        areas[searchAreaList[i]].flags &= ~0x8000u;
     }
-    floorIndex.Clear();
+    searchAreaList.Clear();
 
     return true;
 }
@@ -1652,18 +1653,18 @@ bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, in
   float v103; // [esp+14h] [ebp-78h]
   float v104; // [esp+18h] [ebp-74h]
   float v108; // [esp+18h] [ebp-74h]
-  idPlane v109; // [esp+1Ch] [ebp-70h] BYREF // point to forward
+  idPlane toForwardPlane_v109; // [esp+1Ch] [ebp-70h] BYREF // point to forward
   int v110; // [esp+2Ch] [ebp-60h]
-  idPlane v111; // [esp+30h] [ebp-5Ch] BYREF // point to left
+  idPlane toLeftPlane_v111; // [esp+30h] [ebp-5Ch] BYREF // point to left
   float v112; // [esp+40h] [ebp-4Ch]
 	idVec3 v113; // v113 v114 v115
   int v116; // [esp+50h] [ebp-3Ch]
-	floorEdgeSplitPoint_t v117; // v117 y z v120 v121
-	floorEdgeSplitPoint_t v122; // v122 v123 v124 v125 v126
+	floorEdgeSplitPoint_t minSplitPoint_v122; // v122 v123 v124 v125 v126
+	floorEdgeSplitPoint_t maxSplitPoint_v117; // v117 y z v120 v121
   float v127; // [esp+88h] [ebp-4h]
 
 	idList<aasArea_t> &areas = (idList<aasArea_t> &)this->areas;
-	idList<int> &floorIndex = (idList<int> &)this->floorIndex;
+	idList<int> &searchAreaList = (idList<int> &)this->searchAreaList;
 
   v7 = &trace;
   trace.fraction = 0.0f;
@@ -1672,50 +1673,50 @@ bool idAASFileLocal::TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, in
   trace.lastEdgeNum = 0;
   v113 = end - start;
 	idVec3 normal = v113.Cross(this->settings.gravityDir); // left
-	v111.SetNormal(normal);
-	v111.Normalize(true);
-  a = v111[0];
+	toLeftPlane_v111.SetNormal(normal);
+	toLeftPlane_v111.Normalize(true);
+  a = toLeftPlane_v111[0];
   v10 = -1.0f;
-  c = v111[2];
-  b = v111[1];
+  c = toLeftPlane_v111[2];
+  b = toLeftPlane_v111[1];
 #if 0
-  if ( v111[0] != 0.0f )
+  if ( toLeftPlane_v111[0] != 0.0f )
   {
-    if ( v111[1] == 0.0f && 0.0f == c )
+    if ( toLeftPlane_v111[1] == 0.0f && 0.0f == c )
     {
-      v15 = v111[1];
+      v15 = toLeftPlane_v111[1];
       if ( a <= 0.0f )
       {
-        v17 = v111[2];
+        v17 = toLeftPlane_v111[2];
         if ( -1.0f == a )
         {
 LABEL_43:
           v16 = v17;
           goto LABEL_23;
         }
-        v18 = v111[2];
+        v18 = toLeftPlane_v111[2];
       }
       else
       {
-        v16 = v111[2];
+        v16 = toLeftPlane_v111[2];
         if ( 1.0f == a )
           goto LABEL_23;
         v10 = 1.0f;
-        v18 = v111[2];
+        v18 = toLeftPlane_v111[2];
       }
-      v111[0] = v10;
+      toLeftPlane_v111[0] = v10;
       goto LABEL_22;
     }
 LABEL_28:
-    v14 = v111[1];
+    v14 = toLeftPlane_v111[1];
     v79 = fabs(a);
     if ( v79 == 1.0f )
     {
-      v20 = v111[2];
+      v20 = toLeftPlane_v111[2];
       if ( 0.0f != v14 || 0.0f != v20 )
       {
-        v111[2] = 0.0f;
-        v111[1] = 0.0f;
+        toLeftPlane_v111[2] = 0.0f;
+        toLeftPlane_v111[1] = 0.0f;
         v13 = 0.0f;
         v14 = v13;
         goto LABEL_24;
@@ -1726,56 +1727,56 @@ LABEL_28:
     if ( v80 != 1.0f )
     {
       v81 = fabs(c);
-      v20 = v111[2];
+      v20 = toLeftPlane_v111[2];
       if ( v81 == 1.0f && (0.0f != a || 0.0f != v14) )
       {
-        v13 = v111[2];
-        v111[1] = 0.0f;
-        v111[0] = 0.0f;
+        v13 = toLeftPlane_v111[2];
+        toLeftPlane_v111[1] = 0.0f;
+        toLeftPlane_v111[0] = 0.0f;
         v14 = 0.0f;
         a = v14;
         goto LABEL_24;
       }
       goto LABEL_44;
     }
-    v20 = v111[2];
+    v20 = toLeftPlane_v111[2];
     if ( 0.0f == a && 0.0f == v20 )
     {
 LABEL_44:
       v13 = v20;
       goto LABEL_24;
     }
-    v15 = v111[1];
-    v111[2] = 0.0f;
-    v111[0] = 0.0f;
+    v15 = toLeftPlane_v111[1];
+    toLeftPlane_v111[2] = 0.0f;
+    toLeftPlane_v111[0] = 0.0f;
     v18 = 0.0f;
 LABEL_22:
     v16 = v18;
-    a = v111[0];
+    a = toLeftPlane_v111[0];
     goto LABEL_23;
   }
-  if ( v111[1] != 0.0f )
+  if ( toLeftPlane_v111[1] != 0.0f )
   {
     if ( 0.0f == c )
     {
-      v15 = v111[1];
+      v15 = toLeftPlane_v111[1];
       if ( b > 0.0f )
       {
-        v16 = v111[2];
+        v16 = toLeftPlane_v111[2];
         if ( 1.0f != b )
         {
-          v13 = v111[2];
-          v111[1] = 1.0f;
+          v13 = toLeftPlane_v111[2];
+          toLeftPlane_v111[1] = 1.0f;
           v14 = 1.0f;
           goto LABEL_24;
         }
         goto LABEL_23;
       }
-      v17 = v111[2];
+      v17 = toLeftPlane_v111[2];
       if ( -1.0f != b )
       {
-        v13 = v111[2];
-        v111[1] = -1.0f;
+        v13 = toLeftPlane_v111[2];
+        toLeftPlane_v111[1] = -1.0f;
         v14 = -1.0f;
         goto LABEL_24;
       }
@@ -1783,25 +1784,25 @@ LABEL_22:
     }
     goto LABEL_28;
   }
-  v13 = v111[2];
-  if ( v111[2] <= 0.0f )
+  v13 = toLeftPlane_v111[2];
+  if ( toLeftPlane_v111[2] <= 0.0f )
   {
     if ( -1.0f != v13 )
     {
-      v15 = v111[1];
-      v111[2] = -1.0f;
+      v15 = toLeftPlane_v111[1];
+      toLeftPlane_v111[2] = -1.0f;
       v16 = -1.0f;
       goto LABEL_23;
     }
-    v14 = v111[1];
+    v14 = toLeftPlane_v111[1];
   }
   else
   {
-    v14 = v111[1];
+    v14 = toLeftPlane_v111[1];
     if ( 1.0f != v13 )
     {
-      v15 = v111[1];
-      v111[2] = 1.0f;
+      v15 = toLeftPlane_v111[1];
+      toLeftPlane_v111[2] = 1.0f;
       v16 = 1.0f;
 LABEL_23:
       v19 = v16;
@@ -1811,36 +1812,36 @@ LABEL_23:
   }
 LABEL_24:
   v75 = v14 * start.y + start.x * a + v13 * start.z;
-  v111[3] = -v75;
+  toLeftPlane_v111[3] = -v75;
   v95.x = v13 * this->settings.gravityDir.y - this->settings.gravityDir.z * v14;
   v95.y = this->settings.gravityDir.z * a - v13 * this->settings.gravityDir.x;
   v95.z = v14 * this->settings.gravityDir.x - a * this->settings.gravityDir.y;
 #else
-  v14 = v111[1];
-  v13 = v111[2];
-  a = v111[0];
-  v111.FitThroughPoint(start);
-  v95 = this->settings.gravityDir.Cross(v111.Normal()); // point to start
+  v14 = toLeftPlane_v111[1];
+  v13 = toLeftPlane_v111[2];
+  a = toLeftPlane_v111[0];
+  toLeftPlane_v111.FitThroughPoint(start);
+  v95 = this->settings.gravityDir.Cross(toLeftPlane_v111.Normal()); // point to start
 #endif
-  v109.SetNormal(v95);
-	v109.Normalize(true);
+  toForwardPlane_v109.SetNormal(v95);
+	toForwardPlane_v109.Normalize(true);
 #if 0
-  v21 = v109[0];
-  v22 = v109[2];
-  v23 = v109[1];
-  if ( v109[0] != 0.0f )
+  v21 = toForwardPlane_v109[0];
+  v22 = toForwardPlane_v109[2];
+  v23 = toForwardPlane_v109[1];
+  if ( toForwardPlane_v109[0] != 0.0f )
   {
-    if ( v109[1] == 0.0f && 0.0f == v22 )
+    if ( toForwardPlane_v109[1] == 0.0f && 0.0f == v22 )
     {
-      v27 = v109[1];
+      v27 = toForwardPlane_v109[1];
       if ( v21 <= 0.0f )
         v29 = -1.0f;
       else
         v29 = 1.0f;
       if ( v29 == v21 )
         goto LABEL_66;
-      v30 = v109[2];
-      v109[0] = v29;
+      v30 = toForwardPlane_v109[2];
+      toForwardPlane_v109[0] = v29;
       goto LABEL_65;
     }
 LABEL_77:
@@ -1849,8 +1850,8 @@ LABEL_77:
     {
       if ( 0.0f != v23 || 0.0f != v22 )
       {
-        v109[2] = 0.0f;
-        v109[1] = 0.0f;
+        toForwardPlane_v109[2] = 0.0f;
+        toForwardPlane_v109[1] = 0.0f;
         v25 = 0.0f;
         v24 = v25;
         goto LABEL_67;
@@ -1862,13 +1863,13 @@ LABEL_77:
     {
       if ( 0.0f != v21 || 0.0f != v22 )
       {
-        v27 = v109[1];
-        v109[2] = 0.0f;
-        v109[0] = 0.0f;
+        v27 = toForwardPlane_v109[1];
+        toForwardPlane_v109[2] = 0.0f;
+        toForwardPlane_v109[0] = 0.0f;
         v30 = 0.0f;
 LABEL_65:
         v22 = v30;
-        v21 = v109[0];
+        v21 = toForwardPlane_v109[0];
 LABEL_66:
         v31 = v22;
         v24 = v27;
@@ -1881,121 +1882,130 @@ LABEL_66:
       v86 = fabs(v22);
       if ( v86 == 1.0f && (0.0f != v21 || 0.0f != v23) )
       {
-        v25 = v109[2];
-        v109[1] = 0.0f;
-        v109[0] = 0.0f;
+        v25 = toForwardPlane_v109[2];
+        toForwardPlane_v109[1] = 0.0f;
+        toForwardPlane_v109[0] = 0.0f;
         v24 = 0.0f;
         v21 = v24;
         goto LABEL_67;
       }
     }
 LABEL_91:
-    v27 = v109[1];
+    v27 = toForwardPlane_v109[1];
     goto LABEL_66;
   }
-  if ( v109[1] == 0.0f )
+  if ( toForwardPlane_v109[1] == 0.0f )
   {
-    v24 = v109[1];
-    v25 = v109[2];
-    if ( v109[2] <= 0.0f )
+    v24 = toForwardPlane_v109[1];
+    v25 = toForwardPlane_v109[2];
+    if ( toForwardPlane_v109[2] <= 0.0f )
       v26 = -1.0f;
     else
       v26 = 1.0f;
     if ( v26 == v25 )
       goto LABEL_67;
-    v27 = v109[1];
-    v109[2] = v26;
-    v22 = v109[2];
+    v27 = toForwardPlane_v109[1];
+    toForwardPlane_v109[2] = v26;
+    v22 = toForwardPlane_v109[2];
     goto LABEL_66;
   }
   if ( 0.0f != v22 )
     goto LABEL_77;
-  v27 = v109[1];
+  v27 = toForwardPlane_v109[1];
   if ( v23 <= 0.0f )
     v28 = -1.0f;
   else
     v28 = 1.0f;
   if ( v28 == v27 )
     goto LABEL_66;
-  v25 = v109[2];
-  v109[1] = v28;
-  v24 = v109[1];
+  v25 = toForwardPlane_v109[2];
+  toForwardPlane_v109[1] = v28;
+  v24 = toForwardPlane_v109[1];
 LABEL_67:
   v32 = v24 * start.y;
   v33 = start.x * v21;
   v116 = startAreaNum;
   v82 = v32 + v33 + v25 * start.z;
-  v109[3] = -v82;
+  toForwardPlane_v109[3] = -v82;
 #else
-  v24 = v109[1];
-  v21 = v109[0];
-  v25 = v109[2];
+  v24 = toForwardPlane_v109[1];
+  v21 = toForwardPlane_v109[0];
+  v25 = toForwardPlane_v109[2];
   v116 = startAreaNum;
-  v109.FitThroughPoint(start);
+  toForwardPlane_v109.FitThroughPoint(start);
+#endif
+#if 0
+  ID_IF_DBG()
+  {
+	  //printf("Left: %s|Forward: %s\n", toLeftPlane_v111.Normal().ToString(), toForwardPlane_v109.Normal().ToString());
+	  session->rw->DebugArrow(colorOrange, start, start+toLeftPlane_v111.Normal() * 1000, 10);
+	  session->rw->DebugArrow(colorBlue, start, start+toForwardPlane_v109.Normal() * 1000, 10);
+	  //session->rw->DebugAxis(toForwardPlane_v109.Normal() * -toForwardPlane_v109[3], toForwardPlane_v109.Normal().ToAngles().ToMat3());
+	AAS_DrawPoint(maxSplitPoint_v117.point, colorBlue);
+	AAS_DrawPoint(minSplitPoint_v122.point, colorRed);
+  }
 #endif
   v83 = v25 * end.z + v21 * end.x + v24 * end.y;
   v127 = -v83;
-			ID_IF_DBG()
-				aaa=1;
+			//ID_IF_DBG() aaa=1;
   if ( !idAASFileLocal::GetFloorEdgeSplitPoints(
-          (struct idAASFileLocal::floorEdgeSplitPoint_t *)&v122,
-          (struct idAASFileLocal::floorEdgeSplitPoint_t *)&v117,
+          (struct idAASFileLocal::floorEdgeSplitPoint_t *)&minSplitPoint_v122,
+          (struct idAASFileLocal::floorEdgeSplitPoint_t *)&maxSplitPoint_v117,
           startAreaNum,
-          &v111,
-          &v109) )
+          &toLeftPlane_v111,
+          &toForwardPlane_v109) )
   {
     x = start.x;
-    v117.edgeIndex = 0;
-    v117.point = start;
-    v122.edgeIndex = 0;
-    v122.point = v117.point;
-    v117.distance = 0.0f;
-    v122.distance = 0.0f;
+    maxSplitPoint_v117.edgeIndex = 0;
+    maxSplitPoint_v117.point = start;
+    minSplitPoint_v122.edgeIndex = 0;
+    minSplitPoint_v122.point = maxSplitPoint_v117.point;
+    maxSplitPoint_v117.distance = 0.0f;
+    minSplitPoint_v122.distance = 0.0f;
   }
+#if 0
   else
   {
 			ID_IF_DBG()
 			{
-				//printf("Left: %s|Forward: %s\n", v111.Normal().ToString(), v109.Normal().ToString());
-				session->rw->DebugArrow(colorBlue, start, start+v111.Normal() * 1000, 10);
-				session->rw->DebugArrow(colorOrange, start, start+v109.Normal() * 1000, 10);
-				//session->rw->DebugAxis(v109.Normal() * -v109[3], v109.Normal().ToAngles().ToMat3());
-			session->rw->DrawText( va( "A: %d", startAreaNum ), v122.point, 1.0f, colorRed, mat3_identity );
-			session->rw->DebugCircle(colorRed, v122.point, idVec3( 0, 0, 1 ), 30.0f, 8);
-			session->rw->DrawText( va( "B: %d", startAreaNum ), v117.point, 1.0f, colorRed, mat3_identity );
-			session->rw->DebugCircle(colorRed, v117.point, idVec3( 0, 0, 1 ), 30.0f, 8);
-			session->rw->DebugArrow( colorRed, v122.point, v117.point, 5 );
+				//printf("Left: %s|Forward: %s\n", toLeftPlane_v111.Normal().ToString(), toForwardPlane_v109.Normal().ToString());
+			session->rw->DrawText( va( "A: %d", startAreaNum ), minSplitPoint_v122.point, 1.0f, colorRed, mat3_identity );
+			session->rw->DebugCircle(colorRed, minSplitPoint_v122.point, idVec3( 0, 0, 1 ), 30.0f, 8);
+			session->rw->DrawText( va( "B: %d", startAreaNum ), maxSplitPoint_v117.point, 1.0f, colorRed, mat3_identity );
+			session->rw->DebugCircle(colorRed, maxSplitPoint_v117.point, idVec3( 0, 0, 1 ), 30.0f, 8);
+			session->rw->DebugArrow( colorRed, minSplitPoint_v122.point, maxSplitPoint_v117.point, 5 );
 			}
   }
+#endif
   // clear last search area bit
-  for ( i = 0; i < this->floorIndex.Num(); ++i )
+  for ( i = 0; i < this->searchAreaList.Num(); ++i )
   {
-    v36 = this->floorIndex[i];
+    v36 = this->searchAreaList[i];
     areas[v36].flags &= ~AAS_AREA_FLOOD_VISITED /* 0x8000u */;
   }
-  floorIndex.Clear();
+  searchAreaList.Clear();
   while ( 1 )
   {
-    v44 = v117.point[0];
+    v44 = maxSplitPoint_v117.point[0];
     v45 = v116;
-    floorIndex.Append(v116);
+    searchAreaList.Append(v116);
     areas[v45].flags |= AAS_AREA_FLOOD_VISITED /* 0x8000u */;
-    v7->endpos = v117.point;
-    v46 = v117.edgeIndex;
+    v7->endpos = maxSplitPoint_v117.point;
+    v46 = maxSplitPoint_v117.edgeIndex;
     v7->lastEdgeNum = v46;
     if ( v45 == endAreaNum )
       break;
-    v112 = v109.Normal() * v7->endpos + v127;
+    v112 = toForwardPlane_v109.Normal() * v7->endpos + v127;
     if ( v112 > 0.1f )
       break;
     v47 = v7->endpos.y;
     v48 = this->areas[v45].reach;
-    v49 = v109[0] * v7->endpos.x;
-    v110 = this->floorIndex.Num();
-  	v112 = v109.Normal() * v7->endpos;
+    v49 = toForwardPlane_v109[0] * v7->endpos.x;
+    v110 = this->searchAreaList.Num();
+  	v112 = toForwardPlane_v109.Normal() * v7->endpos;
     v50 = v112;
     const aasReachability_t *_v112 = v48;
-    v109[3] = -v50;
+    toForwardPlane_v109[3] = -v50;
     if ( v48 == NULL )
     {
 LABEL_150:
@@ -2017,37 +2027,45 @@ LABEL_150:
         v52 = &this->areas[v51];
         if ( (v52->travelFlags & ~travelFlags) == 0 && (v52->flags & AAS_AREA_FLOOD_VISITED /* 0x8000u */) == 0 )
         {
-          floorIndex.Append(v51);
+          searchAreaList.Append(v51);
           areas[v51].flags |= AAS_AREA_FLOOD_VISITED/* 0x8000u */;
           idAASFileLocal::GetFloorEdgeSplitPoints(
-            (struct idAASFileLocal::floorEdgeSplitPoint_t *)&v122,
-            (struct idAASFileLocal::floorEdgeSplitPoint_t *)&v117,
+            (struct idAASFileLocal::floorEdgeSplitPoint_t *)&minSplitPoint_v122,
+            (struct idAASFileLocal::floorEdgeSplitPoint_t *)&maxSplitPoint_v117,
             _v112->toAreaNum,
-            &v111,
-            &v109);
-          if ( v122.distance < 1.0e30f && v117.distance >= 0.1f )
+            &toLeftPlane_v111,
+            &toForwardPlane_v109);
+          if ( minSplitPoint_v122.distance < idMath::INFINITY && maxSplitPoint_v117.distance >= 0.1f )
           {
-            v96 = trace.endpos - v122.point;
+            v96 = trace.endpos - minSplitPoint_v122.point;
+#if 0
+			ID_IF_DBG()
+			{
+				AAS_DrawPoint(maxSplitPoint_v117.point, colorBlue);
+				AAS_DrawPoint(minSplitPoint_v122.point, colorRed);
+				AAS_DrawArea((idAASFile *)this, v51);
+			}
+#endif
             v87 = fabs(v96.x);
-            if ( v87 < 0.0000001f )
+            if ( v87 < idMath::FLT_EPSILON )
               v96.x = 0.0f;
             v88 = fabs(v96.y);
-            if ( v88 < 0.0000001f )
+            if ( v88 < idMath::FLT_EPSILON )
               v96.y = 0.0f;
             v89 = fabs(v96.z);
             v59 = v96.z;
-            if ( v89 < 0.0000001f ) {
+            if ( v89 < idMath::FLT_EPSILON ) {
             	v59 = 0.0f;
             	v96.z = v59;
             }
 #if 0
 			ID_IF_DBG()
 			{
-			session->rw->DrawText( va( "X: %d", _v112->toAreaNum ), v122.point, 1.0f, colorBlue, mat3_identity );
-			session->rw->DebugCircle(colorBlue, v122.point, idVec3( 0, 0, 1 ), 35.0f, 8);
-			session->rw->DrawText( va( "Y: %d", _v112->toAreaNum ), v117.point, 1.0f, colorBlue, mat3_identity );
-			session->rw->DebugCircle(colorBlue, v117.point, idVec3( 0, 0, 1 ), 35.0f, 8);
-			session->rw->DebugArrow( colorBlue, v122.point, v122.point+v96, 5 );
+			session->rw->DrawText( va( "X: %d", _v112->toAreaNum ), minSplitPoint_v122.point, 1.0f, colorBlue, mat3_identity );
+			session->rw->DebugCircle(colorBlue, minSplitPoint_v122.point, idVec3( 0, 0, 1 ), 35.0f, 8);
+			session->rw->DrawText( va( "Y: %d", _v112->toAreaNum ), maxSplitPoint_v117.point, 1.0f, colorBlue, mat3_identity );
+			session->rw->DebugCircle(colorBlue, maxSplitPoint_v117.point, idVec3( 0, 0, 1 ), 35.0f, 8);
+			session->rw->DebugArrow( colorBlue, minSplitPoint_v122.point, minSplitPoint_v122.point+v96, 5 );
 			}
 #endif
             v90 = this->settings.gravityDir * v96;
@@ -2075,13 +2093,13 @@ LABEL_150:
       }
     }
     v61 = v110;
-    for ( m = v110; m < this->floorIndex.Num(); ++m )
+    for ( m = v110; m < this->searchAreaList.Num(); ++m )
     {
-      v63 = this->floorIndex[m];
+      v63 = this->searchAreaList[m];
       areas[v63].flags &= ~AAS_AREA_FLOOD_VISITED/* 0x8000u */;
     }
     v68 = _v112;
-    floorIndex.SetNum(v61);
+    searchAreaList.SetNum(v61);
     v7 = &trace;
     v116 = v68->toAreaNum;
   }
@@ -2090,12 +2108,12 @@ LABEL_150:
 LABEL_159:
   v7->lastAreaNum = v45;
   v7->fraction = v65;
-  for ( ii = 0; ii < this->floorIndex.Num(); ++ii )
+  for ( ii = 0; ii < this->searchAreaList.Num(); ++ii )
   {
-    v70 = this->floorIndex[ii];
+    v70 = this->searchAreaList[ii];
     areas[v70].flags &= ~AAS_AREA_FLOOD_VISITED/* 0x8000u */;
   }
-  floorIndex.Clear();
+  searchAreaList.Clear();
   return true;
 }
 #endif
@@ -2133,7 +2151,7 @@ bool idAASFileLocal::SplitFloorWinding(
 		do
 		{
 			edgeIndex_v10 = this->edgeIndex[i_v6 + area_v8->firstEdge];
-			vertex_v11 = &this->vertices[this->edges[abs(edgeIndex_v10)].vertexNum[edgeIndex_v10 >> 31]];
+			vertex_v11 = &this->vertices[this->edges[abs(edgeIndex_v10)].vertexNum[(unsigned int)edgeIndex_v10 >> 31]];
 			/*
 			if(ID_IS_DBG() && aaa)
 			{
@@ -2160,11 +2178,11 @@ bool idAASFileLocal::SplitFloorWinding(
 
 //----- (005EC1D0) --------------------------------------------------------
 bool idAASFileLocal::GetFloorEdgeSplitPoints(
-        idAASFileLocal::floorEdgeSplitPoint_t *a2,
-        idAASFileLocal::floorEdgeSplitPoint_t *a3,
+        idAASFileLocal::floorEdgeSplitPoint_t *minSplitPoint_a2,
+        idAASFileLocal::floorEdgeSplitPoint_t *maxSplitPoint_a3,
         int areaNum_a4,
-        const idPlane *a5,
-        const idPlane *a6) const
+        const idPlane *toLeftSplitPlane_a5,
+        const idPlane *toForwardRefPlane_a6) const
 {
   float *dists_v8; // esp
   int *sides_v9; // esp
@@ -2191,18 +2209,18 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
   float dist_v39; // [esp+50h] [ebp+14h]
 
 	idVec3 projVertex_v19;
-  a2->point = vec3_origin;
-  a2->edgeIndex = 0;
-  a2->distance = 1.0e30f;
-  a3->point = vec3_origin;
-  a3->edgeIndex = 0;
-  a3->distance = -1.0e30f;
+  minSplitPoint_a2->point = vec3_origin;
+  minSplitPoint_a2->edgeIndex = 0;
+  minSplitPoint_a2->distance = idMath::INFINITY;
+  maxSplitPoint_a3->point = vec3_origin;
+  maxSplitPoint_a3->edgeIndex = 0;
+  maxSplitPoint_a3->distance = -idMath::INFINITY;
   area_v34 = &this->areas[areaNum_a4];
   size_v35 = 4 * (area_v34->numEdges + 1) + 15;
   dists_v8 = (float *)alloca(size_v35);
   sides_v9 = (int *)alloca(size_v35);
   sides_v33 = &v21;
-  result = idAASFileLocal::SplitFloorWinding(areaNum_a4, a5, dists_v8, sides_v9); // (this, areaNum_a4, a5, (float *)&v21, &v21);
+  result = idAASFileLocal::SplitFloorWinding(areaNum_a4, toLeftSplitPlane_a5, dists_v8, sides_v9); // (this, areaNum_a4, toLeftSplitPlane_a5, (float *)&v21, &v21);
   if ( result ) // all distance >= 0
   {
     i_v11 = 0;
@@ -2241,21 +2259,23 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(
 			last = projVertex_v23;
 			aaa=0;
 			}
+		  ID_IF_DBG()
+		  AAS_DrawPoint(projVertex_v23, colorBlack);
 			*/
           projVertex_v19 = projVertex_v23;
-          dist_v39 = a6->Distance(projVertex_v23);
-          if ( a2->distance > dist_v39 )
+          dist_v39 = toForwardRefPlane_a6->Distance(projVertex_v23);
+          if ( minSplitPoint_a2->distance > dist_v39 )
           {
-            a2->distance = dist_v39;
-            a2->edgeIndex = edgeIndex_v14;
-            a2->point = projVertex_v19;
+            minSplitPoint_a2->distance = dist_v39;
+            minSplitPoint_a2->edgeIndex = edgeIndex_v14;
+            minSplitPoint_a2->point = projVertex_v19;
           }
           i_v11 = i_v36;
-          if ( a3->distance < dist_v39 )
+          if ( maxSplitPoint_a3->distance < dist_v39 )
           {
-            a3->distance = dist_v39;
-            a3->edgeIndex = edgeIndex_v14;
-            a3->point = projVertex_v19;
+            maxSplitPoint_a3->distance = dist_v39;
+            maxSplitPoint_a3->edgeIndex = edgeIndex_v14;
+            maxSplitPoint_a3->point = projVertex_v19;
           }
         }
         ++i_v11;
@@ -2324,7 +2344,7 @@ float idAASFileLocal::GetFloorDistance(
   result = v46;
   if ( a5 <= v46 )
   {
-    maxDist_v47 = 1.0e30f;
+    maxDist_v47 = idMath::INFINITY;
     if ( area_v6->numEdges > 0 )
     {
       edge_list = this->edges.Ptr();

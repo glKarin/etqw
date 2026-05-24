@@ -189,7 +189,7 @@ class idAASFileLocal : public idAASFile
 	void FlagNoPushAreas(void);
 
 		// 103 * 4 = 412
-		idList<int>					floorIndex; // area index
+		idList<int>					searchAreaList; // search area index
 #endif
 };
 
