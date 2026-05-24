@@ -26,12 +26,25 @@ GLSL_SHADER const char GLOBAL_ILLUMINATION_FRAG[] =
 "uniform sampler2D u_fragmentMap0;    /* u_bumpTexture */\n"
 "uniform sampler2D u_fragmentMap1;    /* u_diffuseTexture */\n"
 "uniform sampler2D u_fragmentMap2;    /* u_specularTexture */\n"
+#ifdef _SPLASHDAMAGE // alpha test in interaction
+"uniform lowp float u_alphaTest;\n"
+#endif
 "\n"
 "void main(void)\n"
 "{\n"
 "#ifdef _BFG\n"
+#ifdef _SPLASHDAMAGE // alpha test in interaction
+"    vec4 diffuseMap4 = texture2D(u_fragmentMap1, var_TexDiffuse.st);\n"
+"    float testAlpha = diffuseMap4.a * (u_diffuseColor.a/* * 0.5*/);\n"
+"    if (u_alphaTest > testAlpha)\n"
+"        discard;\n"
+#endif
 "    vec4 bumpMap = texture2D(u_fragmentMap0, var_TexNormal.st);\n"
+#ifdef _SPLASHDAMAGE // alpha test in interaction
+"    vec3 diffuseMap = diffuseMap4.rgb;\n"
+#else
 "    vec3 diffuseMap = texture2D(u_fragmentMap1, var_TexDiffuse.st).xyz;\n"
+#endif
 "    vec3 specMap = texture2D(u_fragmentMap2, var_TexSpecular.st).xyz;\n"
 "\n"
 "    float specularPower = 10.0;\n"
@@ -55,6 +68,11 @@ GLSL_SHADER const char GLOBAL_ILLUMINATION_FRAG[] =
 "    float rimColor = 0.125 * 1.2 * lightColor * pow(rim, rimPower);\n"
 "    vec3 color = (diffuseColor + specularColor) * halfLdotN * lightColor + rimColor;\n"
 #endif
+#ifdef _SPLASHDAMAGE // alpha test in interaction
+"    vec4 diffuseColor4 = texture2D(u_fragmentMap1, var_TexDiffuse) * u_diffuseColor;\n"
+"    if (u_alphaTest > diffuseColor4.a)\n"
+"        discard;\n"
+#endif
 "    vec3 color = (diffuseColor + specularColor) * halfLdotN * lightColor;\n"
 "    gl_FragColor = vec4(color, 1.0) * var_Color;\n"
 "\n"
@@ -70,7 +88,11 @@ GLSL_SHADER const char GLOBAL_ILLUMINATION_FRAG[] =
 "    NdotL += 0.5;\n"
 "    NdotL = NdotL * NdotL;\n"
 "#endif\n"
+#ifdef _SPLASHDAMAGE // alpha test in interaction
+"    vec3 diffuseColor = diffuseColor4.rgb;\n"
+#else
 "    vec3 diffuseColor = texture2D(u_fragmentMap1, var_TexDiffuse).rgb * u_diffuseColor.rgb;\n"
+#endif
 "    vec3 specularColor = 2.0 * texture2D(u_fragmentMap2, var_TexSpecular).rgb * u_specularColor.rgb;\n"
 "\n"
 "#ifdef BLINN_PHONG\n"

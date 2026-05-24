@@ -151,6 +151,9 @@ void	RB_GLSL_DrawInteraction(const drawInteraction_t *din)
 #endif
 
 	GL_SelectTextureNoClient(0); //k2023
+#ifdef _SPLASHDAMAGE // alpha test in interaction
+	GL_Uniform1f(offsetof(shaderProgram_t, alphaTest), din->alphaTest);
+#endif
 
 	// draw it
 	RB_DrawElementsWithCounters(din->surf->geo);

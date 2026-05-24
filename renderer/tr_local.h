@@ -512,6 +512,9 @@ typedef struct viewEntity_s {
 #if defined(_SHADOW_MAPPING) || defined(_D3BFG_CULLING)
 	RenderMatrix		mvp;
 #endif
+#ifdef _SPLASHDAMAGE //karin: frontend area ambient
+	const sdDeclAmbientCubeMap *areaAmbient;
+#endif
 } viewEntity_t;
 
 const int	MAX_CLIP_PLANES	= 1;				// we may expand this to six for some subview issues
@@ -619,6 +622,9 @@ typedef struct {
 	idVec4				bumpMatrix[2];
 	idVec4				diffuseMatrix[2];
 	idVec4				specularMatrix[2];
+#ifdef _SPLASHDAMAGE //karin: alpha test in interaction stage
+	float				alphaTest;
+#endif
 } drawInteraction_t;
 
 
