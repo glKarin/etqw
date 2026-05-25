@@ -2310,62 +2310,62 @@ int idAASFileLocal::FindReachabilityByName( const char *name ) const {
 
 void idAASFileLocal::LinkReachability(void)
 {
-  int v1; // edi
-  int v2; // edx
-  int v3; // eax
-  int v4; // ebx
+  int i_v1; // edi
+  int i_v2; // edx
+  int i_v3; // eax
+  int i_v4; // ebx
   aasReachability_t *reach_list; // eax
   int fromAreaNum; // esi
   aasReachability_t *reach_v7; // eax
   int toAreaNum; // edx
 
-  v1 = 0;
-  v2 = 0;
+  i_v1 = 0;
+  i_v2 = 0;
   if ( this->areas.Num() > 0 )
   {
-    v3 = 0;
+    i_v3 = 0;
     do
     {
-      this->areas[v3].reach = NULL;
-      this->areas[v3].rev_reach = NULL;
-      ++v2;
-      ++v3;
+      this->areas[i_v3].reach = NULL;
+      this->areas[i_v3].rev_reach = NULL;
+      ++i_v2;
+      ++i_v3;
     }
-    while ( v2 < this->areas.Num() );
+    while ( i_v2 < this->areas.Num() );
   }
   if ( this->reachabilities.Num() > 0 )
   {
-    v4 = 0;
+    i_v4 = 0;
     do
     {
       reach_list = this->reachabilities.Ptr();
-      fromAreaNum = reach_list[v4].fromAreaNum;
-      reach_v7 = &reach_list[v4];
+      fromAreaNum = reach_list[i_v4].fromAreaNum;
+      reach_v7 = &reach_list[i_v4];
       reach_v7->next = this->areas[fromAreaNum].reach;
       this->areas[fromAreaNum].reach = reach_v7;
       toAreaNum = reach_v7->toAreaNum;
       reach_v7->rev_next = this->areas[toAreaNum].rev_reach;
-      ++v1;
+      ++i_v1;
       this->areas[toAreaNum].rev_reach = reach_v7;
-      ++v4;
+      ++i_v4;
     }
-    while ( v1 < this->reachabilities.Num() );
+    while ( i_v1 < this->reachabilities.Num() );
   }
 }
 
 void idAASFileLocal::FlagNoPushAreas(void)
 {
   aasArea_t *area_v1; // esi
-  int v2; // edi
+  int i_v2; // edi
   int *edgeIndex_list; // ebx
   aasEdge_t *edge_v4; // ebp
-#define __int64 int64_t
-  __int64 v5; // rax
+//#define __int64 int64_t
+//  __int64 v5; // rax
   int areaNum_v7; // [esp+8h] [ebp-1Ch]
   int areaNum_v8; // [esp+Ch] [ebp-18h]
   idVec3 *vertex_v10; // [esp+14h] [ebp-10h]
-  float v11; // [esp+14h] [ebp-10h]
-  idVec3 v12; // v12 v13 v14
+  float inv_v11; // [esp+14h] [ebp-10h]
+  idVec3 center_v12; // v12 v13 v14
 
   idVec3 *_v5_1;
   areaNum_v7 = 0;
@@ -2375,8 +2375,8 @@ void idAASFileLocal::FlagNoPushAreas(void)
     do
     {
       area_v1 = &this->areas[areaNum_v8];
-      v2 = 0;
-      v12 = vec3_zero;
+      i_v2 = 0;
+      center_v12 = vec3_zero;
       if ( area_v1->numEdges > 0 )
       {
         edgeIndex_list = this->edgeIndex.Ptr();
@@ -2384,18 +2384,17 @@ void idAASFileLocal::FlagNoPushAreas(void)
         vertex_v10 = this->vertices.Ptr();
         do
         {
-          int _v5_0 = edgeIndex_list[v2 + area_v1->firstEdge];
-          //_v5 = &v10[v4[(HIDWORD(v5) ^ v5) - HIDWORD(v5)].vertexNum[(unsigned int)list[v2 + v1->firstEdge] >> 31]];
+          int _v5_0 = edgeIndex_list[i_v2 + area_v1->firstEdge];
+          //_v5 = &v10[i_v4[(HIDWORD(v5) ^ v5) - HIDWORD(v5)].vertexNum[(unsigned int)list[i_v2 + v1->firstEdge] >> 31]];
           _v5_1 = &vertex_v10[ edge_v4[abs(_v5_0)].vertexNum[(unsigned int)_v5_0 >> 31] ];
-          ++v2;
-          v12 = *_v5_1 + v12;
+          ++i_v2;
+          center_v12 = *_v5_1 + center_v12;
         }
-        while ( v2 < area_v1->numEdges );
+        while ( i_v2 < area_v1->numEdges );
       }
-      v11 = 1.0 / (double)area_v1->numEdges;
-      v12 = v11 * v12;
-    	//v12 = AreaCenter(areaNum_v8);
-      if ( this->PushPointIntoArea(areaNum_v7, v12) )
+      inv_v11 = 1.0f / (float)area_v1->numEdges;
+      center_v12 = inv_v11 * center_v12;
+      if ( this->PushPointIntoArea(areaNum_v7, center_v12) )
         area_v1->flags |= AAS_AREA_NOPUSH; //0x10u;
       ++areaNum_v8;
       ++areaNum_v7;
