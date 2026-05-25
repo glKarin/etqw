@@ -3154,6 +3154,9 @@ bool sdWalkerControl::CheckStateExit( void ) {
 	return false;
 }
 
+#ifdef __ANDROID__ //karin: re-normalize player/walker movement direction. only for DIII4A smooth onscreen joystick control
+static idCVar harm_g_normalizeMovementDirection("harm_g_normalizeMovementDirection", "0", CVAR_GAME | CVAR_BOOL, "Re-normalize player/walker movement direction");
+#endif
 /*
 ================
 sdWalkerControl::RunStateMachine
@@ -3165,6 +3168,51 @@ void sdWalkerControl::RunStateMachine( void ) {
 	input->Clear();
 	input->SetPlayer( driver );
 
+#ifdef __ANDROID__ //karin: for in smooth joystick on Android
+	usercmd_t& _cmd = const_cast<usercmd_t &>(input->GetUserCmd());
+	if(harm_g_normalizeMovementDirection.GetBool())
+	{
+#define _AVA_DEG 60.f // 67.5f
+#define _INCR_AVA_DEG(x) ((x) + _AVA_DEG)
+#define _DECR_AVA_DEG(x) ((x) - _AVA_DEG)
+		const int KEY_MOVESPEED	= 127;
+		if(_cmd.forwardmove != 0 || _cmd.rightmove != 0) {
+			float a = (float)atan2(_cmd.rightmove, _cmd.forwardmove);
+			a = RAD2DEG(a);
+			if (a >= 360.0f || a < 0.0f) {
+				a -= floor(a / 360.0f) * 360.0f;
+				if (a >= 360.0f) {
+					a -= 360.0f;
+				}
+				else if (a < 0.0f) {
+					a += 360.0f;
+				}
+			}
+
+			bool _forward = ((a >= 0 && a <= _INCR_AVA_DEG(0)) || (a >= _DECR_AVA_DEG(360) && a <= 360));
+			bool _backward = (a >= _DECR_AVA_DEG(180) && a <= _INCR_AVA_DEG(180));
+			bool _left = (a > _DECR_AVA_DEG(270) && a < _INCR_AVA_DEG(270));
+			bool _right = (a > _DECR_AVA_DEG(90) && a < _INCR_AVA_DEG(90));
+
+			if(_forward)
+				_cmd.forwardmove = KEY_MOVESPEED;
+			else if(_backward)
+				_cmd.forwardmove = -KEY_MOVESPEED;
+			else
+				_cmd.forwardmove = 0;
+
+			if(_left)
+				_cmd.rightmove = -KEY_MOVESPEED;
+			else if(_right)
+				_cmd.rightmove = KEY_MOVESPEED;
+			else
+				_cmd.rightmove = 0;
+		} else {
+			_cmd.forwardmove = 0;
+			_cmd.rightmove = 0;
+		}
+	}
+#endif
 	if ( newStateTime != 0 ) {
 		if ( gameLocal.time < newStateTime ) {
 			CheckStateExit();
