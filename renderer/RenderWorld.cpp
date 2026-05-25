@@ -1719,6 +1719,82 @@ void idRenderWorldLocal::AddEntityRefToArea(idRenderEntityLocal *def, portalArea
 	ref->areaPrev = area->entityRefs.areaPrev;
 	ref->areaNext->areaPrev = ref;
 	ref->areaPrev->areaNext = ref;
+#ifdef _SPLASHDAMAGE //karin: entity push into connected/outside areas
+	// find connected areas
+	if(def->parms.flags.pushIntoConnectedOutsideAreas)
+	{
+		for (portal_t *p = area->portals ; p ; p = p->next) {
+			portalArea_t *a = &portalAreas[ p->intoArea ];
+			// check pushed
+			bool pushed = false;
+			for (ref = a->entityRefs.areaNext; ref != &a->entityRefs; ref = ref->areaNext) {
+				if(ref->entity == def)
+				{
+					pushed = true;
+					break;
+				}
+			}
+			if(pushed)
+				continue;
+
+			ref = areaReferenceAllocator.Alloc();
+
+			tr.pc.c_entityReferences++;
+
+			ref->entity = def;
+
+			// link to entityDef
+			ref->ownerNext = def->entityRefs;
+			def->entityRefs = ref;
+
+			// link to end of area list
+			ref->area = a;
+			ref->areaNext = &a->entityRefs;
+			ref->areaPrev = a->entityRefs.areaPrev;
+			ref->areaNext->areaPrev = ref;
+			ref->areaPrev->areaNext = ref;
+		}
+	}
+
+	// all areas
+	if(def->parms.flags.pushIntoOutsideAreas)
+	{
+		for (int i = 0 ; i < numPortalAreas ; i++) {
+			portalArea_t *a = &portalAreas[ i ];
+			if(a == area)
+				continue;
+
+			// check pushed
+			bool pushed = false;
+			for (ref = a->entityRefs.areaNext; ref != &a->entityRefs; ref = ref->areaNext) {
+				if(ref->entity == def)
+				{
+					pushed = true;
+					break;
+				}
+			}
+			if(pushed)
+				continue;
+
+			ref = areaReferenceAllocator.Alloc();
+
+			tr.pc.c_entityReferences++;
+
+			ref->entity = def;
+
+			// link to entityDef
+			ref->ownerNext = def->entityRefs;
+			def->entityRefs = ref;
+
+			// link to end of area list
+			ref->area = a;
+			ref->areaNext = &a->entityRefs;
+			ref->areaPrev = a->entityRefs.areaPrev;
+			ref->areaNext->areaPrev = ref;
+			ref->areaPrev->areaNext = ref;
+		}
+	}
+#endif
 }
 
 /*
