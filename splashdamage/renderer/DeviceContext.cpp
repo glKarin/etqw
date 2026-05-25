@@ -8,21 +8,15 @@
 #include "renderer/tr_local.h"
 
 #if 0
-#define DC_PLACEHOLDER(...) Sys_Printf(__VA_ARGS__)
+#define DC_PLACEHOLDER(...) //Sys_Printf(__VA_ARGS__)
+#define DC_DRAW(...) R_DC_DebugType(__VA_ARGS__) //Sys_Printf(__VA_ARGS__)
+#define DC_DEBUG_MATERIAL(...) //R_DC_DebugMaterial(__VA_ARGS__)
+#define DC_DEBUG_POS(x, y) R_DC_DebugPos(x, y)
 #else
 #define DC_PLACEHOLDER(...)
-#endif
-
-#if 0
-#define DC_DRAW(...) Sys_Printf(__VA_ARGS__)
-#else
 #define DC_DRAW(...)
-#endif
-
-#if 0
-#define DC_DEBUG_MATERIAL(...) R_DC_DebugMaterial(__VA_ARGS__)
-#else
 #define DC_DEBUG_MATERIAL(...)
+#define DC_DEBUG_POS(...)
 #endif
 
 #define DC_UNUSED_ON_GAME
@@ -47,6 +41,30 @@ static void R_DC_DebugMaterial(const idMaterial *shader, float x, float y, float
 	tr.gameGuiModel->SetColor(1.0f, 0.0f, 0.0f, 0.5f);
 	idWStr str = StrToWStr(shader->GetName());
 	sdBounds2D bb = sdBounds2D(x, y, 640/* - x - w*/, 480/* - y - h*/);
+	deviceContext->DrawText(str.c_str(), bb, DTF_WORDWRAP);
+	tr.gameGuiModel->SetColor(c[0], c[1], c[2], c[3]);
+}
+
+static float dc_debug_x;
+static float dc_debug_y;
+static void R_DC_DebugPos(float x, float y)
+{
+	dc_debug_x = x;
+	dc_debug_y = y;
+}
+
+static void R_DC_DebugType(const char *fmt, ...)
+{
+	char text[1024] = {0};
+	va_list argptr;
+	va_start(argptr, fmt);
+	idStr::vsnPrintf(text, sizeof(text), fmt, argptr);
+	va_end(argptr);
+	
+	idVec4 c = tr.gameGuiModel->CurrentColor();
+	tr.gameGuiModel->SetColor(1.0f, 0.0f, 0.0f, 0.5f);
+	idWStr str = StrToWStr(text);
+	sdBounds2D bb = sdBounds2D(dc_debug_x, dc_debug_y, 640/* - x - w*/, 480/* - y - h*/);
 	deviceContext->DrawText(str.c_str(), bb, DTF_WORDWRAP);
 	tr.gameGuiModel->SetColor(c[0], c[1], c[2], c[3]);
 }
@@ -116,6 +134,7 @@ void sdDeviceContextLocal::PopClipRect() {
 }
 
 void sdDeviceContextLocal::DrawRect( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial* material, float angle ) {
+	DC_DEBUG_POS(x, y);
 	DC_DRAW("DCDraw:DrawRect|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -269,6 +288,7 @@ void sdDeviceContextLocal::DrawClippedWindingMasked( const idWinding2D& winding,
 }
 
 void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float h, float u0, float v0, float u1, float v1, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
+	DC_DEBUG_POS(x, y);
 	DC_DRAW("DCDraw:DrawMaskedMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -326,6 +346,7 @@ void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float 
 }
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, float scaleX, float scaleY, float offsetX, float offsetY, float angle ) {
+	DC_DEBUG_POS(x, y);
 	DC_DRAW("DCDraw:DrawMaterial|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -398,6 +419,7 @@ void sdDeviceContextLocal::DrawMaterial( const sdBounds2D& rect, const idMateria
 }
 
 void sdDeviceContextLocal::DrawMaterial( float x, float y, float w, float h, const idMaterial* material, const idVec4 &color, const idVec2& st0, const idVec2& st1 ) {
+	DC_DEBUG_POS(x, y);
 	DC_DRAW("DCDraw:DrawMaterial5|%s\n", material?material->GetName():NULL);
 
 	if(!material)
@@ -981,26 +1003,26 @@ bool sdDeviceContextLocal::ClippedCoords(float *x, float *y, float *w, float *h,
         if (*x < clipRect->GetLeft()) {
             *w -= clipRect->GetLeft() - *x;
             *x = clipRect->GetLeft();
-        } else if (*x > clipRect->GetLeft() + clipRect->GetWidth()) {
+        } else if (*x > clipRect->GetRight()) {
             *x = *w = *y = *h = 0;
         }
 
         if (*y < clipRect->GetTop()) {
             *h -= clipRect->GetTop() - *y;
             *y = clipRect->GetTop();
-        } else if (*y > clipRect->GetTop() + clipRect->GetHeight()) {
+        } else if (*y > clipRect->GetBottom()) {
             *x = *w = *y = *h = 0;
         }
 
         if (*w > clipRect->GetWidth()) {
-            *w = clipRect->GetWidth() - *x + clipRect->GetLeft();
-        } else if (*x + *w > clipRect->GetLeft() + clipRect->GetWidth()) {
+            *w = clipRect->GetRight() - *x;
+        } else if (*x + *w > clipRect->GetRight()) {
             *w = clipRect->GetRight() - *x;
         }
 
         if (*h > clipRect->GetHeight()) {
-            *h = clipRect->GetHeight() - *y + clipRect->GetTop();
-        } else if (*y + *h > clipRect->GetTop() + clipRect->GetHeight()) {
+            *h = clipRect->GetBottom() - *y;
+        } else if (*y + *h > clipRect->GetBottom()) {
             *h = clipRect->GetBottom() - *y;
         }
 
