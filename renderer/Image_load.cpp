@@ -1275,12 +1275,12 @@ LABEL_27:
 
 	*f++ = 0;
 #ifdef _SPLASHDAMAGE
-	int v14 = idStr::Length(imageProg);
-	int v15 = MD5_BlockChecksum((byte *)imageProg, v14);
-	const char *v16 = va("%ub%d", v15, v14);
+	int length_v14 = idStr::Length(imageProg);
+	int md5_v15 = MD5_BlockChecksum((byte *)imageProg, length_v14);
+	const char *filename_v16 = va("%ub%d", md5_v15, length_v14);
 	idStr str = fileName;
 	str.StripFilename();
-	str.AppendPath(v16);
+	str.AppendPath(filename_v16);
 	idStr::Copynz(fileName, str.c_str(), MAX_IMAGE_NAME);
 #endif
 	strcat(fileName, ".dds");

@@ -122,73 +122,48 @@ class idAASFileLocal : public idAASFile
 #ifdef _SPLASHDAMAGE
 		virtual int					FindReachabilityByName( const char *name ) const;
 		virtual bool				PushPointIntoArea( int areaNum, idVec3 &point ) const;
-		virtual bool				TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const;
-		virtual bool				TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const;
-
-		void						CalcAreaPlanes(void);
-		void						LoadAreaPlane_r(int nodeNum, idList<idList<int> > &faceMap);
 #endif
 
 	private:
 		int							BoundsReachableAreaNum_r(int nodeNum, const idBounds &bounds, const int areaFlags, const int excludeTravelFlags) const;
+		int							BoundsReachableAreaNum_r(const idBounds *bounds, int nodeNum, int areaFlags, int excludeTravelFlags) const;
 		void						MaxTreeDepth_r(int nodeNum, int &depth, int &maxDepth) const;
 		int							MaxTreeDepth(void) const;
 		int							AreaContentsTravelFlags(int areaNum) const;
 		idVec3						AreaReachableGoal(int areaNum) const;
 		int							NumReachabilities(void) const;
 #ifdef _SPLASHDAMAGE
+		void						LinkReachability(void);
+		void						FlagNoPushAreas(void);
+
+		// sample
 		struct floorEdgeSplitPoint_t {
-			idVec3 point;
-			float distance;
-			int edgeIndex;
+			idVec3	point;
+			float	distance;
+			int		edgeIndex;
 		};
 		struct bestReachableArea_t {
-			float v0;
-			float v1;
-			int areaFlags;
-			int excludeTravelFlags;
-			int areaNum1;
-			float distance1;
-			int areaNum2;
-			float distance2;
+			float	v0;
+			float	v1;
+			int		areaFlags;
+			int		excludeTravelFlags;
+			int		areaNum1;
+			float	distance1;
+			int		areaNum2;
+			float	distance2;
 		};
 
-		bool						SplitFloorWinding(
-			int areaNum, // areaNum
-			const idPlane *a3,
-			float *a4, // array
-			int *a5 // array
-		) const;
-		bool GetFloorEdgeSplitPoints(
-				floorEdgeSplitPoint_t *a2,
-				floorEdgeSplitPoint_t *a3,
-				int areaNum,
-				const idPlane *a5,
-				const idPlane *a6) const;
-	float GetFloorDistance(
-        int a2,
-        const idPlane *a3,
-        const idVec3 *a4,
-        float a5,
-        float a6) const;
-	void BoundsBestReachableAreaNum(
-		idBounds *a2,
-		const idVec3 *a3,
-		int a4,
-		const idPlane *a5,
-		bestReachableArea_t *a6) const;
-	void PointBestReachableAreaNum(
-		const idVec3 *a2,
-		bestReachableArea_t *a3) const;
+		virtual bool				TraceHeight( aasTraceHeight_t &trace, const idVec3 &start, const idVec3 &end ) const;
+		virtual bool				TraceFloor( aasTraceFloor_t &trace, const idVec3 &start, int startAreaNum, const idVec3 &end, int endAreaNum, int travelFlags ) const;
+		bool						SplitFloorWinding(int areaNum, const idPlane *plane, float retDists[], int retSides[]) const;
+		bool						GetFloorEdgeSplitPoints(floorEdgeSplitPoint_t *minSplitPoint, floorEdgeSplitPoint_t *maxSplitPoint, int areaNum, const idPlane *toLeftSplitPlane, const idPlane *toForwardRefPlane) const;
+		float						GetFloorDistance(int areaNum, const idPlane *plane, const idVec3 *origin_a4, float minDist_a5, float maxDist_a6) const;
+		void						BoundsBestReachableAreaNum(const idBounds *bounds, const idVec3 *origin, int nodeNum, const idPlane *plane, bestReachableArea_t *bestReachableArea) const;
+		void						PointBestReachableAreaNum(const idVec3 *origin, bestReachableArea_t *bestReachableArea) const;
 
-	bool Trace(
-		aasTrace_t *a2,
-		const idVec3 *a3,
-		const idVec3 *a4) const;
-	void LinkReachability(void);
-	void FlagNoPushAreas(void);
+		bool						Trace(aasTrace_t *trace_a2, const idVec3 *start_a3, const idVec3 *end_a4) const;
 
-		// 103 * 4 = 412
+		// offset is 103 * 4 = 412
 		idList<int>					searchAreaList; // search area index
 #endif
 };

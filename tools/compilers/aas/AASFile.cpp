@@ -1972,9 +1972,6 @@ bool idAASFileLocal::LoadBinary(const idStr &fileName, unsigned int mapFileCRC)
 		common->Error("idAASFileLocal::Load: tree depth = %d", depth);
 	}
 
-	//karin: make area planes info
-	CalcAreaPlanes();
-
 	common->Printf("done.\n");
 
 	return true;
@@ -2252,51 +2249,6 @@ bool idAASFileLocal::ParseReachabilitiesBinary(idFile *file)
 	}
 
 	return true;
-}
-
-void idAASFileLocal::LoadAreaPlane_r(int nodeNum, idList<idList<int> > &faceMap) {
-	int i, areaNum;
-	const aasNode_t *node;
-
-	node = &nodes[nodeNum];
-
-	for (i = 0; i < 2; i++) {
-		nodeNum = node->children[i];
-
-		if (nodeNum == 0) { // is solid
-			continue;
-		}
-		if (nodeNum < 0) { // is area
-			areaNum = -nodeNum;
-			aasFace_t &face = faces.Alloc();
-			face.planeNum = node->planeNum;
-			face.areas[0] = (short)areaNum;
-			faceMap[areaNum].Append(faces.Num() - 1);
-			continue;
-		}
-		LoadAreaPlane_r(nodeNum, faceMap);
-	}
-}
-
-void idAASFileLocal::CalcAreaPlanes(void)
-{
-	int i, j;
-	aasArea_t *area;
-
-	idList<idList<int> > faceMap;
-	faceMap.SetNum(areas.Num());
-	LoadAreaPlane_r(1, faceMap);
-
-	for (i = 0; i < areas.Num(); i++) {
-		area = &areas[i];
-		idList<aasIndex_t> &areaFaces = faceMap[i];
-		area->firstFace = faceIndex.Num();
-		area->numFaces = areaFaces.Num();
-
-		for (j = 0; j < areaFaces.Num(); j++) {
-			faceIndex.Append(areaFaces[j]);
-		}
-	}
 }
 
 int idAASFileLocal::FindReachabilityByName( const char *name ) const {
