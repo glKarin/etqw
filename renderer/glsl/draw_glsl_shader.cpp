@@ -226,7 +226,7 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
     ret.Append(GLSL_SHADER_SOURCE("stencilToColor", SHADER_STENCIL_TO_COLOR, &stencilToColorShader, SIMPLE_VERTEX_TEXCOORD_VERT, STENCIL_TO_COLOR_FRAG, "", ""));
 #endif
 	ret.Append(GLSL_SHADER_SOURCE("texgen", SHADER_TEXGEN, &texgenShader, TEXGEN_VERT, TEXGEN_FRAG, "", ""));
-	//ret.Append(GLSL_SHADER_SOURCE("occlusionTest", SHADER_OCCLUSIONTEST, &occlusionTestShader, OCCLUSIONTEST_VERT, OCCLUSIONTEST_FRAG, "", ""));
+	ret.Append(GLSL_SHADER_SOURCE("occlusionTest", SHADER_OCCLUSIONTEST, &occlusionTestShader, OCCLUSIONTEST_VERT, OCCLUSIONTEST_FRAG, "", ""));
 
     // newStage
 	ret.Append(GLSL_SHADER_SOURCE("colorProcess", SHADER_COLORPROCESS, &colorProcessShader, COLORPROCESS_VERT, COLORPROCESS_FRAG, "", ""));

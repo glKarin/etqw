@@ -233,6 +233,7 @@ class idRenderWorldLocal : public idRenderWorld
 		virtual bool			IsVisibleOcclusionTestDef( qhandle_t occtestHandle );
 		virtual	void			FreeOcclusionTestDef( qhandle_t occtestHandle );
 		virtual int				CountVisibleOcclusionTestDef( qhandle_t occtestHandle );
+		virtual void			UpdateOcclusionTests( void );
 
 		virtual idRenderModel*	CreateDecalModel();
 		virtual void 			AddToProjectedDecal( const idFixedWinding& winding, const idVec3 &projectionOrigin, const bool parallel, const idVec4& color, idRenderModel* model, int entityNum, const idMaterial** onlyMaterials = NULL, const int numOnlyMaterials = 1 );
@@ -323,6 +324,7 @@ class idRenderWorldLocal : public idRenderWorld
 		bool					generateAllInteractionsCalled;
 #ifdef _SPLASHDAMAGE
 		const sdDeclAtmosphere	*atmosphere;
+		idList<class sdOcclusionTestLocal *> occlusionTests;
 #endif
 
 		//-----------------------

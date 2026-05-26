@@ -82,3 +82,6 @@
 
 #include "doom3/plain.vert.h"
 #include "doom3/plain.frag.h"
+
+#include "doom3/occlusionTest.vert.h"
+#include "doom3/occlusionTest.frag.h"

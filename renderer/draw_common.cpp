@@ -31,6 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
 #include "renderer/RenderProgram.h"
+#include "renderer/OcclusionTest.h"
 #endif
 
 #ifdef _K_DEV //karin: debug shader pass
@@ -737,7 +738,6 @@ void RB_CopyParms(const void *data)
 	backEnd.parms = cmd->parms;
 }
 
-
 static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf, const shaderStage_t *pStage)
 {
 	float parm[4];
@@ -829,6 +829,29 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindImage("environmentCubeMap", environmentCubeMap);
 	program->BindImage("skyGradientCubeMap", skyGradientCubeMap);
 }
+
+#ifdef _SPLASHDAMAGE //karin: render occlusion testing
+static void RB_OcclusionTesting(void)
+{
+	if (!backEnd.viewDef->renderWorld || backEnd.viewDef->renderWorld->occlusionTests.Num() == 0)
+		return;
+
+	idList<sdOcclusionTestLocal *> list;
+	list.Resize(backEnd.viewDef->renderWorld->occlusionTests.Num());
+	sdOcclusionTestLocal *test;
+	for (int i = 0; i < backEnd.viewDef->renderWorld->occlusionTests.Num(); i++)
+	{
+		test = backEnd.viewDef->renderWorld->occlusionTests[i];
+		if (test && backEnd.viewDef->renderView.viewID == test->GetViewID())
+			list.Append(test);
+	}
+	if (list.Num() == 0)
+		return;
+
+	sdOcclusionQueryWrapper queryWrapper;
+	queryWrapper.Render(list);
+}
+#endif
 #endif
 
 /*
@@ -2321,6 +2344,10 @@ void	RB_STD_DrawView(void)
 	// fill the depth buffer and clear color buffer to black except on
 	// subviews
 	RB_STD_FillDepthBuffer(drawSurfs, numDrawSurfs);
+
+#ifdef _SPLASHDAMAGE //karin: render occlusion testing
+	RB_OcclusionTesting();
+#endif
 
 	// main light renderer
 	if (r_lightingModel != LM_NOLIGHTING

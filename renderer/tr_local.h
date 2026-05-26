@@ -1136,7 +1136,7 @@ extern idCVar r_useETC2;				// ETC2 compression
 extern idCVar harm_r_useFenceSync;
 extern void RB_FenceSync(void);
 
-//#include "rb/OcclusionQuery.h"
+#include "rb/OcclusionQuery.h"
 #endif
 //#define DEBUG_SYNC_MIN_INTERVAL 1
 #ifdef DEBUG_SYNC_MIN_INTERVAL
@@ -1712,7 +1712,7 @@ typedef enum {
 #endif
 	SHADER_DIFFUSECUBEMAP,
 	// SHADER_GLASSWARP,
-	//SHADER_OCCLUSIONTEST,
+	SHADER_OCCLUSIONTEST,
 	SHADER_TEXGEN,
 	// new stage
 	SHADER_COLORPROCESS,

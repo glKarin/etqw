@@ -188,8 +188,8 @@ void R_CreateEntityRefs(idRenderEntityLocal *def)
 
 	// if the entity hasn't been fully specified due to expensive animation calcs
 	// for md5 and particles, use the provided conservative bounds.
-#ifdef _SPLASHDAMAGE //karin: enttiy overridenBounds parm
-	if (def->parms.callback && !def->parms.flags.overridenBounds) 
+#ifdef _SPLASHDAMAGE //karin: entity overridenBounds parm
+	if (def->parms.callback || def->parms.flags.overridenBounds)
 #else
 	if (def->parms.callback) 
 #endif

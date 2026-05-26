@@ -2,25 +2,29 @@
 
 #include "../tr_local.h"
 
+const int rvmOcclusionQuery::RESULT_INVALID = 1;
+
 rvmOcclusionQuery::rvmOcclusionQuery()
 {
 	Reset();
 }
 
-bool rvmOcclusionQuery::IsVisible(bool def) {
+int rvmOcclusionQuery::Query(int def) {
 	if (queryState == OCCLUSION_QUERY_STATE_FINISH)
-		return result == 1;
+		return result;
 
 	if(IsQueryStale())
 	{
 		Sync(false);
 		if (queryState == OCCLUSION_QUERY_STATE_FINISH)
-			return result == 1;
+			return result;
 		return def;
 	}
 
-	Sync(true);
-	return result == 1;
+	Sync(false);
+	if (queryState == OCCLUSION_QUERY_STATE_FINISH)
+		return result;
+	return def;
 }
 
 bool rvmOcclusionQuery::IsQueryStale(void) const {
@@ -30,7 +34,12 @@ bool rvmOcclusionQuery::IsQueryStale(void) const {
 	return queryTimeOutTime < currentTime;
 }
 
-void rvmOcclusionQuery::Begin(GLenum type, int ms)
+void rvmOcclusionQuery::SetMode(GLenum type)
+{
+	mode = type;
+}
+
+void rvmOcclusionQuery::Begin(int ms)
 {
 	assert(id != 0);
 	if (queryState != OCCLUSION_QUERY_STATE_READY)
@@ -38,12 +47,17 @@ void rvmOcclusionQuery::Begin(GLenum type, int ms)
 
 	queryState = OCCLUSION_QUERY_STATE_DRAW;
 
-	queryStartTime = Sys_Milliseconds();
 	if(ms > 0)
+	{
+		queryStartTime = Sys_Milliseconds();
 		queryTimeOutTime = queryStartTime + ms;
+	}
 
-	mode = type;
+#ifdef GL_ES_VERSION_2_0 //karin: GL_SAMPLES_PASSED not support on OpenGLES
+	qglBeginQuery(mode == GL_SAMPLES_PASSED ? GL_ANY_SAMPLES_PASSED : mode, id);
+#else
 	qglBeginQuery(mode, id);
+#endif
 }
 
 void rvmOcclusionQuery::End(void)
@@ -52,7 +66,11 @@ void rvmOcclusionQuery::End(void)
 		return;
 
 	queryState = OCCLUSION_QUERY_STATE_WAITING;
+#ifdef GL_ES_VERSION_2_0 //karin: GL_SAMPLES_PASSED not support on OpenGLES
+	qglEndQuery(mode == GL_SAMPLES_PASSED ? GL_ANY_SAMPLES_PASSED : mode);
+#else
 	qglEndQuery(mode);
+#endif
 }
 
 void rvmOcclusionQuery::BeginRender(void)
@@ -94,7 +112,7 @@ void rvmOcclusionQuery::Reset(void)
 	queryState = OCCLUSION_QUERY_STATE_UNINITIALIZED;
 	id = 0;
 	mode = GL_ANY_SAMPLES_PASSED;
-	result = 0;
+	result = RESULT_INVALID;
 }
 
 void rvmOcclusionQuery::Sync(bool wait)
@@ -113,7 +131,11 @@ void rvmOcclusionQuery::Sync(bool wait)
 	while(!passed);
 
 	qglGetQueryObjectuiv(id, GL_QUERY_RESULT, &passed);
-	result = passed ? 1 : 2;
+#ifdef GL_ES_VERSION_2_0 //karin: GL_SAMPLES_PASSED not support on OpenGLES
+	result = mode == GL_SAMPLES_PASSED ? passed ? INT_MAX : 0 : (int)passed;
+#else
+	result = passed;
+#endif
 
 	queryState = OCCLUSION_QUERY_STATE_FINISH;
 }
@@ -127,11 +149,11 @@ void rvmOcclusionQuery::Next(void)
 		queryStartTime = -1;
 		queryTimeOutTime = -1;
 		queryState = OCCLUSION_QUERY_STATE_READY;
-		mode = GL_ANY_SAMPLES_PASSED;
-		result = 0;
+		result = RESULT_INVALID;
 	}
 }
 
+#if 0
 #include "QueueList.h"
 
 static idCVar harm_r_useGPUOcclusionCulling("harm_r_useGPUOcclusionCulling", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "Enable GPU Occlusion culling(OpenGLES 3.0+)");
@@ -277,3 +299,4 @@ void RB_TestOcclutionLights(void)
 	if(total)
 		common->Printf("occ %d %d %d\n", total, passed, skip);
 }
+#endif

@@ -749,6 +749,6 @@ void RB_ExecuteBackEndCommands(const emptyCommand_t *cmds)
 #include "rb/rb_debug.cpp"
 #ifdef _OPENGLES3
 #include "rb/rb_fencesync.cpp"
-//#include "rb/OcclusionQuery.cpp"
+#include "rb/OcclusionQuery.cpp"
 #endif
 

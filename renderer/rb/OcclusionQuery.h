@@ -12,22 +12,28 @@ public:
 		OCCLUSION_QUERY_STATE_FINISH,
 	};
 
+	static const int RESULT_INVALID;
+
     rvmOcclusionQuery();
 
     //~rvmOcclusionQuery(){}
 
     bool IsQueryStale(void) const;
-    bool IsVisible(bool def = true);
+    int Query(int def = RESULT_INVALID);
 
 	static void BeginRender(void);
 	static void EndRender(void);
 	void Init(void);
 	void Destroy(void);
-	void Begin(GLenum mode = GL_ANY_SAMPLES_PASSED, int ms = 0);
+	void SetMode(GLenum m);
+	void Begin(int ms = 0);
 	void End(void);
 	void Sync(bool wait = false);
 	int GetResult(void) const;
 	void Next(void);
+	bool IsWaiting(void) const;
+	bool IsFinished(void) const;
+	bool HasResult(void) const;
 
 private:
 	void Reset(void);
@@ -44,6 +50,21 @@ private:
 ID_INLINE int rvmOcclusionQuery::GetResult(void) const
 {
 	return result;
+}
+
+ID_INLINE bool rvmOcclusionQuery::IsWaiting(void) const
+{
+	return queryState == OCCLUSION_QUERY_STATE_WAITING;
+}
+
+ID_INLINE bool rvmOcclusionQuery::IsFinished(void) const
+{
+	return queryState == OCCLUSION_QUERY_STATE_FINISH;
+}
+
+ID_INLINE bool rvmOcclusionQuery::HasResult(void) const
+{
+	return result > RESULT_INVALID;
 }
 
 #endif

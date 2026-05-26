@@ -34,6 +34,9 @@ If you have questions concerning this license or the applicable additional terms
 #if defined(_RAVEN) || defined(_HUMANHEAD) //k: dynamic model gui trace
 #include "Model_local.h"
 #endif
+#ifdef _SPLASHDAMAGE
+#include "renderer/OcclusionTest.h"
+#endif
 
 /*
 ===================
@@ -171,6 +174,12 @@ idRenderWorldLocal::idRenderWorldLocal()
 #endif
 #ifdef _SPLASHDAMAGE //karin: atmosphere
 	atmosphere = NULL;
+	for (int i = 0; i < occlusionTests.Num(); i++)
+	{
+		if (occlusionTests[i])
+			occlusionTests[i]->FreeOcclusionTest();
+	}
+	occlusionTests.DeleteContents(true);
 #endif
 }
 
@@ -845,6 +854,7 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 	parms->renderWorld = this;
 #ifdef _SPLASHDAMAGE //karin: custom stage shader parms to backend
 	R_AddCopyParmsCmd(parms);
+	UpdateOcclusionTests();
 #endif
 
 	// use this time for any subsequent 2D rendering, so damage blobs/etc
@@ -3762,21 +3772,105 @@ void idRenderWorldLocal::FreeStoppedEffectDefs( void ) {
 }
 
 qhandle_t idRenderWorldLocal::AddOcclusionTestDef( const occlusionTest_t *occtest ) {
+#ifdef _OPENGLES3
+	if (GL_QUERY_AVAILABLE())
+	{
+		sdOcclusionTestLocal *test = new sdOcclusionTestLocal;
+		int index = occlusionTests.FindNull();
+		if (index == -1)
+			index = occlusionTests.Append(test);
+		else
+			occlusionTests[index] = test;
+		test->index = index;
+		test->world = this;
+		test->UpdateOcclusionTest(occtest);
+		return index;
+	}
+#endif
 	return -1;
 }
 
 void idRenderWorldLocal::UpdateOcclusionTestDef( qhandle_t occtestHandle, const occlusionTest_t *occtest ) {
+#ifdef _OPENGLES3
+	if (GL_QUERY_AVAILABLE())
+	{
+		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+			common->Error("idRenderWorld::UpdateOcclusionTestDef: index = %i", occtestHandle);
+			return;
+		}
+		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		if (!test)
+		{
+			test = new sdOcclusionTestLocal;
+			occlusionTests[occtestHandle] = test;
+			test->index = occtestHandle;
+			test->world = this;
+		}
+		test->UpdateOcclusionTest(occtest);
+	}
+#endif
 }
 
 bool idRenderWorldLocal::IsVisibleOcclusionTestDef( qhandle_t occtestHandle ) {
-	return false;
+#ifdef _OPENGLES3
+	if (GL_QUERY_AVAILABLE())
+	{
+		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+			common->Error("idRenderWorld::IsVisibleOcclusionTestDef: index = %i", occtestHandle);
+			return true;
+		}
+		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		if (!test)
+			return true;
+		return test->IsVisible();
+	}
+#endif
+	return true;
 }
 
 void idRenderWorldLocal::FreeOcclusionTestDef( qhandle_t occtestHandle ) {
+#ifdef _OPENGLES3
+	if (GL_QUERY_AVAILABLE())
+	{
+		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+			common->Error("idRenderWorld::FreeOcclusionTestDef: index = %i", occtestHandle);
+			return;
+		}
+		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		if (test)
+		{
+			test->FreeOcclusionTest();
+			delete test;
+			occlusionTests[occtestHandle] = NULL;
+		}
+	}
+#endif
 }
 
 int idRenderWorldLocal::CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) {
-	return 0;
+#ifdef _OPENGLES3
+	if (GL_QUERY_AVAILABLE())
+	{
+		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+			common->Error("idRenderWorld::CountVisibleOcclusionTestDef: index = %i", occtestHandle);
+			return INT_MAX;
+		}
+		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		if (!test)
+			return INT_MAX;
+		return test->CountVisible();
+	}
+#endif
+	return INT_MAX;
+}
+
+void idRenderWorldLocal::UpdateOcclusionTests( void )
+{
+	for (int i = 0; i < occlusionTests.Num(); i++)
+	{
+		if (occlusionTests[i])
+			occlusionTests[i]->Ready();
+	}
 }
 
 idRenderModelDecal * idRenderModel_decal::Create(void) {
@@ -3906,7 +4000,30 @@ void idRenderWorldLocal::DebugArrow( const idVec4 &color, const idVec3 &start, c
 }
 
 void idRenderWorldLocal::DebugBounds( const idVec4 &color, const idBounds &bounds, const idVec3 &org, const idMat3& axes, const int lifetime ) {
-	DebugBounds(color, bounds, org, lifetime);
+	int i;
+	idVec3 v[8];
+
+	if (bounds.IsCleared()) {
+		return;
+	}
+
+	//karin: transform by modelMatrix
+	float modelMatrix[16];
+	R_AxisToModelMatrix(axes, org, modelMatrix);
+	idVec3 p;
+	for (i = 0; i < 8; i++) {
+		p[0] = bounds[(i^(i>>1))&1][0];
+		p[1] = bounds[(i>>1)&1][1];
+		p[2] = bounds[(i>>2)&1][2];
+
+		R_LocalPointToGlobal(modelMatrix, p, v[i]);
+	}
+
+	for (i = 0; i < 4; i++) {
+		DebugLine(color, v[i], v[(i+1)&3], lifetime);
+		DebugLine(color, v[4+i], v[4+((i+1)&3)], lifetime);
+		DebugLine(color, v[i], v[4+i], lifetime);
+	}
 }
 
 void idRenderWorldLocal::SetAtmosphere( const sdDeclAtmosphere* a ) {

@@ -597,6 +597,14 @@ struct occlusionTest_t {
     int			view;
 };
 
+class sdOcclusionTest {
+public:
+	virtual					~sdOcclusionTest( void ) {}
+
+	virtual void			FreeOcclusionTest( void ) = 0;
+	virtual void			UpdateOcclusionTest( const occlusionTest_t *def ) = 0;
+};
+
 struct cheapDecalParameters_t {
     idVec3				origin;
     idVec3				normal;
@@ -785,6 +793,7 @@ class idRenderWorld
     	virtual bool			IsVisibleOcclusionTestDef( qhandle_t occtestHandle ) = 0;
     	virtual	void			FreeOcclusionTestDef( qhandle_t occtestHandle ) = 0;
     	virtual int				CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) = 0;
+		virtual void			UpdateOcclusionTests( void ) = 0;
 #endif
 		// Force the generation of all light / surface interactions at the start of a level
 		// If this isn't called, they will all be dynamically generated
