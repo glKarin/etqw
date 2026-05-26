@@ -7,38 +7,38 @@ class idFramebuffer;
 class sdPostprocessBuffer
 {
 	public:
-		sdPostprocessBuffer(void);
+							sdPostprocessBuffer(void);
 
-        void Begin(int index);
-        void End(void);
-		void Clear(void) const;
-		bool Init(int width, int height);
-		void Shutdown(void);
-		uint32_t GetFramebuffer(void) const;
+        void				Begin(int index);
+        void				End(void);
+		void				Clear(void) const;
+		bool				Init(int width, int height);
+		void				Shutdown(void);
+		uint32_t			GetFramebuffer(void) const;
         // framebuffer size
-        int	 Width(void) const {
+        int					Width(void) const {
             return width;
         }
-        int	 Height(void) const {
+        int					Height(void) const {
             return height;
         }
         // texture size
-        int	 UploadWidth(void) const;
-        int	 UploadHeight(void) const;
-		void ClearAll(void) const;
+        int					UploadWidth(void) const;
+        int					UploadHeight(void) const;
+		void				ClearAll(void) const;
 
 	private:
-		void UploadImage(void) const;
+		void				UploadImage(void) const;
 
 	private:
-		int width;
-		int height;
-		idFramebuffer *fb;
-        idImage *images[2];
-		int currentBuffer;
+		int					width;
+		int					height;
+		idFramebuffer		*fb;
+        idImage				*images[2];
+		int					currentBuffer;
 
-		sdPostprocessBuffer(const sdPostprocessBuffer &);
-		sdPostprocessBuffer & operator=(const sdPostprocessBuffer &);
+							sdPostprocessBuffer(const sdPostprocessBuffer &);
+							sdPostprocessBuffer & operator=(const sdPostprocessBuffer &);
 };
 
 extern sdPostprocessBuffer postprocessBuffer;

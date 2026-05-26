@@ -28,51 +28,51 @@ class sdRenderProgramShader
 			SL_HLSL,
 		} shaderLang_t;
 
-		sdRenderProgramShader(void);
-		void Init(void);
-		bool IsValid(void) const;
-		bool Parse(idParser &src);
-		void PostParse(const sdDeclRenderProgram *program);
-		shaderType_t GetType(void) const {
+									sdRenderProgramShader(void);
+		void						Init(void);
+		bool						IsValid(void) const;
+		bool						Parse(idParser &src);
+		void						PostParse(const sdDeclRenderProgram *program);
+		shaderType_t				GetType(void) const {
 			return type;
 		}
-		shaderLang_t GetLang(void) const {
+		shaderLang_t				GetLang(void) const {
 			return lang;
 		}
-		const char * GetSource(void) const {
+		const char *				GetSource(void) const {
 			return source.c_str();
 		}
-		const idStrList & GetPlaceholders(void) const {
+		const idStrList &			GetPlaceholders(void) const {
 			return placeholders;
 		}
 		const idList<const sdDeclRenderBinding *> & GetBindings(void) const {
 			return bindings;
 		}
-		int NumBindings(void) const {
+		int							NumBindings(void) const {
 			return bindings.Num();
 		}
 		const sdDeclRenderBinding * GetBinding(int i) const {
 			return i >= 0 && i < bindings.Num() ? bindings[i] : NULL;
 		}
 		const sdDeclRenderBinding * GetBinding(const char *name) const;
-		const char * GetPlaceholder(int i) const {
+		const char *				GetPlaceholder(int i) const {
 			return i >= 0 && i < placeholders.Num() ? placeholders[i].c_str() : NULL;
 		}
-		void ExportSource(const char *path, const char *filename, const char *name, bool raw = false) const;
-		bool HasPostprocessTexture(void) const;
+		void						ExportSource(const char *path, const char *filename, const char *name, bool raw = false) const;
+		bool						HasPostprocessTexture(void) const;
 
 	private:
-		void HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName);
-		void BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length);
+		void						HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName);
+		void						BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length);
 
 	private:
-		shaderType_t type;
-		shaderLang_t lang;
-		idStr sourceRaw;
-		idStrList placeholders;
-		idStr source;
+		shaderType_t				type;
+		shaderLang_t				lang;
+		idStr						sourceRaw;
+		idStrList					placeholders;
+		idStr						source;
 		idList<const sdDeclRenderBinding *> bindings;
-		idStrList defines;
+		idStrList					defines;
 
 		friend class sdDeclRenderProgram;
 };

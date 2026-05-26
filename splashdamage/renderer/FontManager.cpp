@@ -1198,9 +1198,21 @@ void sdFontManagerLocal::WriteChecksum(const char *fileName, unsigned int checks
 	common->Printf("Write font checksum '%s' to %s.\n", checksumStr.c_str(), checksumFile.c_str());
 }
 
+void sdFontManagerLocal::RemoveChecksum(const char *fileName) const
+{
+	idStr checksumFile;
+	ChecksumFileName(checksumFile, fileName);
+	if (fileSystem->ReadFile(checksumFile.c_str(), NULL) > 0)
+	{
+		fileSystem->RemoveFile(checksumFile);
+		common->Printf("Remove old font checksum file '%s'.\n", checksumFile.c_str());
+	}
+}
+
 bool sdFontManagerLocal::ConvertFont(const sdLocFont_t *fc, const char *name, const char *lang, const char *fileName) const
 {
 	common->Printf("Converting and caching true type font '%s' to DOOM3 font......\n", name);
+	RemoveChecksum(fileName);
 	if(R_ExportTrueTypeFont(fc->file.c_str(), name, lang, DEFAULT_FONT_TEXTURE_SIZE))
 	{
 		common->Printf("Convert and cached true type font '%s' to DOOM3 font successful.\n", name);

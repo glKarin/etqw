@@ -57,6 +57,7 @@ private:
 	bool					ConvertFont(const sdLocFont_t *fc, const char *name, const char *lang, const char *fileName) const;
 	unsigned int			ReadChecksum(const char *fileName) const;
 	void					WriteChecksum(const char *fileName, unsigned int checksum) const;
+	void					RemoveChecksum(const char *fileName) const;
 	void					ChecksumFileName(idStr &out, const char *fileName) const;
 	unsigned int			TrueTypeFontFileChecksum(const char *file) const;
 
