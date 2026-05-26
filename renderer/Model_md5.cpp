@@ -65,7 +65,8 @@ idMD5Mesh::idMD5Mesh()
 	deformInfo		= NULL;
 	surfaceNum		= 0;
 #ifdef _SPLASHDAMAGE //karin: md5mesh version 11: flags
-	flags			= 0;
+	flags.vertexColor = false;
+	flags.noAnimate = false;
 #endif
 }
 
@@ -142,12 +143,12 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 				break;
 
 			if(!idStr::Icmp(token, "vertexColor")) {
-				flags |= MD5MF_VERTEX_COLOR;
+				flags.vertexColor = true;
 				continue;
 			}
 
 			if(!idStr::Icmp(token, "noAnimate")) {
-				flags |= MD5MF_NO_ANIMATE;
+				flags.noAnimate = true;
 				continue;
 			}
 
@@ -319,7 +320,7 @@ void idMD5Mesh::ParseMesh(idLexer &parser, int numJoints, const idJointMat *join
 		verts[i].Clear();
 		verts[i].st = texCoords[i];
 #ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
-		if(flags & MD5MF_VERTEX_COLOR)
+		if(flags.vertexColor)
 		{
 			verts[i].color[0] = vertColors[i].r;
 			verts[i].color[1] = vertColors[i].g;
@@ -429,7 +430,7 @@ void idMD5Mesh::UpdateSurface(const struct renderEntity_s *ent, const idJointMat
 			tri->verts[i].Clear();
 			tri->verts[i].st = texCoords[i];
 #ifdef _SPLASHDAMAGE //karin: md5mesh version 11 vertex color
-			if(flags & MD5MF_VERTEX_COLOR)
+			if(flags.vertexColor)
 			{
 				tri->verts[i].color[0] = vertColors[i].r;
 				tri->verts[i].color[1] = vertColors[i].g;
@@ -1308,7 +1309,7 @@ int idMD5Mesh::FindBinaryVert(const idList<binaryVertGroup_t> &list) const
 	{
 		if(group->shader != shader)
 			continue;
-		if(group->noAnimate != ((flags & MD5MF_NO_ANIMATE) != 0))
+		if(group->noAnimate != flags.noAnimate)
                 continue;
             if (group->shader->GetEntityGui())
                 continue;
@@ -1373,7 +1374,7 @@ bool idMD5Mesh::ReadBinary(idFile *file, int numJoints, const void *transforms, 
 	file->ReadInt(i); // v44
 	file->ReadInt(numRawVertex); // v52
 	file->ReadBool(bool_v196); // v196
-	if(bool_v196) flags |= MD5MF_NO_ANIMATE;
+	if(bool_v196) flags.noAnimate = true;
 	file->ReadBool(bool_v198);
 	file->ReadBool(vertexRigidFlag);
 

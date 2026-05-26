@@ -281,11 +281,10 @@ class idMD5Mesh
 			vertColor_t() : r(0), g(0), b(0), a(0) {}
 		};
 		idList<vertColor_t>			vertColors;
-		int							flags;
-		enum md5meshFlags {
-			MD5MF_VERTEX_COLOR = 1,
-			MD5MF_NO_ANIMATE = 2,
-		};
+		struct {
+			bool vertexColor : 1;
+			bool noAnimate : 1;
+		} flags;
 		idStr						meshName;
 #endif
 };
