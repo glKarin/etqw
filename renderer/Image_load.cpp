@@ -964,21 +964,21 @@ ImageProgramStringToFileCompressedFileName
 #ifdef _SPLASHDAMAGE //karin: generated compressed image file name
 void iImageProgramStringToCompressedFileName(const char *imageProg, char *fileName)
 {
-  int v4; // eax
-  char *v5; // edi
-  const char *v6; // esi
-  const char *v7; // ebx
-  intptr_t v8; // edx
-  const char *v9; // ecx
-  char v10; // al
-  char v11; // al
-  int v12; // ecx
-  char v13; // dl
-  size_t v14; // eax
-  int v15; // eax
-  char *v16; // eax
-  int v17; // [esp-4h] [ebp-14h]
-  char *Sourcea; // [esp+14h] [ebp+4h]
+  int length_v4;
+  char *v5;
+  const char *v6;
+  const char *v7;
+  intptr_t v8;
+  const char *v9;
+  char v10;
+  char v11;
+  int v12;
+  char v13;
+  size_t v14;
+  int v15;
+  char *v16;
+  int v17;
+  char *Sourcea;
 
   if ( idStr::CheckExtension(imageProg, "dds") )
   {
@@ -986,14 +986,14 @@ void iImageProgramStringToCompressedFileName(const char *imageProg, char *fileNa
     return;
   }
   idStr::Copynz(fileName, "generated/dds/", 256);
-  v4 = 0;
+  length_v4 = 0;
   if ( *fileName )
   {
     do
-      ++v4;
-    while ( fileName[v4] );
+      ++length_v4;
+    while ( fileName[length_v4] );
   }
-  v5 = &fileName[v4];
+  v5 = &fileName[length_v4];
   Sourcea = 0;
   v6 = imageProg;
   v7 = imageProg;
@@ -1100,7 +1100,7 @@ LABEL_27:
 void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char *fileName) const
 {
 #ifdef _SPLASHDAMAGExxx
-  int v4; // eax
+  int length_v4; // eax
   char *v5; // edi
   const char *v6; // esi
   char *v7; // ebx
@@ -1122,14 +1122,14 @@ void idImage::ImageProgramStringToCompressedFileName(const char *imageProg, char
     return;
   }
   idStr::Copynz(fileName, "generated/dds/", 256);
-  v4 = 0;
+  length_v4 = 0;
   if ( *fileName )
   {
     do
-      ++v4;
-    while ( fileName[v4] );
+      ++length_v4;
+    while ( fileName[length_v4] );
   }
-  v5 = &fileName[v4];
+  v5 = &fileName[length_v4];
   Sourcea = 0;
   v6 = imageProg;
   v7 = imageProg;

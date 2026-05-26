@@ -305,13 +305,13 @@ idAASFileLocal::PointReachableAreaNum
 int idAASFileLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &searchBounds, const int areaFlags, const int excludeTravelFlags) const
 {
 #ifdef _SPLASHDAMAGE
-	int result; // eax
-	int i_v7; // ebx
+	int result;
+	int i_v7;
 	idVec3 invGravityDir_v8;
-	idVec3 originDown_v11; // [esp+14h] [ebp-44h] BYREF
-	idBounds bounds_v12; // [esp+20h] [ebp-38h] BYREF
-	idAASFileLocal::bestReachableArea_t bestReachableArea_v13; // [esp+38h] [ebp-20h] BYREF
-	float maxStepHeight; // [esp+64h] [ebp+Ch]
+	idVec3 originDown_v11;
+	idBounds bounds_v12;
+	idAASFileLocal::bestReachableArea_t bestReachableArea_v13;
+	float maxStepHeight;
 
 	bestReachableArea_v13.v0 = this->settings.boundingBox[1].z - this->settings.boundingBox[0].z;
 	bestReachableArea_v13.excludeTravelFlags = excludeTravelFlags;
@@ -343,7 +343,7 @@ int idAASFileLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &
 		result = bestReachableArea_v13.areaNum2;
 		if ( bestReachableArea_v13.areaNum2 )
 			break;
-		idAASFileLocal::BoundsBestReachableAreaNum(&bounds_v12, &origin, 1, 0, &bestReachableArea_v13);
+		idAASFileLocal::BoundsBestReachableAreaNum(&bounds_v12, &origin, 1, NULL, &bestReachableArea_v13);
 		++i_v7;
 		bounds_v12.ExpandSelf(4.0f);
 		if ( i_v7 >= 4 )
@@ -433,12 +433,12 @@ idAASFileLocal::BoundsReachableAreaNum_r
 */
 int idAASFileLocal::BoundsReachableAreaNum_r(const idBounds *bounds_a2, int nodeNum_a3, int areaFlags_a4, int excludeTravelFlags_a5) const {
 
-	int areaNum_v5; // eax
-	bool isAreaNum_v6; // sf
-	const aasNode_t *v8; // esi
-	int side_v9; // eax
-	int result; // eax
-	const aasArea_t *area_v11; // edi
+	int areaNum_v5;
+	bool isAreaNum_v6;
+	const aasNode_t *v8;
+	int side_v9;
+	int result;
+	const aasArea_t *area_v11;
 
 	areaNum_v5 = nodeNum_a3;
 	isAreaNum_v6 = nodeNum_a3 < 0;
@@ -547,7 +547,6 @@ void idAASFileLocal::PushPointIntoAreaNum(int areaNum, idVec3 &point) const
 {
 #ifdef _SPLASHDAMAGE
 	PushPointIntoArea(areaNum, point);
-	//common->Error("Disable idAASFileLocal::PushPointIntoAreaNum(%d)", areaNum);
 #else
 	int i, faceNum;
 	const aasArea_t *area;
@@ -857,56 +856,52 @@ idAASFileLocal::PushPointIntoArea
 ============
 */
 bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
-  bool ret_v4; // bl
-  const aasArea_t *area_v5; // esi
-  int edgeIndex_v6; // ecx
-  unsigned int edgeIndexAbs_v7; // edx
-  const aasEdge_t *edge_list; // eax
-  bool b_v9; // zf
-  const aasEdge_t *edge_v10; // eax
-  const idVec3 *vertex_v11; // edx
-  const idVec3 *edgeVertexLT0_p_x; // esi
-  const idVec3 *edgeVertexGE0_v13; // ebx
-  float rightLength_v14; // st7
-  //float v15; // st7
-  float normalX_v16; // st6
-  float normalZ_v17; // st5
-  float normalY_v18; // st4
-  float normalY_v19; // st5
-  float normalZ_v20; // st4
-  float normalZ_v21; // st3
-  float v22; // st3
-  float normalX_v23; // st4
-  float normalY_v24; // st6
-  float normalX_v25; // rt2
-  float normalY_v26; // rtt
-  float v27; // st3
-  bool result; // al
-  float v29; // [esp+8h] [ebp-98h]
-  float rightLengthSqr_v30; // [esp+8h] [ebp-98h]
-  float rightLength_v31; // [esp+8h] [ebp-98h]
-  float v32; // [esp+8h] [ebp-98h]
-  float rightLengthInv_v33; // [esp+8h] [ebp-98h]
-  float dist_v34; // [esp+8h] [ebp-98h]
-  char cilpped_v35; // [esp+Fh] [ebp-91h]
-  float normalX_v36; // [esp+10h] [ebp-90h]
-  float normalY_v37; // [esp+10h] [ebp-90h]
-  float normalZ_v38; // [esp+10h] [ebp-90h]
-  float v39; // [esp+10h] [ebp-90h]
-  float dist_v40; // [esp+10h] [ebp-90h]
-  float dist_v41; // [esp+10h] [ebp-90h]
-  float dist_v42; // [esp+10h] [ebp-90h]
-  char v43; // [esp+17h] [ebp-89h]
+	bool ret_v4;
+	const aasArea_t *area_v5;
+	int edgeIndex_v6;
+	unsigned int edgeIndexAbs_v7;
+	const aasEdge_t *edge_list;
+	bool noVerticleEdge_v9;
+	const aasEdge_t *edge_v10;
+	const idVec3 *vertex_v11;
+	const idVec3 *edgeVertexLT0_p_x;
+	const idVec3 *edgeVertexGE0_v13;
+	float rightLength_v14;
+	float normalX_v16;
+	float normalZ_v17;
+	float normalY_v18;
+	float normalY_v19;
+	float normalZ_v20;
+	float normalZ_v21;
+	float v22;
+	float normalX_v23;
+	float normalY_v24;
+	float normalX_v25;
+	float normalY_v26;
+	float v27;
+	bool result;
+	float v29;
+	float rightLengthSqr_v30;
+	float rightLength_v31;
+	float v32;
+	float rightLengthInv_v33;
+	float dist_v34;
+	char cilpped_v35;
+	float normalX_v36;
+	float normalY_v37;
+	float normalZ_v38;
+	float v39;
+	float dist_v40;
+	float dist_v41;
+	float dist_v42;
+	char v43;
 	idVec3 rightNormalized_v44; // v44 v45 v48
-  //float v44; // [esp+18h] [ebp-88h]
-  //float v45; // [esp+1Ch] [ebp-84h]
-  float normalY_v46; // [esp+1Ch] [ebp-84h]
-  //float v48; // [esp+20h] [ebp-80h]
-  float normalZ_v49; // [esp+20h] [ebp-80h]
-  float v52 = 0.0f; // [esp+24h] [ebp-7Ch]
-  int edgeIndexNum_v53; // [esp+28h] [ebp-78h]
-  const aasArea_t *v56; // [esp+38h] [ebp-68h]
-  float maxDistance_v57; // [esp+3Ch] [ebp-64h]
+	float normalY_v46;
+	float normalZ_v49;
+	float v52 = 0.0f;
+	int edgeIndexNum_v53;
+	const aasArea_t *area_v56;
+	float maxDistance_v57;
 	idVec3 right_v58; // v58 v59 v60
 	idVec3 edgeLine_v61; // v61 v62 v63
 	idVec3 vertexLT0ToPoint_v64; // v64 v65 v66
@@ -914,189 +909,99 @@ bool idAASFileLocal::PushPointIntoArea( int areaNum, idVec3 &point ) const {
 	idVec3 v70; // v70 v71 v72
 	idVec3 vertexGE0ToPoint_v73; // v73 v74 v75
 	idVec3 v78; // v78 v79 v80
-  idVec3 lastPoint_v81; // 0:^34.12
-  idVec3 originPoint_v82; // 0:^90.12
+	idVec3 lastPoint_v81; // 0:^34.12
+	idVec3 originPoint_v82; // 0:^90.12
 
 	idVec3 v16_19_20;
 
-  maxDistance_v57 = idMath::INFINITY;
-  originPoint_v82 = point;
-  lastPoint_v81 = point;
-  ret_v4 = false;
-  area_v5 = &this->areas[areaNum];
-  cilpped_v35 = 0;
-  v43 = 0;
-  v56 = area_v5;
-  edgeIndexNum_v53 = 0;
-  if ( area_v5->numEdges <= 0 )
-    return ret_v4;
-  do
-  {
-    edgeIndex_v6 = this->edgeIndex[edgeIndexNum_v53 + area_v5->firstEdge];
-    edgeIndexAbs_v7 = abs(edgeIndex_v6);
-    edge_list = this->edges.Ptr();
-    b_v9 = (edge_list[edgeIndexAbs_v7].flags & AAS_EDGE_VERTICAL/* 0x40 */) == 0;
-    edge_v10 = &edge_list[edgeIndexAbs_v7];
-    if ( !b_v9 )
-      goto LABEL_53;
-    vertex_v11 = this->vertices.Ptr();
-    edgeVertexLT0_p_x = &vertex_v11[edge_v10->vertexNum[(unsigned int)edgeIndex_v6 >> 31]];
-    v78 = *edgeVertexLT0_p_x - originPoint_v82;
-    edgeVertexGE0_v13 = &vertex_v11[edge_v10->vertexNum[edgeIndex_v6 >= 0]];
-    v29 = v78.LengthSqr();
-    if ( maxDistance_v57 > v29 )
-    {
-      maxDistance_v57 = v29;
-      lastPoint_v81 = *edgeVertexLT0_p_x;
-    }
-    edgeLine_v61 = *edgeVertexGE0_v13 - *edgeVertexLT0_p_x;
-  	right_v58 = edgeLine_v61.Cross(this->settings.invGravityDir);
-    rightNormalized_v44 = right_v58;
-    rightLengthSqr_v30 = right_v58.LengthSqr();
-    rightLength_v31 = sqrt(rightLengthSqr_v30);
-    rightLength_v14 = rightLength_v31;
-    if ( rightLength_v31 >= idMath::FLT_EPSILON )
-    {
-      rightLengthInv_v33 = 1.0f / rightLength_v14;
-      rightNormalized_v44 = rightLengthInv_v33 * right_v58;
-      v32 = rightLength_v14;
-      //v15 = 0.0f;
-    }
-    else
-    {
-      //v15 = 0.0f;
-      v32 = 0.0f;
-    }
-  	v16_19_20 = rightNormalized_v44;
-#if 0
-    normalX_v16 = rightNormalized_v44.x;
-    normalZ_v17 = rightNormalized_v44.z;
-    normalY_v18 = rightNormalized_v44.y;
-    if ( rightNormalized_v44.x == 0.0f ) // by x-axis
-    {
-      if ( rightNormalized_v44.y == 0.0f ) // if y == 0 pure up/down
-      {
-        normalY_v19 = rightNormalized_v44.y; // 0.0
-        normalZ_v20 = rightNormalized_v44.z;
-        if ( rightNormalized_v44.z <= 0.0f )
-          normalZ_v21 = -1.0f;
-        else
-          normalZ_v21 = 1.0f;
-        if ( normalZ_v21 != normalZ_v20 )
-        {
-          normalZ_v49 = normalZ_v21;
-          normalZ_v20 = normalZ_v49; // -1.0 / 1.0
-        }
-        goto LABEL_44;
-      }
-      if ( 0.0f == normalZ_v17 ) // if z == 0 pure forward/backward
-      {
-        if ( normalY_v18 <= 0.0f )
-          normalY_v22 = -1.0f;
-        else
-          normalY_v22 = 1.0f;
-        if ( normalY_v22 != normalY_v18 )
-        {
-          normalY_v46 = normalY_v22;
-          normalY_v18 = normalY_v46;
-        }
-        goto LABEL_43;
-      }
-    }
-    else if ( rightNormalized_v44.y == 0.0f && 0.0f == normalZ_v17 ) // if y == 0 && z == 0 pure left/right
-    {
-      normalX_v23 = rightNormalized_v44.x;
-      normalY_v24 = rightNormalized_v44.y;
-      if ( rightNormalized_v44.x <= 0.0f )
-      {
-        if ( -1.0f != normalX_v23 )
-          normalX_v23 = -1.0f;
-      }
-      else if ( 1.0f != normalX_v23 )
-      {
-        normalX_v23 = 1.0f;
-      }
-      goto LABEL_42;
-    }
-    normalX_v36 = fabs(normalX_v16);
-    if ( 1.0f == normalX_v36 )
-    {
-      if ( 0.0f == normalY_v18 && 0.0f == normalZ_v17 )
-        goto LABEL_43;
-      normalZ_v17 = 0.0f; // v50
-      normalY_v24 = 0.0f; // v50
-      normalX_v23 = rightNormalized_v44.x;
-LABEL_42:
-      normalX_v25 = normalX_v23;
-      normalY_v18 = normalY_v24;
-      normalX_v16 = normalX_v25;
-LABEL_43:
-      normalY_v26 = normalY_v18;
-      normalZ_v20 = normalZ_v17;
-      normalY_v19 = normalY_v26;
-      goto LABEL_44;
-    }
-    normalY_v37 = fabs(normalY_v18);
-    if ( normalY_v37 == 1.0f )
-    {
-      if ( 0.0f != normalX_v16 || 0.0f != normalZ_v17 )
-      {
-        normalZ_v17 = 0.0f; // v51
-        normalX_v16 = 0.0f; // v51
-        normalY_v18 = rightNormalized_v44.y;
-      }
-      goto LABEL_43;
-    }
-    normalZ_v38 = fabs(normalZ_v17);
-    if ( normalZ_v38 != 1.0f || 0.0f == normalX_v16 && 0.0f == normalY_v18 )
-      goto LABEL_43;
-    normalY_v19 = 0.0f; // v47
-    normalX_v16 = 0.0f; // v47
-    normalZ_v20 = rightNormalized_v44.z;
-LABEL_44:
-#endif
-  	//v16_19_20.Set(normalX_v16, normalY_v19, normalZ_v20);
-	v16_19_20.FixDegenerateNormal();
-    if ( 0.0f != v32 )
-    {
-      v39 = v16_19_20 * *edgeVertexGE0_v13;
-      v52 = -v39;
-    }
-    dist_v34 = point * v16_19_20 + v52;
-    v27 = dist_v34;
-    if ( dist_v34 < 0.0f ) // in back
-    {
-      cilpped_v35 = 1;
-      v70 = v16_19_20 * v27;
-      point = point - v70;
-      dist_v34 = 0.0f;
-    }
-    dist_v40 = fabs(dist_v34);
-    if ( dist_v40 < 0.1f ) // in plane
-    {
-      vertexLT0ToGE0_v67 = *edgeVertexGE0_v13 - *edgeVertexLT0_p_x;
-      vertexLT0ToPoint_v64 = point - *edgeVertexLT0_p_x;
-      dist_v41 = vertexLT0ToPoint_v64 * vertexLT0ToGE0_v67;
-      if ( dist_v41 >= 0.0f )
-      {
-        vertexGE0ToPoint_v73 = point - *edgeVertexGE0_v13;
-        dist_v42 = vertexLT0ToGE0_v67 * vertexGE0ToPoint_v73;
-        if ( 0.0f >= dist_v42 )
-          v43 = 1;
-      }
-    }
-    ret_v4 = cilpped_v35;
-    area_v5 = v56;
+	maxDistance_v57 = idMath::INFINITY;
+	originPoint_v82 = point;
+	lastPoint_v81 = point;
+	ret_v4 = false;
+	area_v5 = &this->areas[areaNum];
+	cilpped_v35 = 0;
+	v43 = 0;
+	area_v56 = area_v5;
+	edgeIndexNum_v53 = 0;
+	if ( area_v5->numEdges <= 0 )
+		return ret_v4;
+	do
+	{
+		edgeIndex_v6 = this->edgeIndex[edgeIndexNum_v53 + area_v5->firstEdge];
+		edgeIndexAbs_v7 = abs(edgeIndex_v6);
+		edge_list = this->edges.Ptr();
+		noVerticleEdge_v9 = (edge_list[edgeIndexAbs_v7].flags & AAS_EDGE_VERTICAL/* 0x40 */) == 0;
+		edge_v10 = &edge_list[edgeIndexAbs_v7];
+		if ( !noVerticleEdge_v9 )
+			goto LABEL_53;
+		vertex_v11 = this->vertices.Ptr();
+		edgeVertexLT0_p_x = &vertex_v11[edge_v10->vertexNum[(unsigned int)edgeIndex_v6 >> 31]];
+		v78 = *edgeVertexLT0_p_x - originPoint_v82;
+		edgeVertexGE0_v13 = &vertex_v11[edge_v10->vertexNum[edgeIndex_v6 >= 0]];
+		v29 = v78.LengthSqr();
+		if ( maxDistance_v57 > v29 )
+		{
+			maxDistance_v57 = v29;
+			lastPoint_v81 = *edgeVertexLT0_p_x;
+		}
+		edgeLine_v61 = *edgeVertexGE0_v13 - *edgeVertexLT0_p_x;
+		right_v58 = edgeLine_v61.Cross(this->settings.invGravityDir);
+		rightNormalized_v44 = right_v58;
+		rightLengthSqr_v30 = right_v58.LengthSqr();
+		rightLength_v31 = sqrt(rightLengthSqr_v30);
+		rightLength_v14 = rightLength_v31;
+		if ( rightLength_v31 >= idMath::FLT_EPSILON )
+		{
+			rightLengthInv_v33 = 1.0f / rightLength_v14;
+			rightNormalized_v44 = rightLengthInv_v33 * right_v58;
+			v32 = rightLength_v14;
+		}
+		else
+		{
+			v32 = 0.0f;
+		}
+		v16_19_20 = rightNormalized_v44;
+		v16_19_20.FixDegenerateNormal();
+		if ( 0.0f != v32 )
+		{
+			v39 = v16_19_20 * *edgeVertexGE0_v13;
+			v52 = -v39;
+		}
+		dist_v34 = point * v16_19_20 + v52;
+		v27 = dist_v34;
+		if ( dist_v34 < 0.0f ) // in back
+		{
+			cilpped_v35 = 1;
+			v70 = v16_19_20 * v27;
+			point = point - v70;
+			dist_v34 = 0.0f;
+		}
+		dist_v40 = fabs(dist_v34);
+		if ( dist_v40 < 0.1f ) // in plane
+		{
+			vertexLT0ToGE0_v67 = *edgeVertexGE0_v13 - *edgeVertexLT0_p_x;
+			vertexLT0ToPoint_v64 = point - *edgeVertexLT0_p_x;
+			dist_v41 = vertexLT0ToPoint_v64 * vertexLT0ToGE0_v67;
+			if ( dist_v41 >= 0.0f )
+			{
+				vertexGE0ToPoint_v73 = point - *edgeVertexGE0_v13;
+				dist_v42 = vertexLT0ToGE0_v67 * vertexGE0ToPoint_v73;
+				if ( 0.0f >= dist_v42 )
+					v43 = 1;
+			}
+		}
+		ret_v4 = cilpped_v35;
+		area_v5 = area_v56;
 LABEL_53:
-    ++edgeIndexNum_v53;
-  }
-  while ( edgeIndexNum_v53 < area_v5->numEdges );
-  if ( !ret_v4 )
-    return ret_v4;
-  result = ret_v4;
-  if ( !v43 )
-    point = lastPoint_v81;
-  return result;
+		++edgeIndexNum_v53;
+	}
+	while ( edgeIndexNum_v53 < area_v5->numEdges );
+	if ( !ret_v4 )
+		return ret_v4;
+	result = ret_v4;
+	if ( !v43 )
+		point = lastPoint_v81;
+	return result;
 }
 
 /*
@@ -1111,38 +1016,35 @@ idAASFileLocal::TraceHeight
 */
 bool idAASFileLocal::TraceHeight(aasTraceHeight_t& trace, const idVec3& start, const idVec3& end) const
 {
-	aasTraceStack_t* tstack_p_v4; // edx
-	int nodeNum_v6; // eax
-	const aasNode_t* list; // esi
-	int v8; // eax
-	bool v9; // zf
-	const aasNode_t* node_v10; // esi
-	int numPoints; // eax
-	idVec3* points; // ebx
-	int v13; // eax
-	idVec3* v14; // eax
-	int planeNum; // ebx
-	const idPlane* plane_v16; // eax
-	float front_v20; // st4
-	float back_v21; // st2
-	int nodeNum_v22; // eax
-	int tmpPlaneNum_v23; // ebp
-	float v24; // st1
-	double frac_v25; // st2
-	float zero_v26; // st2
-	double frac2_v27; // st1
-	double front_v29; // [esp+10h] [ebp-1040h]
-	double back_v30; // [esp+10h] [ebp-1040h]
-	float v31; // [esp+10h] [ebp-1040h]
+	aasTraceStack_t* tstack_p_v4;
+	int nodeNum_v6;
+	const aasNode_t* list;
+	int nodeNum_v8;
+	bool noHeightFlag_v9;
+	const aasNode_t* node_v10;
+	int numPoints;
+	idVec3* points;
+	int numPoints_v13;
+	idVec3* tracePoint_v14;
+	int planeNum;
+	const idPlane* plane_v16;
+	float front_v20;
+	float back_v21;
+	int nodeNum_v22;
+	int tmpPlaneNum_v23;
+	float v24;
+	double frac_v25;
+	double frac2_v27;
+	double front_v29;
+	double back_v30;
+	float frac_v31;
 	idVec3 cur_end_v32; // v32 v33 v34
-	idVec3 v35; // v35 v36 v37
+	idVec3 curLine_v35; // v35 v36 v37
 	idVec3 v38; // v38 v39 v40
 	idVec3 cur_mid_v41; // v41 v42 v43
 	idVec3 cur_start_v44; // v44 v45 v46
-	aasTraceStack_t tracestack_v47[MAX_AAS_TREE_DEPTH];
-	// float v47[1024]; // [esp+50h] [ebp-1000h] BYREF
-	aasTraceStack_t* retaddr = &tracestack_v47[MAX_AAS_TREE_DEPTH];
-	// (v47 + 1024) - 32; // [esp+1050h] [ebp+0h] BYREF // aasTraceStack_t
+	aasTraceStack_t tracestack_v47[MAX_AAS_TREE_DEPTH]; // 1024
+	aasTraceStack_t* retaddr = &tracestack_v47[MAX_AAS_TREE_DEPTH]; // 1024 - 32
 
 	idVec3 cur_start_v17; // v17 v18 v19
 	tstack_p_v4 = tracestack_v47;
@@ -1157,18 +1059,18 @@ bool idAASFileLocal::TraceHeight(aasTraceHeight_t& trace, const idVec3& start, c
 		if (!nodeNum_v6)
 			goto LABEL_23;
 		list = this->nodes.Ptr();
-		v8 = nodeNum_v6;
-		v9 = (list[v8].flags & AAS_NODE_FLAG_COLUMN_HEIGHT) == 0; // 2
-		node_v10 = &list[v8];
-		if (!v9)
+		nodeNum_v8 = nodeNum_v6;
+		noHeightFlag_v9 = (list[nodeNum_v8].flags & AAS_NODE_FLAG_COLUMN_HEIGHT) == 0; // 2
+		node_v10 = &list[nodeNum_v8];
+		if (!noHeightFlag_v9)
 		{
 			numPoints = trace.numPoints;
 			if (numPoints < trace.maxPoints)
 			{
 				points = trace.points;
-				v13 = numPoints;
-				points[v13] = tstack_p_v4->start;
-				v14 = &points[v13];
+				numPoints_v13 = numPoints;
+				points[numPoints_v13] = tstack_p_v4->start;
+				tracePoint_v14 = &points[numPoints_v13];
 				trace.points[trace.numPoints++].z = (float)((node_v10->flags >> AAS_NODE_FLAG_COLUMN_HEIGHT/* 2 */) -
 					AAS_NODE_FLAG_COLUMN_HEIGHT_OFFSET/* 0x2000 */);
 			}
@@ -1196,7 +1098,6 @@ bool idAASFileLocal::TraceHeight(aasTraceHeight_t& trace, const idVec3& start, c
 		tmpPlaneNum_v23 = tstack_p_v4->planeNum;
 		v24 = front_v20 >= 0.0f ? front_v20 - TRACEPLANE_EPSILON : (front_v20 + TRACEPLANE_EPSILON);
 		frac_v25 = v24 / (front_v20 - back_v21);
-		zero_v26 = 0.0f;
 		if (frac_v25 >= 0.0f)
 		{
 			if (frac_v25 <= 1.0f)
@@ -1212,26 +1113,26 @@ bool idAASFileLocal::TraceHeight(aasTraceHeight_t& trace, const idVec3& start, c
 		{
 			frac2_v27 = 0.001f;
 		}
-		v35 = cur_end_v32 - cur_start_v17;
-		v31 = frac2_v27;
-		v38 = v35 * v31;
+		curLine_v35 = cur_end_v32 - cur_start_v17;
+		frac_v31 = frac2_v27;
+		v38 = curLine_v35 * frac_v31;
 		cur_mid_v41 = v38 + cur_start_v17;
 		tstack_p_v4->planeNum = planeNum;
 		tstack_p_v4->start = cur_mid_v41;
-		tstack_p_v4->nodeNum = node_v10->children[zero_v26 <= front_v20];
+		tstack_p_v4->nodeNum = node_v10->children[0.0f <= front_v20];
 		tstack_p_v4++;
 		if (tstack_p_v4 >= retaddr)
 			break;
-		nodeNum_v22 = node_v10->children[zero_v26 > front_v20];
+		nodeNum_v22 = node_v10->children[0.0f > front_v20];
 		tstack_p_v4->start = cur_start_v44;
 		tstack_p_v4->end = cur_mid_v41;
 		tstack_p_v4->planeNum = tmpPlaneNum_v23;
-	LABEL_22:
+LABEL_22:
 		tstack_p_v4->nodeNum = nodeNum_v22;
 		tstack_p_v4++;
 		if (tstack_p_v4 >= retaddr)
 			break;
-	LABEL_23:
+LABEL_23:
 		tstack_p_v4--;
 		if (tstack_p_v4 < tracestack_v47)
 			return true;
@@ -1835,25 +1736,25 @@ idAASFileLocal::SplitFloorWinding
 */
 bool idAASFileLocal::SplitFloorWinding(int areaNum_a2, const idPlane* plane_a3, float retDists_a4[], int retSides_a5[]) const
 {
-	const aasArea_t* area_list; // eax
-	int i_v6; // ebp
-	bool noEdges_v7; // cc
-	const aasArea_t* area_v8; // eax
-	float* distPtr_v9; // edi
-	int edgeIndex_v10; // esi
-	const idVec3* vertex_v11; // eax
-	int sign_v12; // eax
-	int v14; // [esp+4h] [ebp-8h]
-	int v15; // [esp+8h] [ebp-4h]
-	const aasArea_t* area_v16; // [esp+10h] [ebp+4h]
+	const aasArea_t* area_list;
+	int i_v6;
+	bool noEdges_v7;
+	const aasArea_t* area_v8;
+	float* distPtr_v9;
+	int edgeIndex_v10;
+	const idVec3* vertex_v11;
+	int sign_v12;
+	int front_v14;
+	int back_v15;
+	const aasArea_t* area_v16;
 	int* signPtr = retSides_a5;
 
 	area_list = this->areas.Ptr();
 	i_v6 = 0;
 	noEdges_v7 = area_list[areaNum_a2].numEdges <= 0;
 	area_v8 = &area_list[areaNum_a2];
-	v15 = 1;
-	v14 = 0;
+	back_v15 = 1;
+	front_v14 = 0;
 	area_v16 = area_v8;
 	if (!noEdges_v7)
 	{
@@ -1874,18 +1775,18 @@ bool idAASFileLocal::SplitFloorWinding(int areaNum_a2, const idPlane* plane_a3, 
 			*distPtr_v9++ = d; // retDists_a4 += 1
 			sign_v12 = FLOATSIGNBITSET(d);
 			// check distance less than 0; sign_v12 = 1 if distance < 0 // *((_DWORD *)distPtr_v9 - 1) >> 31;
-			v15 &= sign_v12;
-			v14 |= sign_v12;
+			back_v15 &= sign_v12;
+			front_v14 |= sign_v12;
 			*signPtr++ = sign_v12;
 			// retSides_a5 += 1 // *(_DWORD *)((char *)distPtr_v9 + ((char *)retSides_a5 - (char *)retDists_a4) - 4) = sign_v12; // retSides_a5 - retDists_a4 == align16( (1+numEdges) * sizeof(int/float) )
 			area_v8 = area_v16;
-			//Sys_Printf("EEE %d/%d: %f %d | %d %d\n", i_v6-1,area_v8->numEdges, d,sign_v12,v15, v14);
+			//Sys_Printf("EEE %d/%d: %f %d | %d %d\n", i_v6-1,area_v8->numEdges, d,sign_v12,back_v15, front_v14);
 		}
 		while (i_v6 < area_v16->numEdges);
 	}
 	retDists_a4[area_v8->numEdges] = *retDists_a4;
 	retSides_a5[area_v8->numEdges] = *retSides_a5;
-	return v15 != v14; // all distance >= 0; v14 == v15 if has distance < 0
+	return back_v15 != front_v14; // all distance >= 0; v14 == v15 if has distance < 0
 }
 
 /*
@@ -1902,29 +1803,29 @@ idAASFileLocal::GetFloorEdgeSplitPoints
 */
 bool idAASFileLocal::GetFloorEdgeSplitPoints(idAASFileLocal::floorEdgeSplitPoint_t* minSplitPoint_a2, idAASFileLocal::floorEdgeSplitPoint_t* maxSplitPoint_a3, int areaNum_a4, const idPlane* toLeftSplitPlane_a5, const idPlane* toForwardRefPlane_a6) const
 {
-	float* dists_v8; // esp
-	int* sides_v9; // esp
-	bool result; // al
-	int i_v11; // eax
-	float* distPtr_v12; // ebx
-	int v13; // ecx
-	int edgeIndex_v14; // ecx // edgeIndex
-	const aasEdge_t* edge_v15; // edx
-	const idVec3* vertex0_v16; // eax
-	const idVec3* vertex1_v17; // edx
-	int v21; // [esp+0h] [ebp-3Ch] BYREF
-	byte v22[8]; // [esp+4h] [ebp-38h] BYREF
-	idVec3 projVertex_v23; // v23 v24 v25
-	idVec3 projLine_v26; // v26 v27 v28
-	idVec3 edgeLine_v29; // edgeVec // v29 v30 v31
-	int i; // [esp+30h] [ebp-Ch]
-	int* sides_v33; // [esp+34h] [ebp-8h]
-	const aasArea_t* area_v34; // [esp+38h] [ebp-4h]
-	int size_v35; // [esp+4Ch] [ebp+10h]
-	int i_v36; // [esp+4Ch] [ebp+10h]
-	float* distPtr_v37; // [esp+50h] [ebp+14h]
-	float frac_v38; // [esp+50h] [ebp+14h]
-	float dist_v39; // [esp+50h] [ebp+14h]
+	float* dists_v8;
+	int* sides_v9;
+	bool result;
+	int i_v11;
+	float* distPtr_v12;
+	//int v13;
+	int edgeIndex_v14;
+	const aasEdge_t* edge_v15;
+	const idVec3* vertex0_v16;
+	const idVec3* vertex1_v17;
+	//int v21;
+	//byte v22[8];
+	idVec3 projVertex_v23;
+	idVec3 projLine_v26;
+	idVec3 edgeLine_v29;
+	//int i;
+	int* sides_v33;
+	const aasArea_t* area_v34;
+	int size_v35;
+	int i_v36;
+	float* distPtr_v37;
+	float frac_v38;
+	float dist_v39;
 
 	idVec3 projVertex_v19;
 	minSplitPoint_a2->point = vec3_origin;
@@ -1937,7 +1838,7 @@ bool idAASFileLocal::GetFloorEdgeSplitPoints(idAASFileLocal::floorEdgeSplitPoint
 	size_v35 = 4 * (area_v34->numEdges + 1) + 15;
 	dists_v8 = (float*)alloca(size_v35);
 	sides_v9 = (int*)alloca(size_v35);
-	sides_v33 = &v21;
+	//sides_v33 = &v21;
 	result = idAASFileLocal::SplitFloorWinding(areaNum_a4, toLeftSplitPlane_a5, dists_v8, sides_v9);
 	// (this, areaNum_a4, toLeftSplitPlane_a5, (float *)&v21, &v21);
 	if (result) // all distance >= 0
@@ -2025,49 +1926,49 @@ idAASFileLocal::GetFloorDistance
 */
 float idAASFileLocal::GetFloorDistance(int areaNum_a2, const idPlane* plane_a3, const idVec3* origin_a4, float minDist_a5, float maxDist_a6) const
 {
-	const aasArea_t* area_v6; // edx
-	float v8; // st7
-	float result; // st7
-	const aasEdge_t* edge_list; // ebx
-	const idVec3* vertexes_v11; // esi
-	const int* edgeIndex_v12; // edi
-	unsigned int edgeIndexAbs_v13; // eax
-	int vertexIndex_v14; // edx
-	const idVec3* vertex1_p_x; // eax
-	const idVec3* vertex0_v16; // edx
-	float v17; // st7
-	float v18; // st5
-	float v19; // st6
-	float v20; // st2
-	float v21; // [esp+4h] [ebp-40h]
+	const aasArea_t* area_v6;
+	float distAbs_v8;
+	float result;
+	const aasEdge_t* edge_list;
+	const idVec3* vertexes_v11;
+	const int* edgeIndex_v12;
+	unsigned int edgeIndexAbs_v13;
+	int vertexIndex_v14;
+	const idVec3* vertex1_p_x;
+	const idVec3* vertex0_v16;
+	float v17;
+	float v18;
+	float v19;
+	float v20;
+	float v21;
 	idVec3 v22; // v22 v23 v24
 	idVec3 edgeLine_v25; // v25 v26 v27
 	idVec3 v28; // v28 v29 v30
 	idVec3 v31; // v31 v32 v33
 	idVec3 v34(0.0f, 0.0f, 0.0f); // v34 v35 v36
-	float dist_v37; // [esp+48h] [ebp+4h]
-	float distAbs_v38; // [esp+48h] [ebp+4h]
-	float v39; // [esp+48h] [ebp+4h]
-	float edgeLineLengthSqr_v40; // [esp+48h] [ebp+4h]
-	float v41; // [esp+48h] [ebp+4h]
-	float v42; // [esp+48h] [ebp+4h]
-	float v43; // [esp+48h] [ebp+4h]
-	float v44; // [esp+48h] [ebp+4h]
-	float v45; // [esp+48h] [ebp+4h]
-	float v46; // [esp+4Ch] [ebp+8h]
-	float maxDist_v47; // [esp+50h] [ebp+Ch]
-	int numEdges; // [esp+54h] [ebp+10h]
+	float dist_v37;
+	float distAbs_v38;
+	float dot_v39;
+	float edgeLineLengthSqr_v40;
+	float v41;
+	float v42;
+	float masDistSqr_v43;
+	float v44;
+	float v45;
+	float dist_v46;
+	float maxDist_v47;
+	int numEdges;
 
 	idVec3 _v18; // v18 v17 v19
 
 	area_v6 = &this->areas[areaNum_a2];
 	dist_v37 = plane_a3->Distance(*origin_a4);
 	distAbs_v38 = fabs(dist_v37);
-	v8 = distAbs_v38;
-	v39 = this->settings.invGravityDir * plane_a3->Normal();
-	v46 = v8 / v39;
-	result = v46;
-	if (minDist_a5 <= v46)
+	distAbs_v8 = distAbs_v38;
+	dot_v39 = this->settings.invGravityDir * plane_a3->Normal();
+	dist_v46 = distAbs_v8 / dot_v39;
+	result = dist_v46;
+	if (minDist_a5 <= dist_v46)
 	{
 		maxDist_v47 = idMath::INFINITY;
 		if (area_v6->numEdges > 0)
@@ -2113,15 +2014,15 @@ float idAASFileLocal::GetFloorDistance(int areaNum_a2, const idPlane* plane_a3, 
 				--numEdges;
 			}
 			while (numEdges);
-			result = v46;
+			result = dist_v46;
 		}
-		v43 = maxDist_a6 * maxDist_a6;
-		if (v43 <= maxDist_v47)
-			return v46;
+		masDistSqr_v43 = maxDist_a6 * maxDist_a6;
+		if (masDistSqr_v43 <= maxDist_v47)
+			return dist_v46;
 		v44 = this->settings.invGravityDir * v34;
 		v45 = fabs(v44);
 		if (v45 >= result)
-			return v46;
+			return dist_v46;
 		else
 			return v45;
 	}
@@ -2141,19 +2042,19 @@ idAASFileLocal::BoundsBestReachableAreaNum
 */
 void idAASFileLocal::BoundsBestReachableAreaNum(const idBounds* bounds_a2, const idVec3* origin_a3, int nodeNum_a4, const idPlane* plane_a5, idAASFileLocal::bestReachableArea_t* bestReachableArea_a6) const
 {
-	int nodeNum_v6; // esi
-	bool b_v7; // sf
-	const aasNode_t* node_v10; // esi
-	int side_v11; // eax
-	const aasArea_t* area_v12; // eax
-	int areaNum_v13; // esi
-	float FloorDistance; // [esp+1Ch] [ebp+4h]
+	int nodeNum_v6;
+	bool isAreaNum_v7;
+	const aasNode_t* node_v10;
+	int side_v11;
+	const aasArea_t* area_v12;
+	int areaNum_v13;
+	float FloorDistance;
 
 	nodeNum_v6 = nodeNum_a4;
-	b_v7 = nodeNum_a4 < 0;
+	isAreaNum_v7 = nodeNum_a4 < 0;
 	if (!nodeNum_a4)
 		return;
-	while (!b_v7)
+	while (!isAreaNum_v7)
 	{
 		node_v10 = &this->nodes[nodeNum_v6];
 		side_v11 = bounds_a2->PlaneSide(this->planeList[node_v10->planeNum], 0.1f);
@@ -2161,29 +2062,25 @@ void idAASFileLocal::BoundsBestReachableAreaNum(const idBounds* bounds_a2, const
 			goto LABEL_7;
 		if (side_v11 != SIDE_BACK/* 1 */)
 		{
-			idAASFileLocal::BoundsBestReachableAreaNum(bounds_a2, origin_a3, node_v10->children[1], plane_a5,
-			                                           bestReachableArea_a6);
-		LABEL_7:
+			idAASFileLocal::BoundsBestReachableAreaNum(bounds_a2, origin_a3, node_v10->children[1], plane_a5, bestReachableArea_a6);
+LABEL_7:
 			if ((node_v10->flags & AAS_NODE_FLAG_FLOOR_PLANE/* 1 */) != 0)
 				plane_a5 = &this->planeList[node_v10->planeNum];
 			nodeNum_v6 = node_v10->children[0];
 			goto LABEL_10;
 		}
 		nodeNum_v6 = node_v10->children[1];
-	LABEL_10:
-		b_v7 = nodeNum_v6 < 0;
+LABEL_10:
+		isAreaNum_v7 = nodeNum_v6 < 0;
 		if (!nodeNum_v6)
 			return;
 	}
 	area_v12 = &this->areas[-nodeNum_v6];
-	if ((area_v12->flags & bestReachableArea_a6->areaFlags) != 0 && (area_v12->travelFlags & bestReachableArea_a6->
-		excludeTravelFlags) == 0)
+	if ((area_v12->flags & bestReachableArea_a6->areaFlags) != 0 && (area_v12->travelFlags & bestReachableArea_a6->excludeTravelFlags) == 0)
 	{
 		areaNum_v13 = -nodeNum_v6;
-		FloorDistance = idAASFileLocal::GetFloorDistance(areaNum_v13, plane_a5, origin_a3, bestReachableArea_a6->v0,
-		                                                 bestReachableArea_a6->v1);
-		if (bestReachableArea_a6->distance1 - bestReachableArea_a6->v0 > FloorDistance && bestReachableArea_a6->
-			distance2 > FloorDistance)
+		FloorDistance = idAASFileLocal::GetFloorDistance(areaNum_v13, plane_a5, origin_a3, bestReachableArea_a6->v0, bestReachableArea_a6->v1);
+		if (bestReachableArea_a6->distance1 - bestReachableArea_a6->v0 > FloorDistance && bestReachableArea_a6->distance2 > FloorDistance)
 		{
 			bestReachableArea_a6->distance2 = FloorDistance;
 			bestReachableArea_a6->areaNum2 = areaNum_v13;
@@ -2201,14 +2098,14 @@ idAASFileLocal::PointBestReachableAreaNum
 */
 void idAASFileLocal::PointBestReachableAreaNum(const idVec3* origin_a2, idAASFileLocal::bestReachableArea_t* bestReachableArea_a3) const
 {
-	const idPlane* plane_list; // ebp
-	int nodeNum_v5; // eax
-	const aasNode_t* node_v6; // esi
-	const idPlane* plane_p_a; // edx
-	const aasArea_t* area_v8; // edx
-	int areaNum_v9; // ebx
-	const idPlane* plane_v10; // [esp+18h] [ebp-4h]
-	float dist_v11; // [esp+20h] [ebp+4h]
+	const idPlane* plane_list;
+	int nodeNum_v5;
+	const aasNode_t* node_v6;
+	const idPlane* plane_p_a;
+	const aasArea_t* area_v8;
+	int areaNum_v9;
+	const idPlane* plane_v10;
+	float dist_v11;
 
 	plane_list = this->planeList.Ptr();
 	plane_v10 = NULL;
@@ -2234,8 +2131,7 @@ void idAASFileLocal::PointBestReachableAreaNum(const idVec3* origin_a2, idAASFil
 			return;
 	}
 	area_v8 = &this->areas[-nodeNum_v5]; // negative is area num
-	if ((area_v8->flags & bestReachableArea_a3->areaFlags) != 0 && (area_v8->travelFlags & bestReachableArea_a3->
-		excludeTravelFlags) == 0)
+	if ((area_v8->flags & bestReachableArea_a3->areaFlags) != 0 && (area_v8->travelFlags & bestReachableArea_a3->excludeTravelFlags) == 0)
 	{
 		areaNum_v9 = -nodeNum_v5;
 		bestReachableArea_a3->distance1 = idAASFileLocal::GetFloorDistance(

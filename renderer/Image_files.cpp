@@ -1194,21 +1194,21 @@ bool R_LoadHalfSphereToCube(const char *imgName, byte *pics[6], int *outSize, ID
 	int scaled_height;
 	size_t size;
 	int stride;
-	float v9; // st7
-	double v10; // st7
-	int v12; // esi
-	int v13; // eax
-	int v14; // esi
+	float v9;
+	double v10;
+	int width_v12;
+	int v13;
+	int v14;
 	int offset;
 	byte *block;
 	int height;
 	int x;
-	float v21; // [esp+60h] [ebp-28h]
+	float v21;
 	int width;
 	int y;
 	int side;
 	ID_TIME_T thisTime;
-	float v26; // [esp+74h] [ebp-14h]
+	float v26;
 	float dir[3];
 
 	if ( pics )
@@ -1266,13 +1266,13 @@ bool R_LoadHalfSphereToCube(const char *imgName, byte *pics[6], int *outSize, ID
 					}
 					v21 = v10;
 					v26 = atan2(dir[1], dir[0]);
-					v12 = width;
+					width_v12 = width;
 					v26 = v26 / 3.1415927;
 					v26 = (v26 * 0.5 + 0.5) * (width - 1.0f);
 					v26 = floor(v26);
 					v13 = (int)v26;
 					v26 = v21 / 3.1415927;
-					v14 = v13 % v12;
+					v14 = v13 % width_v12;
 					v26 = (v26 + v26) * (height - 1.0f);
 					v26 = floor(v26);
 					offset = 4 * (width * ((int)v26 % height) + v14);
