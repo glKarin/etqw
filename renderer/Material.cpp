@@ -1301,6 +1301,7 @@ void idMaterial::ParseBlend(idLexer &src, shaderStage_t *stage)
 
 #ifdef _SPLASHDAMAGE //karin: ETQW material blend
 	if (!token.Icmp("screen")) { // blend screen
+		stage->drawStateBits = GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE; // see m1k3/sunsprite
 		return;
 	}
 #endif
