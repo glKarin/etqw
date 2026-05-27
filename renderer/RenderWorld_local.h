@@ -324,7 +324,7 @@ class idRenderWorldLocal : public idRenderWorld
 		bool					generateAllInteractionsCalled;
 #ifdef _SPLASHDAMAGE
 		const sdDeclAtmosphere	*atmosphere;
-		idList<class sdOcclusionTestLocal *> occlusionTests;
+		idList<class sdOcclusionTestLocal *> occlusionTestDefs;
 #endif
 
 		//-----------------------

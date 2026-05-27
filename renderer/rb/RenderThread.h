@@ -66,7 +66,7 @@ public:
     void                    SyncState( void );
 
 private:
-    idQueueList<ActuallyLoadImage_data_t>	imagesAlloc; //List for the backend thread
+    idQueueList<ActuallyLoadImage_data_t> imagesAlloc; //List for the backend thread
     idQueueList<idImage *>	imagesPurge; //List for the backend thread
 	int						requestState;
 

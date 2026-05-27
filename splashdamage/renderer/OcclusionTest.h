@@ -9,46 +9,19 @@ class sdOcclusionTestLocal : public sdOcclusionTest
 	public:
 							sdOcclusionTestLocal(void);
 	virtual					~sdOcclusionTestLocal(void);
-	bool					IsVisible(void);
-	int						CountVisible(void);
 	virtual void			UpdateOcclusionTest( const occlusionTest_t *def );
 	virtual void			FreeOcclusionTest(void);
-	void					Render(void); // backend
-	void					Ready(void); // frontend
-	int						GetViewID(void) const {
-		return parms.view;
-	}
-
-	private:
-	bool					CreateQuery(void);
-	void					UpdateTri(void);
-	void					MakeModelMatrix(void);
-	bool					ReadResults(void);
-	enum {
-		DIRTY_NONE = 0,
-		DIRTY_BOUNDS = 1,
-		DIRTY_MATRIX = 1 << 1,
-	};
+	bool					IsVisible(void);
+	int						CountVisible(void);
+	int						GetResult(void) const;
 
 public:
 	int						index;
 	idRenderWorldLocal		*world;
-	occlusionTest_t			parms; // frontend
+	occlusionTest_t			parms;
 
 	private:
-	rvmOcclusionQuery		*query;
-	int						lastResult;
-	struct srfTriangles_t	*tri; // backend
-	float					modelMatrix[16]; // backend
-	int						dirty;
-};
-
-class sdOcclusionQueryWrapper
-{
-	public:
-	void					Begin();
-	void					Render(idList<sdOcclusionTestLocal *> &list);
-	void					End();
+	qhandle_t				query;
 };
 
 #endif

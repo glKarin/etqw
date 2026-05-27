@@ -83,6 +83,9 @@ void idRenderThread::BackendThreadShutdown( void )
     common->Printf("[MainThread]: Render thread shutdown -> %zu(%s)\n", threadId, RENDER_THREAD_NAME);
 }
 
+#ifdef _SPLASHDAMAGE //karin: occlusion testing
+extern void RB_QueryOcclusionTesting(void);
+#endif
 // only render thread is running and main thread is waiting
 ID_INLINE static void RB_OnlyRenderThreadRunningAndMainThreadWaiting(void)
 {
@@ -90,6 +93,10 @@ ID_INLINE static void RB_OnlyRenderThreadRunningAndMainThreadWaiting(void)
     RB_GLSL_HandleShaders();
     // debug tools
     RB_SetupRenderTools();
+#ifdef _SPLASHDAMAGE //karin: occlusion testing
+    // occlusion query
+    RB_QueryOcclusionTesting();
+#endif
 //#ifdef _IMGUI
     // start imgui
     //RB_ImGui_Start();

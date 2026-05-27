@@ -174,12 +174,12 @@ idRenderWorldLocal::idRenderWorldLocal()
 #endif
 #ifdef _SPLASHDAMAGE //karin: atmosphere
 	atmosphere = NULL;
-	for (int i = 0; i < occlusionTests.Num(); i++)
+	for (int i = 0; i < occlusionTestDefs.Num(); i++)
 	{
-		if (occlusionTests[i])
-			occlusionTests[i]->FreeOcclusionTest();
+		if (occlusionTestDefs[i])
+			occlusionTestDefs[i]->FreeOcclusionTest();
 	}
-	occlusionTests.DeleteContents(true);
+	occlusionTestDefs.DeleteContents(true);
 #endif
 }
 
@@ -855,6 +855,15 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 #ifdef _SPLASHDAMAGE //karin: custom stage shader parms to backend
 	R_AddCopyParmsCmd(parms);
 	UpdateOcclusionTests();
+#ifdef _MULTITHREAD
+	if(!multithreadActive)
+#endif
+	{
+extern void R_UpdateOcclusionTesting(void);
+extern void RB_QueryOcclusionTesting(void);
+	RB_QueryOcclusionTesting();
+	R_UpdateOcclusionTesting();
+	}
 #endif
 
 	// use this time for any subsequent 2D rendering, so damage blobs/etc
@@ -3776,11 +3785,11 @@ qhandle_t idRenderWorldLocal::AddOcclusionTestDef( const occlusionTest_t *occtes
 	if (GL_QUERY_AVAILABLE())
 	{
 		sdOcclusionTestLocal *test = new sdOcclusionTestLocal;
-		int index = occlusionTests.FindNull();
+		int index = occlusionTestDefs.FindNull();
 		if (index == -1)
-			index = occlusionTests.Append(test);
+			index = occlusionTestDefs.Append(test);
 		else
-			occlusionTests[index] = test;
+			occlusionTestDefs[index] = test;
 		test->index = index;
 		test->world = this;
 		test->UpdateOcclusionTest(occtest);
@@ -3794,15 +3803,15 @@ void idRenderWorldLocal::UpdateOcclusionTestDef( qhandle_t occtestHandle, const 
 #ifdef _OPENGLES3
 	if (GL_QUERY_AVAILABLE())
 	{
-		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+		if (occtestHandle < 0 || occtestHandle >= occlusionTestDefs.Num()) {
 			common->Error("idRenderWorld::UpdateOcclusionTestDef: index = %i", occtestHandle);
 			return;
 		}
-		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		sdOcclusionTestLocal *test = occlusionTestDefs[occtestHandle];
 		if (!test)
 		{
 			test = new sdOcclusionTestLocal;
-			occlusionTests[occtestHandle] = test;
+			occlusionTestDefs[occtestHandle] = test;
 			test->index = occtestHandle;
 			test->world = this;
 		}
@@ -3815,11 +3824,11 @@ bool idRenderWorldLocal::IsVisibleOcclusionTestDef( qhandle_t occtestHandle ) {
 #ifdef _OPENGLES3
 	if (GL_QUERY_AVAILABLE())
 	{
-		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+		if (occtestHandle < 0 || occtestHandle >= occlusionTestDefs.Num()) {
 			common->Error("idRenderWorld::IsVisibleOcclusionTestDef: index = %i", occtestHandle);
 			return true;
 		}
-		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		sdOcclusionTestLocal *test = occlusionTestDefs[occtestHandle];
 		if (!test)
 			return true;
 		return test->IsVisible();
@@ -3832,16 +3841,16 @@ void idRenderWorldLocal::FreeOcclusionTestDef( qhandle_t occtestHandle ) {
 #ifdef _OPENGLES3
 	if (GL_QUERY_AVAILABLE())
 	{
-		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+		if (occtestHandle < 0 || occtestHandle >= occlusionTestDefs.Num()) {
 			common->Error("idRenderWorld::FreeOcclusionTestDef: index = %i", occtestHandle);
 			return;
 		}
-		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		sdOcclusionTestLocal *test = occlusionTestDefs[occtestHandle];
 		if (test)
 		{
 			test->FreeOcclusionTest();
 			delete test;
-			occlusionTests[occtestHandle] = NULL;
+			occlusionTestDefs[occtestHandle] = NULL;
 		}
 	}
 #endif
@@ -3851,11 +3860,11 @@ int idRenderWorldLocal::CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) 
 #ifdef _OPENGLES3
 	if (GL_QUERY_AVAILABLE())
 	{
-		if (occtestHandle < 0 || occtestHandle >= occlusionTests.Num()) {
+		if (occtestHandle < 0 || occtestHandle >= occlusionTestDefs.Num()) {
 			common->Error("idRenderWorld::CountVisibleOcclusionTestDef: index = %i", occtestHandle);
 			return INT_MAX;
 		}
-		sdOcclusionTestLocal *test = occlusionTests[occtestHandle];
+		sdOcclusionTestLocal *test = occlusionTestDefs[occtestHandle];
 		if (!test)
 			return INT_MAX;
 		return test->CountVisible();
@@ -3866,11 +3875,6 @@ int idRenderWorldLocal::CountVisibleOcclusionTestDef( qhandle_t occtestHandle ) 
 
 void idRenderWorldLocal::UpdateOcclusionTests( void )
 {
-	for (int i = 0; i < occlusionTests.Num(); i++)
-	{
-		if (occlusionTests[i])
-			occlusionTests[i]->Ready();
-	}
 }
 
 idRenderModelDecal * idRenderModel_decal::Create(void) {

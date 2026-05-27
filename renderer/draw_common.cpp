@@ -830,28 +830,21 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindImage("skyGradientCubeMap", skyGradientCubeMap);
 }
 
-#ifdef _SPLASHDAMAGE //karin: render occlusion testing
-static void RB_OcclusionTesting(void)
+ID_INLINE static void RB_OcclusionTesting(void)
 {
-	if (!backEnd.viewDef->renderWorld || backEnd.viewDef->renderWorld->occlusionTests.Num() == 0)
-		return;
-
-	idList<sdOcclusionTestLocal *> list;
-	list.Resize(backEnd.viewDef->renderWorld->occlusionTests.Num());
-	sdOcclusionTestLocal *test;
-	for (int i = 0; i < backEnd.viewDef->renderWorld->occlusionTests.Num(); i++)
-	{
-		test = backEnd.viewDef->renderWorld->occlusionTests[i];
-		if (test && backEnd.viewDef->renderView.viewID == test->GetViewID())
-			list.Append(test);
-	}
-	if (list.Num() == 0)
-		return;
-
-	sdOcclusionQueryWrapper queryWrapper;
-	queryWrapper.Render(list);
+	occlusionTestManager->Render();
 }
-#endif
+
+void R_UpdateOcclusionTesting(void)
+{
+	occlusionTestManager->Update();
+}
+
+void RB_QueryOcclusionTesting(void)
+{
+	occlusionTestManager->Query();
+	occlusionTestManager->Ready();
+}
 #endif
 
 /*

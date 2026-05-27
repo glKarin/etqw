@@ -168,9 +168,16 @@ static void R_IssueRenderCommands(volatile frameData_t *fd)
 	}
 }
 
+#ifdef _SPLASHDAMAGE //karin: occlusion testing
+extern void R_UpdateOcclusionTesting(void);
+#endif
 // only main thread is running and render thread is waiting
 ID_INLINE static void R_OnlyMainThreadRunningAndRenderThreadWaiting(void)
 {
+#ifdef _SPLASHDAMAGE //karin: occlusion testing
+	// occlusion query
+	R_UpdateOcclusionTesting();
+#endif
 //#ifdef _IMGUI
 //    R_ImGui_Render();
 //#endif

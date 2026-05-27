@@ -3186,6 +3186,7 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/PostprocessBuffer.cpp
 			splashdamage/renderer/Model_clust.cpp
 			splashdamage/renderer/ImposterGeometry.cpp
+			splashdamage/renderer/OcclusionTest.cpp
 	)
 	set(splashdamage_decl_src
 			splashdamage/decllib/declAmbientCubeMap.cpp

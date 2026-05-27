@@ -2210,7 +2210,10 @@ void R_VidRestart_f(const idCmdArgs &args)
 		globalImages->PurgeAllImages();
 
         // delete framebuffer: shadow map, stencil texture
-        Framebuffer::Shutdown();
+		Framebuffer::Shutdown();
+#ifdef _SPLASHDAMAGE //karin: free occlusion test
+		occlusionTestManager->Shutdown();
+#endif
         // delete all shaders
         R_GLSL_Shutdown();
 
@@ -2559,7 +2562,11 @@ void idRenderSystemLocal::Shutdown(void)
 	globalImages->Shutdown();
 
     // delete framebuffer: shadow map, stencil texture
-    Framebuffer::Shutdown();
+	Framebuffer::Shutdown();
+
+#ifdef _SPLASHDAMAGE //karin: free occlusion test
+	occlusionTestManager->Shutdown();
+#endif
 
 	// close the r_logFile
 	if (logFile) {
