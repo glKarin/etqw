@@ -84,4 +84,4 @@
 
 > Run
 1. Put `base/renderprogs` into game `base` folder(`etqwbase` on Android).
-2. Execute `ETQW +set r_useShadowMapping 1 +set r_forceShadowMapsOnAlphaTestedSurfaces 1`.
+2. Execute `ETQW +set r_multithread 0 +set r_useShadowMapping 1 +set r_forceShadowMapsOnAlphaTestedSurfaces 1`.
