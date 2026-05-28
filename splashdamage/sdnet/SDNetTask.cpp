@@ -4,7 +4,7 @@
 #include "SDNetTask_local.h"
 #include "SDNet_local.h"
 
-#define SD_NET_TASK_FAKE_UPDATE_INTERVAL 1000
+#define SD_NET_TASK_FAKE_UPDATE_INTERVAL 50
 
 sdNetTask_Local::sdNetTask_Local(const char *_name)
     : taskStatus(TS_INITIAL),

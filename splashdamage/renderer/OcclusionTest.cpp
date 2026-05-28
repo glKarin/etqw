@@ -32,10 +32,13 @@ bool sdOcclusionTestLocal::IsVisible(void) {
 		query = occlusionTestManager->Alloc();
 		test = occlusionTestManager->Get(query);
 		test->UpdateQueryMode(GL_ANY_SAMPLES_PASSED);
+		test->Start(idOcclusionTestJob::UT_MANUAL);
 	}
 	else
+	{
 		test = occlusionTestManager->Get(query);
-	test->Start(idOcclusionTestJob::UT_MANUAL);
+		test->Restart();
+	}
 
 	return test->lastResult > 0;
 }
@@ -50,10 +53,13 @@ int sdOcclusionTestLocal::CountVisible(void) {
 		query = occlusionTestManager->Alloc();
 		test = occlusionTestManager->Get(query);
 		test->UpdateQueryMode(GL_SAMPLES_PASSED);
+		test->Start(idOcclusionTestJob::UT_MANUAL);
 	}
 	else
+	{
 		test = occlusionTestManager->Get(query);
-	test->Start(idOcclusionTestJob::UT_MANUAL);
+		test->Restart();
+	}
 
 	return test->lastResult > 0 ? test->lastResult : INT_MAX;
 }

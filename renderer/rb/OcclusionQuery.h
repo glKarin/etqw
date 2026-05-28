@@ -68,6 +68,7 @@ public:
 	void					Free(void); // frontend
 	void					Render(void); // backend
 	void					Start(updateType_e mode); // frontend
+	void					Restart(void); // frontend
 	void					Ready(void); // frontend
 	bool					CanQuery(void) const; // backend
 	void					Query(void); // backend
@@ -88,6 +89,7 @@ private:
 		int			viewID;
 		GLenum		mode;
 		int			dirty;
+		bool		start;
 	};
 
 public:
@@ -98,7 +100,7 @@ public:
 	int						lastResult;
 	float					modelMatrix[16]; // backend
 	updateType_e			update;
-	bool					stop;
+	bool					running;
 
 private:
 	frontEndInfo_t			parms; // frontend

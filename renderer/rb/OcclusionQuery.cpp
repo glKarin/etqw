@@ -165,7 +165,7 @@ idOcclusionTestJob::idOcclusionTestJob(void)
 		tri(NULL),
 		lastResult(0),
 		update(UT_NONE),
-		stop(true)
+		running(false)
 {
 	parms.axis = mat3_identity;
 	parms.origin.Zero();
@@ -173,6 +173,7 @@ idOcclusionTestJob::idOcclusionTestJob(void)
 	parms.dirty = DIRTY_NONE;
 	parms.mode = 0;
 	parms.viewID = -1;
+	parms.start = false;
 
 	((idMat4 *)modelMatrix)->Identity();
 }
@@ -251,11 +252,11 @@ void idOcclusionTestJob::UpdateTri(void)
 	tri->indexes[5] = 3;
 	// top
 	tri->indexes[6] = 4;
-	tri->indexes[7] = 5;
-	tri->indexes[8] = 6;
+	tri->indexes[7] = 6;
+	tri->indexes[8] = 5;
 	tri->indexes[9] = 4;
-	tri->indexes[10] = 6;
-	tri->indexes[11] = 7;
+	tri->indexes[10] = 7;
+	tri->indexes[11] = 6;
 	// left
 	tri->indexes[12] = 0;
 	tri->indexes[13] = 3;
@@ -265,18 +266,18 @@ void idOcclusionTestJob::UpdateTri(void)
 	tri->indexes[17] = 4;
 	// right
 	tri->indexes[18] = 1;
-	tri->indexes[19] = 2;
-	tri->indexes[20] = 5;
+	tri->indexes[19] = 5;
+	tri->indexes[20] = 2;
 	tri->indexes[21] = 2;
-	tri->indexes[22] = 6;
-	tri->indexes[23] = 5;
+	tri->indexes[22] = 5;
+	tri->indexes[23] = 6;
 	// forward
 	tri->indexes[24] = 0;
-	tri->indexes[25] = 1;
-	tri->indexes[26] = 4;
+	tri->indexes[25] = 4;
+	tri->indexes[26] = 1;
 	tri->indexes[27] = 1;
-	tri->indexes[28] = 5;
-	tri->indexes[29] = 4;
+	tri->indexes[28] = 4;
+	tri->indexes[29] = 5;
 	// backward
 	tri->indexes[30] = 3;
 	tri->indexes[31] = 2;
@@ -304,7 +305,7 @@ void idOcclusionTestJob::MakeModelMatrix(void)
 
 void idOcclusionTestJob::Ready(void)
 {
-	if(!query || !parms.mode)
+	if(!query || !parms.mode || !parms.start || update == UT_NONE)
 		return;
 
 	if (parms.dirty & DIRTY_BOUNDS)
@@ -349,6 +350,10 @@ void idOcclusionTestJob::Ready(void)
 	}
 
 	viewID = parms.viewID;
+
+	if (this->update == UT_MANUAL)
+		parms.start = false;
+	running = true;
 }
 
 void idOcclusionTestJob::Start(updateType_e mode)
@@ -368,12 +373,31 @@ void idOcclusionTestJob::Start(updateType_e mode)
 		query = new rvmOcclusionQuery;
 
 	this->update = mode;
-	this->stop = false;
+	this->parms.start = true;
+}
+
+void idOcclusionTestJob::Restart(void)
+{
+	if (!parms.mode)
+	{
+		common->Error("Occlusion test mode not set");
+		return;
+	}
+	if (update == UT_NONE)
+	{
+		common->Error("Occlusion test update type is invalid");
+		return;
+	}
+
+	if(!query)
+		query = new rvmOcclusionQuery;
+
+	this->parms.start = true;
 }
 
 bool idOcclusionTestJob::CanQuery(void) const
 {
-	return tri && query && !stop && parms.mode && update != UT_NONE && !query->IsWaiting();
+	return tri && query && running && parms.mode && update != UT_NONE && !query->IsWaiting();
 }
 
 void idOcclusionTestJob::Query(void)
@@ -420,10 +444,8 @@ void idOcclusionTestJob::Render(void)
 	}
 	query->End();
 
-	if (update == UT_MANUAL)
-	{
-		this->stop = true;
-	}
+	if (this->update == UT_MANUAL)
+		this->running = false;
 }
 
 
@@ -504,7 +526,7 @@ void idOcclusionTestManager::BeginRender(void)
 	GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
 
 	qglDisable(GL_BLEND);
-	qglDisable(GL_CULL_FACE);
+	//qglDisable(GL_CULL_FACE);
 	if (!harm_r_drawOcclusionBounds.GetBool())
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	qglDepthMask(GL_FALSE);
@@ -517,7 +539,7 @@ void idOcclusionTestManager::EndRender(void)
 	if (!harm_r_drawOcclusionBounds.GetBool())
 		qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	qglStencilMask(GL_TRUE);
-	qglEnable(GL_CULL_FACE);
+	//qglEnable(GL_CULL_FACE);
 	qglEnable(GL_BLEND);
 
 	GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
@@ -543,13 +565,13 @@ void idOcclusionTestManager::HandleFree(void) {
 		qhandle_t handle = freeList[i];
 		if (handle < 0 || handle >= list.Num())
 		{
-			common->Warning("idOcclusionTestManager::HandleFree: invalid handle: ", handle);
+			common->Warning("idOcclusionTestManager::HandleFree: invalid handle: %d", handle);
 			continue;
 		}
 		idOcclusionTestJob *item = list[handle];
 		if (!item)
 		{
-			common->Warning("idOcclusionTestManager::HandleFree: handle is NULL: ", handle);
+			common->Warning("idOcclusionTestManager::HandleFree: handle is NULL: %d", handle);
 			continue;
 		}
 		item->Free(); // free tri
@@ -604,7 +626,7 @@ qhandle_t idOcclusionTestManager::Alloc(void) {
 void idOcclusionTestManager::Free(qhandle_t handle) {
 	if (handle < 0 || handle >= list.Num())
 	{
-		common->Warning("idOcclusionTestManager::Free: invalid handle: ", handle);
+		common->Warning("idOcclusionTestManager::Free: invalid handle: %d", handle);
 		return;
 	}
 	freeList.AddUnique(handle);
@@ -613,7 +635,7 @@ void idOcclusionTestManager::Free(qhandle_t handle) {
 idOcclusionTestJob * idOcclusionTestManager::Get(qhandle_t handle) {
 	if (handle < 0 || handle >= list.Num())
 	{
-		common->Warning("idOcclusionTestManager::Get: invalid handle: ", handle);
+		common->Warning("idOcclusionTestManager::Get: invalid handle: %d", handle);
 		return NULL;
 	}
 	return list[handle];
@@ -622,13 +644,13 @@ idOcclusionTestJob * idOcclusionTestManager::Get(qhandle_t handle) {
 int idOcclusionTestManager::GetResult(qhandle_t handle) const {
 	if (handle < 0 || handle >= list.Num())
 	{
-		common->Warning("idOcclusionTestManager::Find: invalid handle: ", handle);
+		common->Warning("idOcclusionTestManager::Find: invalid handle: %d", handle);
 		return -1;
 	}
 	idOcclusionTestJob *item = list[handle];
 	if (!item)
 	{
-		common->Warning("idOcclusionTestManager::Find: handle is NULL: ", handle);
+		common->Warning("idOcclusionTestManager::Find: handle is NULL: %d", handle);
 		return -1;
 	}
 	return item->lastResult;
