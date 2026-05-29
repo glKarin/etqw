@@ -1,0 +1,47 @@
+# mega file struct
+mega {
+    # header
+    fileID: int32 = 1095189837 / [4]char8 = MEGA
+    version: int32 = 8 / 9
+
+	# meta
+    resolution: int32
+		@define tilesPerAxis = resolution / 128
+		@define numLevels = ((FLOAT32_BIT_TO_INT32(resolution / 2048) >> 23) & 0xFF) - 126;
+		@define levelTiles(level) = (tilesPerAxis >> level) ^ 2
+		@define totalTiles = SUM(levelTiles(0...(numLevels - 1)))
+    megaCompressionFormat: int32
+	megaCompressionFormats: int32[numLevels]
+	@if version == 8
+	maxCompressedTileSize: int32
+	@else if version == 9
+	maxCompressedTileSizes: int32[numLevels]
+	@end if
+    tableChunks: [totalTiles]TileTable_t
+        TileTable_t {
+            offset: int32
+            length: uint32
+        }
+	
+	# data
+	@var index = 0
+	@for level in {0...(numLevels-1)}
+		@define width = levelTiles(level)
+		@define height = width
+		@for h in {0...(width-1)}
+			@for w in {0...(width-1)}
+				@define tileTable : TileTable_t = tableChunks[index]
+				<SEEK_SET> tileTable.offset
+				dataChunk: TileData_t # 3 + tileTable.length
+					TileData_t {
+						quality_r: int8
+						quality_g: int8
+						quality_b: int8
+						compressedData: [tileTable.length]uint8
+					}
+				@set index = index + 1
+			@end for
+		@end for
+	@end for
+    <EOF>
+}

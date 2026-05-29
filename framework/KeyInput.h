@@ -236,6 +236,8 @@ class idKeyInput
 };
 
 #ifdef _SPLASHDAMAGE
+extern const int MAX_KEYS;
+extern idKey *keys;
 
 class sdKeyCommand
 {
@@ -261,6 +263,19 @@ private:
     idStr					binding;
     int						action;
     usercmdbuttonType_t		type;
+};
+
+enum
+{
+	KM_CTRL,
+	KM_SHIFT,
+	KM_ALT,
+	KM_COMMAND,
+	KM_RCTRL,
+	KM_RSHIFT,
+	KM_RALT,
+	KM_RCOMMAND,
+	KM_TOTAL
 };
 
 class sdKeyBind
@@ -328,10 +343,10 @@ public:
         if ( _fixedText != NULL ) {
             fixedText = _fixedText;
         }
-#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+
+    	//karin: compat for DOOM3
     	repeats = 0;
     	usercmdAction = UB_NONE;
-#endif
     }
 
     void					SetDown( bool _down );
@@ -368,9 +383,6 @@ public:
         return name.c_str();
     }
 
-#if !defined(_SPLASHDAMAGE)
-protected:
-#endif
     bool					down;
     int						id;
     idStr					name;
@@ -378,15 +390,16 @@ protected:
     idWStr					fixedText;
     sdKeyCommand*			activeCommand;
 
-#ifdef _SPLASHDAMAGE //karin: compat for DOOM3
+	//karin: compat for DOOM3
 	int				repeats;		// if > 1, it is autorepeating
 	idStr			binding;
 	int				usercmdAction;	// for testing by the asyncronous usercmd generation
     usercmdbuttonType_t		type;
 
+	sdKeyCommand			command;
+
 	idKey() : down( false ), id( 0 ), activeCommand( NULL ), repeats(0), usercmdAction(UB_NONE), type(B_COMMAND)
 	{}
-#endif
 };
 
 class sdKeyInputManager

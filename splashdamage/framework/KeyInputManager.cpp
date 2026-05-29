@@ -1,10 +1,12 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#include "idlib/precompiled.h"
+
+#include "framework/KeyInput.h"
 #include "KeyInputManager_Local.h"
 
 sdKeyInputManagerLocal::sdKeyInputManagerLocal() {
-	defaultContexts.SetNum(MAX_KEYS);
 }
 
 sdKeyInputManagerLocal::~sdKeyInputManagerLocal() {
@@ -31,9 +33,9 @@ const char* sdKeyInputManagerLocal::GetBinding( sdBindContext* context, idKey& k
 		sdKeyBind *bind = context->GetBind(key.GetId());
 		if (bind) {
 			if (modifierKey)
-				return bind->GetCommand().GetBinding();
-			else
 				return bind->GetCommand(modifierKey->GetId()).GetBinding();
+			else
+				return bind->GetCommand().GetBinding();
 		}
 	}
 	return "";
@@ -113,7 +115,7 @@ void sdKeyInputManagerLocal::ProcessUserCmdEvent( const sdSysEvent& event ) {
 sdKeyCommand* sdKeyInputManagerLocal::GetCommand( sdBindContext* context, const idKey& key ) {
 #if 1
 	(void)context;
-	sdKeyCommand* keyCommand = &defaultContexts[key.GetId()];
+	sdKeyCommand* keyCommand = &const_cast<idKey &>(key).command;
 	keyCommand->Set(idKeyInput::GetBinding(key.GetId()));
 	return keyCommand;
 #else
@@ -182,6 +184,7 @@ sdKeyCommand::sdKeyCommand( void )
 
 void sdKeyCommand::Set( const char* _binding ) {
 	binding = _binding;
+	type = game->SetupBinding(binding.c_str(), action);
 }
 
 void sdKeyCommand::FixupBind( void ) {

@@ -272,34 +272,6 @@ typedef enum {
     MAX_CONTROLLER_AXIS,
 } controllerAxis_t;
 
-/*typedef enum imeEvent_e {
-	IMEV_COMPOSITION_START,
-	IMEV_COMPOSITION_END,
-	IMEV_COMPOSITION_UPDATE,
-	IMEV_COMPOSITION_COMMIT,
-} imeEvent_t;
-
-typedef enum mouseButton_e {
-	M_INVALID = 0,
-
-	M_MOUSE1 = 1,
-	M_MOUSE2,
-	M_MOUSE3,
-	M_MOUSE4,
-	M_MOUSE5,
-	M_MOUSE6,
-	M_MOUSE7,
-	M_MOUSE8,
-	M_MOUSE9,
-	M_MOUSE10,
-	M_MOUSE11,
-	M_MOUSE12,
-
-	M_MWHEELDOWN,
-	M_MWHEELUP,
-
-	M_NUM_MOUSEBUTTONS,
-} mouseButton_t;*/
 #include "sys/sys_input.h"
 #endif
 
@@ -358,18 +330,14 @@ public:
 	void						FreeData( void );
 
 	bool						IsKeyEvent( void ) const { return evType == SE_KEY
-#if 1
-		&& !(evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) 
-#endif
+		&& !(evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) //karin: compat for DOOM3
 		; }
 	bool						IsCharEvent( void ) const { return evType == SE_CHAR; }
 	bool						IsRealMouseEvent( void ) const { return evType == SE_MOUSE; }
 	bool						IsMouseEvent( void ) const { return evType == SE_MOUSE || evType == SE_CONTROLLER_MOUSE; }
 	bool						IsControllerMouseEvent( void ) const { return evType == SE_CONTROLLER_MOUSE; }
 	bool						IsMouseButtonEvent( void ) const { return 
-#if 1
-		(evType == SE_KEY && evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) || 
-#endif
+		(evType == SE_KEY && evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) || //karin: compat for DOOM3
 		evType == SE_MOUSE_BUTTON; }
 	bool						IsConsoleEvent( void ) const { return evType == SE_CONSOLE; }
 	bool						IsControllerButtonEvent( void ) const { return evType == SE_CONTROLLER_BUTTON; }
@@ -393,7 +361,22 @@ public:
 
 	bool						IsKeyRepeat( void ) const { return ( evValue2 & 0x2 ) != 0; }
 
-	mouseButton_e				GetMouseButton() const { return (evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) ? static_cast< mouseButton_e >( evValue - K_MOUSE1 + 1 ) : M_INVALID; }
+	mouseButton_e				GetMouseButton() const
+	{
+		static const mouseButton_t maps[] = {
+			M_MOUSE1,
+			M_MOUSE2,
+			M_MOUSE3,
+			M_MOUSE4,
+			M_MOUSE5,
+			M_MOUSE6,
+			M_MOUSE7,
+			M_MOUSE8,
+			M_MWHEELDOWN,
+			M_MWHEELUP,
+		};
+		return (evValue >= K_MOUSE1 && evValue <= K_MWHEELUP) ? maps[ evValue - K_MOUSE1 ] : M_INVALID;
+	}
 
 	int							GetGuiAction( void ) const { return evValue; }
 

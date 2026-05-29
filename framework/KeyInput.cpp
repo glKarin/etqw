@@ -180,9 +180,11 @@ keyname_t keynames[] = {
 
 
 
+#ifdef _SPLASHDAMAGE //karin: move to header
+const int	MAX_KEYS = 256;
+#else
 static const int	MAX_KEYS = 256;
 
-#if !defined(_SPLASHDAMAGE) //karin: move to header
 class idKey
 {
 	public:
@@ -882,5 +884,5 @@ const char * IN_FirstKeyFromBinding(const char *binding, int *keycode = NULL)
 #endif
 
 #ifdef _SPLASHDAMAGE //karin: for assess some variables on KeyInput.cpp
-#include "framework/KeyInputManager.cpp"
+//#include "framework/KeyInputManager.cpp"
 #endif

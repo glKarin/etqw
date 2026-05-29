@@ -2023,11 +2023,11 @@ const idDecl *idDeclManagerLocal::DeclByIndex(declType_t type, int index, bool f
 		common->FatalError("idDeclManager::DeclByIndex: bad type: %i", typeIndex);
 	}
 
-	if (index < 0 || index >= linearLists[ typeIndex ].Num()) {
-#ifdef _SPLASHDAMAGE //karin: TEMP TODO index == -1, not found
-		common->Warning("idDeclManager::DeclByIndex: out of range: %s %d", declTypes[typeIndex]->GetName(), index);
+#ifdef _SPLASHDAMAGE //karin: not found, return NULL if index == -1, don't throw exception
+	if(index == -1)
 		return NULL;
 #endif
+	if (index < 0 || index >= linearLists[ typeIndex ].Num()) {
 		common->Error("idDeclManager::DeclByIndex: out of range");
 	}
 
@@ -4324,7 +4324,9 @@ void idDeclManagerLocal::ExportDeclSource(const char *savePath, const char *targ
 			if(expand)
 			{
 				idParser src;
-				src.LoadMemory(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length(), "exportDeclSource");
+				idStr tmpPath = df->fileName;
+				tmpPath.SetFileExtension(".exportDeclSource"); //karin: using same path for find include files
+				src.LoadMemory(finalPreprocessedBuffer.c_str(), finalPreprocessedBuffer.Length(), tmpPath.c_str());
 				src.SetFlags(DECL_LEXER_FLAGS);
 				src.SkipUntilString("{");
 				idToken token;

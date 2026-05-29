@@ -39,7 +39,6 @@ public:
 
 private:
 	idList<sdBindContext *>	bindContexts;
-	idList<sdKeyCommand>	defaultContexts; //karin: compat for DOOM3
 };
 
 extern sdKeyInputManagerLocal inputManagerLocal;
