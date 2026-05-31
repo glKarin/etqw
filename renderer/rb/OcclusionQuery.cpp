@@ -236,7 +236,6 @@ void idOcclusionTestJob::UpdateTri(void)
 	if (tri)
 	{
 		R_FreeStaticTriSurf(tri);
-		tri = NULL;
 	}
 
 	tri = R_AllocStaticTriSurf();
@@ -305,9 +304,6 @@ void idOcclusionTestJob::MakeModelMatrix(void)
 
 void idOcclusionTestJob::Ready(void)
 {
-	if(!query || !parms.mode || !parms.start || update == UT_NONE)
-		return;
-
 	if (parms.dirty & DIRTY_BOUNDS)
 	{
 		UpdateTri();
@@ -321,10 +317,12 @@ void idOcclusionTestJob::Ready(void)
 	}
 
 	if (!tri)
+	{
 		UpdateTri();
 
-	if (!tri)
-		return;
+		if (!tri)
+			return;
+	}
 
 	if (!tri->ambientCache) {
 		if (!R_CreateAmbientCache(tri, false)) {
@@ -342,6 +340,9 @@ void idOcclusionTestJob::Ready(void)
 
 	if (tri->indexCache)
 		vertexCache.Touch(tri->indexCache);
+
+	if(!query || !parms.mode || !parms.start || update == UT_NONE)
+		return;
 
 	if (harm_r_drawOcclusionBounds.GetBool())
 	{
@@ -427,6 +428,9 @@ void idOcclusionTestJob::Query(void)
 
 void idOcclusionTestJob::Render(void)
 {
+	if(!tri || !tri->ambientCache)
+		return;
+
 	float mvp[16];
 	float modelViewMatrix[16];
 	myGlMultMatrix(modelMatrix, backEnd.viewDef->worldSpace.modelViewMatrix, modelViewMatrix);
