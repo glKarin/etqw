@@ -4,8 +4,6 @@
 #if !defined( __SDNETMESSAGE_LOCAL_H__ )
 #define __SDNETMESSAGE_LOCAL_H__
 
-#include "idlib/precompiled.h"
-
 #include "SDNetMessage.h"
 
 //===============================================================

@@ -10,8 +10,6 @@
 //
 //===============================================================
 
-#include "idlib/precompiled.h"
-
 #include "SDNetProfile_local.h"
 #include "SDNetAccount_local.h"
 
@@ -41,9 +39,27 @@ public:
 	// Get online account
 	virtual sdNetAccount&		GetAccount();
 
+	void						SetRawUsername(const char *name);
+	void						Init(void);
+	void						Create(void);
+	void						Remove(void);
+
+private:
+	bool						SaveOffline( int saveItem ) const;
+	bool						SaveProfileOffline(idFile *file) const;
+	bool						SaveBindingsOffline(idFile *file) const;
+	bool						SaveCVarsOffline(idFile *file) const;
+
+	bool						Restore( int saveItems );
+	bool						RestoreOffline(int item);
+	bool						RestoreBindingsOffline(const char *data);
+	bool						RestoreProfileOffline(const char *data);
+	bool						RestoreCVarsOffline(const char *data);
+
+	void						ProfilePath(idStr &out, const char *type) const;
+
 private:
 	userState_e userState;
-	idStr username;
 	idStr rawUsername;
 	sdNetProfile_Local profile;
 	sdNetAccount_Local account;

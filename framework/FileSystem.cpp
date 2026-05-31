@@ -424,6 +424,7 @@ class idFileSystemLocal : public idFileSystem
 		static void				TouchFileList_f(const idCmdArgs &args);
         virtual void			RemoveDir(const char *relativePath);
         virtual void			RemoveFolder(const char *relativePath);
+        void                    RemoveDir_r(const char *OSPath, int type = 0);
 #ifdef _RAVEN
 		virtual void			SetIsFileLoadingAllowed(bool mode) { (void)mode; }
 		virtual idFile *		GetNewFileMemory( void );
@@ -548,11 +549,11 @@ class idFileSystemLocal : public idFileSystem
 		// Add game extra game base name from cfg file after add base game paths
         void                    InitExtraGame(const char *configFile);
 
-        void                    RemoveDir_r(const char *OSPath, int type = 0);
 #ifdef _SPLASHDAMAGE
 		bool					ParseMetaConfFile(const char *text, int length, bool isAddon, const char *type = NULL);
 		bool					ParseMetaConf(idLexer &src, metaDataContext_t &md);
 		void					InitMetaConf(const char *type = NULL);
+		friend void				ReplacePathSeparators(idStr &path, char sep = PATHSEPERATOR_CHAR);
 #endif
 };
 
@@ -5479,4 +5480,13 @@ void idFileSystemLocal::FreeTGA( byte* pic ) {
 	Mem_Free(pic);
 }
 
+
+void ReplacePathSeparators(idStr &path, char sep) {
+	fileSystemLocal.ReplaceSeparators(path, sep);
+}
+
+void RemoveOSDir(const char *OSPath, int type = 0)
+{
+	fileSystemLocal.RemoveDir_r(OSPath, type);
+}
 #endif

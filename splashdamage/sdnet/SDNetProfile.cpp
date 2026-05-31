@@ -1,6 +1,8 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#include "idlib/precompiled.h"
+
 #include "SDNetProfile_local.h"
 #include "SDNetTask_local.h"
 
@@ -49,4 +51,14 @@ sdNetTask* sdNetProfile_Local::Restore() {
 }
 
 #endif /* !SD_DEMO_BUILD */
+
+void sdNetProfile_Local::SetUsername(const char *name)
+{
+	properties.Set("username", name);
+}
+
+void sdNetProfile_Local::Clear(void)
+{
+	properties.Clear();
+}
 

@@ -5,7 +5,6 @@
 #define __SDNETTASK_LOCAL_H__
 
 #include "SDNetTask.h"
-#include "idlib/precompiled.h"
 #include "SDNetTeamManager.h"
 #include "SDNetStatsManager.h"
 #include "SDNetSessionManager.h"
@@ -31,6 +30,9 @@ public:
 	virtual void				ReleaseLock();
 
 	virtual void				RunFrame();
+
+protected:
+	virtual void				OnStateChanged(taskStatus_e st);
 
 private:
 	taskStatus_e taskStatus;

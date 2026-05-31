@@ -6,8 +6,6 @@
 
 #if !defined( SD_DEMO_BUILD )
 
-#include "idlib/precompiled.h"
-
 #include "SDNetTeamManager.h"
 
 //===============================================================

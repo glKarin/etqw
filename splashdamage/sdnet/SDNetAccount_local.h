@@ -12,7 +12,6 @@
 //
 //===============================================================
 
-#include "idlib/precompiled.h"
 #include "SDNet.h"
 
 #include "SDNetAccount_Auth.h"

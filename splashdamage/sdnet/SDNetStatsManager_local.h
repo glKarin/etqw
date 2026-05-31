@@ -12,8 +12,6 @@
 
 #if !defined( SD_DEMO_BUILD )
 
-#include "idlib/precompiled.h"
-
 #include "SDNetStatsManager.h"
 
 class sdNetStatsManager_Local : public sdNetStatsManager {

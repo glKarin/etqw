@@ -1,6 +1,8 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#include "idlib/precompiled.h"
+
 #include "SDNet_local.h"
 
 #include "SDNetTask_local.h"
@@ -16,7 +18,8 @@ sdNetService_Local::sdNetService_Local()
 	serviceState(SS_DISABLED),
 	disconnectReason(DR_NONE),
 	dedicatedState(DS_OFFLINE),
-	lastError(SDNET_NO_ERROR)
+	lastError(SDNET_NO_ERROR),
+	activeUser(NULL)
 {
 }
 
@@ -24,6 +27,7 @@ sdNetService_Local::~sdNetService_Local() {
 }
 
 bool sdNetService_Local::Init() {
+	LoadOfflineUsers();
 	serviceState = SS_INITIALIZED;
 	dedicatedState = DS_ONLINE;
 	isInitialized = true;
@@ -80,14 +84,14 @@ sdNetErrorCode_e sdNetService_Local::CreateUser( sdNetUser** user, const char* u
 		if(!idStr::Cmp(userList[i]->GetUsername(), username))
 		{
 			*user = userList[i];
-			break;
+			return SDNET_USER_USERNAME_EXISTS;
 		}
 	}
 	if(!*user)
 	{
 		sdNetUser_Local *newUser = new sdNetUser_Local;
-		newUser->username = username;
-		newUser->userState = sdNetUser::US_ONLINE;
+		newUser->SetRawUsername(username);
+		newUser->Create();
 		userList.Append(newUser);
 		*user = newUser;
 	}
@@ -95,6 +99,23 @@ sdNetErrorCode_e sdNetService_Local::CreateUser( sdNetUser** user, const char* u
 }
 
 void sdNetService_Local::DeleteUser( sdNetUser* user ) {
+	if(!user)
+		return;
+	// deactivate user first
+	if(activeUser == user)
+		user->Deactivate();
+
+	const char *username = user->GetUsername();
+	for(int i = 0; i < userList.Num(); i++)
+	{
+		if(!idStr::Cmp(userList[i]->GetUsername(), username))
+		{
+			userList[i]->Remove();
+			delete userList[i];
+			userList.RemoveIndex(i);
+			break;
+		}
+	}
 }
 
 int sdNetService_Local::NumUsers() const {
@@ -108,7 +129,7 @@ sdNetUser* sdNetService_Local::GetUser( const int index ) {
 }
 
 sdNetUser* sdNetService_Local::GetActiveUser() {
-	return userList.Num() > 0 ? userList[0] : NULL;
+	return activeUser;
 }
 
 	//
@@ -160,8 +181,11 @@ sdNetErrorCode_e sdNetService_Local::GetLastError() const {
 	// Start online service and connect to auth system
 sdNetTask* sdNetService_Local::Connect() {
 	serviceState = SS_ONLINE;
+#if 0
 	sdNetUser *user;
 	CreateUser(&user, "test");
+	activeUser = user;
+#endif
 	return new sdNetTask_Connect;
 }
 
@@ -199,6 +223,34 @@ idList<sdNetTask *> sdNetService_Local::taskPools;
 
 void sdNetService_Local::AddTask(sdNetTask *task) {
 	taskPools.Append( task );
+}
+
+void sdNetService_Local::LoadOfflineUsers(void)
+{
+	common->Printf("Load local offline users...");
+	activeUser = NULL;
+	userList.DeleteContents(true);
+
+	idStr path = fileSystem->GetUserPath();
+	path.AppendPath("sdnet");
+	idStrList list;
+	int size = Sys_ListFiles(path, "/", list);
+	common->Printf("%d\n", size);
+	for(int i = 0; i < size; i++)
+	{
+		if (!list[i].Cmp(".") || !list[i].Cmp("..")) { // only for Windows
+			continue;
+		}
+		sdNetUser_Local *user = new sdNetUser_Local;
+		common->Printf("Load offline user: %s\n", list[i].c_str());
+		user->SetRawUsername(list[i].c_str());
+		user->Init();
+		userList.Append(user);
+	}
+}
+
+void sdNetService_Local::SetActiveUser(sdNetUser *user) {
+	activeUser = user;
 }
 
 sdNetService_Local networkServiceLocal;

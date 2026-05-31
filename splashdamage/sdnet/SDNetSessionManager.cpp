@@ -1,6 +1,8 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#include "idlib/precompiled.h"
+
 #include "SDNetSessionManager_local.h"
 
 #include "SDNetTask_local.h"

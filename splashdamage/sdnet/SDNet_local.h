@@ -4,8 +4,6 @@
 #ifndef __SDNET_LOCAL_H__
 #define __SDNET_LOCAL_H__
 
-#include "idlib/precompiled.h"
-
 #include "SDNet.h"
 #include "SDNetUser_local.h"
 #include "SDNetSessionManager_local.h"
@@ -109,7 +107,12 @@ public:
 	virtual const idDict*			GetProfileProperties( sdNetClientId userID ) const;
 #endif /* !SD_DEMO_BUILD */
 
-	void AddTask(sdNetTask *task);
+	void							AddTask(sdNetTask *task);
+
+	void							SetActiveUser(sdNetUser *user);
+
+private:
+	void							LoadOfflineUsers(void);
 	
 private:
 	bool isInitialized;
@@ -125,10 +128,11 @@ private:
 	sdNetTeamManager_Local teamManager;
 #endif /* !SD_DEMO_BUILD */
 	sdNetErrorCode_e lastError;
+	sdNetUser *activeUser;
 
 	static idList<sdNetTask *> taskPools;
 };
 
-extern sdNetService* networkService;
+extern sdNetService_Local networkServiceLocal;
 
 #endif /* !__SDNET_LOCAL_H__ */

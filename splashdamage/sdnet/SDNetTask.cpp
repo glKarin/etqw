@@ -1,10 +1,12 @@
 // Copyright (C) 2007 Id Software, Inc.
 //
 
+#include "idlib/precompiled.h"
+
 #include "SDNetTask_local.h"
 #include "SDNet_local.h"
 
-#define SD_NET_TASK_FAKE_UPDATE_INTERVAL 50
+#define SDNET_TASK_FAKE_UPDATE_INTERVAL 500
 
 sdNetTask_Local::sdNetTask_Local(const char *_name)
     : taskStatus(TS_INITIAL),
@@ -13,7 +15,7 @@ sdNetTask_Local::sdNetTask_Local(const char *_name)
     name = _name;
     startTime = Sys_Milliseconds();
     updateTime = startTime;
-    common->Printf("Add task: %s", name.c_str());
+    common->Printf("Add task: %s\n", name.c_str());
     ((sdNetService_Local *)networkService)->AddTask(this);
 }
 
@@ -50,20 +52,38 @@ void sdNetTask_Local::RunFrame() {
         return;
     }
     int ts = Sys_Milliseconds();
-    if (ts - updateTime < 1000) {
+    if (ts - updateTime < SDNET_TASK_FAKE_UPDATE_INTERVAL) {
         return;
     }
     updateTime = ts;
     if (taskStatus == TS_INITIAL) {
         taskStatus = TS_PENDING;
-        common->Printf("[SDNet]: %s task pending...\n", name.c_str());
+		OnStateChanged(taskStatus);
     }
     else if (taskStatus == TS_PENDING) {
         taskStatus = TS_COMPLETING;
-        common->Printf("[SDNet]: %s task completing...\n", name.c_str());
+		OnStateChanged(taskStatus);
+    }
+    else if (taskStatus == TS_COMPLETING) {
+        taskStatus = TS_DONE;
+		OnStateChanged(taskStatus);
     }
     else if (taskStatus == TS_COMPLETING || taskStatus == TS_CANCELLING) {
         taskStatus = TS_DONE;
+		errorCode = SDNET_CANCELLED;
+		OnStateChanged(taskStatus);
+    }
+}
+
+void sdNetTask_Local::OnStateChanged(taskStatus_e st)
+{
+    if (taskStatus == TS_PENDING) {
+        common->Printf("[SDNet]: %s task pending...\n", name.c_str());
+    }
+    else if (taskStatus == TS_COMPLETING) {
+        common->Printf("[SDNet]: %s task completing...\n", name.c_str());
+    }
+    else if (taskStatus == TS_DONE) {
         common->Printf("[SDNet]: %s task done.\n", name.c_str());
     }
 }

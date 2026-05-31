@@ -4,8 +4,6 @@
 #if !defined( __SDNETSESSIONMANAGER_LOCAL_H__ )
 #define __SDNETSESSIONMANAGER_LOCAL_H__
 
-#include "idlib/precompiled.h"
-
 #include "SDNetSessionManager.h"
 
 //===============================================================

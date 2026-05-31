@@ -6,7 +6,6 @@
 
 #if !defined( SD_DEMO_BUILD )
 
-#include "idlib/precompiled.h"
 #include "SDNetMessage_local.h"
 #include "SDNetMessageHistory.h"
 #include "SDNet.h"

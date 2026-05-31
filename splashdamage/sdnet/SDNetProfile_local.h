@@ -10,8 +10,6 @@
 //
 //===============================================================
 
-#include "idlib/precompiled.h"
-
 #include "SDNetProfile.h"
 
 class sdNetProfile_Local : public sdNetProfile {
@@ -21,6 +19,8 @@ public:
 
 	virtual idDict&			GetProperties();
 	virtual const idDict&	GetProperties() const;
+	void					SetUsername(const char *name);
+	void					Clear(void);
 
 	//
 	// Online functionality

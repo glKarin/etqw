@@ -12,7 +12,6 @@
 //
 //===============================================================
 
-#include "idlib/precompiled.h"
 #include "SDNetMessageHistory.h"
 #include "SDNetMessage_local.h"
 #include "SDNet.h"

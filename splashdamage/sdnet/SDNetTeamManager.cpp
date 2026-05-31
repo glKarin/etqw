@@ -3,6 +3,8 @@
 
 #if !defined( SD_DEMO_BUILD )
 
+#include "idlib/precompiled.h"
+
 #include "SDNetTeamManager_local.h"
 
 #include "SDNetTask_local.h"
