@@ -952,8 +952,18 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 		textAlign = ALIGN_RIGHT;
 	else
 		textAlign = ALIGN_LEFT;
-
-	fontManagerLocal.DrawText(text, rect, textAlign, wrap, tr.gameGuiModel->CurrentColor());
+	
+	if(flags & DTF_NOCLIPPING)
+	{
+		sdBounds2D newRect = rect;
+		if(wrap)
+			newRect[1][1] = idMath::INFINITY;
+		else
+			newRect[1][0] = idMath::INFINITY;
+		fontManagerLocal.DrawText(text, newRect, textAlign, wrap, tr.gameGuiModel->CurrentColor());
+	}
+	else
+		fontManagerLocal.DrawText(text, rect, textAlign, wrap, tr.gameGuiModel->CurrentColor());
 
 	//const idMaterial* material = declManager->FindMaterial("commandmaps/area22");
 	//DrawCircleMaterial( rect.GetCenter().x, rect.GetCenter().y, idVec2(rect.GetWidth()/2,rect.GetWidth()/2), 90, idVec4(0,0,1,1), material, idVec4(1,1,1,1), 135 );
@@ -969,7 +979,17 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 	else
 		textAlign = ALIGN_LEFT;
 
-	fontManagerLocal.GetTextDimensions(text, rect, textAlign, wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
+	if(flags & DTF_NOCLIPPING)
+	{
+		sdBounds2D newRect = rect;
+		if(wrap)
+			newRect[1][1] = idMath::INFINITY;
+		else
+			newRect[1][0] = idMath::INFINITY;
+		fontManagerLocal.GetTextDimensions(text, newRect, textAlign, wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
+	}
+	else
+		fontManagerLocal.GetTextDimensions(text, rect, textAlign, wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
 }
 
 void sdDeviceContextLocal::OverrideAspectRationCorrection( bool setOverride ) {
