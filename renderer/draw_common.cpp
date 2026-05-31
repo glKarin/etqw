@@ -879,7 +879,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
     idList<int> customNewStageUniformIsSet(SHADER_MAX_CUSTOM);
 #endif
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
-	bool materialBuiltinVariablesLoaded = false;
+	idList<int> materialBuiltinVariablesLoaded(surf->material->GetNumStages());
 #endif
 
 	tri = surf->geo;
@@ -1039,7 +1039,6 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
 		// see if we are a new-style stage
-		//if(pStage->destinationBuffer != -1) continue;
 
 		const sdRenderProgram *renderProgram = pStage->renderProgram;
 
@@ -1063,11 +1062,6 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 			int oldDrawBits = renderProgram->SetupState();
 
-			if(!materialBuiltinVariablesLoaded) {
-				RB_SetBuiltinProgramEnvironment();
-				materialBuiltinVariablesLoaded = true;
-			}
-
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Color));
@@ -1075,12 +1069,24 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Tangent));
 			GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Bitangent));
 
-			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
-			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), ac->st.ToFloatPtr());
-			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), &ac->color);
-			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Normal), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
-			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Tangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[0].ToFloatPtr());
-			GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Bitangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[1].ToFloatPtr());
+			if(materialBuiltinVariablesLoaded.FindIndex(renderProgram->GetShaderProgram()) == -1) {
+				RB_SetBuiltinProgramEnvironment();
+
+				// bind builtin program variables
+				RB_BindBuiltinProgramEnvironment(renderProgram, surf, pStage);
+
+				// set standard transformations
+				GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), rb_MVP);
+
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), ac->st.ToFloatPtr());
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), &ac->color);
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Normal), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Tangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[0].ToFloatPtr());
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Bitangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[1].ToFloatPtr());
+
+				materialBuiltinVariablesLoaded.Append(renderProgram->GetShaderProgram());
+			}
 
 			// set the color
 			color[0] = regs[ pStage->color.registers[0] ];
@@ -1088,12 +1094,6 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			color[2] = regs[ pStage->color.registers[2] ];
 			color[3] = regs[ pStage->color.registers[3] ];
 			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
-
-			// bind builtin program variables
-			RB_BindBuiltinProgramEnvironment(renderProgram, surf, pStage);
-
-			// set standard transformations
-			GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), rb_MVP);
 
 			GL_State( pStage->drawStateBits );
 
