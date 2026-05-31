@@ -4254,7 +4254,7 @@ void idDeclManagerLocal::DeclbToText_f(const idCmdArgs &args) {
 			if(out[0] == 6 && !idStr::Cmpn((const char *)&out[4], LEXB_VERSION, 6)) // is binary lex: like idFile::ReadString() num:int32 chars[num]
 			{
 				idParser src;
-				src.LoadMemoryBinary(&out[0], entry.uncompressedLength, "declbToText", &declManagerLocal.globalTokencache);
+				src.LoadMemoryBinary(&out[0], entry.uncompressedLength, "<declbToText>", &declManagerLocal.globalTokencache);
 				src.SetFlags(DECL_LEXER_FLAGS);
 				OutputTextSource(src, buf);
 				buf.Append("\n");

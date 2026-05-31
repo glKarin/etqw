@@ -845,6 +845,15 @@ void idKeyInput::Init(void)
 {
 
 	keys = new idKey[MAX_KEYS];
+#ifdef _SPLASHDAMAGE //karin: fill extras key info for game
+	for(int i = 0; i < MAX_KEYS; i++)
+	{
+		keys[i].id = i;
+		keys[i].name = KeyNumToString(i, false);
+		keys[i].locName = KeyNumToString(i, true);
+		keys[i].fixedText = StrToWStr(keys[i].name) + L"_fixedText";
+	}
+#endif
 
 	// register our functions
 	cmdSystem->AddCommand("bind", Key_Bind_f, CMD_FL_SYSTEM, "binds a command to a key", idKeyInput::ArgCompletion_KeyName);
@@ -883,6 +892,3 @@ const char * IN_FirstKeyFromBinding(const char *binding, int *keycode = NULL)
 }
 #endif
 
-#ifdef _SPLASHDAMAGE //karin: for assess some variables on KeyInput.cpp
-//#include "framework/KeyInputManager.cpp"
-#endif
