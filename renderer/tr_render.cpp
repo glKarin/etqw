@@ -736,7 +736,7 @@ void RB_CreateSingleDrawInteractions(const drawSurf_t *surf, void (*DrawInteract
 	const float			*lightRegs = vLight->shaderRegisters;
 	drawInteraction_t	inter;
 #ifdef _SPLASHDAMAGE //karin: alpha test in interaction stage
-	inter.alphaTest = 1.1f;
+	inter.alphaTest = 0.0f;
 #endif
 
 	if (r_skipInteractions.GetBool() || !surf->geo || !surf->geo->ambientCache) {
@@ -1031,7 +1031,7 @@ void RB_CreateSingleDrawGlobalIllumination(const drawSurf_t *drawSurf, void (*Dr
     drawInteraction_t inter;
     memset(&inter, 0, sizeof(inter));
 #ifdef _SPLASHDAMAGE //karin: alpha test in interaction stage
-	inter.alphaTest = 1.1f;
+	inter.alphaTest = 0.0f;
 #endif
     inter.surf = drawSurf;
 
