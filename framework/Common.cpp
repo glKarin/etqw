@@ -3354,6 +3354,7 @@ void idCommonLocal::LoadGameDLL(void)
 #ifndef _XENON
 	gameImport.networkService			= ::networkService;
 #endif
+	//karin: make same key/value allocator for idDict in engine and game, because idDict of engine maybe modified in game
 	idStrPool *keypool = NULL;
 	idStrPool *valuepool = NULL;
 	idDict::GetGlobalPools(globalKeyPool, globalValuePool);

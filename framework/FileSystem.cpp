@@ -336,6 +336,8 @@ typedef struct searchpath_s {
 #define ADDON_CONFIG "addon.conf"
 #ifdef _SPLASHDAMAGE
 #define PAKMETA_CONFIG "pakmeta.conf"
+
+void ReplacePathSeparators(idStr &path, char sep = PATHSEPERATOR_CHAR); // idFileSystemLocal's friend function with default args
 #endif
 
 class idDEntry : public idStrList
@@ -553,7 +555,7 @@ class idFileSystemLocal : public idFileSystem
 		bool					ParseMetaConfFile(const char *text, int length, bool isAddon, const char *type = NULL);
 		bool					ParseMetaConf(idLexer &src, metaDataContext_t &md);
 		void					InitMetaConf(const char *type = NULL);
-		friend void				ReplacePathSeparators(idStr &path, char sep = PATHSEPERATOR_CHAR);
+		friend void				ReplacePathSeparators(idStr &path, char sep);
 #endif
 };
 
