@@ -237,7 +237,7 @@ const sdDeclRenderBinding * sdRenderProgramShader::GetBinding(const char *name) 
 	return NULL;
 }
 
-void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length)
+void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const char *program, const char *text, int length)
 {
 	idStr str;
 	if(sdDeclTemplate::ExpandTemplate(str, text, length))
@@ -246,9 +246,11 @@ void sdRenderProgramShader::BuildSource(sdStringBuilder_Heap &buf, const sdDeclR
 		length = str.Length();
 	}
 
+	idStr path = program;
+	path.Append("_shader");
 	idLexer src;
-	src.LoadMemory(text, length, "shader");
-	src.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_NODOLLARPRECOMPILE | LEXFL_NOFATALERRORS);
+	src.LoadMemory(text, length, path);
+	src.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_NOSTRINGESCAPECHARS | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_NODOLLARPRECOMPILE | LEXFL_NOFATALERRORS | LEXFL_NOERRORS);
 	idToken token;
 
 	int range_start = 0;
@@ -331,9 +333,10 @@ void sdRenderProgramShader::PostParse(const sdDeclRenderProgram *program) {
 		return;
 
 	sdStringBuilder_Heap buf;
-	BuildSource(buf, program, sourceRaw.c_str(), sourceRaw.Length());
+	BuildSource(buf, program->GetFileName(), sourceRaw.c_str(), sourceRaw.Length());
 	source = buf.c_str();
 	source.ReplaceChar('$', ' ');
+	//printf("|%s|\n", source.c_str());
 
 	const idDecl *decl;
 
@@ -351,7 +354,7 @@ void sdRenderProgramShader::PostParse(const sdDeclRenderProgram *program) {
 	bindings.SetGranularity(1);
 }
 
-void sdRenderProgramShader::HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName) {
+void sdRenderProgramShader::HandleInclude(sdStringBuilder_Heap &buf, const char *program, const char *fileName) {
 	idStr name = fileName;
 	name.StripLeading("\"");
 	name.StripTrailing("\"");
@@ -359,22 +362,34 @@ void sdRenderProgramShader::HandleInclude(sdStringBuilder_Heap &buf, const sdDec
 	name.StripTrailing(">");
 	char *text = NULL;
 	int length = 0;
+	idStr path = name;
 
-	if ((length = fileSystem->ReadFile(name, (void **)&text, NULL)) <= 0)
+	//1. try raw include file path
+	if ((length = fileSystem->ReadFile(path, (void **)&text, NULL)) <= 0)
 	{
-		idStr path = program->GetFileName();
+		//2. try current prog file path
+		path = program;
 		path.StripFilename();
 		path.AppendPath(name);
-		//Sys_Printf("XXX %s|%s|\n", program->GetFileName(), path.c_str());
+		//Sys_Printf("XXX %s|%s|\n", program, path.c_str());
 		length = fileSystem->ReadFile(path, (void **)&text, NULL);
+		if ((length = fileSystem->ReadFile(name, (void **)&text, NULL)) <= 0)
+		{
+			//3. try to find in renderprogs/
+			path = "renderprogs";
+			path.AppendPath(name);
+			//Sys_Printf("YYY %s|%s|\n", program, path.c_str());
+			length = fileSystem->ReadFile(path, (void **)&text, NULL);
+		}
 	}
+
 	if (!text || length <= 0)
 	{
 		common->Warning("sdRenderProgramShader::HandleInclude: Could not load include file: %s", name.c_str());
 		return;
 	}
 
-	BuildSource(buf, program, text, length);
+	BuildSource(buf, path, text, length);
 
 	Mem_Free(text);
 }
@@ -456,8 +471,6 @@ bool sdDeclRenderProgram::ParseShader(idParser &src)
 
 void sdRenderProgramShader::ExportSource(const char *path, const char *filename, const char *name, bool raw) const {
 	sdStringBuilder_Heap buf;
-
-
 
 	idStr filePath = path;
 	filePath.AppendPath(name);

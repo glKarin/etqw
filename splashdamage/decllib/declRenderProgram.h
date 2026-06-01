@@ -62,8 +62,8 @@ class sdRenderProgramShader
 		bool						HasPostprocessTexture(void) const;
 
 	private:
-		void						HandleInclude(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *fileName);
-		void						BuildSource(sdStringBuilder_Heap &buf, const sdDeclRenderProgram *program, const char *text, int length);
+		void						HandleInclude(sdStringBuilder_Heap &buf, const char *program, const char *fileName);
+		void						BuildSource(sdStringBuilder_Heap &buf, const char *program, const char *text, int length);
 
 	private:
 		shaderType_t				type;
