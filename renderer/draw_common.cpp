@@ -845,6 +845,8 @@ void RB_QueryOcclusionTesting(void)
 	occlusionTestManager->Query();
 	occlusionTestManager->Ready();
 }
+
+extern void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs );
 #endif
 
 /*
@@ -2349,6 +2351,9 @@ void	RB_STD_DrawView(void)
 #endif
 	   )
     {
+#ifdef _SPLASHDAMAGE //karin: render areas ambient
+		RB_DrawAreaAmbients(drawSurfs, numDrawSurfs);
+#endif
 #ifdef _GLOBAL_ILLUMINATION
         if(HARM_RENDER_GLOBAL_ILLUMINATION())
             RB_DrawGlobalIlluminations(drawSurfs, numDrawSurfs);
