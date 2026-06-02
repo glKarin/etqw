@@ -541,7 +541,12 @@ void idImage::GenerateImage(const byte *pic, int width, int height,
 		R_SetBorderTexels((byte *)scaledBuffer, width, height, rgba);
 	}
 
-	if (generatorFunction == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) )) {
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+	if (generatorFunction == NULL && generatorFunctor == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) ))
+#else
+	if (generatorFunction == NULL && ( ( depth == TD_BUMP && globalImages->image_writeNormalTGA.GetBool() ) || ( depth != TD_BUMP && globalImages->image_writeTGA.GetBool() ) ))
+#endif
+	{
 		// Optionally write out the texture to a .tga
 		char filename[MAX_IMAGE_NAME];
 		ImageProgramStringToCompressedFileName(imgName, filename);
@@ -1655,7 +1660,12 @@ bool idImage::CheckPrecompressedImage(bool fullLoad)
 		return false;
 	}
 
-	if (!generatorFunction && timestamp != FILE_NOT_FOUND_TIMESTAMP) {
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+	if (!generatorFunction && !generatorFunctor && timestamp != FILE_NOT_FOUND_TIMESTAMP)
+#else
+	if (!generatorFunction && timestamp != FILE_NOT_FOUND_TIMESTAMP)
+#endif
+	{
 		if (precompTimestamp < timestamp) {
 			// The image has changed after being precompressed
 			return false;
@@ -2085,6 +2095,12 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 		generatorFunction(this);
 		return;
 	}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+	if (generatorFunctor) {
+		(*generatorFunctor)(this);
+		return;
+	}
+#endif
 
 	// if we are a partial image, we are only going to load from a compressed file
 	if (isPartialImage) {
@@ -2721,7 +2737,11 @@ void idImage::Print() const
 {
 	if (precompressedFile) {
 		common->Printf("P");
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+	} else if (generatorFunction || generatorFunctor) {
+#else
 	} else if (generatorFunction) {
+#endif
 		common->Printf("F");
 	} else {
 		common->Printf(" ");
@@ -3422,3 +3442,9 @@ void idImage::GenerateDepthStencilImage( int width, int height, bool allowDownSi
 
 	GL_CheckErrors();
 }
+
+#ifdef _SPLASHDAMAGE //karin: image loaded
+bool idImage::IsLoaded() const {
+	return texnum == TEXTURE_NOT_LOADED;
+}
+#endif

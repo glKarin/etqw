@@ -337,6 +337,8 @@ class idImage
 
 #ifdef _SPLASHDAMAGE
     	int					sourceWidth, sourceHeight;				// after power of two, before downsample
+		const idImageGeneratorFunctorBase *	generatorFunctor;	// NULL for files
+		bool				IsLoaded() const;
 #endif
 
 		// data for listImages
@@ -397,6 +399,7 @@ ID_INLINE idImage::idImage()
 #endif
 #ifdef _SPLASHDAMAGE
 	sourceWidth = sourceHeight = 0;
+	generatorFunctor = NULL;
 #endif
 }
 

@@ -2,12 +2,23 @@
 
 #include "renderer/tr_local.h"
 
-idCVar harm_r_skipAreaAmbient("harm_r_skipAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Skip areas ambient before draw interactions");
+#include "RenderProgram.h"
+#include "RenderProgramManager.h"
+
+idCVar harm_r_skipAreaAmbient("harm_r_skipAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "Skip areas ambient before draw interactions");
+
+idCVar aaa("aaa", "0", CVAR_BOOL | CVAR_RENDERER, "Skip areas ambient before draw interactions");
+
+idCVar harm_r_areaAmbientScale("harm_r_areaAmbientScale", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Area ambient scale");
 
 extern void RB_CreateSingleDrawAreaAmbient(const drawSurf_t *drawSurf, void (*DrawInteraction)(const drawInteraction_t *));
 
-static void RB_DrawAreaAmbient(const drawInteraction_t *din)
+static const sdRenderProgram *ambientBasicShader;
+
+static void RB_DrawAreaAmbient_builtin(const drawInteraction_t *din)
 {
+    GL_Uniform1f(offsetof(shaderProgram_t, specularExponent), din->surf->space->areaAmbient->GetBrightness());
+
     // load all the vertex program parameters
     GL_Uniform4fv(offsetof(shaderProgram_t, localViewOrigin), din->localViewOrigin.ToFloatPtr());
     GL_Uniform4fv(offsetof(shaderProgram_t, bumpMatrixS), din->bumpMatrix[0].ToFloatPtr());
@@ -52,23 +63,105 @@ static void RB_DrawAreaAmbient(const drawInteraction_t *din)
     din->specularImage->Bind();
 
     GL_SelectTextureNoClient(0); //k2023
-#ifdef _SPLASHDAMAGE // alpha test in interaction
 	GL_Uniform1f(offsetof(shaderProgram_t, alphaTest), din->alphaTest);
-#endif
 
     // draw it
     RB_DrawElementsWithCounters(din->surf->geo);
 }
 
-static void RB_CreateDrawAreaAmbient(const drawSurf_t *surf)
+static void RB_DrawAreaAmbient_external(const drawInteraction_t *din)
+{
+    // load all the vertex program parameters
+
+    const sdDeclAmbientCubeMap *areaAmbient = din->surf->space->areaAmbient;
+    ambientBasicShader->BindVector("ambientBrightness", areaAmbient->GetBrightness());
+    ambientBasicShader->BindVector("ambientScale", areaAmbient->GetBrightness(), harm_r_areaAmbientScale.GetFloat());
+    ambientBasicShader->BindVector("diffuseMatrix_s", din->diffuseMatrix[0]);
+    ambientBasicShader->BindVector("diffuseMatrix_t", din->diffuseMatrix[1]);
+    ambientBasicShader->BindVector("bumpMatrix_s", din->bumpMatrix[0]);
+    ambientBasicShader->BindVector("bumpMatrix_t", din->bumpMatrix[1]);
+    ambientBasicShader->BindVector("viewOriginWorld", backEnd.viewDef->renderView.vieworg);
+    ambientBasicShader->BindVector("alphaThresh", din->alphaTest);
+    ambientBasicShader->BindVector("viewOrigin", din->localViewOrigin); // parallax
+
+    idMat4 modelMatrix;
+    memcpy(&modelMatrix, din->surf->space->modelMatrix, sizeof(modelMatrix));
+    modelMatrix.TransposeSelf();
+    ambientBasicShader->BindVector("transposedModelMatrix_x", modelMatrix[0]);
+    ambientBasicShader->BindVector("transposedModelMatrix_y", modelMatrix[1]);
+    ambientBasicShader->BindVector("transposedModelMatrix_z", modelMatrix[2]);
+
+    switch (din->vertexColor) {
+        case SVC_MODULATE:
+            ambientBasicShader->BindVector("colorModulate", oneModulate[0]);
+            ambientBasicShader->BindVector("colorAdd", zero[0]);
+            break;
+        case SVC_INVERSE_MODULATE:
+            ambientBasicShader->BindVector("colorModulate", negOneModulate[0]);
+            ambientBasicShader->BindVector("colorAdd", one[0]);
+            break;
+        case SVC_IGNORE:
+        default:
+            ambientBasicShader->BindVector("colorModulate", zero[0]);
+            ambientBasicShader->BindVector("colorAdd", one[0]);
+            break;
+    }
+
+    // set the constant colors
+    ambientBasicShader->BindVector("diffuseColor", din->diffuseColor);
+    ambientBasicShader->BindVector("specularColor", din->specularColor);
+
+    // set the textures
+
+    // texture 0 will be the per-surface bump map
+    ambientBasicShader->BindImage("bumpMap", din->bumpImage);
+
+    // texture 1 is the per-surface diffuse map
+    ambientBasicShader->BindImage("diffuseMap", din->diffuseImage);
+
+    // texture 2 is the per-surface specular map
+    ambientBasicShader->BindImage("specularMap", din->specularImage);
+
+    // texture 3 is the cube map
+    idImage *ambientCubeMap = NULL;
+    // 1. using entity parms
+    if(din->surf->space->entityDef && din->surf->space->entityDef->parms.ambientCubeMap)
+    {
+        ambientCubeMap = din->surf->space->entityDef->parms.ambientCubeMap->GetAmbientCubeMap();
+    }
+    // 2. using area
+    if(!ambientCubeMap)
+        ambientCubeMap = din->surf->space->areaAmbient->GetAmbientCubeMap();
+    // 3. using atmosphere
+    if(!ambientCubeMap)
+        ambientCubeMap = backEnd.parms.ambientCubeMap;
+    ambientBasicShader->BindImage("ambientCubeMap", ambientCubeMap);
+
+    // texture 4 is the specular cube map
+    idImage *specularCubeMap = NULL;
+    // 1. using entity parms
+    if(din->surf->space->entityDef && din->surf->space->entityDef->parms.ambientCubeMap)
+    {
+        specularCubeMap = din->surf->space->entityDef->parms.ambientCubeMap->GetSpecularCubeMap();
+    }
+    // 2. using area
+    if(!specularCubeMap)
+        specularCubeMap = din->surf->space->areaAmbient->GetSpecularCubeMap();
+    ambientBasicShader->BindImage("specularCubeMap", specularCubeMap);
+
+    GL_SelectTextureNoClient(0); //k2023
+
+    // draw it
+    RB_DrawElementsWithCounters(din->surf->geo);
+}
+
+static void RB_CreateDrawAreaAmbient_external(const drawSurf_t *surf)
 {
     if (!surf || !surf->geo->ambientCache) {
         return;
     }
-	if(!surf->space->areaAmbient)
-		return;
-
-    GL_Uniform1f(offsetof(shaderProgram_t, specularExponent), surf->space->areaAmbient->GetBrightness());
+    if(!surf->space->areaAmbient)
+        return;
 
     // set the vertex pointers
     idDrawVert	*ac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
@@ -83,7 +176,45 @@ static void RB_CreateDrawAreaAmbient(const drawSurf_t *surf)
 
     // this may cause RB_GLSL_DrawInteraction to be exacuted multiple
     // times with different colors and images if the surface or light have multiple layers
-    RB_CreateSingleDrawAreaAmbient(surf, RB_DrawAreaAmbient);
+    RB_CreateSingleDrawAreaAmbient(surf, RB_DrawAreaAmbient_external);
+
+    // disable features
+    ambientBasicShader->BindImage("bumpMap", NULL);
+
+    ambientBasicShader->BindImage("diffuseMap", NULL);
+
+    ambientBasicShader->BindImage("specularMap", NULL);
+
+    ambientBasicShader->BindImage("ambientCubeMap", NULL);
+
+    ambientBasicShader->BindImage("specularCubeMap", NULL);
+
+    backEnd.glState.currenttmu = -1;
+    GL_SelectTexture(0);
+}
+
+static void RB_CreateDrawAreaAmbient_builtin(const drawSurf_t *surf)
+{
+    if (!surf || !surf->geo->ambientCache) {
+        return;
+    }
+	if(!surf->space->areaAmbient)
+		return;
+
+    // set the vertex pointers
+    idDrawVert	*ac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
+
+    GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Normal), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
+    GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Bitangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[1].ToFloatPtr());
+    GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Tangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[0].ToFloatPtr());
+    GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), ac->st.ToFloatPtr());
+
+    GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+    GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), ac->color);
+
+    // this may cause RB_GLSL_DrawInteraction to be exacuted multiple
+    // times with different colors and images if the surface or light have multiple layers
+    RB_CreateSingleDrawAreaAmbient(surf, RB_DrawAreaAmbient_builtin);
 
     // disable features
     GL_SelectTextureNoClient(2);
@@ -96,28 +227,9 @@ static void RB_CreateDrawAreaAmbient(const drawSurf_t *surf)
     GL_SelectTexture(0);
 }
 
-void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
+static void RB_DrawAreaAmbients_builtin( drawSurf_t **drawSurfs, int numDrawSurfs )
 {
-	if(harm_r_skipAreaAmbient.GetBool())
-		return;
-
-    if( numDrawSurfs == 0 )
-    {
-        return;
-    }
-
-    if( !drawSurfs )
-    {
-        return;
-    }
-
-    // if we are just doing 2D rendering, no need to fill the depth buffer
-    if( backEnd.viewDef->viewEntitys == NULL )
-    {
-        return;
-    }
-
-    RB_LogComment("---------- RB_DrawAreaAmbients ----------\n");
+    RB_LogComment("---------- RB_DrawAreaAmbients_builtin ----------\n");
 
     // bind the vertex and fragment shader
     GL_UseProgram(&globalIlluminationShader);
@@ -136,70 +248,13 @@ void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
     int glStateBits = backEnd.glState.glStateBits;
     // draw all the subview surfaces, which will already be at the start of the sorted list,
     // with the general purpose path
-    //GL_State( GLS_DEFAULT );
-
-//#define BLEND_NORMALS 1
-
-    // RB: even use additive blending to blend the normals
     //GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
 
     GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
 
-    //GL_Color( colorWhite );
-
-#if 0
-    idVec4 diffuseColor;
-    idVec4 specularColor;
-    idVec4 ambientColor;
-
-    if( viewDef->renderView.rdflags & RDF_IRRADIANCE )
-    {
-        // RB: don't let artist run into a trap when baking multibounce lightgrids
-
-        // use default value of r_lightScale 3
-        const float lightScale = 3;
-        const idVec4 lightColor = colorWhite * lightScale;
-
-        // apply the world-global overbright and the 2x factor for specular
-        diffuseColor = lightColor;
-        specularColor = lightColor;// * 2.0f;
-
-        // loose 5% with every bounce like in DDGI
-        const float energyConservation = 0.95f;
-
-        //ambientColor.Set( energyConservation, energyConservation, energyConservation, 1.0f );
-        float a = r_forceAmbient.GetFloat();
-
-        ambientColor.Set( a, a, a, 1 );
-    }
-    else
-    {
-        const float lightScale = r_lightScale.GetFloat();
-        const idVec4 lightColor = colorWhite * lightScale;
-
-        // apply the world-global overbright and tune down specular a bit so we have less fresnel overglow
-        diffuseColor = lightColor;
-        specularColor = lightColor;// * 0.5f;
-
-        float ambientBoost = 1.0f;
-        if( !r_usePBR.GetBool() )
-        {
-            ambientBoost += r_useSSAO.GetBool() ? 0.2f : 0.0f;
-            ambientBoost *= r_useHDR.GetBool() ? 1.1f : 1.0f;
-        }
-
-        ambientColor.x = r_forceAmbient.GetFloat() * ambientBoost;
-        ambientColor.y = r_forceAmbient.GetFloat() * ambientBoost;
-        ambientColor.z = r_forceAmbient.GetFloat() * ambientBoost;
-        ambientColor.w = 1;
-    }
-
-    renderProgManager.SetRenderParm( RENDERPARM_AMBIENT_COLOR, ambientColor.ToFloatPtr() );
-#endif
-
     for( int i = 0; i < numDrawSurfs; i++ )
     {
-        RB_CreateDrawAreaAmbient(drawSurfs[i]);
+        RB_CreateDrawAreaAmbient_builtin(drawSurfs[i]);
     }
 
     GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
@@ -215,8 +270,86 @@ void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
 
     // disable blending
     GL_State( glStateBits );
-    //SetFragmentParm( RENDERPARM_ALPHA_TEST, vec4_zero.ToFloatPtr() );
 
     //k GL_SelectTexture( 0 );
 }
 
+static void RB_DrawAreaAmbients_external( drawSurf_t **drawSurfs, int numDrawSurfs )
+{
+    ambientBasicShader = renderProgramManager->LoadProgram("ambient/basic");
+    if( !ambientBasicShader || !ambientBasicShader->Bind() )
+    {
+        RB_DrawAreaAmbients_builtin(drawSurfs, numDrawSurfs);
+        return;
+    }
+
+    RB_LogComment("---------- RB_DrawAreaAmbients_external ----------\n");
+
+    // bind the vertex and fragment shader
+
+    // enable the vertex arrays
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Tangent));
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Bitangent));
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Normal));
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));	// gl_Vertex
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));	// gl_Color
+
+    // force MVP change on first surface
+    backEnd.currentSpace = NULL;
+
+    int glStateBits = backEnd.glState.glStateBits;
+    // draw all the subview surfaces, which will already be at the start of the sorted list,
+    // with the general purpose path
+    //GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
+
+    GL_State( GLS_SRCBLEND_ONE | GLS_DSTBLEND_ZERO | GLS_DEPTHMASK | GLS_DEPTHFUNC_EQUAL );
+
+    for( int i = 0; i < numDrawSurfs; i++ )
+    {
+        RB_CreateDrawAreaAmbient_external(drawSurfs[i]);
+    }
+
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Tangent));
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Bitangent));
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Normal));
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));	// gl_Vertex
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));	// gl_Color
+
+    ambientBasicShader->Unbind();
+
+    backEnd.currentSpace = NULL;
+
+    // disable blending
+    GL_State( glStateBits );
+
+    //k GL_SelectTexture( 0 );
+}
+
+void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
+{
+    if(harm_r_skipAreaAmbient.GetBool())
+        return;
+
+    if( numDrawSurfs == 0 )
+    {
+        return;
+    }
+
+    if( !drawSurfs )
+    {
+        return;
+    }
+
+    // if we are just doing 2D rendering, no need to fill the depth buffer
+    if( backEnd.viewDef->viewEntitys == NULL )
+    {
+        return;
+    }
+
+    if (aaa.GetBool())
+        RB_DrawAreaAmbients_builtin(drawSurfs, numDrawSurfs);
+    else
+        RB_DrawAreaAmbients_external(drawSurfs, numDrawSurfs);
+}

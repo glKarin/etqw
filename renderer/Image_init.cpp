@@ -1228,6 +1228,13 @@ void idImage::Reload(bool checkPrecompressed, bool force, bool fromBackEnd)
 		generatorFunction(this);
 		return;
 	}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+	if (generatorFunctor) {
+		common->DPrintf("regenerating %s.\n", imgName.c_str());
+		(*generatorFunctor)(this);
+		return;
+	}
+#endif
 
 	// check file times
 	if (!force) {
@@ -2415,6 +2422,11 @@ void idImageManager::BeginLevelLoad()
 		if (image->generatorFunction) {
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+		if (image->generatorFunctor) {
+			continue;
+		}
+#endif
 
 		if (com_purgeAll.GetBool()) {
 			image->PurgeImage(
@@ -2465,6 +2477,11 @@ void idImageManager::EndLevelLoad()
 		if (image->generatorFunction) {
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+		if (image->generatorFunctor) {
+			continue;
+		}
+#endif
 
 		if (!image->levelLoadReferenced && !image->referencedOutsideLevelLoad) {
 //			common->Printf( "Purging %s\n", image->imgName.c_str() );
@@ -2487,6 +2504,11 @@ void idImageManager::EndLevelLoad()
 		if (image->generatorFunction) {
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+		if (image->generatorFunctor) {
+			continue;
+		}
+#endif
 
 #ifdef _MULTITHREAD
 		if (image->levelLoadReferenced && (image->texnum == idImage::TEXTURE_NOT_LOADED || image->purgePending) && !image->partialImage)

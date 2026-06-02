@@ -1015,6 +1015,12 @@ void R_ReportImageDuplication_f(const idCmdArgs &args)
 			// ignore procedural images
 			continue;
 		}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+		if (image1->generatorFunctor) {
+			// ignore procedural images
+			continue;
+		}
+#endif
 
 		if (image1->cubeFiles != CF_2D) {
 			// ignore cube maps
@@ -1040,6 +1046,11 @@ void R_ReportImageDuplication_f(const idCmdArgs &args)
 			if (image2->generatorFunction) {
 				continue;
 			}
+#ifdef _SPLASHDAMAGE //karin: image generator functor
+			if (image2->generatorFunctor) {
+				continue;
+			}
+#endif
 
 			if (image2->cubeFiles != CF_2D) {
 				continue;
