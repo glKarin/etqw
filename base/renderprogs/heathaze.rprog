@@ -23,9 +23,9 @@ renderProgram heatHaze {
 			// texture 2 takes the deform magnitude and scales it by the projection distance
 			vec4 vec = vec4(1.0,0.0,0.0,1.0);
 			R0 = vec;
-			R0.z = dot ( $positionAttrib , $u_modelViewMatrix[2] );
-			R1 = vec4( dot ( R0 , $u_projectionMatrix[0] ) );
-			R2 = vec4( dot ( R0 , $u_projectionMatrix[3] ) );
+			R0.z = dot ( $positionAttrib , $transposedModelViewMatrix[2] );
+			R1 = vec4( dot ( R0 , $transposedProjectionMatrix[0] ) );
+			R2 = vec4( dot ( R0 , $transposedProjectionMatrix[3] ) );
 			// don't let the recip get near zero for polygons that cross the view plane
 			R2 = max ( R2 , vec4( 1.0 ) );
 			R2 = vec4( 1.0 / R2.w );
@@ -95,9 +95,9 @@ renderProgram heatHazeWithVertex {
 			// texture 2 takes the deform magnitude and scales it by the projection distance
 			vec4 vec = vec4(1.0,0.0,0.0,1.0);
 			R0 = vec;
-			R0.z = dot ( $positionAttrib , $u_modelViewMatrix[2] );
-			R1 = vec4( dot ( R0 , $u_projectionMatrix[0] ) );
-			R2 = vec4( dot ( R0 , $u_projectionMatrix[3] ) );
+			R0.z = dot ( $positionAttrib , $transposedModelViewMatrix[2] );
+			R1 = vec4( dot ( R0 , $transposedProjectionMatrix[0] ) );
+			R2 = vec4( dot ( R0 , $transposedProjectionMatrix[3] ) );
 			// don't let the recip get near zero for polygons that cross the view plane
 			R2 = max ( R2 , vec4( 1.0 ) );
 			R2 = vec4( 1.0 / R2.w );
@@ -176,9 +176,9 @@ renderProgram heatHazeWithMask {
 			// texture 2 takes the deform magnitude and scales it by the projection distance
 			vec4 vec = vec4(1.0,0.0,0.0,1.0);
 			R0 = vec;
-			R0.z = dot ( $positionAttrib , $u_modelViewMatrix[2] );
-			R1 = vec4( dot ( R0 , $u_projectionMatrix[0] ) );
-			R2 = vec4( dot ( R0 , $u_projectionMatrix[3] ) );
+			R0.z = dot ( $positionAttrib , $transposedModelViewMatrix[2] );
+			R1 = vec4( dot ( R0 , $transposedProjectionMatrix[0] ) );
+			R2 = vec4( dot ( R0 , $transposedProjectionMatrix[3] ) );
 			// don't let the recip get near zero for polygons that cross the view plane
 			R2 = max ( R2 , vec4( 1.0 ) );
 			R2 = vec4( 1.0 / R2.w );
@@ -259,9 +259,9 @@ renderProgram heatHazeWithMaskAndVertex {
 			// texture 2 takes the deform magnitude and scales it by the projection distance
 			vec4 vec = vec4(1.0,0.0,0.0,1.0);
 			R0 = vec;
-			R0.z = dot ( $positionAttrib , $u_modelViewMatrix[2] );
-			R1 = vec4( dot ( R0 , $u_projectionMatrix[0] ) );
-			R2 = vec4( dot ( R0 , $u_projectionMatrix[3] ) );
+			R0.z = dot ( $positionAttrib , $transposedModelViewMatrix[2] );
+			R1 = vec4( dot ( R0 , $transposedProjectionMatrix[0] ) );
+			R2 = vec4( dot ( R0 , $transposedProjectionMatrix[3] ) );
 			// don't let the recip get near zero for polygons that cross the view plane
 			R2 = max ( R2 , 1.0 );
 			R2 = vec4( 1.0 / R2.w );
@@ -342,9 +342,9 @@ renderProgram heatHazeMatrix {
 			// texture 2 takes the deform magnitude and scales it by the projection distance
 			vec4 vec = vec4(1.0,0.0,0.0,1.0);
 			R0 = vec;
-			R0.z = dot ( $positionAttrib , $u_modelViewMatrix[2] );
-			R1 = vec4( dot ( R0 , $u_projectionMatrix[0] ) );
-			R2 = vec4( dot ( R0 , $u_projectionMatrix[3] ) );
+			R0.z = dot ( $positionAttrib , $transposedModelViewMatrix[2] );
+			R1 = vec4( dot ( R0 , $transposedProjectionMatrix[0] ) );
+			R2 = vec4( dot ( R0 , $transposedProjectionMatrix[3] ) );
 			// don't let the recip get near zero for polygons that cross the view plane
 			R2 = max ( R2 , vec4( 1.0 ) );
 			R2 = vec4( 1.0 / R2.w );

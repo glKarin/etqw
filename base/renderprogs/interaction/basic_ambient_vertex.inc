@@ -1,130 +1,134 @@
 
-$ifndef instance
-	$ifndef deform
-		OPTION ARB_position_invariant;
-	$endif
-$endif
-
-TEMP	bitangent;
-TEMP	R0, R1, R2;
-
 $ifdef instance
-	TEMP _pos;
-	TEMP _nrm;
-	TEMP _tan;
-	DP4 _pos.x, vertex.texcoord[5], $positionAttrib;
-	DP4 _pos.y, vertex.texcoord[6], $positionAttrib;
-	DP4 _pos.z, vertex.texcoord[7], $positionAttrib;
-	MOV _pos.w, $positionAttrib.w;
-
-	DP3 _nrm.x, vertex.texcoord[5], $normalAttrib;
-	DP3 _nrm.y, vertex.texcoord[6], $normalAttrib;
-	DP3 _nrm.z, vertex.texcoord[7], $normalAttrib;
-	
-	DP3 _tan.x, vertex.texcoord[5], $tangentAttrib;
-	DP3 _tan.y, vertex.texcoord[6], $tangentAttrib;
-	DP3 _tan.z, vertex.texcoord[7], $tangentAttrib;
-
-	MOV result.texcoord[6].w, vertex.texcoord[2];
-
-	PARAM  mvp[4]       = { state.matrix.mvp };
-	OUTPUT oPos         = result.position;
-	# Transform the vertex to clip coordinates. 
-	DP4   oPos.x, mvp[0], _pos;
-	DP4   oPos.y, mvp[1], _pos;
-	DP4   oPos.z, mvp[2], _pos;
-	DP4   oPos.w, mvp[3], _pos;
-$else
-	$ifdef deform
-		TEMP _pos;
-		PARAM  mvp[4]       = { state.matrix.mvp };
-		OUTPUT oPos         = result.position;
-		# Transform the vertex to clip coordinates. 
-		MUL		R0.x, $parameters.x, $colorAttrib.w;
-		MAD   _pos.xyz, R0.x, $normalAttrib, $positionAttrib;
-		MOV	  _pos.w, $positionAttrib.w;
-		DP4   oPos.x, mvp[0], _pos;
-		DP4   oPos.y, mvp[1], _pos;
-		DP4   oPos.z, mvp[2], _pos;
-		DP4   oPos.w, mvp[3], _pos;
-	$else
-		ATTRIB _pos = $positionAttrib;
-	$endif
-	$if !r_32ByteVtx
-	ATTRIB _nrm = $normalAttrib;
-	ATTRIB _tan = $tangentAttrib;
-	$else
-	TEMP _nrm, _tan;
-	MOV _nrm, $normalAttrib;
-	MOV _tan, $tangentAttrib;
-	$endif
-$endif
-        
-PARAM	defaultTexCoord = { 0, 0.5, 0, 1 };
-
-XPD		bitangent, _nrm, _tan;
-MUL		bitangent, bitangent, $tangentAttrib.w;
-
-# textures 1 takes the base coordinates by the texture matrix
-MOV		result.texcoord[1], defaultTexCoord;
-DP4		result.texcoord[1].x, $texCoordAttrib, $bumpMatrix_s;
-DP4		result.texcoord[1].y, $texCoordAttrib, $bumpMatrix_t;
-
-# textures 4 takes the base coordinates by the texture matrix
-MOV		result.texcoord[4], defaultTexCoord;
-DP4		result.texcoord[4].x, $texCoordAttrib, $diffuseMatrix_s;
-DP4		result.texcoord[4].y, $texCoordAttrib, $diffuseMatrix_t;
-
-# generate the vertex color, which can be 1.0, color, or 1.0 - color
-MAD		result.color, $colorAttrib, $colorModulate, $colorAdd;
-
-# build tangent space -> world space conversion matrix
-DP3		result.texcoord[5].x, $transposedModelMatrix_x, _tan;
-DP3		result.texcoord[6].x, $transposedModelMatrix_y, _tan;
-DP3		result.texcoord[7].x, $transposedModelMatrix_z, _tan;
-
-DP3		result.texcoord[5].y, $transposedModelMatrix_x, bitangent;
-DP3		result.texcoord[6].y, $transposedModelMatrix_y, bitangent;
-DP3		result.texcoord[7].y, $transposedModelMatrix_z, bitangent;
-
-DP3		result.texcoord[5].z, $transposedModelMatrix_x, _nrm;
-DP3		result.texcoord[6].z, $transposedModelMatrix_y, _nrm;
-DP3		result.texcoord[7].z, $transposedModelMatrix_z, _nrm;
-
-# calculate vector to eye
-DP4		R0.x, $transposedModelMatrix_x, _pos;
-DP4		R0.y, $transposedModelMatrix_y, _pos;
-DP4		R0.z, $transposedModelMatrix_z, _pos;
-
-# normalize
-TEMP	viewtovec;
-SUB		viewtovec.xyz, R0, $viewOriginWorld;
-DP3		viewtovec.w, viewtovec, viewtovec;
-RSQ		R0.w, viewtovec.w;
-MUL		result.texcoord[2], viewtovec, -R0.w;
-#MOV		result.texcoord[2], R0;
-
-$ifdef 	parallax
-	# calculate vector to light in R0
-	SUB		R0, $viewOrigin, _pos;
-
-	# put into texture space for TEX6
-	DP3		result.texcoord[0].x, _tan, R0;
-	DP3		result.texcoord[0].y, bitangent, R0;
-	DP3		result.texcoord[0].z, _nrm, R0;
+attribute vec4 attr_TexCoord5;
+attribute vec4 attr_TexCoord6;
+attribute vec4 attr_TexCoord7;
+attribute vec4 attr_TexCoord2;
 $endif
 
-#ifdef enable_detail_fade
-PARAM  mv[4]       = { state.matrix.modelview };
-DP4   R0.w, -mv[2], _pos;
-SUB   R0.w, R0.w, $detailFade.x;
-MAD result.texcoord[1].w, R0.w, $detailFade.y, 1;
-#endif
-
+varying vec4 var_TexCoord6; // var_TangentToWorldMatrix[1]
+varying vec4 oPos;
+varying vec4 var_TexCoord1; // var_TexNormal
+varying vec4 var_TexCoord4; // var_TexDiffuse
+varying vec4 var_Color;
+varying vec4 var_TexCoord5; // var_TangentToWorldMatrix[0]
+varying vec4 var_TexCoord7; // var_TangentToWorldMatrix[2]
+varying vec4 var_TexCoord2;
+varying vec4 var_TexCoord0; // var_V
 $if ( r_megaDrawMethod != 0 )
-SUB		R2, _pos, $viewOrigin;
-DP3		R1.x, R2, R2;
-RSQ		R1.y, R1.x;
-MUL		R1.x, R1.y, R1.x;
-MAD		result.color.secondary, R1.x, $fogDepths.z, $fogDepths.w; 
+varying vec4 var_Color2;
 $endif
+
+void main ( void ) {
+    gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+$ifndef instance
+  $ifndef deform
+	// ARB_position_invariant;
+  $endif
+$endif
+	vec4 bitangent = vec4(attr_Bitangent, 1.0);
+	vec4 R0;
+	vec4 R1;
+	vec4 R2;
+$ifdef instance
+	vec4 _pos;
+	vec4 _nrm;
+	vec4 _tan;
+	_pos.x = dot ( attr_TexCoord5 , $positionAttrib );
+	_pos.y = dot ( attr_TexCoord6 , $positionAttrib );
+	_pos.z = dot ( attr_TexCoord7 , $positionAttrib );
+	_pos.w = $positionAttrib.w;
+	_nrm.x = dot ( attr_TexCoord5 .xyz , $normalAttrib .xyz );
+	_nrm.y = dot ( attr_TexCoord6 .xyz , $normalAttrib .xyz );
+	_nrm.z = dot ( attr_TexCoord7 .xyz , $normalAttrib .xyz );
+	_tan.x = dot ( attr_TexCoord5 .xyz , $tangentAttrib .xyz );
+	_tan.y = dot ( attr_TexCoord6 .xyz , $tangentAttrib .xyz );
+	_tan.z = dot ( attr_TexCoord7 .xyz , $tangentAttrib .xyz );
+	var_TexCoord6.w = attr_TexCoord2;
+	mat4 mvp = u_modelViewProjectionMatrix;
+	oPos = gl_Position;
+	// Transform the vertex to clip coordinates.
+	oPos.x = dot ( mvp[0], _pos );
+	oPos.y = dot ( mvp[1], _pos );
+	oPos.z = dot ( mvp[2], _pos );
+	oPos.w = dot ( mvp[3], _pos );
+$else
+  $ifdef deform
+	vec4 _pos;
+	mat4 mvp = u_modelViewProjectionMatrix;
+	oPos = gl_Position;
+	// Transform the vertex to clip coordinates.
+	R0.x = parameters.x * BYTE_COLOR( $colorAttrib.w );
+	_pos.xyz = R0.x * $normalAttrib + $positionAttrib;
+	_pos.w = $positionAttrib.w;
+	oPos.x = dot ( mvp[0], _pos );
+	oPos.y = dot ( mvp[1], _pos );
+	oPos.z = dot ( mvp[2], _pos );
+	oPos.w = dot ( mvp[3], _pos );
+  $else
+	vec4 _pos = $positionAttrib;
+  $endif
+  $if !r_32ByteVtx
+	vec4 _nrm = vec4($normalAttrib, 1.0);
+	vec4 _tan = vec4($tangentAttrib, 1.0);
+  $else
+	vec4 _nrm;
+	vec4 _tan;
+	_nrm = vec4($normalAttrib, 1.0);
+	_tan = vec4($tangentAttrib, 1.0);
+  $endif
+$endif
+	vec4 defaultTexCoord = vec4(0.0,0.5,0.0,1.0);
+	// textures 1 takes the base coordinates by the texture matrix
+	var_TexCoord1 = defaultTexCoord;
+	var_TexCoord1.x = dot ( $texCoordAttrib , $bumpMatrix_s );
+	var_TexCoord1.y = dot ( $texCoordAttrib , $bumpMatrix_t );
+	// textures 4 takes the base coordinates by the texture matrix
+	var_TexCoord4 = defaultTexCoord;
+	var_TexCoord4.x = dot ( $texCoordAttrib , $diffuseMatrix_s );
+	var_TexCoord4.y = dot ( $texCoordAttrib , $diffuseMatrix_t );
+	// generate the vertex color, which can be 1.0, color, or 1.0 - color
+	var_Color = $colorAttrib * $colorModulate + $colorAdd;
+	// build tangent space -> world space conversion matrix
+	var_TexCoord5.x = dot ( transposedModelMatrix_x .xyz , _tan .xyz );
+	var_TexCoord6.x = dot ( transposedModelMatrix_y .xyz , _tan .xyz );
+	var_TexCoord7.x = dot ( transposedModelMatrix_z .xyz , _tan .xyz );
+	var_TexCoord5.y = dot ( transposedModelMatrix_x .xyz , bitangent .xyz );
+	var_TexCoord6.y = dot ( transposedModelMatrix_y .xyz , bitangent .xyz );
+	var_TexCoord7.y = dot ( transposedModelMatrix_z .xyz , bitangent .xyz );
+	var_TexCoord5.z = dot ( transposedModelMatrix_x .xyz , _nrm .xyz );
+	var_TexCoord6.z = dot ( transposedModelMatrix_y .xyz , _nrm .xyz );
+	var_TexCoord7.z = dot ( transposedModelMatrix_z .xyz , _nrm .xyz );
+	// calculate vector to eye
+	R0.x = dot ( $transposedModelMatrix_x , _pos );
+	R0.y = dot ( $transposedModelMatrix_y , _pos );
+	R0.z = dot ( $transposedModelMatrix_z , _pos );
+	// normalize
+	vec4 viewtovec;
+	viewtovec.xyz = (R0 - $viewOriginWorld).xyz;
+	viewtovec.w = dot ( viewtovec .xyz , viewtovec .xyz );
+	R0.w = 1.0 / sqrt ( viewtovec.w );
+	var_TexCoord2 = viewtovec * -R0.w;
+	// MOV  result.texcoord[2], R0;
+$ifdef  parallax
+	// calculate vector to light in R0
+	R0 = $viewOrigin - _pos;
+	// put into texture space for TEX6
+	var_TexCoord0.x = dot ( _tan .xyz , R0 .xyz );
+	var_TexCoord0.y = dot ( bitangent .xyz , R0 .xyz );
+	var_TexCoord0.z = dot ( _nrm .xyz , R0 .xyz );
+$endif
+$ifdef enable_detail_fade
+	mat4 mv = u_modelViewMatrix;
+	R0.w = dot ( -mv[2], _pos );
+	R0.w = R0.w - detailFade.x;
+	var_TexCoord1.w = R0.w * detailFade.y + 1.0;
+$endif
+$if ( r_megaDrawMethod != 0 )
+	R2 = _pos - $viewOrigin;
+	R1.x = dot ( R2 .xyz , R2 .xyz );
+	R1.y = 1.0 / sqrt ( R1.x );
+	R1.x = R1.y * R1.x;
+	var_Color2 = R1.x * $fogDepths.z + $fogDepths.w;
+$endif
+}

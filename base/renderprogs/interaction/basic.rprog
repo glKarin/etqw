@@ -10,11 +10,11 @@ renderProgram ambient/basic {
 		depthFunc less // so it behaves like a proper depth fill pass
 	}
 
-	program vertex arb { <%
+	program vertex glsl { <%
 		$include "interaction/basic_ambient_vertex.inc"
 	%> }
 
-	program fragment arb { <%
+	program fragment glsl { <%
 		$include "interaction/basic_ambient_fragment.inc"
 	%> }
 }
