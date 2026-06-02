@@ -16,6 +16,8 @@ public:
     bool									LoadProgram(const sdDeclRenderProgram *decl);
 
     // bind
+    bool									Bind(void) const;
+    void									Unbind(void) const;
     bool									Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const;
     void									Unbind(const materialStage_t *stage) const;
     int										SetupState(void) const;
@@ -24,8 +26,9 @@ public:
 	void									BindVector(const char *name, const idVec4 &v4) const;
 	void									BindVector(const char *name, const idVec2 &v2) const;
 	void									BindVector(const char *name, float f) const;
-	void									BindVector(const char *name, float x, float y, float z, float w = 1.0f) const;
+	void									BindVector(const char *name, float x, float y, float z = 0.0f, float w = 1.0f) const;
 	void									BindMat4(const char *name, const float mat4[]) const;
+	void									BindMat4(const char *name, const idMat4 &mat4) const;
 	void									BindImage(const char *name, idImage *img) const;
 
     // state
@@ -63,6 +66,7 @@ private:
 	void									BindTexelSize(const char *name, const idImage *img) const;
 	GLint									GetUniformLocation(const char *name) const;
 	int										FindIndex(const char *name) const;
+	GLint									GetUniformType(GLuint glHandle, GLint location, GLint &unit);
 
 
     shaderHandle_t 				            shaderProgram;
@@ -71,6 +75,8 @@ private:
     idList<idStr>							bindingNames;
     idList<GLint>							locations;
 	idList<int>								nameHash;
+    idList<GLint>							textureUnits; // if >= 0 is texture unit, < 0 is vec/mat/...
+	int										numTextureUnits;
 
     static void								LoadSourceCallback(struct GLSLShaderProp *prop);
     static void								BindingLocationCallback(struct GLSLShaderProp *prop);

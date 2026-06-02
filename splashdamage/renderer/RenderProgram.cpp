@@ -29,7 +29,8 @@ extern void RB_GLSL_ConvertGL2ESFragmentShader(idStr &ret, const char *text, int
 
 sdRenderProgram::sdRenderProgram(void)
         : shaderProgram(idGLSLShaderManager::INVALID_SHADER_HANDLE),
-        declRenderProgram(NULL)
+        declRenderProgram(NULL),
+		numTextureUnits(0)
 {
 }
 
@@ -99,7 +100,11 @@ void sdRenderProgram::LoadSourceCallback(GLSLShaderProp *prop) {
 
 void sdRenderProgram::BindingLocationCallback(struct GLSLShaderProp *prop) {
     sdRenderProgram *self = (sdRenderProgram *)prop->data;
-    self->GetLocations(prop->handle);
+	GLuint currentProgram;
+	qglGetIntegerv(GL_CURRENT_PROGRAM, (GLint *)&currentProgram);
+	qglUseProgram(prop->handle);
+	self->GetLocations(prop->handle);
+	qglUseProgram(currentProgram);
 }
 
 void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float *regs) const
@@ -194,9 +199,9 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 				//Sys_Printf("TTT %d %d %s %s\n", j,location, tex->renderBinding ? tex->renderBinding->GetName(): "<NULL>", tex->image->imgName.c_str());
 
 				// uisng j as sampler handle
-				GL_SelectTexture( j );
+				qglUniform1i(location, textureUnits[j]);
+				GL_SelectTexture( textureUnits[j] );
 				tex->image->Bind();
-				qglUniform1i(location, j);
 				BindTexelSize(bindingNames[j], tex->image);
 				handled = true;
 				break;
@@ -204,9 +209,9 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 			if(handled)
 				continue;
 			// binding default value
-			GL_SelectTexture( j );
+			qglUniform1i(location, textureUnits[j]);
+			GL_SelectTexture( textureUnits[j] );
 			binding->GetDefaultImage()->Bind();
-			qglUniform1i(location, j);
 			BindTexelSize(bindingNames[j], binding->GetDefaultImage());
 			//Sys_Printf("TTTddd %d %d %s %s\n", j,location, binding->GetName(), binding->GetDefaultImage()->imgName.c_str());
 		}
@@ -234,7 +239,7 @@ void sdRenderProgram::BindMaterialUniform(const idMaterial *mat, const float *re
 #endif
 }
 
-bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const
+bool sdRenderProgram::Bind(void) const
 {
     if(!IsValid())
         return false;
@@ -243,6 +248,14 @@ bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, 
     if(!shader)
         return false;
     GL_UseProgram((shaderProgram_t *)shader);
+
+    return true;
+}
+
+bool sdRenderProgram::Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const
+{
+	if(!Bind())
+		return false;
 
     BindStageUniform(stage, regs);
 	//BindMaterialUniform(mat, regs);
@@ -262,25 +275,24 @@ int sdRenderProgram::SetupState(void) const {
 
 void sdRenderProgram::UnbindUniform(const materialStage_t *stage) const
 {
-    const sdDeclRenderBinding *binding;
-
     // binding sampler uniform to null
-	for(int i = 0; i < bindings.Num(); i++)
+	for(int i = 0; i < numTextureUnits; i++)
 	{
-		binding = bindings[i];
-
-		 if(binding && binding->GetBindingType() == sdDeclRenderBinding::BT_TEXTURE) {
-			 GL_SelectTexture( i );
-			 globalImages->BindNull();
-		 }
+		GL_SelectTexture( i );
+		globalImages->BindNull();
 	}
+}
+
+void sdRenderProgram::Unbind(void) const
+{
+    GL_SelectTextureForce(0);
+    GL_UseProgram(NULL);
 }
 
 void sdRenderProgram::Unbind(const materialStage_t *stage) const
 {
     UnbindUniform(stage);
-    GL_SelectTextureForce(0);
-    GL_UseProgram(NULL);
+	Unbind();
 }
 
 void sdRenderProgram::LoadSource(idStr &vsOut, idStr &fsOut) const
@@ -288,8 +300,23 @@ void sdRenderProgram::LoadSource(idStr &vsOut, idStr &fsOut) const
     common->Printf("Convert GLSL shader %s:\n\n", declRenderProgram->GetName());
     LoadVertexSource(vsOut);
     LoadFragmentSource(fsOut);
-    common->Printf("Vertex shader:\n%s\n\n", vsOut.c_str());
-    common->Printf("Fragment shader:\n%s\n\n", fsOut.c_str());
+
+	const int Length = 1024; // max is 4096 for idCommon::VPrintf
+    common->Printf("Vertex shader:\n");
+    for (int i = 0; i < vsOut.Length(); i += Length)
+    {
+	    idStr str = vsOut.Mid(i, Length);
+		common->Printf("%s", str.c_str());
+    }
+	common->Printf("\n\n");
+
+	common->Printf("Fragment shader:\n");
+	for (int i = 0; i < fsOut.Length(); i += Length)
+	{
+		idStr str = fsOut.Mid(i, Length);
+		common->Printf("%s", str.c_str());
+	}
+	common->Printf("\n\n");
 }
 
 void sdRenderProgram::LoadVertexSource(idStr &out) const {
@@ -461,14 +488,30 @@ void sdRenderProgram::GetLocations(shaderHandle_t handle)
 	bindingNames.Clear();
 	nameHash.Clear();
 	locations.Clear();
+	textureUnits.Clear();
+
 	GetShaderLocations(shader->program, declRenderProgram->GetVertexShader());
 	GetShaderLocations(shader->program, declRenderProgram->GetFragmentShader());
+
 	bindings.Resize(bindings.Num());
 	bindings.SetGranularity(1);
 	bindingNames.Resize(bindingNames.Num());
 	bindingNames.SetGranularity(1);
 	locations.Resize(locations.Num());
 	locations.SetGranularity(1);
+	nameHash.Resize(nameHash.Num());
+	nameHash.SetGranularity(1);
+	textureUnits.Resize(textureUnits.Num());
+	textureUnits.SetGranularity(1);
+
+	common->Printf("Shader %s: uniforms %d, texture units %d\n", declRenderProgram->GetName(), bindings.Num(), numTextureUnits);
+	for(int i = 0; i < bindings.Num(); i++)
+	{
+		idStr str = textureUnits[i] >= 0 ? "sampler" : "variant";
+		if(textureUnits[i] >= 0)
+			str.Append(va("(%d)", textureUnits[i]));
+		common->Printf("%2d: %s location %d, %s, %s\n", i, bindingNames[i].c_str(), locations[i], bindings[i] ? "custom" : "builtin", str.c_str());
+	}
 }
 
 void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader)
@@ -477,6 +520,8 @@ void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramS
     GLint location;
 	const char *name;
 	int index;
+	numTextureUnits = 0;
+	int unit;
 
     for (int i = 0; i < shader->NumBindings(); i++) {
 		name = shader->GetPlaceholder(i);
@@ -490,6 +535,10 @@ void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramS
 		index = bindingNames.Append(name);
 		locations.Append(location);
 		nameHash.Append(idStr::Hash(name));
+		unit = GetUniformType(glHandle, location, numTextureUnits);
+		textureUnits.Append(unit);
+		if(unit >= 0)
+			qglUniform1i(location, unit);
 		// add texture size to shader for OpenGLES2.0 texRECT
 		if(binding && binding->GetBindingType() == sdDeclRenderBinding::BT_TEXTURE) {
 			idStr texName = TEXEL_SIZE_NAME(name);
@@ -499,9 +548,82 @@ void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramS
 				index = bindingNames.Append(texName);
 				locations.Append(location);
 				nameHash.Append(idStr::Hash(texName));
+				textureUnits.Append(-1);
 			}
 		}
     }
+}
+
+GLint sdRenderProgram::GetUniformType(GLuint glHandle, GLint location, GLint &unit)
+{
+	GLint count = 0;
+	qglGetProgramiv(glHandle, GL_ACTIVE_UNIFORMS, &count);
+
+	GLchar name[128];
+	GLsizei length;
+	GLint size;
+	GLenum type;
+	GLint loc;
+	for(int i = 0; i < count; i++)
+	{
+		qglGetActiveUniform(glHandle, i, sizeof(name), &length, &size, &type, name);
+		loc = qglGetUniformLocation(glHandle, name);
+		if(location == loc)
+		{
+			switch(type)
+			{
+				case GL_FLOAT:
+				case GL_FLOAT_VEC2:
+				case GL_FLOAT_VEC3:
+				case GL_FLOAT_VEC4:
+					return -1;
+				case GL_INT:
+				case GL_INT_VEC2:
+				case GL_INT_VEC3:
+				case GL_INT_VEC4:
+					return -2;
+				case GL_UNSIGNED_INT:
+				case GL_UNSIGNED_INT_VEC2:
+				case GL_UNSIGNED_INT_VEC3:
+				case GL_UNSIGNED_INT_VEC4:
+					return -3;
+				case GL_BOOL:
+				case GL_BOOL_VEC2:
+				case GL_BOOL_VEC3:
+				case GL_BOOL_VEC4:
+					return -4;
+				case GL_FLOAT_MAT2:
+				case GL_FLOAT_MAT3:
+				case GL_FLOAT_MAT4:
+				case GL_FLOAT_MAT2x3:
+				case GL_FLOAT_MAT2x4:
+				case GL_FLOAT_MAT3x2:
+				case GL_FLOAT_MAT3x4:
+				case GL_FLOAT_MAT4x2:
+				case GL_FLOAT_MAT4x3:
+					return -5;
+				case GL_SAMPLER_2D:
+				case GL_SAMPLER_3D:
+				case GL_SAMPLER_CUBE:
+				case GL_SAMPLER_2D_SHADOW:
+				case GL_SAMPLER_2D_ARRAY:
+				case GL_SAMPLER_2D_ARRAY_SHADOW:
+				case GL_SAMPLER_CUBE_SHADOW:
+				case GL_INT_SAMPLER_2D:
+				case GL_INT_SAMPLER_3D:
+				case GL_INT_SAMPLER_CUBE:
+				case GL_INT_SAMPLER_2D_ARRAY:
+				case GL_UNSIGNED_INT_SAMPLER_2D:
+				case GL_UNSIGNED_INT_SAMPLER_3D:
+				case GL_UNSIGNED_INT_SAMPLER_CUBE:
+				case GL_UNSIGNED_INT_SAMPLER_2D_ARRAY:
+					return unit++;
+				default:
+					return -6;
+			}
+		}
+	}
+	return -7;
 }
 
 int sdRenderProgram::GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const {
@@ -529,8 +651,6 @@ int sdRenderProgram::GetLocation(GLuint glHandle, const sdDeclRenderBinding *bin
 		location = qglGetUniformLocation(glHandle, rawName);
 	}
 
-	if(location >= 0)
-	common->Printf("Shader %s: bind location '%s' -> %d\n", declRenderProgram->GetName(), rawName, location);
 	return location;
 }
 
@@ -556,6 +676,10 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 	const char *BuiltinMat4_Variables[] = {
 		"u_projectionMatrix",
 		"u_modelViewMatrix",
+		"u_modelMatrix",
+		"transposedModelMatrix",
+		"transposedModelViewMatrix",
+		"transposedProjectionMatrix",
 	};
 	for (int i = 0; i < sizeof(BuiltinMat4_Variables) / sizeof(BuiltinMat4_Variables[0]); i++) {
 		if(!idStr::Icmp(rawName, BuiltinMat4_Variables[i])) {
@@ -652,6 +776,15 @@ void sdRenderProgram::BindMat4(const char *name, const float mat4[]) const
 	qglUniformMatrix4fv(location, 1, false, mat4);
 }
 
+void sdRenderProgram::BindMat4(const char *name, const idMat4 &mat4) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniformMatrix4fv(location, 1, false, mat4.ToFloatPtr());
+}
+
 void sdRenderProgram::BindImage(const char *name, idImage *image) const
 {
 	int index = FindIndex(name);
@@ -659,30 +792,37 @@ void sdRenderProgram::BindImage(const char *name, idImage *image) const
 		return;
 
 	GLint location = locations[index];
-	if(location < 0)
+	if(location < 0 || textureUnits[index] < 0)
 		return;
 
     const sdDeclRenderBinding *binding = bindings[index];
 	// setup sampler uniform
-	GL_SelectTexture( index );
+	qglUniform1i(location, textureUnits[index]);
+	GL_SelectTexture( textureUnits[index] );
 	if(image)
 	{
 		image->Bind();
-		qglUniform1i(location, index);
 		BindTexelSize(name, image);
 	}
 	else if(binding && binding->GetBindingType() == sdDeclRenderBinding::BT_TEXTURE)
 	{
 		// binding default value
 		binding->GetDefaultImage()->Bind();
-		qglUniform1i(location, index);
 		BindTexelSize(name, binding->GetDefaultImage());
+	}
+	else
+	{
+		globalImages->BindNull();
+		BindTexelSize(name, NULL);
 	}
 }
 
 void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const {
 	float texelSize[] = {
-		(float)img->uploadWidth, (float)img->uploadHeight, 0.0f, 1.0f
+		img ? (float)img->uploadWidth : 0.0f,
+		img ? (float)img->uploadHeight : 0.0f,
+		0.0f,
+		1.0f
 	};
 	BindVector(TEXEL_SIZE_NAME(name), texelSize);
 }
