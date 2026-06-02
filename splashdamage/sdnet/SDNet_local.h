@@ -109,7 +109,8 @@ public:
 
 	void							AddTask(sdNetTask *task);
 
-	void							SetActiveUser(sdNetUser *user);
+	void							SetActiveUser(sdNetUser_Local *user);
+	void							SaveUserModified(void);
 
 private:
 	void							LoadOfflineUsers(void);
@@ -128,7 +129,7 @@ private:
 	sdNetTeamManager_Local teamManager;
 #endif /* !SD_DEMO_BUILD */
 	sdNetErrorCode_e lastError;
-	sdNetUser *activeUser;
+	sdNetUser_Local *activeUser;
 
 	static idList<sdNetTask *> taskPools;
 };

@@ -43,6 +43,7 @@ public:
 	void						Init(void);
 	void						Create(void);
 	void						Remove(void);
+	void						SaveModified(void);
 
 private:
 	bool						SaveOffline( int saveItem ) const;
@@ -63,6 +64,7 @@ private:
 	idStr rawUsername;
 	sdNetProfile_Local profile;
 	sdNetAccount_Local account;
+	bool noPrint;
 	friend class sdNetService_Local;
 };
 

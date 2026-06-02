@@ -43,7 +43,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/DeviceContext.h"
 #include "renderer/FontManager.h"
 #include "sdnet/SDNet.h"
-#include "sdnet/SDNetUser.h"
+#include "sdnet/SDNet_local.h"
 
 static idStrPool *globalKeyPool;
 static idStrPool *globalValuePool;
@@ -1378,8 +1378,7 @@ void idCommonLocal::WriteConfiguration(void)
 
 	WriteConfigToFile(CONFIG_FILE);
 #ifdef _SPLASHDAMAGE //karin: sync modified cvar/key bindings to user profile
-	if(networkService->GetActiveUser())
-		networkService->GetActiveUser()->Save(sdNetUser::SI_CVARS | sdNetUser::SI_BINDINGS);
+	networkServiceLocal.SaveUserModified();
 #endif
 	session->WriteCDKey();
 

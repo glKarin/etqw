@@ -249,8 +249,14 @@ void sdNetService_Local::LoadOfflineUsers(void)
 	}
 }
 
-void sdNetService_Local::SetActiveUser(sdNetUser *user) {
+void sdNetService_Local::SetActiveUser(sdNetUser_Local *user) {
 	activeUser = user;
+}
+
+void sdNetService_Local::SaveUserModified(void)
+{
+	if(activeUser)
+		activeUser->SaveModified();
 }
 
 sdNetService_Local networkServiceLocal;

@@ -10,7 +10,8 @@ extern void RemoveOSDir(const char *OSPath, int type = 0);
 extern void	ReplacePathSeparators(idStr &path, char sep = PATHSEPERATOR_CHAR);
 
 sdNetUser_Local::sdNetUser_Local()
-    : userState(US_INACTIVE)
+    : userState(US_INACTIVE),
+	noPrint(false)
 {
 }
 
@@ -115,21 +116,24 @@ void sdNetUser_Local::ProfilePath(idStr &out, const char *type) const
 
 bool sdNetUser_Local::SaveCVarsOffline(idFile *file) const
 {
-	common->Printf("Save user '%s' offline cvars\n", rawUsername.c_str());
+	if(!noPrint)
+		common->Printf("Save user '%s' offline cvars\n", rawUsername.c_str());
 	cvarSystem->WriteFlaggedVariables(CVAR_ARCHIVE, "seta", file);
 	return true;
 }
 
 bool sdNetUser_Local::SaveBindingsOffline(idFile *file) const
 {
-	common->Printf("Save user '%s' offline bindings\n", rawUsername.c_str());
+	if(!noPrint)
+		common->Printf("Save user '%s' offline bindings\n", rawUsername.c_str());
 	idKeyInput::WriteBindings(file);
 	return true;
 }
 
 bool sdNetUser_Local::SaveProfileOffline(idFile *file) const
 {
-	common->Printf("Save user '%s' offline profile\n", rawUsername.c_str());
+	if(!noPrint)
+		common->Printf("Save user '%s' offline profile\n", rawUsername.c_str());
 	int num = profile.GetProperties().GetNumKeyVals();
 	for(int i = 0; i < num; i++)
 	{
@@ -314,4 +318,11 @@ void sdNetUser_Local::Remove(void)
 	path.AppendPath("sdnet");
 	path.AppendPath(rawUsername);
 	RemoveOSDir(path);
+}
+
+void sdNetUser_Local::SaveModified(void)
+{
+	noPrint = true;
+	Save(sdNetUser::SI_CVARS | sdNetUser::SI_BINDINGS);
+	noPrint = false;
 }
