@@ -871,7 +871,8 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 			vEnt->areaAmbient = entity->parms.ambientCubeMap;
 		else if (area->cubeMapDecl)
 			vEnt->areaAmbient = area->cubeMapDecl;
-		// else if (atmosphere) vEnt->areaAmbient = atmosphere->GetAmbientCubeMap();
+		else if (atmosphere && !entity->parms.flags.dontCastFromAtmosLight)
+			vEnt->areaAmbient = atmosphere->GetAmbientCubeMap();
 #endif
 
 		// possibly expand the scissor rect
