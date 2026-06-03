@@ -57,6 +57,7 @@ extern int GLES3_VERSION;
 #define USING_GLES32 (GLES3_VERSION > 1)
 #endif
 
+//#define INTERACTION_ALPHA_TEST 1
 #define COLOR_MODULATE_IS_NORMALIZED 1
 
 extern const float zero[];

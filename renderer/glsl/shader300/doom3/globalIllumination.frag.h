@@ -27,7 +27,7 @@ GLSL_SHADER const char ES3_GLOBAL_ILLUMINATION_FRAG[] =
 "uniform sampler2D u_fragmentMap0;    /* u_bumpTexture */\n"
 "uniform sampler2D u_fragmentMap1;    /* u_diffuseTexture */\n"
 "uniform sampler2D u_fragmentMap2;    /* u_specularTexture */\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "uniform lowp float u_alphaTest;\n"
 #endif
 "\n"
@@ -36,14 +36,14 @@ GLSL_SHADER const char ES3_GLOBAL_ILLUMINATION_FRAG[] =
 "void main(void)\n"
 "{\n"
 "#ifdef _BFG\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "    vec4 diffuseMap4 = texture(u_fragmentMap1, var_TexDiffuse.st);\n"
 "    float testAlpha = diffuseMap4.a * (u_diffuseColor.a/* * 0.5*/);\n"
 "    if (u_alphaTest > testAlpha)\n"
 "        discard;\n"
 #endif
 "    vec4 bumpMap = texture(u_fragmentMap0, var_TexNormal.st);\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "    vec3 diffuseMap = diffuseMap4.rgb;\n"
 #else
 "    vec3 diffuseMap = texture(u_fragmentMap1, var_TexDiffuse.st).xyz;\n"
@@ -75,7 +75,7 @@ GLSL_SHADER const char ES3_GLOBAL_ILLUMINATION_FRAG[] =
 "    _gl_FragColor = vec4(color, 1.0) * var_Color;\n"
 "\n"
 "#else\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "    vec4 diffuseColor4 = texture(u_fragmentMap1, var_TexDiffuse) * u_diffuseColor;\n"
 "    if (u_alphaTest > diffuseColor4.a)\n"
 "        discard;\n"
@@ -91,7 +91,7 @@ GLSL_SHADER const char ES3_GLOBAL_ILLUMINATION_FRAG[] =
 "    NdotL += 0.5;\n"
 "    NdotL = NdotL * NdotL;\n"
 "#endif\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "    vec3 diffuseColor = diffuseColor4.rgb;\n"
 #else
 "    vec3 diffuseColor = texture(u_fragmentMap1, var_TexDiffuse).rgb * u_diffuseColor.rgb;\n"

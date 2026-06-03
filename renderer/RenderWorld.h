@@ -415,7 +415,7 @@ typedef struct renderEntity_s {
 
 	int						timeGroup;
 	int						xrayIndex;
-#ifdef _SPLASHDAMAGE //karin: missing in SDK
+#ifdef _SPLASHDAMAGE //karin: missing in SDK, if build SaveGame.cpp
 	float					groundRadiosity;
 	int						forceOutside;
 #endif

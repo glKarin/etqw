@@ -85,7 +85,7 @@ GLSL_SHADER const char INTERACTION_SHADOW_MAPPING_FRAG[] =
 "#else\n"
 "    varying highp vec4 var_ShadowCoord;\n"
 "#endif\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "uniform lowp float u_alphaTest;\n"
 #endif
 "\n"
@@ -117,7 +117,7 @@ _PBR_GENERAL_FUNCTION
 "void main(void)\n"
 "{\n"
 "    //float u_specularExponent = 4.0;\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "    vec4 diffuseColor4 = texture2D(u_fragmentMap3, var_TexDiffuse) * u_diffuseColor;\n"
 "    if (u_alphaTest > diffuseColor4.a)\n"
 "        discard;\n"
@@ -152,7 +152,7 @@ _PBR_GENERAL_FUNCTION
 "\n"
 "    vec3 lightProjection = texture2DProj(u_fragmentMap2, var_TexLight.xyw).rgb;\n"
 "    vec3 lightFalloff = texture2D(u_fragmentMap1, vec2(var_TexLight.z, 0.5)).rgb;\n"
-#ifdef _SPLASHDAMAGE // alpha test in interaction
+#ifdef INTERACTION_ALPHA_TEST // alpha test in interaction
 "    vec3 diffuseColor = diffuseColor4.rgb;\n"
 #else
 "    vec3 diffuseColor = texture2D(u_fragmentMap3, var_TexDiffuse).rgb * u_diffuseColor.rgb;\n"
