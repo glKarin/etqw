@@ -56,11 +56,12 @@ void rvmOcclusionQuery::Begin(int ms)
 		queryTimeOutTime = queryStartTime + ms;
 	}
 
-#ifdef GL_ES_VERSION_2_0 //karin: GL_SAMPLES_PASSED not support on OpenGLES
-	qglBeginQuery(mode == GL_SAMPLES_PASSED ? GL_ANY_SAMPLES_PASSED : mode, id);
-#else
-	qglBeginQuery(mode, id);
+#if !defined(__ANDROID__) //karin: GL_SAMPLES_PASSED not support on OpenGLES
+	if (USING_GL)
+		qglBeginQuery(mode, id);
+	else
 #endif
+	qglBeginQuery(mode == GL_SAMPLES_PASSED ? GL_ANY_SAMPLES_PASSED : mode, id);
 }
 
 void rvmOcclusionQuery::End(void)
@@ -69,11 +70,12 @@ void rvmOcclusionQuery::End(void)
 		return;
 
 	queryState = OCCLUSION_QUERY_STATE_WAITING;
-#ifdef GL_ES_VERSION_2_0 //karin: GL_SAMPLES_PASSED not support on OpenGLES
-	qglEndQuery(mode == GL_SAMPLES_PASSED ? GL_ANY_SAMPLES_PASSED : mode);
-#else
-	qglEndQuery(mode);
+#if !defined(__ANDROID__) //karin: GL_SAMPLES_PASSED not support on OpenGLES
+	if (USING_GL)
+		qglEndQuery(mode);
+	else
 #endif
+	qglEndQuery(mode == GL_SAMPLES_PASSED ? GL_ANY_SAMPLES_PASSED : mode);
 }
 
 void rvmOcclusionQuery::BeginRender(void)
@@ -134,11 +136,12 @@ void rvmOcclusionQuery::Sync(bool wait)
 	while(!passed);
 
 	qglGetQueryObjectuiv(id, GL_QUERY_RESULT, &passed);
-#ifdef GL_ES_VERSION_2_0 //karin: GL_SAMPLES_PASSED not support on OpenGLES
-	result = mode == GL_SAMPLES_PASSED ? (passed ? INT_MAX : 0) : (int)passed;
-#else
-	result = passed;
+#if !defined(__ANDROID__) //karin: GL_SAMPLES_PASSED not support on OpenGLES
+	if (USING_GL)
+		result = (int)passed;
+	else
 #endif
+	result = mode == GL_SAMPLES_PASSED ? (passed ? INT_MAX : 0) : (int)passed;
 
 	queryState = OCCLUSION_QUERY_STATE_FINISH;
 }
