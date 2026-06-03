@@ -231,4 +231,51 @@ void idRenderEntityLocal::UpdateInstanceList(void) {
 		world->UpdateEntityDef(instList[i], &re);
 	}
 }
+
+// renderEntity.flags.pushByCenter = spawnArgs.GetBool( "pushByOrigin" ); in game
+idVec3 idRenderEntityLocal::GetVisDistOrigin(void) const
+{
+	idVec3 origin;
+	if (parms.hModel)
+	{
+		if(!idStr::Icmpn(parms.hModel->Name(), "_lodentity_", 11))
+		{
+			if(parms.flags.pushByCenter && !parms.origin.IsZero())
+				origin = parms.origin;
+			else
+			{
+				if(parms.flags.overridenBounds)
+					origin = parms.hModel->Bounds(&parms).GetCenter();
+				else
+					origin = parms.bounds.GetCenter();
+			}
+		}
+		else if(!idStr::Icmpn(parms.hModel->Name(), "_area", 5))
+		{
+			if(parms.flags.overridenBounds)
+				origin = parms.hModel->Bounds(&parms).GetCenter();
+			else
+				origin = parms.bounds.GetCenter();
+		}
+		else
+		{
+			origin = parms.origin;
+		}
+	}
+	else // parms.callback != NULL
+	{
+		/*
+		   if(parms.flags.pushByOrigin)
+		   origin = parms.origin;
+		   else if(parms.flags.pushByCenter)
+		   origin = parms.origin;
+		   else if(!parms.bounds.IsCleared())
+		   origin = parms.bounds.GetCenter();
+		   else
+		   */
+		origin = parms.origin;
+	}
+
+	return origin;
+}
 #endif

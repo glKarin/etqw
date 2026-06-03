@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _SPLASHDAMAGE //karin: vis dist check
 idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
+idCVar harm_r_drawVisDistCheck("harm_r_drawVisDistCheck", "0", CVAR_INTEGER | CVAR_RENDERER, "draw entity visible distance check");
 #endif
 
 /*
@@ -801,19 +802,29 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 		if ((entity->parms.minVisDist > 0.0f || entity->parms.maxVisDist > 0.0f)
 			//&& entity->parms.flags.disableLODs
 			&& !entity->parms.imposter //karin: using imposter if too far
-			&& !harm_r_skipVisDistCheck.GetBool()) {
-			idVec3 origin;
-			if (entity->parms.hModel && !idStr::Icmpn(entity->parms.hModel->Name(), "_lodentity_", 11))
-			{
-				origin = entity->parms.flags.pushByCenter ? entity->parms.origin : entity->parms.bounds.GetCenter();
-			}
-			else
-				origin = entity->parms.origin;
+			&& !harm_r_skipVisDistCheck.GetBool()) 
+		{
+			idVec3 origin = entity->GetVisDistOrigin();
 			float distance = tr.viewDef->renderView.vieworg.Dist(origin);
+			if(harm_r_drawVisDistCheck.GetInteger() & 1)
+			{
+				const idVec4 *color;
+				if ((entity->parms.minVisDist > 0.0f && distance < entity->parms.minVisDist) || (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist))
+					color = &colorRed;
+				else
+					color = &colorGreen;
+				idVec3 dir = origin - tr.viewDef->renderView.vieworg;
+				dir.Normalize();
+				idVec3 dpos = origin + idVec3(0, 0, 100);
+				DebugArrow(*color, dpos, origin, 10);
+				DrawText(va("%d < %f < %d", entity->parms.minVisDist, distance, entity->parms.maxVisDist), dpos, 1, *color, dir.ToMat3());
+			}
+
 			if (entity->parms.minVisDist > 0.0f && distance < entity->parms.minVisDist)
 				continue;
 			if (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist)
 				continue;
+
 			if (entity->parms.maxVisDist > entity->parms.minVisDist && entity->parms.visDistFalloff > 0.0f)
 			{
 				float range = entity->parms.maxVisDist - entity->parms.minVisDist;
@@ -856,7 +867,11 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 #endif
 		vEnt = R_SetEntityDefViewEntity(entity);
 #ifdef _SPLASHDAMAGE //karin: copy area ambient to viewEntity
-		vEnt->areaAmbient = area->cubeMapDecl;
+		if (entity->parms.ambientCubeMap)
+			vEnt->areaAmbient = entity->parms.ambientCubeMap;
+		else if (area->cubeMapDecl)
+			vEnt->areaAmbient = area->cubeMapDecl;
+		// else if (atmosphere) vEnt->areaAmbient = atmosphere->GetAmbientCubeMap();
 #endif
 
 		// possibly expand the scissor rect
@@ -1021,24 +1036,6 @@ bool idRenderWorldLocal::CullLightByPortals(const idRenderLightLocal *light, con
 	return false;
 }
 
-#ifdef _SPLASHDAMAGE //karin: light with special areas
-idCVar harm_r_lightSingleArea("harm_r_lightSingleArea", "0", CVAR_BOOL | CVAR_RENDERER, "Ignore other areas of light");
-static bool R_IsAreaNumNotInLightArea(const idRenderLightLocal *light, int areaNum)
-{
-	if(!harm_r_lightSingleArea.GetBool())
-	{
-		for(int i = 1; i < light->parms.numAreas; i++)
-		{
-			if(tr.viewDef->connectedAreas[light->parms.areas[i]])
-			{
-				return false;
-			}
-		}
-	}
-
-	return (light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]);
-}
-#endif
 /*
 ===================
 AddAreaLightRefs
@@ -1078,6 +1075,20 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 		//karin: check visible distance range
 		if (light->parms.maxVisDist > 0.0f && !harm_r_skipVisDistCheck.GetBool()) {
 			float distance = tr.viewDef->renderView.vieworg.Dist(light->parms.origin);
+			if(harm_r_drawVisDistCheck.GetInteger() & 2)
+			{
+				const idVec4 *color;
+				if (distance > light->parms.maxVisDist)
+					color = &colorRed;
+				else
+					color = &colorOrange;
+				idVec3 dir = light->parms.origin - tr.viewDef->renderView.vieworg;
+				dir.Normalize();
+				idVec3 dpos = light->parms.origin + idVec3(0, 0, 100);
+				DebugArrow(*color, dpos, light->parms.origin, 10);
+				DrawText(va("%f < %d", distance, light->parms.maxVisDist), dpos, 1, *color, dir.ToMat3());
+			}
+
 			if (distance > light->parms.maxVisDist)
 				continue;
 		}
@@ -1097,7 +1108,6 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
         	if (r_useLightAreaCulling.GetInteger() &&
 #ifdef _SPLASHDAMAGE
                 !light->parms.flags.noShadows && light->lightShader->LightCastsShadows() &&
-				//R_IsAreaNumNotInLightArea(light, areaNum)
                 light->areaNum != -1 && !tr.viewDef->connectedAreas[light->areaNum]
 #else
                 !light->parms.noShadows && light->lightShader->LightCastsShadows() &&
@@ -1126,7 +1136,6 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
         	if (r_useLightCulling.GetInteger() >= 3 &&
 #ifdef _SPLASHDAMAGE
             !light->parms.flags.noShadows && light->lightShader->LightCastsShadows()
-			//&& R_IsAreaNumNotInLightArea(light, areaNum)
             && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]
 #else
             !light->parms.noShadows && light->lightShader->LightCastsShadows()
@@ -1743,6 +1752,20 @@ void idRenderWorldLocal::AddAreaEffectRefs(int areaNum, const portalStack_s *ps)
     	//karin: check visible distance range
     	if (effect->parms.maxVisDist > 0.0f && !harm_r_skipVisDistCheck.GetBool()) {
     		float distance = tr.viewDef->renderView.vieworg.Dist(effect->parms.origin);
+    		if(harm_r_drawVisDistCheck.GetInteger() & 4)
+    		{
+    			const idVec4 *color;
+    			if (distance > effect->parms.maxVisDist)
+    				color = &colorRed;
+    			else
+    				color = &colorBlue;
+    			idVec3 dir = effect->parms.origin - tr.viewDef->renderView.vieworg;
+    			dir.Normalize();
+    			idVec3 dpos = effect->parms.origin + idVec3(0, 0, 100);
+    			DebugArrow(*color, dpos, effect->parms.origin, 10);
+    			DrawText(va("%f < %f", distance, effect->parms.maxVisDist), dpos, 1, *color, dir.ToMat3());
+    		}
+
     		if (distance > effect->parms.maxVisDist)
     			continue;
     	}

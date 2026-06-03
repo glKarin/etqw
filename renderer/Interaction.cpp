@@ -1412,20 +1412,15 @@ void idInteraction::AddActiveInteraction(void)
 	if ((entityDef->parms.minVisDist > 0.0f || entityDef->parms.maxVisDist > 0.0f)
 		//&& entityDef->parms.flags.disableLODs
 		&& !entityDef->parms.imposter //karin: using imposter if too far
-		&& !harm_r_skipVisDistCheck.GetBool()) {
-		idVec3 origin;
-		if (entityDef->parms.hModel && !idStr::Icmpn(entityDef->parms.hModel->Name(), "_lodentity_", 11))
-		{
-			origin = entityDef->parms.flags.pushByCenter ? entityDef->parms.origin : entityDef->parms.bounds.GetCenter();
-		}
-		else
-			origin = entityDef->parms.origin;
+		&& !harm_r_skipVisDistCheck.GetBool())
+	{
+		idVec3 origin = entityDef->GetVisDistOrigin();
 		float distance = tr.viewDef->renderView.vieworg.Dist(origin);
 		if (entityDef->parms.minVisDist > 0.0f && distance < entityDef->parms.minVisDist)
 			return;
 		if (entityDef->parms.maxVisDist > 0.0f && distance > entityDef->parms.maxVisDist)
 			return;
-		}
+	}
 #endif
 
 	// the dynamic model may have changed since we built the surface list
