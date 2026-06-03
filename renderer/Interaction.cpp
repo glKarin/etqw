@@ -1418,8 +1418,16 @@ void idInteraction::AddActiveInteraction(void)
 		float distance = tr.viewDef->renderView.vieworg.Dist(origin);
 		if (entityDef->parms.minVisDist > 0.0f && distance < entityDef->parms.minVisDist)
 			return;
-		if (entityDef->parms.maxVisDist > 0.0f && distance > entityDef->parms.maxVisDist)
-			return;
+		if (entityDef->parms.maxVisDist > 0.0f)
+		{
+			float maxVisDist;
+			if (entityDef->parms.shadowVisDistMult > 0.0f)
+				maxVisDist = entityDef->parms.maxVisDist * (1.0f - entityDef->parms.shadowVisDistMult);
+			else
+				maxVisDist = entityDef->parms.maxVisDist;
+			if (distance > maxVisDist)
+				return;
+		}
 	}
 #endif
 
