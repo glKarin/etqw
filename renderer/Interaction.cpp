@@ -1421,8 +1421,14 @@ void idInteraction::AddActiveInteraction(void)
 		if (entityDef->parms.maxVisDist > 0.0f)
 		{
 			float maxVisDist;
+#if 1
 			if (entityDef->parms.shadowVisDistMult > 0.0f)
 				maxVisDist = entityDef->parms.maxVisDist * (1.0f - entityDef->parms.shadowVisDistMult);
+#else // test
+			static idCVar harm_r_shadowVisDistMult("harm_r_shadowVisDistMult", "0", CVAR_RENDERER | CVAR_FLOAT, "test shadowVisDistMult");
+			if (harm_r_shadowVisDistMult.GetFloat() > 0.0f)
+				maxVisDist = entityDef->parms.maxVisDist * (1.0f - harm_r_shadowVisDistMult.GetFloat());
+#endif
 			else
 				maxVisDist = entityDef->parms.maxVisDist;
 			if (distance > maxVisDist)
