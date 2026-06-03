@@ -715,6 +715,14 @@ static void RB_SubmittInteraction(drawInteraction_t *din, void (*DrawInteraction
 			din->diffuseColor[2] *= RB_overbright;
 		}
 #endif
+#ifdef _SPLASHDAMAGE //karin: fade by distance
+		if (din->surf->space->fadeFraction > 0.0f) {
+			const float fade = 1.0f - din->surf->space->fadeFraction;
+			din->diffuseColor[0] *= fade;
+			din->diffuseColor[1] *= fade;
+			din->diffuseColor[2] *= fade;
+		}
+#endif
 		DrawInteraction(din);
 	}
 }

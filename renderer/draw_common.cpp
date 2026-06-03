@@ -1092,6 +1092,15 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			color[1] = regs[ pStage->color.registers[1] ];
 			color[2] = regs[ pStage->color.registers[2] ];
 			color[3] = regs[ pStage->color.registers[3] ];
+#ifdef _SPLASHDAMAGE //karin: fade by distance
+			if (surf->space->fadeFraction > 0.0f) {
+				const float fade = 1.0f - surf->space->fadeFraction;
+				color[0] *= fade;
+				color[1] *= fade;
+				color[2] *= fade;
+				color[3] *= fade;
+			}
+#endif
 			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
 
 			GL_State( pStage->drawStateBits );
@@ -1388,6 +1397,15 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				break;
 		}
 
+#ifdef _SPLASHDAMAGE //karin: fade by distance
+		if (surf->space->fadeFraction > 0.0f) {
+			const float fade = 1.0f - surf->space->fadeFraction;
+			color[0] *= fade;
+			color[1] *= fade;
+			color[2] *= fade;
+			color[3] *= fade;
+		}
+#endif
 		GL_Uniform4fv(offsetof(shaderProgram_t, glColor), color);
 
 		// bind the texture

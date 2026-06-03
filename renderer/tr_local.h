@@ -516,6 +516,7 @@ typedef struct viewEntity_s {
 #endif
 #ifdef _SPLASHDAMAGE //karin: frontend area ambient
 	const sdDeclAmbientCubeMap *areaAmbient;
+	float						fadeFraction; // 0.0 is disable, fade = 1.0 - fadeFraction
 #endif
 } viewEntity_t;
 

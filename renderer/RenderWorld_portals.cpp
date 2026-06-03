@@ -824,22 +824,6 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 				continue;
 			if (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist)
 				continue;
-
-			if (entity->parms.maxVisDist > entity->parms.minVisDist && entity->parms.visDistFalloff > 0.0f)
-			{
-				float range = entity->parms.maxVisDist - entity->parms.minVisDist;
-				float fadeRange = range * entity->parms.visDistFalloff;
-				float nofadeRange = range - fadeRange;
-				distance -= entity->parms.minVisDist;
-				if (distance > nofadeRange)
-				{
-					float frac = (distance - nofadeRange) / fadeRange;
-					entity->parms.shaderParms[SHADERPARM_RED] *= frac;
-					entity->parms.shaderParms[SHADERPARM_GREEN] *= frac;
-					entity->parms.shaderParms[SHADERPARM_BLUE] *= frac;
-					entity->parms.shaderParms[SHADERPARM_ALPHA] *= frac;
-				}
-			}
 		}
 #endif
 		// check for completely suppressing the model
@@ -873,6 +857,30 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 			vEnt->areaAmbient = area->cubeMapDecl;
 		else if (atmosphere && !entity->parms.flags.dontCastFromAtmosLight)
 			vEnt->areaAmbient = atmosphere->GetAmbientCubeMap();
+
+		vEnt->fadeFraction = 0.0f;
+#if 1
+		if (entity->parms.maxVisDist > entity->parms.minVisDist && entity->parms.visDistFalloff > 0.0f)
+#else // test
+		static idCVar harm_r_visDistFalloff("harm_r_visDistFalloff", "0", CVAR_RENDERER | CVAR_FLOAT, "test visDistFalloff");
+		if (entity->parms.maxVisDist > entity->parms.minVisDist && harm_r_visDistFalloff.GetFloat() > 0.0f)
+#endif
+		{
+			float range = entity->parms.maxVisDist - entity->parms.minVisDist;
+#if 1
+			float fadeRange = range * entity->parms.visDistFalloff;
+#else // test
+			float fadeRange = range * harm_r_visDistFalloff.GetFloat();
+#endif
+			float nofadeRange = range - fadeRange;
+			idVec3 origin = entity->GetVisDistOrigin();
+			float distance = tr.viewDef->renderView.vieworg.Dist(origin);
+			distance -= entity->parms.minVisDist;
+			if (distance > nofadeRange) {
+				vEnt->fadeFraction = /*1.0f - */idMath::ClampFloat(0.0f, 1.0f, (distance - nofadeRange) / fadeRange);
+				// fade = 1.0 - fadeFraction, so 0.0 is full light
+			}
+		}
 #endif
 
 		// possibly expand the scissor rect
