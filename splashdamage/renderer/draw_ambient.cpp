@@ -124,29 +124,16 @@ static void RB_DrawAreaAmbient_external(const drawInteraction_t *din)
 
     // texture 3 is the cube map
     idImage *ambientCubeMap = NULL;
-    // 1. using entity parms
-    if(din->surf->space->entityDef && din->surf->space->entityDef->parms.ambientCubeMap)
-    {
-        ambientCubeMap = din->surf->space->entityDef->parms.ambientCubeMap->GetAmbientCubeMap();
-    }
-    // 2. using area
+    ambientCubeMap = din->surf->space->areaAmbient->GetAmbientCubeMap();
     if(!ambientCubeMap)
-        ambientCubeMap = din->surf->space->areaAmbient->GetAmbientCubeMap();
-    // 3. using atmosphere
-    if(!ambientCubeMap)
-        ambientCubeMap = backEnd.parms.ambientCubeMap;
+        ambientCubeMap = globalImages->blackCubeMapImage;
     ambientBasicShader->BindImage("ambientCubeMap", ambientCubeMap);
 
     // texture 4 is the specular cube map
     idImage *specularCubeMap = NULL;
-    // 1. using entity parms
-    if(din->surf->space->entityDef && din->surf->space->entityDef->parms.ambientCubeMap)
-    {
-        specularCubeMap = din->surf->space->entityDef->parms.ambientCubeMap->GetSpecularCubeMap();
-    }
-    // 2. using area
-    if(!specularCubeMap)
-        specularCubeMap = din->surf->space->areaAmbient->GetSpecularCubeMap();
+    specularCubeMap = din->surf->space->areaAmbient->GetSpecularCubeMap();
+    if (!specularCubeMap)
+        specularCubeMap = globalImages->blackCubeMapImage;
     ambientBasicShader->BindImage("specularCubeMap", specularCubeMap);
 
     GL_SelectTextureNoClient(0); //k2023

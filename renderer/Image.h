@@ -516,6 +516,7 @@ class idImageManager
 	    idImage			    *grayImage;					// full of 0x77
 		idImage 			*blackCubeMapImage;			// RGB is 0, A is 255
 		idImage				*postProcessBuffers[2];
+		idImage 			*ImageFromFunctor(const char *name, const idImageGeneratorFunctorBase *generatorFunctor);
 #endif
 		idImage 			*blackImage;					// full of 0x00
 		idImage 			*normalCubeMapImage;			// cube map to normalize STR into RGB

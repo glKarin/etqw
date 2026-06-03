@@ -425,6 +425,7 @@ public:
 		void					CreateInstanceList(void);
 		void					UpdateInstanceList(void);
 		void					FreeInstanceList(void);
+		idVec3					GetVisDistOrigin(void) const;
 #endif
 };
 

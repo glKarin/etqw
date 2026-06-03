@@ -802,30 +802,25 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	idImage *ambientCubeMap = NULL;
 	idImage *environmentCubeMap = NULL;
 	idImage *skyGradientCubeMap = NULL;
-	// 1. using entity parms
-	if(surf->space->entityDef && surf->space->entityDef->parms.ambientCubeMap)
+	if (surf->space->areaAmbient)
 	{
-		ambientCubeMap = surf->space->entityDef->parms.ambientCubeMap->GetAmbientCubeMap();
-		environmentCubeMap = surf->space->entityDef->parms.ambientCubeMap->GetEnvironmentCubeMap();
-		skyGradientCubeMap = surf->space->entityDef->parms.ambientCubeMap->GetGradientMap();
+		ambientCubeMap = surf->space->areaAmbient->GetAmbientCubeMap();
+		environmentCubeMap = surf->space->areaAmbient->GetEnvironmentCubeMap();
+		skyGradientCubeMap = surf->space->areaAmbient->GetGradientMap();
 	}
-	// 2. using area
-	if(surf->space->areaAmbient)
-	{
-		if(!ambientCubeMap)
-			ambientCubeMap = surf->space->areaAmbient->GetAmbientCubeMap();
-		if(!environmentCubeMap)
-			environmentCubeMap = surf->space->areaAmbient->GetEnvironmentCubeMap();
-		if(!skyGradientCubeMap)
-			skyGradientCubeMap = surf->space->areaAmbient->GetGradientMap();
-	}
-	// 3. using atmosphere
 	if(!ambientCubeMap)
 		ambientCubeMap = backEnd.parms.ambientCubeMap;
 	if(!environmentCubeMap)
 		environmentCubeMap = backEnd.parms.environmentCubeMap;
 	if(!skyGradientCubeMap)
 		skyGradientCubeMap = backEnd.parms.skyGradientCubeMap;
+
+	if(!ambientCubeMap)
+		ambientCubeMap = globalImages->blackCubeMapImage;
+	if(!environmentCubeMap)
+		environmentCubeMap = globalImages->blackCubeMapImage;
+	if(!skyGradientCubeMap)
+		skyGradientCubeMap = globalImages->blackCubeMapImage;
 
 	program->BindImage("ambientCubeMap", ambientCubeMap);
 	program->BindImage("environmentCubeMap", environmentCubeMap);

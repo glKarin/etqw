@@ -2682,4 +2682,51 @@ void idImageManager::PrintMemInfo(MemInfo_t *mi)
 void R_GetCubeVector(int i, int cubesize, int x, int y, float *vector) {
 	getCubeVector(i, cubesize, x, y, vector);
 }
+
+idImage *idImageManager::ImageFromFunctor(const char *_name, const idImageGeneratorFunctorBase *generatorFunctor)
+{
+	idStr name;
+	idImage	*image;
+	int	hash;
+
+	if (!name) {
+		common->FatalError("idImageManager::ImageFromFunctor: NULL name");
+	}
+
+	// strip any .tga file extensions from anywhere in the _name
+	name = _name;
+	name.Replace(".tga", "");
+	name.BackSlashesToSlashes();
+
+	// see if the image already exists
+	hash = name.FileNameHash();
+
+	for (image = imageHashTable[hash] ; image; image = image->hashNext) {
+		if (name.Icmp(image->imgName) == 0) {
+			if (image->generatorFunctor != generatorFunctor) {
+				common->DPrintf("WARNING: reused image %s with mixed generators\n", name.c_str());
+			}
+
+			return image;
+		}
+	}
+
+	// create the image and issue the callback
+	image = AllocImage(name);
+
+	image->generatorFunctor = generatorFunctor;
+
+	if (image_preload.GetBool()) {
+		// check for precompressed, load is from the front end
+		image->referencedOutsideLevelLoad = true;
+		image->ActuallyLoadImage(true, false
+#ifdef _MULTITHREAD
+				, renderThread->IsActive() // If call on OpenGL thread! // !true // !AddAllocList
+#endif
+				);
+	}
+
+	return image;
+}
+
 #endif
