@@ -492,6 +492,9 @@ void	idRenderWorldLocal::WriteRenderLight(qhandle_t handle, const renderLight_t 
 	session->writeDemo->WriteVec3(light->start);
 	session->writeDemo->WriteVec3(light->end);
 	session->writeDemo->WriteInt(light->prelightModel ? 1 : 0);
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+	session->writeDemo->WriteInt(light->numPrelightModels);
+#endif
 	session->writeDemo->WriteInt(light->lightId);
 #ifdef _SPLASHDAMAGE
 	session->writeDemo->WriteInt(light->material ? 1 : 0);
@@ -512,7 +515,10 @@ void	idRenderWorldLocal::WriteRenderLight(qhandle_t handle, const renderLight_t 
 		session->writeDemo->WriteHashString(light->prelightModel->Name());
 	}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+	for (int i = 0; i < light->numPrelightModels; i++)
+		session->writeDemo->WriteHashString(light->prelightModels[i]->Name());
+
 	if (light->material) {
 		session->writeDemo->WriteHashString(light->material->GetName());
 	}
@@ -580,6 +586,9 @@ void	idRenderWorldLocal::ReadRenderLight()
 	session->readDemo->ReadVec3(light.start);
 	session->readDemo->ReadVec3(light.end);
 	session->readDemo->ReadInt(prelightModel);
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+	session->readDemo->ReadInt(light.numPrelightModels);
+#endif
 	session->readDemo->ReadInt(light.lightId);
 	session->readDemo->ReadInt(shader);
 
@@ -593,7 +602,11 @@ void	idRenderWorldLocal::ReadRenderLight()
 		light.prelightModel = renderModelManager->FindModel(session->readDemo->ReadHashString());
 	}
 
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+	memset(light.prelightModels, 0, sizeof(light.prelightModels));
+	for (int i = 0; i < light.numPrelightModels; i++)
+		light.prelightModels[i] = renderModelManager->FindModel(session->readDemo->ReadHashString());
+
 	light.material = NULL;
 	if (shader) {
 		light.material = declManager->FindMaterial(session->readDemo->ReadHashString());

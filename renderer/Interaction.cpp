@@ -1148,7 +1148,12 @@ void idInteraction::CreateInteraction(const idRenderModel *model)
 		if (HasShadows() && shader->SurfaceCastsShadow() && tri->silEdges != NULL) {
 
 			// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
-			if (lightDef->parms.prelightModel == NULL || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool()) {
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+			if ((lightDef->parms.prelightModel == NULL && lightDef->parms.numPrelightModels == 0) || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool())
+#else
+			if (lightDef->parms.prelightModel == NULL || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool())
+#endif
+			{
 
 				// this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
 				sint->shadowTris = R_CreateShadowVolume(entityDef, tri, lightDef, shadowGen, sint->cullInfo);

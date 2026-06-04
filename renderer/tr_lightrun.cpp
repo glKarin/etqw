@@ -721,13 +721,7 @@ void R_CreateLightRefs(idRenderLightLocal *light)
 		light->areaNum = light->parms.areas[0];
 		for(int i = 0; i < light->parms.numAreas; i++)
 		{
-			/*
-			if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows()) {
-				light->areaNum = light->parms.areas[i];
-				light->world->FlowLightThroughPortals(light);
-			} else
-			*/
-				light->world->AddLightRefToArea(light, &light->world->portalAreas[light->parms.areas[i]]);
+			light->world->AddLightRefToArea(light, &light->world->portalAreas[light->parms.areas[i]]);
 		}
 		return;
 	}
@@ -753,7 +747,11 @@ void R_CreateLightRefs(idRenderLightLocal *light)
         // we can limit the area references to those visible through the portals from the light center.
         // We can't do this in the normal case, because shadows are cast from back facing triangles, which
         // may be in areas not directly visible to the light projection center.
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+        if( (light->parms.prelightModel || light->parms.numPrelightModels > 0) && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() )
+#else
         if( light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() )
+#endif
         {
             light->world->FlowLightThroughPortals( light );
         }
@@ -806,7 +804,12 @@ void R_CreateLightRefs(idRenderLightLocal *light)
 	// we can limit the area references to those visible through the portals from the light center.
 	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
 	// may be in areas not directly visible to the light projection center.
-	if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows()) {
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+	if ((light->parms.prelightModel || light->parms.numPrelightModels > 0) && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows())
+#else
+	if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows())
+#endif
+	{
 		light->world->FlowLightThroughPortals(light);
 	} else {
 		// push these points down the BSP tree into areas

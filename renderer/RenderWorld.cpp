@@ -467,9 +467,27 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 	idRenderLightLocal *light = lightDefs[lightHandle];
 
 	if (light) {
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+		bool prelightModelSame = rlight->numPrelightModels == light->parms.numPrelightModels;
+		if (prelightModelSame)
+		{
+			for (int i = 0; i < rlight->numPrelightModels; i++)
+			{
+				if (rlight->prelightModels[i] != light->parms.prelightModels[i])
+				{
+					prelightModelSame = false;
+					break;
+				}
+			}
+		}
+#endif
 		// if the shape of the light stays the same, we don't need to dump
 		// any of our derived data, because shader parms are calculated every frame
-		if (rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
+		if (
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+			prelightModelSame &&
+#endif
+			rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
 		    rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&
 #ifdef _SPLASHDAMAGE
 			rlight->flags.noShadows == light->parms.flags.noShadows && rlight->origin == light->parms.origin &&
@@ -512,6 +530,10 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 
 	if (light->lightHasMoved) {
 		light->parms.prelightModel = NULL;
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+		light->parms.numPrelightModels = 0;
+		memset(light->parms.prelightModels, 0, sizeof(light->parms.prelightModels));
+#endif
 	}
 
 	if (!justUpdate) {

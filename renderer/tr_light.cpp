@@ -1052,6 +1052,53 @@ void R_AddLightSurfaces(void)
 
 			R_LinkLightSurf(&vLight->globalShadows, tri, NULL, light, NULL, vLight->scissorRect, true /* FIXME? */);
 		}
+#ifdef _SPLASHDAMAGE //karin: multi prelights in light
+		if (light->parms.numPrelightModels > 0 && r_useOptimizedShadows.GetBool()) {
+			for (int i = 0; i < light->parms.numPrelightModels; i++)
+			{
+				idRenderModel *shadowModel = light->parms.prelightModels[i];
+
+				if (!shadowModel->NumSurfaces()) {
+					common->Error("no surfs in prelight model '%s'", shadowModel->Name());
+				}
+
+				srfTriangles_t	*tri = shadowModel->Surface(0)->geometry;
+
+				if (!tri->shadowVertexes) {
+					common->Error("R_AddLightSurfaces: prelight model '%s' without shadowVertexes", shadowModel->Name());
+				}
+
+				// these shadows will all have valid bounds, and can be culled normally
+				if (r_useShadowCulling.GetBool()) {
+					if (R_CullLocalBox(tri->bounds, tr.viewDef->worldSpace.modelMatrix, 5, tr.viewDef->frustum)) {
+						continue;
+					}
+				}
+
+				// if we have been purged, re-upload the shadowVertexes
+				if (!tri->shadowCache) {
+					R_CreatePrivateShadowCache(tri);
+
+					if (!tri->shadowCache) {
+						continue;
+					}
+				}
+
+				// touch the shadow surface so it won't get purged
+				vertexCache.Touch(tri->shadowCache);
+
+				if (!tri->indexCache) {
+					vertexCache.Alloc(tri->indexes, tri->numIndexes * sizeof(tri->indexes[0]), &tri->indexCache, true);
+				}
+
+				if (tri->indexCache) {
+					vertexCache.Touch(tri->indexCache);
+				}
+
+				R_LinkLightSurf(&vLight->globalShadows, tri, NULL, light, NULL, vLight->scissorRect, true /* FIXME? */);
+			}
+		}
+#endif
 	}
 }
 
