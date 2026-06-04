@@ -607,10 +607,13 @@ void sdDeclAmbientCubeMap::BakeGradientMap( byte* pic, const int size, const idV
 }
 
 void sdDeclAmbientCubeMap::UploadCubeMap( idImage* image, const byte* cubeMap[6], const int faceSize ) {
+#if 1
+	image->GenerateCubeImage(cubeMap, faceSize, TF_LINEAR, false, TD_HIGH_QUALITY);
+#else
 	int i; // esi
 
 	if ( !image->IsLoaded()) // a1->vtbl + 4
-		image->Reload(false, true); // a1->vtbl + 11
+		image->Reload(false, true, true); // a1->vtbl + 11
 	image->Bind(); // a1->vtbl + 2
 	for ( i = 0; i < 6; ++i )
 	{
@@ -623,6 +626,7 @@ void sdDeclAmbientCubeMap::UploadCubeMap( idImage* image, const byte* cubeMap[6]
 		*/
 #endif
 	}
+#endif
 }
 
 void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
@@ -660,8 +664,8 @@ void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
 	byte **off_81DA5C = &cubeMapByte[0];
 
 	v4 = 0;
-	image->generatorFunctor = NULL;
-	image->Reload(false, true); // (_DWORD *)image->vtbl + 11
+	//image->generatorFunctor = NULL;
+	//image->Reload(false, true, true); // (_DWORD *)image->vtbl + 11
 	for (int i = 0; i < 6; i++ )
 	{
 		memset(*off_81DA44++, 0, 0x10000u);
@@ -725,7 +729,7 @@ void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
 	this->avgAmbientColor *= v27;
 	sdDeclAmbientCubeMap::CubeMapFtob(cubeMapFloat/*off_81DA44*/, cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
 	sdDeclAmbientCubeMap::UploadCubeMap(image, (const byte **)cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
-	image->generatorFunctor = &this->ambientCubeMapImageFunctor;
+	//image->generatorFunctor = &this->ambientCubeMapImageFunctor;
 }
 
 void sdDeclAmbientCubeMap::LightCubeMapImage( idImage* image ) {
@@ -743,8 +747,8 @@ void sdDeclAmbientCubeMap::LightCubeMapImage( idImage* image ) {
 	byte **off_81DA5C = &cubeMapByte[0];
 
 	v3 = 0;
-	image->generatorFunctor = NULL;
-	image->Reload(false, true); // (_DWORD *)image->vtbl + 11
+	//image->generatorFunctor = NULL;
+	//image->Reload(false, true, true); // (_DWORD *)image->vtbl + 11
 	for (int i = 0; i < 6; i++ )
 	{
 		memset(*off_81DA44++, 0, 0x10000u);
@@ -773,7 +777,7 @@ void sdDeclAmbientCubeMap::LightCubeMapImage( idImage* image ) {
 		}
 	sdDeclAmbientCubeMap::CubeMapFtob(cubeMapFloat/*off_81DA44*/, cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
 	sdDeclAmbientCubeMap::UploadCubeMap(image, (const byte **)cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
-	image->generatorFunctor = &this->lightCubeMapImageFunctor;
+	//image->generatorFunctor = &this->lightCubeMapImageFunctor;
 }
 
 void sdDeclAmbientCubeMap::SpecularCubeMapImage( idImage* image ) {
@@ -791,8 +795,8 @@ void sdDeclAmbientCubeMap::SpecularCubeMapImage( idImage* image ) {
 	byte **off_81DA5C = &cubeMapByte[0];
 
 	v3 = 0;
-	image->generatorFunctor = NULL;
-	image->Reload(false, true); // (_DWORD *)image->vtbl + 11
+	//image->generatorFunctor = NULL;
+	//image->Reload(false, true, true); // (_DWORD *)image->vtbl + 11
 	for (int i = 0; i < 6; i++ )
 	{
 		memset(*off_81DA44++, 0, 0x10000u);
@@ -814,10 +818,11 @@ void sdDeclAmbientCubeMap::SpecularCubeMapImage( idImage* image ) {
 	}
 	sdDeclAmbientCubeMap::CubeMapFtob(cubeMapFloat/*off_81DA44*/, cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
 	sdDeclAmbientCubeMap::UploadCubeMap(image, (const byte **)cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
-	image->generatorFunctor = &this->specularCubeMapImageFunctor;
+	//image->generatorFunctor = &this->specularCubeMapImageFunctor;
 }
 
-void sdDeclAmbientCubeMap::GradientMapImage( idImage* image ) {void *vtbl; // edx
+void sdDeclAmbientCubeMap::GradientMapImage( idImage* image ) {
+	void *vtbl; // edx
 	//_DWORD v3[9]; // [esp-24h] [ebp-2Ch] BYREF
 
 	sdDeclAmbientCubeMap::BakeGradientMap(gradientMapData, GRADIENT_SIZE, ambientColor, highLightColor);
