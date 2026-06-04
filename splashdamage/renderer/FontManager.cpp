@@ -14,6 +14,8 @@
 
 #define COLOR_FTOUB(x) ((byte)((x) * 255.0f))
 
+#define DRAW_TEXT_LINE_SPACING 2 // 5 doom3
+
 extern idCVar harm_gui_useD3BFGFont;
 extern idCVar gui_smallFontLimit;
 extern idCVar gui_mediumFontLimit;
@@ -534,7 +536,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 			float x = rectDraw.GetLeft();
 
 			if (textAlign == ALIGN_RIGHT) {
-				x = rectDraw.GetLeft() + rectDraw.GetWidth() - newLineWidth;
+				x = rectDraw.GetRight() - newLineWidth;
 			} else if (textAlign == ALIGN_CENTER) {
 				x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
 			}
@@ -577,8 +579,8 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 				break;
 			}
 
-			y += lineSkip + 5;
-			tHeight += lineSkip + 5;
+			y += lineSkip + DRAW_TEXT_LINE_SPACING;
+			tHeight += lineSkip + DRAW_TEXT_LINE_SPACING;
 
 			if (!calcOnly && y > rectDraw.GetBottom()) {
 				break;
@@ -672,9 +674,9 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
                 // Align text if needed
             	if( textAlign == ALIGN_RIGHT ) {
-                    x = rectDraw.GetLeft() + rectDraw.GetWidth() - textWidth;
+                    x = rectDraw.GetRight() - textWidth;
                 } else if( textAlign == ALIGN_CENTER ) {
-                    x = rectDraw.GetRight() + ( rectDraw.GetWidth() - textWidth ) / 2;
+                    x = rectDraw.GetLeft() + ( rectDraw.GetWidth() - textWidth ) / 2;
                 }
 
                 if( wrap || lastBreak > 0 ) {
@@ -722,8 +724,8 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
                     break;
                 }
 
-                y += lineSkip + 5;
-				tHeight += lineSkip + 5;
+                y += lineSkip + DRAW_TEXT_LINE_SPACING;
+				tHeight += lineSkip + DRAW_TEXT_LINE_SPACING;
 
                 if( !calcOnly && y > rectDraw.GetBottom() ) {
                     break;
@@ -754,7 +756,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
     }
 #endif
 
-	//if(tHeight > lineSkip) tHeight -= 5;
+	//if(tHeight > lineSkip) tHeight -= DRAW_TEXT_LINE_SPACING;
 	if(rSize)
 	{
 		rSize[0] = tWidth;
@@ -1030,7 +1032,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         	float x = rectDraw.GetLeft();
 
         	if (textAlign == ALIGN_RIGHT) {
-        		x = rectDraw.GetLeft() + rectDraw.GetWidth() - newLineWidth;
+        		x = rectDraw.GetRight() - newLineWidth;
         	} else if (textAlign == ALIGN_CENTER) {
         		x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
         	}
@@ -1074,8 +1076,8 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         		break;
         	}
 
-        	y += lineSkip + 5;
-			tHeight += lineSkip + 5;
+        	y += lineSkip + DRAW_TEXT_LINE_SPACING;
+			tHeight += lineSkip + DRAW_TEXT_LINE_SPACING;
 
         	if (!calcOnly && y > rectDraw.GetBottom()) {
         		break;
@@ -1105,7 +1107,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 		}
     }
 
-	//if(tHeight > lineSkip) tHeight -= 5;
+	//if(tHeight > lineSkip) tHeight -= DRAW_TEXT_LINE_SPACING;
 	if(rSize)
 	{
 		rSize[0] = tWidth;
