@@ -2508,7 +2508,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				   )
 				   */
 				src.UnreadToken(&token);
-				ParseProgramStageTexture(src, spd);
+				ParseProgramStageTexture(src, spd, binding);
 				if ( !token.Icmp("diffusemap")
 						// || !token.Icmp("specularmap")
 						// || !token.Icmp("bumpmap")
@@ -2542,7 +2542,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 				   )
 				   */
 				src.UnreadToken(&token);
-				int idx = ParseProgramStageVector(src, spd);
+				int idx = ParseProgramStageVector(src, spd, binding);
 #if 0
 				if(idx != -1)
 				{
@@ -4642,11 +4642,11 @@ void idMaterial::ParseGLSLProgram(idLexer &src, newShaderStage_t *newStage)
 #endif
 
 #ifdef _SPLASHDAMAGE
-int idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
+int idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd, const sdDeclRenderBinding *binding )
 {
 	idToken token;
 	stageVector_t *vector;
-	int regs[4] = {0};
+	int regs[4] = {-1, -1, -1, -1};
 
 	if (!src.ReadToken(&token)) {
 		src.Warning("idMaterial::ParseProgramStageVector: excepted binding name");
@@ -4687,15 +4687,18 @@ int idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
 		return -1;
 	}
 
-	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, name.c_str(), false);
-	if (!decl) {
-		src.Warning("idMaterial::ParseProgramStageVector: render binding '%s' not found", name.c_str());
-		return -1;
-	}
-	const sdDeclRenderBinding *binding = static_cast<const sdDeclRenderBinding *>(decl);
-	if (binding->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
-		src.Warning("idMaterial::ParseProgramStageVector: render binding type '%s' not vector", binding->GetName());
-		return -1;
+	if(!binding)
+	{
+		const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, name.c_str(), false);
+		if (!decl) {
+			src.Warning("idMaterial::ParseProgramStageVector: render binding '%s' not found", name.c_str());
+			return -1;
+		}
+		binding = static_cast<const sdDeclRenderBinding *>(decl);
+		if (binding->GetBindingType() != sdDeclRenderBinding::BT_VECTOR) {
+			src.Warning("idMaterial::ParseProgramStageVector: render binding type '%s' not vector", binding->GetName());
+			return -1;
+		}
 	}
 
 	int ret = spd.numVectors;
@@ -4711,7 +4714,7 @@ int idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd )
 	return ret;
 }
 
-int idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd )
+int idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd, const sdDeclRenderBinding *binding )
 {
 	idToken token;
 	stageTexture_t *texture;
@@ -4741,15 +4744,19 @@ int idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd )
 		return -1;
 	}
 
-	const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, token.c_str(), false);
-	if (!decl) {
-		src.Warning("idMaterial::ParseProgramStageTexture: render binding '%s' not found", token.c_str());
-		return -1;
-	}
-	const sdDeclRenderBinding *binding = static_cast<const sdDeclRenderBinding *>(decl);
-	if (binding->GetBindingType() != sdDeclRenderBinding::BT_TEXTURE) {
-		src.Warning("idMaterial::ParseProgramStageTexture: render binding type '%s' not vector", binding->GetName());
-		return -1;
+	if(!binding)
+	{
+		const idDecl *decl = declManager->FindType(DECL_RENDERBINDING, token.c_str(), false);
+		if (!decl) {
+			src.Warning("idMaterial::ParseProgramStageTexture: render binding '%s' not found", token.c_str());
+			return -1;
+		}
+		binding = static_cast<const sdDeclRenderBinding *>(decl);
+
+		if (binding->GetBindingType() != sdDeclRenderBinding::BT_TEXTURE) {
+			src.Warning("idMaterial::ParseProgramStageTexture: render binding type '%s' not vector", binding->GetName());
+			return -1;
+		}
 	}
 
 	td = binding->GetTextureDepth();

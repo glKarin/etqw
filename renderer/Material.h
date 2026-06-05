@@ -1239,8 +1239,8 @@ class idMaterial : public idDecl
         void				CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults );
         void				CompleteInterationStage( materialStage_t *ss, stageParseData_t& spd );
         void				FinishStage( materialStage_t* ms, stageParseData_t& spd );
-        int					ParseProgramStageVector( idParser &src, stageParseData_t& spd );
-        int					ParseProgramStageTexture( idParser &src, stageParseData_t& spd );
+        int					ParseProgramStageVector( idParser &src, stageParseData_t& spd, const sdDeclRenderBinding *binding = NULL );
+        int					ParseProgramStageTexture( idParser &src, stageParseData_t& spd, const sdDeclRenderBinding *binding = NULL );
         int					ParseProgramStageMatrix( idParser &src, stageParseData_t& spd );
 		bool				ParseConstantCVarExpression( idParser& src, bool& result );
 #endif
