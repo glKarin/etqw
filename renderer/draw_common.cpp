@@ -719,7 +719,6 @@ void R_AddCopyParmsCmd(const viewDef_t *view)
 		builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
 		builtinUniforms.skyGradientCubeMap = globalImages->ambientNormalMap;
 	}
-	builtinUniforms.ambientCubeMap = globalImages->blackCubeMapImage;
 
 	copyParmsCommand_t	*cmd;
 

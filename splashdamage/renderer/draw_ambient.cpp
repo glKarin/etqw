@@ -7,7 +7,7 @@
 
 idCVar harm_r_skipAreaAmbient("harm_r_skipAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "Skip areas ambient before draw interactions");
 
-idCVar aaa("aaa", "0", CVAR_BOOL | CVAR_RENDERER, "Skip areas ambient before draw interactions");
+static idCVar harm_r_builtinAreaAmbient("harm_r_builtinAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "Using built-in global illumination for area ambient rendering");
 
 idCVar harm_r_areaAmbientScale("harm_r_areaAmbientScale", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Area ambient scale");
 
@@ -335,7 +335,7 @@ void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
         return;
     }
 
-    if (aaa.GetBool())
+    if (harm_r_builtinAreaAmbient.GetBool())
         RB_DrawAreaAmbients_builtin(drawSurfs, numDrawSurfs);
     else
         RB_DrawAreaAmbients_external(drawSurfs, numDrawSurfs);
