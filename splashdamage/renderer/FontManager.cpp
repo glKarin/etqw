@@ -14,6 +14,8 @@
 
 #define COLOR_FTOUB(x) ((byte)((x) * 255.0f))
 
+#define CALC_SIZE(x) idMath::FtoiFast((float)round(idMath::Ceil(x) + 1e-6))
+
 #define DRAW_TEXT_LINE_SPACING 2 // 5 doom3
 
 extern idCVar harm_gui_useD3BFGFont;
@@ -186,15 +188,15 @@ void sdFontManagerLocal::SetFont( const qhandle_t num ) {
 void sdFontManagerLocal::SetFontSize( const int pointSize ) {
 }
 
-void sdFontManagerLocal::DrawText( const wchar_t* text, const sdBounds2D& rect, int textAlign, bool wrap, const idVec4 &color ) {
-	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, color, rect, wrap, -1, false, NULL, 0);
+void sdFontManagerLocal::DrawText( const wchar_t* text, const sdBounds2D& rect, int textAlign, bool wrap, bool noclipping, const idVec4 &color ) {
+	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, color, rect, wrap, noclipping, -1, false, NULL, 0);
 }
 
-void sdFontManagerLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, int textAlign, bool wrap, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
+void sdFontManagerLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, int textAlign, bool wrap, bool noclipping, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
 	float fontScale = DC_DEFAULT_FONT_SCALE;
 	SetFont(font);
 	int size[2] = {0};
-	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, -1, true, lineBreaks, 0, size);
+	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, noclipping, -1, true, lineBreaks, 0, size);
 	width = size[0];
 	height = size[1];
 
@@ -275,7 +277,7 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
 	SetFontByScale(scale);
 	useScale = scale * useFont->glyphScale;
 	count = 0;
-	int tWidth = 0;
+	float start = x;
 
 	if ((text && color.w != 0.0f) || calcOnly) {
 		const unsigned char	*s = (const unsigned char *)text;
@@ -288,63 +290,62 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
 
 #ifdef _WCHAR_LANG
         if(AsASCIICharLang(text, (int)len))
-        {
+		{
 #endif
-		while (s && *s && count < len) {
-			if (*s < GLYPH_START || *s > GLYPH_END) {
-				s++;
-				continue;
-			}
-
-			glyph = &useFont->glyphs[*s];
-
-			//
-			// int yadj = Assets.textFont.glyphs[text[i]].bottom +
-			// Assets.textFont.glyphs[text[i]].top; float yadj = scale *
-			// (Assets.textFont.glyphs[text[i]].imageHeight -
-			// Assets.textFont.glyphs[text[i]].height);
-			//
-			if (idStr::IsColor((const char *)s)) {
-				if (*(s+1) == C_COLOR_DEFAULT) {
-					newColor = color;
-				} else {
-					newColor = idStr::ColorForIndex(*(s+1));
-					newColor[3] = color[3];
+			while (s && *s && count < len) {
+				if (*s < GLYPH_START || *s > GLYPH_END) {
+					s++;
+					continue;
 				}
 
-				if (cursor == count || cursor == count+1) {
-					float partialSkip = ((glyph->xSkip * useScale) + adjust) / 5.0f;
+				glyph = &useFont->glyphs[*s];
 
-					if (cursor == count) {
-						partialSkip *= 2.0f;
+				//
+				// int yadj = Assets.textFont.glyphs[text[i]].bottom +
+				// Assets.textFont.glyphs[text[i]].top; float yadj = scale *
+				// (Assets.textFont.glyphs[text[i]].imageHeight -
+				// Assets.textFont.glyphs[text[i]].height);
+				//
+				if (idStr::IsColor((const char *)s)) {
+					if (*(s+1) == C_COLOR_DEFAULT) {
+						newColor = color;
+					} else {
+						newColor = idStr::ColorForIndex(*(s+1));
+						newColor[3] = color[3];
 					}
 
+					if (cursor == count || cursor == count+1) {
+						float partialSkip = ((glyph->xSkip * useScale) + adjust) / 5.0f;
+
+						if (cursor == count) {
+							partialSkip *= 2.0f;
+						}
+
+						if(!calcOnly)
+							DrawEditCursor(x - partialSkip, y, scale, &newColor);
+					}
+
+					s += 2;
+					count += 2;
+					continue;
+				} else {
+					float yadj = useScale * glyph->top;
 					if(!calcOnly)
-					DrawEditCursor(x - partialSkip, y, scale, &newColor);
+						PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
+
+					if (cursor == count) {
+						if(!calcOnly)
+							DrawEditCursor(x, y, scale, &newColor);
+					}
+
+					x += (glyph->xSkip * useScale) + adjust;
+					s++;
+					count++;
 				}
-
-				s += 2;
-				count += 2;
-				continue;
-			} else {
-				float yadj = useScale * glyph->top;
-				if(!calcOnly)
-				PaintChar(x,y - yadj,glyph->imageWidth,glyph->imageHeight,useScale,glyph->s,glyph->t,glyph->s2,glyph->t2,glyph->glyph, &newColor);
-
-				if (cursor == count) {
-					if(!calcOnly)
-					DrawEditCursor(x, y, scale, &newColor);
-				}
-
-				x += (glyph->xSkip * useScale) + adjust;
-				s++;
-				count++;
-				tWidth += (glyph->xSkip * useScale) + adjust;
 			}
-		}
 #ifdef _WCHAR_LANG
-        }
-        else
+		}
+		else
         {
             idStr drawText = text;
             int charIndex = 0;
@@ -391,7 +392,6 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
                     }
 
                     x += (glyph->xSkip * useScale) + adjust;
-					tWidth += (glyph->xSkip * useScale) + adjust;
                 }
             }
         }
@@ -403,9 +403,8 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
 		}
 	}
 
-	//if(tWidth > 0) tWidth -= adjust;
 	if(rWidth)
-		*rWidth = tWidth;
+		*rWidth = CALC_SIZE(x - start);
 	if(calcOnly)
 		count = 0;
 
@@ -437,7 +436,7 @@ int sdFontManagerLocal::CharWidth(const char c, float scale)
 	return idMath::FtoiFast(glyph->xSkip * useScale);
 }
 
-int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
+int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, bool noclipping, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
 {
 	const char	*p, *textPtr, *newLinePtr;
 	char		buff[1024];
@@ -451,7 +450,8 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 	float		cursorSkip = (cursor >= 0 ? charSkip : 0);
 
 	bool		lineBreak, wordBreak;
-	int tWidth = 0, tHeight = 0;
+	int tWidth = CALC_SIZE(charSkip);
+	float tHeight = 0;
 
 	SetFontByScale(textScale);
 
@@ -463,12 +463,10 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
 		}
 
-		tWidth = charSkip;
-		tHeight = lineSkip;
 		if(rSize)
 		{
 			rSize[0] = tWidth;
-			rSize[1] = tHeight;
+			rSize[1] = CALC_SIZE(lineSkip);
 		}
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
@@ -494,124 +492,124 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
 #ifdef _WCHAR_LANG
     if(AsASCIICharLang(text, (int)strlen(text)))
-    {
+	{
 #endif
-	while (p) {
+		while (p) {
 
-		if (*p == '\n' || *p == '\r' || *p == '\0') {
-			lineBreak = true;
+			if (*p == '\n' || *p == '\r' || *p == '\0') {
+				lineBreak = true;
 
-			if ((*p == '\n' && *(p + 1) == '\r') || (*p == '\r' && *(p + 1) == '\n')) {
-				p++;
+				if ((*p == '\n' && *(p + 1) == '\r') || (*p == '\r' && *(p + 1) == '\n')) {
+					p++;
+				}
 			}
-		}
 
-		int nextCharWidth = (idStr::CharIsPrintable(*p) ? CharWidth(*p, textScale) : cursorSkip);
-		// FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
-		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
-		//	The following line and the !linebreak in the if statement below should be removed
-		nextCharWidth = 0;
+			int nextCharWidth = (idStr::CharIsPrintable(*p) ? CharWidth(*p, textScale) : cursorSkip);
+			// FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
+			//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
+			//	The following line and the !linebreak in the if statement below should be removed
+			nextCharWidth = 0;
 
-		if (!lineBreak && (textWidth + nextCharWidth) > rectDraw.GetWidth()) {
-			// The next character will cause us to overflow, if we haven't yet found a suitable
-			// break spot, set it to be this character
-			if (!calcOnly || wrap) //karin: continue if in calc mode and single line
-			{
-			if (len > 0 && newLine == 0) {
+			if (!lineBreak && (textWidth + nextCharWidth) > rectDraw.GetWidth()) {
+				// The next character will cause us to overflow, if we haven't yet found a suitable
+				// break spot, set it to be this character
+				if ((!calcOnly || wrap) && !noclipping) //karin: continue if in calc mode and single line
+				{
+					if (len > 0 && newLine == 0) {
+						newLine = len;
+						newLinePtr = p;
+						newLineWidth = textWidth;
+					}
+
+					wordBreak = true;
+				}
+			} else if (lineBreak || (wrap && (*p == ' ' || *p == '\t'))) {
+				// The next character is in view, so if we are a break character, store our position
 				newLine = len;
-				newLinePtr = p;
+				newLinePtr = p + 1;
 				newLineWidth = textWidth;
 			}
 
-			wordBreak = true;
-			}
-		} else if (lineBreak || (wrap && (*p == ' ' || *p == '\t'))) {
-			// The next character is in view, so if we are a break character, store our position
-			newLine = len;
-			newLinePtr = p + 1;
-			newLineWidth = textWidth;
-		}
+			if (lineBreak || wordBreak) {
+				float x = rectDraw.GetLeft();
 
-		if (lineBreak || wordBreak) {
-			float x = rectDraw.GetLeft();
-
-			if (textAlign == ALIGN_RIGHT) {
-				x = rectDraw.GetRight() - newLineWidth;
-			} else if (textAlign == ALIGN_CENTER) {
-				x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
-			}
-
-			if (wrap || newLine > 0) {
-				buff[newLine] = '\0';
-
-				// This is a special case to handle breaking in the middle of a word.
-				// if we didn't do this, the cursor would appear on the end of this line
-				// and the beginning of the next.
-				if (wordBreak && cursor >= newLine && newLine == len) {
-					cursor++;
+				if (textAlign == ALIGN_RIGHT) {
+					x = rectDraw.GetRight() - newLineWidth;
+				} else if (textAlign == ALIGN_CENTER) {
+					x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
 				}
-			}
 
-			//if (!calcOnly) 
-			{
-				int tw = 0;
-				count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor, calcOnly, &tw);
-				if(tw > tWidth)
-					tWidth = tw;
-			}
+				if (wrap || newLine > 0) {
+					buff[newLine] = '\0';
 
-			if (cursor < newLine) {
-				cursor = -1;
-			} else if (cursor >= 0) {
-				cursor -= (newLine + 1);
-			}
+					// This is a special case to handle breaking in the middle of a word.
+					// if we didn't do this, the cursor would appear on the end of this line
+					// and the beginning of the next.
+					if (wordBreak && cursor >= newLine && newLine == len) {
+						cursor++;
+					}
+				}
 
-			if (!wrap && !calcOnly) {
-				if(rSize)
+				//if (!calcOnly) 
 				{
-					rSize[0] = tWidth;
-					rSize[1] = tHeight;
+					int tw = 0;
+					count += DrawText(x, y, textScale, color, buff, 0, 0, 0, cursor, calcOnly, &tw);
+					if(tw > tWidth)
+						tWidth = tw;
 				}
-				return newLine;
+
+				if (cursor < newLine) {
+					cursor = -1;
+				} else if (cursor >= 0) {
+					cursor -= (newLine + 1);
+				}
+
+				if (!wrap && !calcOnly) {
+					if(rSize)
+					{
+						rSize[0] = tWidth;
+						rSize[1] = CALC_SIZE(tHeight);
+					}
+					return newLine;
+				}
+
+				if ((limit && count > limit) || *p == '\0') {
+					break;
+				}
+
+				y += lineSkip + DRAW_TEXT_LINE_SPACING;
+				tHeight += lineSkip + DRAW_TEXT_LINE_SPACING;
+
+				if (!calcOnly && y > rectDraw.GetBottom()) {
+					break;
+				}
+
+				p = newLinePtr;
+
+				if (breaks) {
+					breaks->Append(p - text);
+				}
+
+				len = 0;
+				newLine = 0;
+				newLineWidth = 0;
+				textWidth = 0;
+				lineBreak = false;
+				wordBreak = false;
+				continue;
 			}
 
-			if ((limit && count > limit) || *p == '\0') {
-				break;
+			buff[len++] = *p++;
+			buff[len] = '\0';
+
+			// update the width
+			if (*(buff + len - 1) != C_COLOR_ESCAPE && (len <= 1 || *(buff + len - 2) != C_COLOR_ESCAPE)) {
+				textWidth += textScale * useFont->glyphScale * useFont->glyphs[(const unsigned char)*(buff + len - 1)].xSkip;
 			}
-
-			y += lineSkip + DRAW_TEXT_LINE_SPACING;
-			tHeight += lineSkip + DRAW_TEXT_LINE_SPACING;
-
-			if (!calcOnly && y > rectDraw.GetBottom()) {
-				break;
-			}
-
-			p = newLinePtr;
-
-			if (breaks) {
-				breaks->Append(p - text);
-			}
-
-			len = 0;
-			newLine = 0;
-			newLineWidth = 0;
-			textWidth = 0;
-			lineBreak = false;
-			wordBreak = false;
-			continue;
 		}
-
-		buff[len++] = *p++;
-		buff[len] = '\0';
-
-		// update the width
-		if (*(buff + len - 1) != C_COLOR_ESCAPE && (len <= 1 || *(buff + len - 2) != C_COLOR_ESCAPE)) {
-			textWidth += textScale * useFont->glyphScale * useFont->glyphs[(const unsigned char)*(buff + len - 1)].xSkip;
-		}
-	}
 #ifdef _WCHAR_LANG
-    }
-    else
+	}
+	else
     {
         idStr drawText = text;
         int			charIndex = 0;
@@ -650,13 +648,13 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
             if( !lineBreak && ( textWidth > rectDraw.GetWidth() ) ) {
                 // The next character will cause us to overflow, if we haven't yet found a suitable
             	// break spot, set it to be this character
-            	if (!calcOnly || wrap) //karin: continue if in calc mode and single line
+				if ((!calcOnly || wrap) && !noclipping) //karin: continue if in calc mode and single line
             	{
-                if( textBuffer.Length() > 0 && lastBreak == 0 ) {
-                    lastBreak = textBuffer.Length();
-                    textWidthAtLastBreak = textWidth;
-                }
-                wordBreak = true;
+					if( textBuffer.Length() > 0 && lastBreak == 0 ) {
+						lastBreak = textBuffer.Length();
+						textWidthAtLastBreak = textWidth;
+					}
+					wordBreak = true;
 				}
             } else if( lineBreak || ( wrap && ( textChar == ' ' || textChar == '\t' ) ) ) {
                 // The next character is in view, so if we are a break character, store our position
@@ -714,7 +712,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 					if(rSize)
 					{
 						rSize[0] = tWidth;
-						rSize[1] = tHeight;
+						rSize[1] = CALC_SIZE(tHeight);
 					}
                     return lastBreak;
                 }
@@ -756,11 +754,10 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
     }
 #endif
 
-	//if(tHeight > lineSkip) tHeight -= DRAW_TEXT_LINE_SPACING;
 	if(rSize)
 	{
 		rSize[0] = tWidth;
-		rSize[1] = tHeight;
+		rSize[1] = CALC_SIZE(tHeight);
 	}
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 }
@@ -866,7 +863,7 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
 	SetFontByScale(scale);
 	useScale = scale * useFont->glyphScale;
 	count = 0;
-	int tWidth = 0;
+	float start = x;
 
 	if ((text && color.w != 0.0f) || calcOnly) {
 		const wchar_t *s = text;
@@ -920,7 +917,6 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
             	x += (glyph->xSkip * useScale) + adjust;
             	s++;
             	count++;
-				tWidth += (glyph->xSkip * useScale) + adjust;
             }
         }
 
@@ -930,16 +926,15 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
 		}
 	}
 
-	//if(tWidth > 0) tWidth -= adjust;
 	if(rWidth)
-		*rWidth = tWidth;
+		*rWidth = CALC_SIZE(x - start);
 	if(calcOnly)
 		count = 0;
 
 	return count;
 }
 
-int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
+int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, bool noclipping, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
 {
 	const wchar_t	*p, *textPtr, *newLinePtr;
 	wchar_t		buff[1024];
@@ -953,7 +948,8 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 	float		cursorSkip = (cursor >= 0 ? charSkip : 0);
 
 	bool		lineBreak, wordBreak;
-	int tWidth = 0, tHeight = 0;
+	int tWidth = CALC_SIZE(charSkip);
+	float tHeight = 0;
 
 	SetFontByScale(textScale);
 
@@ -965,12 +961,10 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
 		}
 
-		tWidth = charSkip;
-		tHeight = lineSkip;
 		if(rSize)
 		{
 			rSize[0] = tWidth;
-			rSize[1] = tHeight;
+			rSize[1] = CALC_SIZE(lineSkip);
 		}
 		return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 	}
@@ -980,7 +974,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 
 	y = lineSkip + rectDraw.GetTop();
 	len = 0;
-	buff[0] = '\0';
+	buff[0] = L'\0';
 	newLine = 0;
 	newLineWidth = 0;
 	p = textPtr;
@@ -994,10 +988,10 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 	wordBreak = false;
 
 	while (p) {
-		if (*p == '\n' || *p == '\r' || *p == '\0') {
+		if (*p == L'\n' || *p == L'\r' || *p == L'\0') {
 			lineBreak = true;
 
-			if ((*p == '\n' && *(p + 1) == '\r') || (*p == '\r' && *(p + 1) == '\n')) {
+			if ((*p == L'\n' && *(p + 1) == L'\r') || (*p == L'\r' && *(p + 1) == L'\n')) {
 				p++;
 			}
 		}
@@ -1011,17 +1005,17 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 		if( !lineBreak && ( (textWidth + nextCharWidth) > rectDraw.GetWidth() ) ) {
 			// The next character will cause us to overflow, if we haven't yet found a suitable
 			// break spot, set it to be this character
-			if (!calcOnly || wrap) //karin: continue if in calc mode and single line
+			if ((!calcOnly || wrap) && !noclipping) //karin: continue if in calc mode and single line
 			{
-			if (len > 0 && newLine == 0) {
-				newLine = len;
-				newLinePtr = p;
-				newLineWidth = textWidth;
-			}
+				if (len > 0 && newLine == 0) {
+					newLine = len;
+					newLinePtr = p;
+					newLineWidth = textWidth;
+				}
 
-            wordBreak = true;
+				wordBreak = true;
 			}
-		} else if( lineBreak || ( wrap && ( *p == ' ' || *p == '\t' ) ) ) {
+		} else if( lineBreak || ( wrap && ( *p == L' ' || *p == L'\t' ) ) ) {
 			// The next character is in view, so if we are a break character, store our position
 			newLine = len;
 			newLinePtr = p + 1;
@@ -1038,7 +1032,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         	}
 
         	if (wrap || newLine > 0) {
-        		buff[newLine] = '\0';
+        		buff[newLine] = L'\0';
 
         		// This is a special case to handle breaking in the middle of a word.
         		// if we didn't do this, the cursor would appear on the end of this line
@@ -1067,12 +1061,12 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 				if(rSize)
 				{
 					rSize[0] = tWidth;
-					rSize[1] = tHeight;
+					rSize[1] = CALC_SIZE(tHeight);
 				}
         		return newLine;
         	}
 
-        	if ((limit && count > limit) || *p == '\0') {
+        	if ((limit && count > limit) || *p == L'\0') {
         		break;
         	}
 
@@ -1099,7 +1093,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         }
 
 		buff[len++] = *p++;
-		buff[len] = '\0';
+		buff[len] = L'\0';
 
 		// update the width
 		if (*(buff + len - 1) != C_COLOR_ESCAPE && (len <= 1 || *(buff + len - 2) != C_COLOR_ESCAPE)) {
@@ -1107,24 +1101,23 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 		}
     }
 
-	//if(tHeight > lineSkip) tHeight -= DRAW_TEXT_LINE_SPACING;
 	if(rSize)
 	{
 		rSize[0] = tWidth;
-		rSize[1] = tHeight;
+		rSize[1] = CALC_SIZE(tHeight);
 	}
 	return idMath::FtoiFast(rectDraw.GetWidth() / charSkip);
 }
 
-void sdFontManagerLocal::DrawText( const char* text, const sdBounds2D& rect, int textAlign, bool wrap, const idVec4 &color ) {
-	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, color, rect, wrap, -1, false, NULL, 0);
+void sdFontManagerLocal::DrawText( const char* text, const sdBounds2D& rect, int textAlign, bool wrap, bool noclipping, const idVec4 &color ) {
+	DrawText(text, DC_DEFAULT_FONT_SCALE, textAlign, color, rect, wrap, noclipping, -1, false, NULL, 0);
 }
 
-void sdFontManagerLocal::GetTextDimensions( const char* text, const sdBounds2D& rect, int textAlign, bool wrap, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
+void sdFontManagerLocal::GetTextDimensions( const char* text, const sdBounds2D& rect, int textAlign, bool wrap, bool noclipping, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
 	float fontScale = DC_DEFAULT_FONT_SCALE;
 	SetFont(font);
 	int size[2] = {0};
-	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, -1, true, lineBreaks, 0, size);
+	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, noclipping, -1, true, lineBreaks, 0, size);
 	width = size[0];
 	height = size[1];
 

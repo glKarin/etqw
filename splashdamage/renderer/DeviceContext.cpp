@@ -953,7 +953,8 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 	else
 		textAlign = ALIGN_LEFT;
 	
-	fontManagerLocal.DrawText(text, rect, textAlign, wrap, tr.gameGuiModel->CurrentColor());
+	fontManagerLocal.DrawText(text, rect, textAlign, wrap, !wrap, tr.gameGuiModel->CurrentColor());
+	//DrawBox(rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), 1, colorGreen);
 
 	//const idMaterial* material = declManager->FindMaterial("commandmaps/area22");
 	//DrawCircleMaterial( rect.GetCenter().x, rect.GetCenter().y, idVec2(rect.GetWidth()/2,rect.GetWidth()/2), 90, idVec4(0,0,1,1), material, idVec4(1,1,1,1), 135 );
@@ -969,7 +970,8 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 	else
 		textAlign = ALIGN_LEFT;
 
-	fontManagerLocal.GetTextDimensions(text, rect, textAlign, wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
+	fontManagerLocal.GetTextDimensions(text, rect, textAlign, wrap, !wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
+	//DrawBox(rect.GetLeft(), rect.GetTop(), width, height, 1, colorRed);
 }
 
 void sdDeviceContextLocal::OverrideAspectRationCorrection( bool setOverride ) {
