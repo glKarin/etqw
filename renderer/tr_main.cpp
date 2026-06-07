@@ -1303,6 +1303,10 @@ void R_RenderView(viewDef_t *parms)
 	// lists
 	R_AddModelSurfaces();
 
+#ifdef _SPLASHDAMAGE //karin: send gui surfs of current view
+	tr.gameGuiModel->EmitCurrentView();
+#endif
+
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 #ifdef _RAVEN_BSE
     R_AddEffectSurfaces();

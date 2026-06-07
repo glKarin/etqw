@@ -956,6 +956,10 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 
 	// prepare for any 2D drawing after this
 	tr.guiModel->Clear();
+
+#ifdef _SPLASHDAMAGE //karin: send gui surfs of current view
+	tr.gameGuiModel->ClearCurrentView();
+#endif
 #endif
 }
 

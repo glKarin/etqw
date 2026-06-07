@@ -94,6 +94,20 @@ public:
 			bool clip = true, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f);
 	void	DrawStretchPicWithColor(const idDrawVert *verts, const glIndex_t *indexes, int vertCount, int indexCount, const idMaterial *hShader,
 			bool clip = true, const idVec4 *color = NULL, float min_x = 0.0f, float min_y = 0.0f, float max_x = 640.0f, float max_y = 480.0f);
+	void	ClearCurrentView(void);
+	void	EmitCurrentView(void);
+
+private:
+	struct emitCurrentView_t 
+	{
+		srfTriangles_t	tri;
+		float shaderParms[MAX_ENTITY_SHADER_PARMS];
+		float modelMatrix[16];
+		bool weaponDepthHack;
+		const idMaterial *material;
+	};
+	void	EndCurrentView(void);
+	void	AddCurrentViewSurface(guiModelSurface_t *surf);
 
 	//---------------------------
 private:
@@ -106,5 +120,6 @@ private:
 	float					emitModelMatrix[16];
 	bool					emitDepthHack;
 	int						usingCurrentView;
+	idList<emitCurrentView_t> currentViewSurfs;
 };
 #endif

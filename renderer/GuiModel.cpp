@@ -772,9 +772,8 @@ void sdGuiModel::End(void)
 		return;
 	}
 
-	usingCurrentView = EMIT_TO_NONE;
-
 	if (surfaces[0].numVerts == 0) {
+		usingCurrentView = EMIT_TO_NONE;
 		Clear();
 		return;
 	}
@@ -782,23 +781,14 @@ void sdGuiModel::End(void)
 	// add the surfaces to this view
 	if(usingCurrentView == EMIT_TO_CURRENTVIEW)
 	{
-		float	modelViewMatrix[16];
-
-		myGlMultMatrix(emitModelMatrix, tr.viewDef->worldSpace.modelViewMatrix,
-				modelViewMatrix);
-
-		for (int i = 0 ; i < surfaces.Num() ; i++) {
-			EmitSurface(&surfaces[i], emitModelMatrix, modelViewMatrix, emitDepthHack);
-		}
-
-		((idMat4 *)emitModelMatrix)->Identity();
-		emitDepthHack = false;
+		EndCurrentView();
 	}
 	else
 	{
 		EmitFullScreen();
 	}
 
+	usingCurrentView = EMIT_TO_NONE;
 	Clear();
 }
 
@@ -1126,4 +1116,116 @@ void sdGuiModel::DrawStretchPicWithColor(const idDrawVert *dverts, const glIndex
 	}
 }
 
+void sdGuiModel::EndCurrentView(void)
+{
+	viewDef_t	*viewDef;
+
+	if (surfaces[0].numVerts == 0) {
+		return;
+	}
+
+	if (!tr.viewDef) {
+		for (int i = 0 ; i < surfaces.Num() ; i++) {
+			AddCurrentViewSurface(&surfaces[i]);
+		}
+	}
+	else
+	{
+		float	modelViewMatrix[16];
+
+		myGlMultMatrix(emitModelMatrix, tr.viewDef->worldSpace.modelViewMatrix, modelViewMatrix);
+
+		for (int i = 0 ; i < surfaces.Num() ; i++) {
+			EmitSurface(&surfaces[i], emitModelMatrix, modelViewMatrix, emitDepthHack);
+		}
+	}
+
+	((idMat4 *)emitModelMatrix)->Identity();
+	emitDepthHack = false;
+}
+
+void sdGuiModel::EmitCurrentView(void)
+{
+	if(currentViewSurfs.Num() == 0)
+		return;
+
+	float	modelViewMatrix[16];
+	srfTriangles_t	*tri;
+	srfTriangles_t *surf;
+
+	emitCurrentView_t *item = currentViewSurfs.Ptr();
+	for (int i = 0 ; i < currentViewSurfs.Num() ; i++, item++) {
+		myGlMultMatrix(item->modelMatrix, tr.viewDef->worldSpace.modelViewMatrix, modelViewMatrix);
+
+		surf = &item->tri;
+		tri = (srfTriangles_t *)R_ClearedFrameAlloc(sizeof(*tri));
+
+		tri->numIndexes = surf->numIndexes;
+		tri->numVerts = surf->numVerts;
+		tri->indexes = (glIndex_t *)R_FrameAlloc(tri->numIndexes * sizeof(tri->indexes[0]));
+		memcpy(tri->indexes, &surf->indexes[0], tri->numIndexes * sizeof(tri->indexes[0]));
+
+		// we might be able to avoid copying these and just let them reference the list vars
+		// but some things, like deforms and recursive
+		// guis, need to access the verts in cpu space, not just through the vertex range
+		tri->verts = (idDrawVert *)R_FrameAlloc(tri->numVerts * sizeof(tri->verts[0]));
+		memcpy(tri->verts, &surf->verts[0], tri->numVerts * sizeof(tri->verts[0]));
+
+		// move the verts to the vertex cache
+		tri->ambientCache = vertexCache.AllocFrameTemp(tri->verts, tri->numVerts * sizeof(tri->verts[0]));
+
+		// if we are out of vertex cache, don't create the surface
+		if (!tri->ambientCache) {
+			return;
+		}
+
+		renderEntity_t renderEntity;
+		memset(&renderEntity, 0, sizeof(renderEntity));
+		memcpy(renderEntity.shaderParms, item->shaderParms, sizeof(item->shaderParms));
+
+		viewEntity_t *guiSpace = (viewEntity_t *)R_ClearedFrameAlloc(sizeof(*guiSpace));
+		memcpy(guiSpace->modelMatrix, item->modelMatrix, sizeof(guiSpace->modelMatrix));
+		memcpy(guiSpace->modelViewMatrix, modelViewMatrix, sizeof(guiSpace->modelViewMatrix));
+		guiSpace->weaponDepthHack = item->weaponDepthHack;
+
+		// add the surface, which might recursively create another gui
+		R_AddDrawSurf(tri, guiSpace, &renderEntity, item->material, tr.viewDef->scissor);
+	}
+}
+
+void sdGuiModel::AddCurrentViewSurface(guiModelSurface_t *surf)
+{
+	if (surf->numVerts == 0) {
+		return;		// nothing in the surface
+	}
+
+	emitCurrentView_t &emit = currentViewSurfs.Alloc();
+	// copy verts and indexes
+	memset(&emit.tri, 0, sizeof(emit));
+
+	emit.tri.numIndexes = surf->numIndexes;
+	emit.tri.numVerts = surf->numVerts;
+	emit.tri.indexes = (glIndex_t *)R_FrameAlloc(emit.tri.numIndexes * sizeof(emit.tri.indexes[0]));
+	memcpy(emit.tri.indexes, &indexes[surf->firstIndex], emit.tri.numIndexes * sizeof(emit.tri.indexes[0]));
+
+	// we might be able to avoid copying these and just let them reference the list vars
+	// but some things, like deforms and recursive
+	// guis, need to access the verts in cpu space, not just through the vertex range
+	emit.tri.verts = (idDrawVert *)R_FrameAlloc(emit.tri.numVerts * sizeof(emit.tri.verts[0]));
+	memcpy(emit.tri.verts, &verts[surf->firstVert], emit.tri.numVerts * sizeof(emit.tri.verts[0]));
+
+	if(surf->registerShaderParms)
+		memcpy(emit.shaderParms, surf->registers, sizeof(surf->registers));
+	memcpy(emit.shaderParms, surf->color, sizeof(surf->color));
+
+	memcpy(emit.modelMatrix, emitModelMatrix, sizeof(emit.modelMatrix));
+	emit.weaponDepthHack = emitDepthHack;
+	
+	emit.material = surf->material;
+}
+
+void sdGuiModel::ClearCurrentView(void)
+{
+	currentViewSurfs.Clear();
+}
 #endif
