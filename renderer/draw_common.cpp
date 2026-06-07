@@ -1104,7 +1104,10 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 			GL_State( pStage->drawStateBits );
 
-			RB_DrawElementsWithCounters( tri );
+			if((backEnd.glState.glStateBits & GLS_POLYMODE_LINE) == 0)
+				RB_DrawElementsWithCounters( tri );
+			else
+				RB_DrawElementsWithCountersLines(tri);
 
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));

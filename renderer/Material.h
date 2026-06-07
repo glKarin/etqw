@@ -399,6 +399,8 @@ typedef struct {
 #endif
 
 #ifdef _SPLASHDAMAGE
+	float				lineWidth;
+
 	const sdRenderProgram*		renderProgram;
 
 	int							numVectors;
@@ -1235,6 +1237,9 @@ class idMaterial : public idDecl
 #endif
 
 #ifdef _SPLASHDAMAGE
+		void				ParseFillMode( idParser &src, materialStage_t *stage );
+		void				ParseCullFace( idParser &src, materialStage_t *stage );
+
 		materialStage_t *	AllocAndCopyStage(const materialStage_t *ss);
         void				CompleteStage( materialStage_t* ms, stageParseData_t& spd, const sdDeclRenderBinding** defaults, const int numDefaults );
         void				CompleteInterationStage( materialStage_t *ss, stageParseData_t& spd );

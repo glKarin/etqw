@@ -82,6 +82,55 @@ void RB_DrawElementsWithCounters(const srfTriangles_t *tri)
 	}
 }
 
+#ifdef GL_ES_VERSION_2_0
+/*
+================
+RB_DrawElementsWithCountersLines
+Only for OpenGLES without glPolygonMode
+================
+*/
+void RB_DrawElementsWithCountersLines(const srfTriangles_t *tri)
+{
+	HARM_CHECK_SHADER("RB_DrawElementsWithCountersLines");
+
+	backEnd.pc.c_drawElements++;
+	backEnd.pc.c_drawIndexes += tri->numIndexes;
+	backEnd.pc.c_drawVertexes += tri->numVerts;
+
+	if (tri->ambientSurface != NULL) {
+		if (tri->indexes == tri->ambientSurface->indexes) {
+			backEnd.pc.c_drawRefIndexes += tri->numIndexes;
+		}
+
+		if (tri->verts == tri->ambientSurface->verts) {
+			backEnd.pc.c_drawRefVertexes += tri->numVerts;
+		}
+	}
+
+	const int numIndexes = r_singleTriangle.GetBool() ? 3 : tri->numIndexes;
+	if (tri->indexCache) {
+		for(int i = 0; i < numIndexes; i += 3)
+		{
+			qglDrawElements(GL_LINE_LOOP,
+					3,
+					GL_INDEX_TYPE,
+					(glIndex_t *)vertexCache.Position(tri->indexCache) + i);
+			backEnd.pc.c_vboIndexes += 3;
+		}
+	} else {
+		vertexCache.UnbindIndex();
+
+		for(int i = 0; i < numIndexes; i += 3)
+		{
+			qglDrawElements(GL_LINE_LOOP,
+					3,
+					GL_INDEX_TYPE,
+					tri->indexes + i);
+		}
+	}
+}
+#endif
+
 /*
 ================
 RB_DrawShadowElementsWithCounters

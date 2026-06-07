@@ -2418,16 +2418,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("cullFace")) { // cullFace front none
-			idToken t;
-			src.ReadToken(&t);
-			if(!idStr::Icmp(t, "front"))
-				cullType = CT_FRONT_SIDED;
-			else if(!idStr::Icmp(t, "none"))
-				cullType = CT_TWO_SIDED;
-			else if(!idStr::Icmp(t, "back"))
-				cullType = CT_BACK_SIDED;
-			else
-				common->Warning("unknown cull face '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
+			ParseCullFace(src, ss);
 			continue;
 		}
 		if (!token.Icmp("alphatocoverage")) {
@@ -2439,9 +2430,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("fillMode")) { // fillMode	lines	1
-			idToken t;
-			src.ExpectAnyToken(&t);
-			src.ParseFloat();
+			ParseFillMode(src, ss);
 			continue;
 		}
 
@@ -5275,4 +5264,36 @@ bool idMaterial::ParseConstantCVarExpression( idParser& src, bool& result )
 	return true;
 }
 
+void idMaterial::ParseFillMode( idParser &src, materialStage_t *ss )
+{
+	idToken t;
+
+	if(src.ReadToken(&t))
+	{
+		if(!idStr::Icmp(t, "lines"))
+			ss->drawStateBits |= GLS_POLYMODE_LINE;
+		else
+		{
+			common->Warning("unknown fill mode '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
+			return;
+		}
+
+		ss->lineWidth = src.ParseFloat();
+	}
+}
+
+void idMaterial::ParseCullFace( idParser &src, materialStage_t *ss )
+{
+	idToken t;
+
+	src.ReadToken(&t);
+	if(!idStr::Icmp(t, "front"))
+		cullType = CT_BACK_SIDED;
+	else if(!idStr::Icmp(t, "none"))
+		cullType = CT_TWO_SIDED;
+	else if(!idStr::Icmp(t, "back"))
+		cullType = CT_FRONT_SIDED;
+	else
+		common->Warning("unknown cull face mode '%s' in material '%s' at '%s'", t.c_str(), GetName(), GetFileName());
+}
 #endif

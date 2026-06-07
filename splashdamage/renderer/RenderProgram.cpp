@@ -394,7 +394,9 @@ void sdRenderProgram::InsertMacro(sdStringBuilder_Heap &buf, const char *name, c
 }
 
 void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
-	//InsertMacro(buf, "alphatest_kill", "0");
+	InsertMacro(buf, "_GLES", "1");
+	//InsertMacro(buf, "_DEBUG", "0");
+	InsertMacro(buf, "_HARM", "1");
 
 	const char *CvarMacros[] = {
 		"r_shaderQuality",

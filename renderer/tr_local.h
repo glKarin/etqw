@@ -1653,6 +1653,9 @@ DRAW_STANDARD
 */
 
 void RB_DrawElementsWithCounters(const srfTriangles_t *tri);
+#ifdef GL_ES_VERSION_2_0
+void RB_DrawElementsWithCountersLines(const srfTriangles_t *tri);
+#endif
 void RB_DrawShadowElementsWithCounters(const srfTriangles_t *tri, int numIndexes);
 void RB_STD_FillDepthBuffer(drawSurf_t **drawSurfs, int numDrawSurfs);
 void RB_BindVariableStageImage(const textureStage_t *texture, const float *shaderRegisters);
