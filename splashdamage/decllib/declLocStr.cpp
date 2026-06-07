@@ -75,16 +75,36 @@ bool sdDeclLocStr::Format( idWStr& result, const idWStrList& inputs ) const {
 	sdWStringBuilder_Heap buf;
 	wchar_t ch;
 	bool found = false;
+	int bracketFound = 0;
 	idStr temp;
 	int i = 0;
 
 	while (i < locText.Length()) {
+		ch = locText[i];
+
+		 if (ch == L'[') { //skip [special label]
+			bracketFound++;
+			i++;
+			continue;
+		}
+		else if (ch == L']') { //skip [special label]
+			bracketFound--;
+			i++;
+			continue;
+		}
+		if(bracketFound)
+		{
+			i++;
+			continue;
+		}
+
+		// color
 		if (idWStr::IsColor(locText.c_str() + i)) {
 			buf.Append(locText.c_str() + i, 2);
 			i += 2;
 			continue;
 		}
-		ch = locText[i];
+
 		if (ch == L'%') {
 			if (found) {
 				if (temp.IsEmpty()) { // %%
@@ -119,6 +139,7 @@ bool sdDeclLocStr::Format( idWStr& result, const idWStrList& inputs ) const {
 			}
 		}
 		else {
+			// handle last
 			if (found) {
 				if (temp.IsEmpty()) { // %%
 					found = false;
@@ -138,11 +159,17 @@ bool sdDeclLocStr::Format( idWStr& result, const idWStrList& inputs ) const {
 					found = false;
 				}
 			}
+			// append now
 			buf.Append(ch);
 		}
+
 		i++;
 	}
+
 	result = buf.c_str();
+	// handle real [ ] escape
+	result.Replace(L"&lbr", L"[");
+	result.Replace(L"&rbr", L"]");
 	// for (int i = 0; i < inputs.Num(); i++) {
 	// 	common->Printf("%d:%ls|||", i, inputs[i].c_str());
 	// }
