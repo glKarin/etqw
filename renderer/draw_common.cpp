@@ -1504,6 +1504,9 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 #ifdef _RAVEN //karin: sniper's blur is 2D and has flag `MF_NEED_CURRENT_RENDER`
 		|| drawSurfs[0]->material->TestMaterialFlag(MF_NEED_CURRENT_RENDER)
 #endif
+#ifdef _SPLASHDAMAGE //karin: `MF_UPDATECURRENTRENDER`
+		|| drawSurfs[0]->material->TestMaterialFlag(MF_UPDATECURRENTRENDER)
+#endif
 	) {
 		if (r_skipPostProcess.GetBool()) {
 			return 0;
@@ -1544,8 +1547,15 @@ int RB_STD_DrawShaderPasses(drawSurf_t **drawSurfs, int numDrawSurfs)
 		}
 
 		// we need to draw the post process shaders after we have drawn the fog lights
-		if (surf->material->GetSort() >= SS_POST_PROCESS
-		    && !backEnd.currentRenderCopied) {
+		if ( (
+				surf->material->GetSort() >= SS_POST_PROCESS
+#ifdef _RAVEN //karin: sniper's blur is 2D and has flag `MF_NEED_CURRENT_RENDER`
+				|| drawSurfs[0]->material->TestMaterialFlag(MF_NEED_CURRENT_RENDER)
+#endif
+#ifdef _SPLASHDAMAGE //karin: `MF_UPDATECURRENTRENDER`
+				|| drawSurfs[0]->material->TestMaterialFlag(MF_UPDATECURRENTRENDER)
+#endif
+		) && !backEnd.currentRenderCopied) {
 			break;
 		}
 /* //k2023

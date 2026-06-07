@@ -3451,6 +3451,9 @@ void idMaterial::ParseMaterial(idLexer &src)
 			continue;
 		} else if (!token.Icmp("ambientOcclusionLight")) {
 			continue;
+		} else if (!token.Icmp("updateCurrentRender")) { // updateCurrentRender
+			SetMaterialFlag(MF_UPDATECURRENTRENDER);
+			continue;
 #endif
 
 #ifdef _NO_LIGHT
