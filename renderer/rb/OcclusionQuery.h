@@ -61,6 +61,7 @@ public:
 							idOcclusionTestJob(void);
 	virtual					~idOcclusionTestJob(void);
 	void					UpdateGeometry( const idBounds &bounds ); // frontend
+	void					UpdateGeometry( const srfTriangles_t *tris ); // frontend
 	void					UpdatePosition( const idVec3 &origin, const idMat3 &axis ); // frontend
 	void					UpdateView( int viewId ); // frontend
 	void					UpdateQueryMode( GLenum mode ); // frontend
@@ -74,12 +75,14 @@ public:
 	void					Query(void); // backend
 
 private:
-	void					UpdateTri(void);
+	void					UpdateTriByBounds(void);
+	void					UpdateTriByTris(void);
 	void					MakeModelMatrix(void);
 	enum {
 		DIRTY_NONE = 0,
 		DIRTY_BOUNDS = 1,
 		DIRTY_MATRIX = 1 << 1,
+		DIRTY_TRIS = 1 << 2,
 	};
 
 	struct frontEndInfo_t {
@@ -90,6 +93,7 @@ private:
 		GLenum		mode;
 		int			dirty;
 		bool		start;
+		const srfTriangles_t *tris;
 	};
 
 public:

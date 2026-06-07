@@ -36,6 +36,9 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #ifdef _SPLASHDAMAGE
 #include "renderer/OcclusionTest.h"
+
+extern void R_UpdateOcclusionTesting(void);
+extern void RB_QueryOcclusionTesting(void);
 #endif
 
 /*
@@ -881,8 +884,6 @@ void idRenderWorldLocal::RenderScene(const renderView_t *renderView)
 	if(!multithreadActive)
 #endif
 	{
-extern void R_UpdateOcclusionTesting(void);
-extern void RB_QueryOcclusionTesting(void);
 	RB_QueryOcclusionTesting();
 	R_UpdateOcclusionTesting();
 	}

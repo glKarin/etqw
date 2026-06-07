@@ -2,7 +2,7 @@
 
 #include "../tr_local.h"
 
-static idCVar harm_r_drawOcclusionBounds("harm_r_drawOcclusionBounds", "0", CVAR_BOOL | CVAR_RENDERER, "render occlusion bounds");
+static idCVar harm_r_drawOcclusionTris("harm_r_drawOcclusionTris", "0", CVAR_BOOL | CVAR_RENDERER, "render occlusion tris");
 idCVar harm_r_skipOcclusionTesting("harm_r_skipOcclusionTesting", "0", CVAR_BOOL | CVAR_RENDERER, "disable occlusion testing");
 
 const int rvmOcclusionQuery::RESULT_INVALID = 1;
@@ -172,11 +172,12 @@ idOcclusionTestJob::idOcclusionTestJob(void)
 {
 	parms.axis = mat3_identity;
 	parms.origin.Zero();
-	parms.bounds.Zero();
+	parms.bounds.Clear();
 	parms.dirty = DIRTY_NONE;
 	parms.mode = 0;
 	parms.viewID = -1;
 	parms.start = false;
+	parms.tris = NULL;
 
 	((idMat4 *)modelMatrix)->Identity();
 }
@@ -211,6 +212,14 @@ void idOcclusionTestJob::UpdateGeometry(const idBounds &bounds) {
 	}
 }
 
+void idOcclusionTestJob::UpdateGeometry(const srfTriangles_t *tris) {
+	if(parms.tris != tris)
+	{
+		parms.dirty |= DIRTY_TRIS;
+		parms.tris = tris;
+	}
+}
+
 void idOcclusionTestJob::UpdatePosition(const idVec3 &origin, const idMat3 &axis) {
 	if(parms.origin != origin)
 	{
@@ -233,13 +242,16 @@ void idOcclusionTestJob::UpdateQueryMode( GLenum mode )
 	parms.mode = mode;
 }
 
-void idOcclusionTestJob::UpdateTri(void)
+void idOcclusionTestJob::UpdateTriByBounds(void)
 {
 	// free old, don't modify it, because maybe used in multi-threading
 	if (tri)
 	{
 		R_FreeStaticTriSurf(tri);
 	}
+
+	if (parms.bounds.IsCleared())
+		return;
 
 	tri = R_AllocStaticTriSurf();
 
@@ -300,6 +312,28 @@ void idOcclusionTestJob::UpdateTri(void)
 	}
 }
 
+void idOcclusionTestJob::UpdateTriByTris(void)
+{
+	// free old, don't modify it, because maybe used in multi-threading
+	if (tri)
+	{
+		R_FreeStaticTriSurf(tri);
+	}
+
+	if (!parms.tris)
+		return;
+
+	tri = R_AllocStaticTriSurf();
+
+	tri->numIndexes = parms.tris->numIndexes;
+	R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
+	memcpy(tri->indexes, parms.tris->indexes, sizeof(*tri->indexes) * tri->numIndexes);
+
+	tri->numVerts = parms.tris->numVerts;
+	R_AllocStaticTriSurfVerts(tri, tri->numVerts);
+	memcpy(tri->verts, parms.tris->verts, sizeof(*tri->verts) * tri->numVerts);
+}
+
 void idOcclusionTestJob::MakeModelMatrix(void)
 {
 	R_AxisToModelMatrix(parms.axis, parms.origin, modelMatrix);
@@ -309,7 +343,7 @@ void idOcclusionTestJob::Ready(void)
 {
 	if (parms.dirty & DIRTY_BOUNDS)
 	{
-		UpdateTri();
+		UpdateTriByBounds();
 		parms.dirty &= ~DIRTY_BOUNDS;
 	}
 
@@ -319,9 +353,18 @@ void idOcclusionTestJob::Ready(void)
 		parms.dirty &= ~DIRTY_MATRIX;
 	}
 
+	if (parms.dirty & DIRTY_TRIS)
+	{
+		UpdateTriByTris();
+		parms.dirty &= ~DIRTY_TRIS;
+	}
+
 	if (!tri)
 	{
-		UpdateTri();
+		if (parms.tris)
+			UpdateTriByTris();
+		else if (!parms.bounds.IsCleared())
+			UpdateTriByBounds();
 
 		if (!tri)
 			return;
@@ -347,10 +390,18 @@ void idOcclusionTestJob::Ready(void)
 	if(!query || !parms.mode || !parms.start || update == UT_NONE)
 		return;
 
-	if (harm_r_drawOcclusionBounds.GetBool())
+	if (harm_r_drawOcclusionTris.GetBool())
 	{
-		session->rw->DebugBounds(lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.bounds, parms.origin, parms.axis, 0);
-		session->rw->DrawText(va("%d: %d = %d", index, lastResult, query ? query->GetResult() : -2), parms.origin + idVec3(0, 0, parms.bounds[1].z + 50), 1.0f, lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.axis);
+		if(!parms.bounds.IsCleared())
+		{
+			session->rw->DebugBounds(lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.bounds, parms.origin, parms.axis, 0);
+			session->rw->DrawText(va("%d: %d: %d = %d", index, query ? query->QueryID() : -1, lastResult, query ? query->GetResult() : -2), parms.origin + idVec3(0, 0, parms.bounds[1].z + 50), 1.0f, lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.axis);
+		}
+		else
+		{
+			R_BoundTriSurf(tri);
+			session->rw->DrawText(va("%d: %d: %d = %d", index, query ? query->QueryID() : -1, lastResult, query ? query->GetResult() : -2), tri->bounds.GetCenter() + idVec3(0, 0, tri->bounds[1].z + 50), 1.0f, lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.axis);
+		}
 	}
 
 	viewID = parms.viewID;
@@ -409,9 +460,6 @@ void idOcclusionTestJob::Query(void)
 	if(!query)
 		return;
 
-	if (query->IsUninitialized())
-		return;
-
 	if (query->IsWaiting())
 	{
 		int res = query->Query();
@@ -447,6 +495,15 @@ void idOcclusionTestJob::Render(void)
 	query->SetMode(parms.mode);
 	query->Begin();
 	{
+		if(harm_r_drawOcclusionTris.GetBool())
+		{
+			if(lastResult > 0)
+				GL_Uniform4fv(SHADER_PARM_ADDR(glColor), colorGreen.ToFloatPtr());
+			else if(lastResult == 0)
+				GL_Uniform4fv(SHADER_PARM_ADDR(glColor), colorRed.ToFloatPtr());
+			else
+				GL_Uniform4fv(SHADER_PARM_ADDR(glColor), colorBlue.ToFloatPtr());
+		}
 		RB_DrawElementsWithCounters(tri);
 	}
 	query->End();
@@ -510,7 +567,7 @@ void idOcclusionTestManager::Render(void) {
 	for (int i = 0; i < renderList.Num(); i++)
 	{
 		idOcclusionTestJob *item = renderList[i];
-		if (item->viewID == backEnd.viewDef->renderView.viewID)
+		if (item->viewID < 0 || item->viewID == backEnd.viewDef->renderView.viewID)
 		{
 			if (!draw)
 			{
@@ -534,7 +591,7 @@ void idOcclusionTestManager::BeginRender(void)
 
 	qglDisable(GL_BLEND);
 	//qglDisable(GL_CULL_FACE);
-	if (!harm_r_drawOcclusionBounds.GetBool())
+	if (!harm_r_drawOcclusionTris.GetBool())
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	qglDepthMask(GL_FALSE);
 	qglStencilMask(GL_FALSE);
@@ -543,7 +600,7 @@ void idOcclusionTestManager::BeginRender(void)
 void idOcclusionTestManager::EndRender(void)
 {
 	qglDepthMask(GL_TRUE);
-	if (!harm_r_drawOcclusionBounds.GetBool())
+	if (!harm_r_drawOcclusionTris.GetBool())
 		qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	qglStencilMask(GL_TRUE);
 	//qglEnable(GL_CULL_FACE);
