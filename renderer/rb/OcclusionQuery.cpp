@@ -82,14 +82,14 @@ void rvmOcclusionQuery::BeginRender(void)
 {
 	qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	qglDepthMask(GL_FALSE);
-	qglStencilMask(GL_FALSE);
+	qglStencilMask(0);
 }
 
 void rvmOcclusionQuery::EndRender(void)
 {
 	qglDepthMask(GL_TRUE);
 	qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	qglStencilMask(GL_TRUE);
+	qglStencilMask(0xFF);
 }
 
 void rvmOcclusionQuery::Init(void) 
@@ -594,7 +594,7 @@ void idOcclusionTestManager::BeginRender(void)
 	if (!harm_r_drawOcclusionTris.GetBool())
 		qglColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	qglDepthMask(GL_FALSE);
-	qglStencilMask(GL_FALSE);
+	qglStencilMask(0);
 }
 
 void idOcclusionTestManager::EndRender(void)
@@ -602,7 +602,7 @@ void idOcclusionTestManager::EndRender(void)
 	qglDepthMask(GL_TRUE);
 	if (!harm_r_drawOcclusionTris.GetBool())
 		qglColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	qglStencilMask(GL_TRUE);
+	qglStencilMask(0xFF);
 	//qglEnable(GL_CULL_FACE);
 	qglEnable(GL_BLEND);
 
