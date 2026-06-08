@@ -1107,7 +1107,12 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			if((backEnd.glState.glStateBits & GLS_POLYMODE_LINE) == 0)
 				RB_DrawElementsWithCounters( tri );
 			else
+			{
+				qglLineWidth(pStage->lineWidth);
 				RB_DrawElementsWithCountersLines(tri);
+				if(pStage->lineWidth != 1.0f)
+					qglLineWidth(1);
+			}
 
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
 			GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
