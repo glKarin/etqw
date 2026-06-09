@@ -1,29 +1,27 @@
 ## ETQWDOOM3
 ### Enemy Territory: Quake Wars on DOOM3 GPL OpenGLES/GLSL
 
-
+-------------------
 
 > Not supported
 * [ ] MegaTexture
 * [ ] Collision testing multi-threading
 * [ ] All ARB/CG type shader source
-* [ ] GUIs on model
+* [x] GUIs on model
 * [ ] Some shaders
-* [ ] Environment lighting
-* [ ] Occlusion query
+* [-] Environment lighting
+* [-] Occlusion query
 * ...
-
 
 
 > Bugs
 * [ ] Atmosphere
 * [ ] Postprocess view effect
-* [ ] Some vehicles AAS error
+* [x] Some vehicles AAS error
 * [ ] BSE
 * [ ] Fonts on GUIs
 * [ ] Multiplayer game
 * ...
-
 
 
 > Changes
@@ -31,15 +29,15 @@
 * Always using DOOM3's interaction shader
 * Playing with bots only
 
+-------------------
 
+#### Source code
 
-> Source code
-
->> Game SDK
+> Game SDK
 * [Game SDK](etqw/ ':include')
 * [SplashDamage/idlib](splashdamage/idlib/ ':include')
 
->> IDA Hex-ray Decompiled
+> IDA Hex-ray Decompiled
 * [idImage::ImageProgramStringToCompressedFileName](renderer/Image_load.cpp ':include')
 * [R_LoadHalfSphereToCube](renderer/Image_files.cpp ':include')
 * [idAASFileLocal::LinkReachability](tools/compilers/aas/AASFile.cpp ':include')
@@ -58,29 +56,31 @@
 * [idAASFileLocal::BoundsReachableAreaNum_r](tools/compilers/aas/AASFile_sample.cpp ':include')
 * [idAASFileLocal::TraceHeight](tools/compilers/aas/AASFile_sample.cpp ':include')
 
->> Raven BSE
+> Raven BSE
 * [Raven BSE](raven/bse/ ':include')
 
->> GPL
+> GPL
 * [DOOM3 GPL](. ':include')
 * [SplashDamage extras](splashdamage/ ':include')
 
->> Game resource
-> [GLSL shader](base/renderprogs/ ':include')
+> Game resource
+* [GLSL shader](base/renderprogs/ ':include')
 
+-------------------
 
+#### Compiling
 
-> Compiling
+> CMake
+```
+cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF -DDEDICATED=OFF CMakeLists.txt
+```
 
->> CMake
->  cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF -DDEDICATED=OFF CMakeLists.txt
-
->> Defined macros
+> Defined macros
 * _SPLASHDAMAGE: patches for engine
 * _ETQW: patches for game
 * _MODEL_OBJ: obj model support
 
-
+-------------------
 
 > Run
 1. Put `base/renderprogs` into game `base` folder(`etqwbase` on Android).

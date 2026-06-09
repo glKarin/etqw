@@ -484,6 +484,9 @@ typedef struct viewLight_s {
     idVec3					lightRadius;		// xyz radius for point lights
 	const struct drawSurf_s	*perforatedShadows;	//karin: perforated surface for shadow mapping
 #endif
+#ifdef _SPLASHDAMAGE //karin: light fade by distance
+	float					fadeFraction; // 0.0 is disable, fade = 1.0 - fadeFraction
+#endif
 } viewLight_t;
 
 

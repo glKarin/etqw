@@ -771,6 +771,16 @@ static void RB_SubmittInteraction(drawInteraction_t *din, void (*DrawInteraction
 			din->diffuseColor[1] *= fade;
 			din->diffuseColor[2] *= fade;
 		}
+		if (backEnd.vLight && backEnd.vLight->fadeFraction > 0.0f)
+		{
+			const float fade = 1.0f - backEnd.vLight->fadeFraction;
+			din->diffuseColor[0] *= fade;
+			din->diffuseColor[1] *= fade;
+			din->diffuseColor[2] *= fade;
+			din->specularColor[0] *= fade;
+			din->specularColor[1] *= fade;
+			din->specularColor[2] *= fade;
+		}
 #endif
 		DrawInteraction(din);
 	}

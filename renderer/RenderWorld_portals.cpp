@@ -34,6 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE //karin: vis dist check
 idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
 idCVar harm_r_drawVisDistCheck("harm_r_drawVisDistCheck", "0", CVAR_INTEGER | CVAR_RENDERER, "draw entity visible distance check");
+idCVar harm_r_visDistLightFallOff("harm_r_visDistLightFallOff", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "light fade by view distance");
 #endif
 
 /*
@@ -1087,6 +1088,7 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 
 #ifdef _SPLASHDAMAGE //karin: vis dist check
 		//karin: check visible distance range
+		bool checkVisDist = false;
 		if (light->parms.maxVisDist > 0.0f && !harm_r_skipVisDistCheck.GetBool()) {
 			float distance = tr.viewDef->renderView.vieworg.Dist(light->parms.origin);
 			if(harm_r_drawVisDistCheck.GetInteger() & 2)
@@ -1105,6 +1107,7 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 
 			if (distance > light->parms.maxVisDist)
 				continue;
+			checkVisDist = true;
 		}
 #endif
 
@@ -1147,7 +1150,7 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 #endif
         // check for being closed off behind a door
         // a light that doesn't cast shadows will still light even if it is behind a door
-        	if (r_useLightCulling.GetInteger() >= 3 &&
+        if (r_useLightCulling.GetInteger() >= 3 &&
 #ifdef _SPLASHDAMAGE
             !light->parms.flags.noShadows && light->lightShader->LightCastsShadows()
             && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]
@@ -1155,7 +1158,7 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
             !light->parms.noShadows && light->lightShader->LightCastsShadows()
             && light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ]
 #endif
-			) {
+		) {
             continue;
         }
 #ifdef _D3BFG_CULLING
@@ -1170,6 +1173,19 @@ void idRenderWorldLocal::AddAreaLightRefs(int areaNum, const portalStack_t *ps)
 		}
 
 		vLight = R_SetLightDefViewLight(light);
+#ifdef _SPLASHDAMAGE //karin: light fade by distance
+		vLight->fadeFraction = 0.0f;
+		if (checkVisDist && harm_r_visDistLightFallOff.GetFloat() > 0.0f && !light->parms.flags.atmosphereLight && light->parms.flags.pointLight)
+		{
+			float fadeRange = light->parms.maxVisDist * harm_r_visDistLightFallOff.GetFloat();
+			float nofadeRange = light->parms.maxVisDist - fadeRange;
+			float distance = tr.viewDef->renderView.vieworg.Dist(light->parms.origin);
+			if (distance > nofadeRange) {
+				vLight->fadeFraction = /*1.0f - */idMath::ClampFloat(0.0f, 1.0f, (distance - nofadeRange) / fadeRange);
+				// fade = 1.0 - fadeFraction, so 0.0 is full light
+			}
+		}
+#endif
 
 		// expand the scissor rect
 		vLight->scissorRect.Union(ps->rect);
