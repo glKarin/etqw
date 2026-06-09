@@ -3393,9 +3393,6 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.IcmpPrefix("parmName")) { // parmName 1 "Wind rotation speed" float 0.0 0.0 0.1
 			src.SkipRestOfLine();
 			continue;
-		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
-			SetMaterialFlag(MF_NOATMOSPHERE);
-			continue;
 		} else if (!token.Icmp("surfaceTypeMap")) { // surfaceTypeMap "name"
 			src.ReadToken(&token);
 			surfaceTypeMapDecl = static_cast<const sdDeclSurfaceTypeMap *>(declManager->FindType(DECL_SURFACETYPEMAP, token, false));
@@ -3408,7 +3405,14 @@ void idMaterial::ParseMaterial(idLexer &src)
 			if (!decl || decl->IsImplicit())
 					common->Warning("UNKNOWN: surfaceType '%s' in '%s'", token.c_str(), GetName());
 			surfaceTypeDecl = static_cast<const sdDeclSurfaceType *>(decl);
-            continue;
+			continue;
+		} else if (!token.Icmp("portal")) { // portal occlusionQuery
+			idToken t;
+			src.ExpectAnyToken(&t);
+			continue;
+		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
+			SetMaterialFlag(MF_NOATMOSPHERE);
+			continue;
 		} else if (!token.Icmp("occlusionQuery")) {
 			SetMaterialFlag(MF_OCCLUSION_QUERY);
 			continue;
@@ -3417,10 +3421,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 			surfaceFlags |= SURF_DISCRETE;
 			continue;
 		} else if (!token.Icmp("vertexPositionOnly")) {
-			continue;
-		} else if (!token.Icmp("portal")) { // portal occlusionQuery
-			idToken t;
-			src.ExpectAnyToken(&t);
+			SetMaterialFlag(MF_VERTEXPOSITIONONLY);
 			continue;
 		} else if (!token.Icmp("onlyAtmosphereInteraction")) {
 			SetMaterialFlag(MF_ONLYATMOSPHEREINTERACTION);
@@ -3431,6 +3432,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 			(void)src.ParseFloat();
 			continue;
 		} else if (!token.Icmp("lowrangeuvs")) {
+			SetMaterialFlag(MF_LOWRANGEUVCOMPRESS);
 			continue;
 		} else if (!token.Icmp("shadowMapped")) {
 			SetMaterialFlag(MF_SHADOWMAPPED);
@@ -3448,6 +3450,7 @@ void idMaterial::ParseMaterial(idLexer &src)
 		} else if (!token.Icmp("nodrop")) {
 			continue;
 		} else if (!token.Icmp("shadowsCastOnlyFromStaticObjects")) {
+			SetMaterialFlag(MF_SHADOWSCASTONLYFROMSTATICOBJECTS);
 			continue;
 		} else if (!token.Icmp("ambientOcclusionLight")) {
 			continue;
