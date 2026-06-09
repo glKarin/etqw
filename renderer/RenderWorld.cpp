@@ -488,7 +488,7 @@ void idRenderWorldLocal::UpdateLightDef(qhandle_t lightHandle, const renderLight
 		// any of our derived data, because shader parms are calculated every frame
 		if (
 #ifdef _SPLASHDAMAGE //karin: multi prelights in light
-			prelightModelSame &&
+			prelightModelSame && rlight->flags.atmosphereLight == light->parms.flags.atmosphereLight && 
 #endif
 			rlight->axis == light->parms.axis && rlight->end == light->parms.end &&
 		    rlight->lightCenter == light->parms.lightCenter && rlight->lightRadius == light->parms.lightRadius &&

@@ -1147,9 +1147,56 @@ void idInteraction::CreateInteraction(const idRenderModel *model)
 		// if the interaction has shadows and this surface casts a shadow
 		if (HasShadows() && shader->SurfaceCastsShadow() && tri->silEdges != NULL) {
 
+#ifdef _SPLASHDAMAGE //karin: prelight shadow model of interaction
+			if (entityDef->parms.mapId && r_useOptimizedShadows.GetBool())
+			{
+				const char *shadowModelName = va("_prelightinteraction_%d_%d_%d", lightDef->parms.mapId, entityDef->parms.mapId, c);
+				idRenderModel *shadowModel = renderModelManager->GetModel(shadowModelName, false);
+				if (shadowModel)
+				{
+					if (shadowModel->NumSurfaces()) {
+						srfTriangles_t	*shadowTri = shadowModel->Surface(0)->geometry;
+
+						if (shadowTri->shadowVertexes) {
+							// copy new, because cause double free when free idRenderWorld
+							sint->shadowTris = R_AllocStaticTriSurf();
+							sint->shadowTris->numVerts = shadowTri->numVerts;
+							sint->shadowTris->numShadowIndexesNoCaps = shadowTri->numShadowIndexesNoCaps;
+							sint->shadowTris->numShadowIndexesNoFrontCaps = shadowTri->numShadowIndexesNoFrontCaps;
+							sint->shadowTris->numIndexes = shadowTri->numIndexes;
+							sint->shadowTris->shadowCapPlaneBits = shadowTri->shadowCapPlaneBits;
+							R_AllocStaticTriSurfShadowVerts(sint->shadowTris, sint->shadowTris->numVerts);
+							SIMDProcessor->Memcpy(sint->shadowTris->shadowVertexes, shadowTri->shadowVertexes, sint->shadowTris->numVerts * sizeof(sint->shadowTris->shadowVertexes[0]));
+							R_AllocStaticTriSurfIndexes(sint->shadowTris, sint->shadowTris->numIndexes);
+							SIMDProcessor->Memcpy(sint->shadowTris->indexes, shadowTri->indexes, sint->shadowTris->numIndexes * sizeof(sint->shadowTris->indexes[0]));
+
+							if (shader->Coverage() != MC_OPAQUE || (!r_skipSuppress.GetBool() && entityDef->parms.suppressSurfaceInViewID)) {
+								// if any surface is a shadow-casting perforated or translucent surface, or the
+								// base surface is suppressed in the view (world weapon shadows) we can't use
+								// the external shadow optimizations because we can see through some of the faces
+								sint->shadowTris->numShadowIndexesNoCaps = sint->shadowTris->numIndexes;
+								sint->shadowTris->numShadowIndexesNoFrontCaps = sint->shadowTris->numIndexes;
+							}
+						}
+						else
+						{
+							common->Warning("idInteraction::CreateInteraction: prelight model '%s' without shadowVertexes", shadowModel->Name());
+						}
+					}
+					else
+					{
+						common->Warning("no surfs in prelight model '%s'", shadowModel->Name());
+					}
+				}
+			}
+
+			if (!sint->shadowTris)
+			{
+#endif
+
 			// if the light has an optimized shadow volume, don't create shadows for any models that are part of the base areas
 #ifdef _SPLASHDAMAGE //karin: multi prelights in light
-			if ((lightDef->parms.prelightModel == NULL && lightDef->parms.numPrelightModels == 0) || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool())
+			if ((lightDef->parms.prelightModel == NULL && lightDef->parms.numPrelightModels == 0) || lightDef->parms.flags.atmosphereLight || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool())
 #else
 			if (lightDef->parms.prelightModel == NULL || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool())
 #endif
@@ -1170,6 +1217,9 @@ void idInteraction::CreateInteraction(const idRenderModel *model)
 
 				interactionGenerated = true;
 			}
+#ifdef _SPLASHDAMAGE //karin: prelight shadow model of interaction
+			}
+#endif
 		}
 
 #ifdef _SHADOW_MAPPING //karin: perforated surface for shadow mapping
