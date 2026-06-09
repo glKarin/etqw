@@ -748,7 +748,7 @@ void R_CreateLightRefs(idRenderLightLocal *light)
         // We can't do this in the normal case, because shadows are cast from back facing triangles, which
         // may be in areas not directly visible to the light projection center.
 #ifdef _SPLASHDAMAGE //karin: multi prelights in light
-        if( (light->parms.prelightModel || light->parms.numPrelightModels > 0) && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() )
+        if( (light->parms.prelightModel || light->parms.numPrelightModels > 0) && !light->parms.flags.atmosphereLight && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() )
 #else
         if( light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows() )
 #endif
@@ -805,7 +805,7 @@ void R_CreateLightRefs(idRenderLightLocal *light)
 	// We can't do this in the normal case, because shadows are cast from back facing triangles, which
 	// may be in areas not directly visible to the light projection center.
 #ifdef _SPLASHDAMAGE //karin: multi prelights in light
-	if ((light->parms.prelightModel || light->parms.numPrelightModels > 0) && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows())
+	if ((light->parms.prelightModel || light->parms.numPrelightModels > 0) && !light->parms.flags.atmosphereLight && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows())
 #else
 	if (light->parms.prelightModel && r_useLightPortalFlow.GetBool() && light->lightShader->LightCastsShadows())
 #endif

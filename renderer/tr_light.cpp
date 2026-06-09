@@ -1053,7 +1053,7 @@ void R_AddLightSurfaces(void)
 			R_LinkLightSurf(&vLight->globalShadows, tri, NULL, light, NULL, vLight->scissorRect, true /* FIXME? */);
 		}
 #ifdef _SPLASHDAMAGE //karin: multi prelights in light
-		if (light->parms.numPrelightModels > 0 && r_useOptimizedShadows.GetBool()) {
+		if (light->parms.numPrelightModels > 0 && !light->parms.flags.atmosphereLight && r_useOptimizedShadows.GetBool()) {
 			for (int i = 0; i < light->parms.numPrelightModels; i++)
 			{
 				idRenderModel *shadowModel = light->parms.prelightModels[i];
