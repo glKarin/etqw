@@ -851,7 +851,7 @@ void idKeyInput::Init(void)
 		keys[i].id = i;
 		keys[i].name = KeyNumToString(i, false);
 		keys[i].locName = KeyNumToString(i, true);
-		keys[i].fixedText = StrToWStr(keys[i].name) + L"_fixedText";
+		keys[i].fixedText = L"Key " + StrToWStr(keys[i].name);
 	}
 #endif
 

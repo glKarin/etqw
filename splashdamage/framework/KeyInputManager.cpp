@@ -75,7 +75,8 @@ void sdKeyInputManagerLocal::KeysFromBinding( sdBindContext* context, const char
 		for (int i = 0; i < MAX_KEYS; i++) {
 			if (keys[i].binding.Icmp(binding) == 0) {
 				if(_keys && numKeys < max)
-					_keys[numKeys++] = &keys[i];
+					_keys[numKeys] = &keys[i];
+				numKeys++;
 			}
 		}
 	}
