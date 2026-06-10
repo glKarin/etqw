@@ -164,6 +164,16 @@ void sdKeyInputManagerLocal::Init(void)
 {
 	for (int i = 0; i < MAX_KEYS; i++) {
 		idKey &key = keys[i];
+		idStr locname = "engine/keys/" + key.name;
+		const idDecl *decl = declManager->FindType(DECL_LOCSTR, locname, false);
+		if(decl)
+		{
+			const sdDeclLocStr *locStr = static_cast<const sdDeclLocStr *>(decl);
+			key.fixedText = locStr->GetText();
+		}
+		else
+			key.fixedText = StrToWStr(idKeyInput::KeyNumToString(i, true));
+
 		if (key.binding.IsEmpty())
 			continue;
 		usercmdbuttonType_t type = game->SetupBinding(key.binding.c_str(), key.usercmdAction);
@@ -301,6 +311,6 @@ void sdBindContext::UnBindBinding( const char* binding ) {
 void sdBindContext::SetupBinds( void ) {
 }
 
-sdKeyInputManagerLocal inputManagerLocal;
+sdKeyInputManagerLocal keyInputManagerLocal;
 
-sdKeyInputManager* keyInputManager = &inputManagerLocal;
+sdKeyInputManager* keyInputManager = &keyInputManagerLocal;

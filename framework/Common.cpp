@@ -3799,7 +3799,7 @@ void idCommonLocal::InitGame(void)
 	session->Init();
 
 #ifdef _SPLASHDAMAGE
-	inputManagerLocal.Init();
+	keyInputManagerLocal.Init();
 #endif
 
 	// have to do this twice.. first one sets the correct r_mode for the renderer init

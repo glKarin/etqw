@@ -1137,7 +1137,7 @@ void idUsercmdGenLocal::Key(int keyNum, bool down)
 #ifdef _SPLASHDAMAGE //karin: check button action type
 	if (action < 0)
 		return;
-	const idKey &key = inputManagerLocal.GetKeyByNum(keyNum);
+	const idKey &key = keyInputManagerLocal.GetKeyByNum(keyNum);
 	if (key.type == B_LOCAL_IMPULSE)
 		return;
 #endif

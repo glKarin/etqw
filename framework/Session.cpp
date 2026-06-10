@@ -3007,7 +3007,7 @@ bool idSessionLocal::ProcessEvent(const sysEvent_t *event)
 			if (idKeyInput::ExecKeyBinding(event->evValue))
 				return true;
 		}
-		const idKey &key = inputManagerLocal.GetKeyByNum(event->evValue);
+		const idKey &key = keyInputManagerLocal.GetKeyByNum(event->evValue);
 		if (key.type == B_LOCAL_IMPULSE && key.usercmdAction != UB_NONE) {
 			game->HandleLocalImpulse(key.usercmdAction, event->evValue2 == 1);
 			return true;

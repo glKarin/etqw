@@ -41,6 +41,6 @@ private:
 	idList<sdBindContext *>	bindContexts;
 };
 
-extern sdKeyInputManagerLocal inputManagerLocal;
+extern sdKeyInputManagerLocal keyInputManagerLocal;
 
 #endif
