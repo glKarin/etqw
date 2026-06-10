@@ -335,6 +335,7 @@ void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
         return;
     }
 
+	backEnd.vLight = NULL;
     if (harm_r_builtinAreaAmbient.GetBool())
         RB_DrawAreaAmbients_builtin(drawSurfs, numDrawSurfs);
     else

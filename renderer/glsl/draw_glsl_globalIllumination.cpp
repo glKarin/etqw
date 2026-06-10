@@ -109,6 +109,8 @@ void RB_DrawGlobalIlluminations( drawSurf_t **drawSurfs, int numDrawSurfs )
 
     RB_LogComment("---------- RB_DrawGlobalIlluminations ----------\n");
 
+	backEnd.vLight = NULL;
+
     // bind the vertex and fragment shader
     GL_UseProgram(&globalIlluminationShader);
 
