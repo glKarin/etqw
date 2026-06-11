@@ -305,6 +305,8 @@ public:
     sdBindContext( const char* _name )
     {
         name = _name;
+		//karin: add HACK: ignore menu, bindmenu, radialmenu
+		isMenu = !idStr::Icmp(_name, "menu") || !idStr::Icmp(_name, "radialmenu") || !idStr::Icmp(_name, "bindmenu");
     }
     ~sdBindContext( void )
     {
@@ -325,10 +327,17 @@ public:
     void					UnBindBinding( const char* binding );
     void					SetupBinds( void );
 
+	//karin: add HACK: save is handle command event
+	bool					IsMenu(void) const {
+		return isMenu;
+	}
+
 private:
     idList< pair_t >		keys;
     idHashIndex				keyHash;
     idStr					name;
+	//karin: add HACK: ignore key command in menu
+	bool					isMenu;
 };
 
 class idKey

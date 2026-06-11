@@ -115,10 +115,7 @@ void sdKeyInputManagerLocal::ProcessUserCmdEvent( const sdSysEvent& event ) {
 
 sdKeyCommand* sdKeyInputManagerLocal::GetCommand( sdBindContext* context, const idKey& key ) {
 #if 1
-	(void)context;
-	sdKeyCommand* keyCommand = &const_cast<idKey &>(key).command;
-	keyCommand->Set(idKeyInput::GetBinding(key.GetId()));
-	return keyCommand;
+	return context->IsMenu() ? NULL : &const_cast<idKey &>(key).command;
 #else
 	if (context) {
 		sdKeyBind *binding = context->GetBind(key.GetId());
@@ -160,24 +157,30 @@ bool sdKeyInputManagerLocal::AnyKeysDown( void ) {
 	return false;
 }
 
+//karin: must after idDeclManager::Init
 void sdKeyInputManagerLocal::Init(void)
 {
 	for (int i = 0; i < MAX_KEYS; i++) {
 		idKey &key = keys[i];
-		idStr locname = "engine/keys/" + key.name;
-		const idDecl *decl = declManager->FindType(DECL_LOCSTR, locname, false);
+		// check locName exists
+		const idDecl *decl = declManager->FindType(DECL_LOCSTR, key.locName, false);
 		if(decl)
 		{
 			const sdDeclLocStr *locStr = static_cast<const sdDeclLocStr *>(decl);
 			key.fixedText = locStr->GetText();
 		}
 		else
+		{
 			key.fixedText = StrToWStr(idKeyInput::KeyNumToString(i, true));
+			key.locName.Clear(); // clear if not exists, it will using fixedText
+		}
 
 		if (key.binding.IsEmpty())
 			continue;
-		usercmdbuttonType_t type = game->SetupBinding(key.binding.c_str(), key.usercmdAction);
+		usercmdbuttonType_t type = game->SetupBinding(key.binding, key.usercmdAction);
 		key.type = type;
+
+		key.command.Set(key.binding);
 	}
 }
 
@@ -195,10 +198,17 @@ sdKeyCommand::sdKeyCommand( void )
 
 void sdKeyCommand::Set( const char* _binding ) {
 	binding = _binding;
-	type = game->SetupBinding(binding.c_str(), action);
+	FixupBind();
 }
 
 void sdKeyCommand::FixupBind( void ) {
+	if(game && !binding.IsEmpty())
+		type = game->SetupBinding(binding, action);
+	else
+	{
+		action = 0;
+		type = B_COMMAND;
+	}
 }
 
 

@@ -953,6 +953,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 	else
 		textAlign = ALIGN_LEFT;
 	
+	//printf("xxx %ls |%f %f\n", text, rect.GetWidth(), rect.GetHeight());
 	fontManagerLocal.DrawText(text, rect, textAlign, wrap, !wrap, tr.gameGuiModel->CurrentColor());
 	//DrawBox(rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), 1, colorGreen);
 

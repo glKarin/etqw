@@ -68,7 +68,7 @@ keyname_t keynames[] = {
 
 	{"CAPSLOCK",		K_CAPSLOCK,			"#str_00000017"},
 	{"SCROLL",			K_SCROLL,			"#str_00000018"},
-	{"PRINTSCREEN",		K_PRINT_SCR,		"#str_00000120"},
+	{"PRINTSCR",		K_PRINT_SCR,		"#str_00000120"},
 
 	{"F1", 				K_F1, 				"#str_00000019"},
 	{"F2", 				K_F2, 				"#str_00000020"},
@@ -603,11 +603,13 @@ void idKeyInput::SetBinding(int keynum, const char *binding)
 	idKey &key = keys[keynum];
 	if(game && !key.binding.IsEmpty())
 	{
-		usercmdbuttonType_t type = game->SetupBinding(key.binding.c_str(), key.usercmdAction);
+		usercmdbuttonType_t type = game->SetupBinding(key.binding, key.usercmdAction);
 		key.type = type;
 	}
 	else
 		key.type = B_COMMAND;
+
+	key.command.Set(key.binding);
 #endif
 }
 
@@ -1001,7 +1003,14 @@ void idKeyInput::Init(void)
 		keyname_t	*kn;
 		for (kn = keynames; kn->name; kn++) {
 			if (i == kn->keynum) {
-				key.locName = kn->strId;
+				if (kn->strId && kn->strId[0] && kn->strId[0] != '#')
+					key.locName = kn->strId;
+				else
+				{
+					idStr name = kn->name;
+					name.ToLower();
+					key.locName = "engine/keys/" + name;
+				}
 				break;
 			}
 		}
