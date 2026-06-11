@@ -34,7 +34,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE //karin: vis dist check
 idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
 idCVar harm_r_drawVisDistCheck("harm_r_drawVisDistCheck", "0", CVAR_INTEGER | CVAR_RENDERER, "draw entity visible distance check");
-idCVar harm_r_visDistLightFallOff("harm_r_visDistLightFallOff", "0", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "light fade by view distance");
+idCVar harm_r_visDistLightFallOff("harm_r_visDistLightFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "light fade by view distance");
+idCVar harm_r_visDistEntityFallOff("harm_r_visDistEntityFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "entity fade by view distance");
 #endif
 
 /*
@@ -864,8 +865,9 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 		vEnt->fadeFraction = 0.0f;
 		if (checkVisDist)
 		{
+		    float falloff = entity->parms.visDistFalloff > 0.0f ? entity->parms.visDistFalloff : harm_r_visDistEntityFallOff.GetFloat();
 #if 1
-			if (entity->parms.maxVisDist > entity->parms.minVisDist && entity->parms.visDistFalloff > 0.0f)
+			if (entity->parms.maxVisDist > entity->parms.minVisDist && falloff > 0.0f)
 #else // test
 			static idCVar harm_r_visDistFalloff("harm_r_visDistFalloff", "0", CVAR_RENDERER | CVAR_FLOAT, "test visDistFalloff");
 			if (entity->parms.maxVisDist > entity->parms.minVisDist && harm_r_visDistFalloff.GetFloat() > 0.0f)
@@ -873,7 +875,7 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 			{
 				float range = entity->parms.maxVisDist - entity->parms.minVisDist;
 #if 1
-				float fadeRange = range * entity->parms.visDistFalloff;
+				float fadeRange = range * falloff;
 #else // test
 				float fadeRange = range * harm_r_visDistFalloff.GetFloat();
 #endif
