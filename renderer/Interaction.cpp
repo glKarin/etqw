@@ -1148,7 +1148,7 @@ void idInteraction::CreateInteraction(const idRenderModel *model)
 		if (HasShadows() && shader->SurfaceCastsShadow() && tri->silEdges != NULL) {
 
 #ifdef _SPLASHDAMAGE //karin: prelight shadow model of interaction
-			if (entityDef->parms.mapId && r_useOptimizedShadows.GetBool())
+			if (entityDef->parms.mapId && !lightDef->parms.flags.atmosphereLight && model->IsStaticWorldModel() && r_useOptimizedShadows.GetBool())
 			{
 				const char *shadowModelName = va("_prelightinteraction_%d_%d_%d", lightDef->parms.mapId, entityDef->parms.mapId, c);
 				idRenderModel *shadowModel = renderModelManager->GetModel(shadowModelName, false);
