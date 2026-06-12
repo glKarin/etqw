@@ -2119,12 +2119,16 @@ idAsyncClient::SendVersionCheck
 void idAsyncClient::SendVersionCheck(bool fromMenu)
 {
 #ifdef _SPLASHDAMAGE //karin: fake check update
+	//HACK: it will execute checkNewVersion and open a dialog when game start in mainmenu.gui, so skip it
+	static int counter = 0;
+	// if (counter++ == 0)
+	// 	return;
 	common->Printf("Check updates(fake)......");
 	game->SetUpdateMessage(L"No availability update: not supported");
 	game->SetUpdateProgress(1.0f);
 	game->SetUpdateFromServer(false);
 	game->SetUpdateAvailability(UPDATE_AVAIL_NONE);
-	game->SetUpdateState(UPDATE_PROMPT_READY);
+	game->SetUpdateState(counter++ == 0 ? UPDATE_IDLE : UPDATE_PROMPT_READY);
 	common->Printf("No availability update: not supported");
 #else
 	idBitMsg	msg;

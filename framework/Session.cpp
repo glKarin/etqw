@@ -3532,12 +3532,13 @@ void idSessionLocal::Frame()
 	}
 #ifdef _SPLASHDAMAGE //karin: response to GUI event of game
 	networkService->RunFrame();
+	//HACK: for close update processing dialog
 	if(game->GetUpdateResponse() != UPDATE_GUI_NONE)
 	{
 		game->SetUpdateProgress(1.0f);
 		game->SetUpdateFromServer(false);
 		game->SetUpdateAvailability(UPDATE_AVAIL_NONE);
-		game->SetUpdateState(UPDATE_PROCESS_UPDATE);
+		game->SetUpdateState(UPDATE_IDLE);
 	}
 	game->RunFrame();
 #endif
