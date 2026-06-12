@@ -953,7 +953,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 	else
 		textAlign = ALIGN_LEFT;
 	
-	//printf("xxx %ls |%f %f\n", text, rect.GetWidth(), rect.GetHeight());
+	//printf("xxx %ls |%f %f |%f %f\n", text, rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight());
 	fontManagerLocal.DrawText(text, rect, textAlign, wrap, !wrap, tr.gameGuiModel->CurrentColor());
 	//DrawBox(rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), 1, colorGreen);
 
@@ -972,6 +972,7 @@ void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBound
 		textAlign = ALIGN_LEFT;
 
 	fontManagerLocal.GetTextDimensions(text, rect, textAlign, wrap, !wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
+	//printf("zzz %ls |%f %f |%f %f |%d %d\n", text, rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), width, height);
 	//DrawBox(rect.GetLeft(), rect.GetTop(), width, height, 1, colorRed);
 }
 

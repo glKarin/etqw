@@ -196,7 +196,7 @@ void sdFontManagerLocal::GetTextDimensions( const wchar_t* text, const sdBounds2
 	float fontScale = DC_DEFAULT_FONT_SCALE;
 	SetFont(font);
 	int size[2] = {0};
-	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, noclipping, -1, true, lineBreaks, 0, size);
+	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, noclipping, -1, true, lineBreaks, 0, charAdvances, size);
 	width = size[0];
 	height = size[1];
 
@@ -436,7 +436,7 @@ int sdFontManagerLocal::CharWidth(const char c, float scale)
 	return idMath::FtoiFast(glyph->xSkip * useScale);
 }
 
-int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, bool noclipping, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
+int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, bool noclipping, int cursor, bool calcOnly, idList<int> *breaks, int limit, int** charAdvances, int rSize[])
 {
 	const char	*p, *textPtr, *newLinePtr;
 	char		buff[1024];
@@ -457,6 +457,8 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
 	textWidth = 0;
 	newLinePtr = NULL;
+	if (charAdvances && text && text[0])
+		memset(*charAdvances, 0, idStr::Length(text));
 
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
@@ -505,6 +507,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 			}
 
 			int nextCharWidth = (idStr::CharIsPrintable(*p) ? CharWidth(*p, textScale) : cursorSkip);
+			const int charWidth = nextCharWidth;
 			// FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
 			//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
 			//	The following line and the !linebreak in the if statement below should be removed
@@ -599,6 +602,8 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 				continue;
 			}
 
+			if (charAdvances)
+				(*charAdvances)[p - text] = charWidth;
 			buff[len++] = *p++;
 			buff[len] = '\0';
 
@@ -616,9 +621,11 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
         idStr textBuffer;
         int			lastBreak = 0;
         float		textWidthAtLastBreak = 0.0f;
+		int index = 0;
 
         while( charIndex < drawText.Length() ) {
             uint32_t textChar = drawText.UTF8Char( charIndex );
+        	index++;
 
             // See if we need to start a new line.
             if( textChar == '\n' || textChar == '\r' || charIndex == drawText.Length() ) {
@@ -629,6 +636,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
                     if( ( textChar == '\n' && nextChar == '\r' ) || ( textChar == '\r' && nextChar == '\n' ) ) {
                         // Just absorb extra newlines.
                         textChar = drawText.UTF8Char( charIndex );
+        				index++;
                     }
                 }
             }
@@ -637,11 +645,15 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
             if( textChar == C_COLOR_ESCAPE && charIndex < drawText.Length() ) {
                 textBuffer.AppendUTF8Char( textChar );
                 textChar = drawText.UTF8Char( charIndex );
+        		index++;
             }
 
             // If the character isn't a new line then add it to the text buffer.
             if( textChar != '\n' && textChar != '\r' ) {
-                textWidth += R_Font_GetCharWidth( useFont, textChar, textScale );
+            	const int charWidth = R_Font_GetCharWidth( useFont, textChar, textScale );
+            	textWidth += charWidth;
+            	if (charAdvances)
+            		(*charAdvances)[index - 1] = charWidth;
                 textBuffer.AppendUTF8Char( textChar );
             }
 
@@ -934,7 +946,7 @@ int sdFontManagerLocal::DrawText(float x, float y, float scale, idVec4 color, co
 	return count;
 }
 
-int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, bool noclipping, int cursor, bool calcOnly, idList<int> *breaks, int limit, int rSize[])
+int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textAlign, idVec4 color, const sdBounds2D &rectDraw, bool wrap, bool noclipping, int cursor, bool calcOnly, idList<int> *breaks, int limit, int** charAdvances, int rSize[])
 {
 	const wchar_t	*p, *textPtr, *newLinePtr;
 	wchar_t		buff[1024];
@@ -955,6 +967,8 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 
 	textWidth = 0;
 	newLinePtr = NULL;
+	if (charAdvances && text && text[0])
+		memset(*charAdvances, 0, idWStr::Length(text));
 
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
@@ -997,6 +1011,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 		}
 
 		int nextCharWidth = (idStr::CharIsPrintable(*p) ? R_Font_GetCharWidth(useFont, *p, textScale) : cursorSkip);
+		const int charWidth = nextCharWidth;
 		// FIXME: this is a temp hack until the guis can be fixed not not overflow the bounding rectangles
 		//		  the side-effect is that list boxes and edit boxes will draw over their scroll bars
 		//	The following line and the !linebreak in the if statement below should be removed
@@ -1092,6 +1107,8 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         	continue;
         }
 
+		if (charAdvances)
+			(*charAdvances)[p - text] = charWidth;
 		buff[len++] = *p++;
 		buff[len] = L'\0';
 
@@ -1117,7 +1134,7 @@ void sdFontManagerLocal::GetTextDimensions( const char* text, const sdBounds2D& 
 	float fontScale = DC_DEFAULT_FONT_SCALE;
 	SetFont(font);
 	int size[2] = {0};
-	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, noclipping, -1, true, lineBreaks, 0, size);
+	DrawText(text, fontScale, textAlign, colorWhite, rect, wrap, noclipping, -1, true, lineBreaks, 0, charAdvances, size);
 	width = size[0];
 	height = size[1];
 
