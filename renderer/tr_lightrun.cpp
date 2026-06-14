@@ -211,6 +211,21 @@ void R_CreateEntityRefs(idRenderEntityLocal *def)
 		               def->referenceBounds[1][1] - def->referenceBounds[0][1]);
 	}
 
+#ifdef _SPLASHDAMAGE //karin: entity push into connected/outside areas
+	if(def->parms.flags.pushIntoConnectedOutsideAreas)
+	{
+        tr.viewCount++;
+		def->world->PushIntoConnectedOutsideAreas(def->parms.origin, def, NULL);
+		return;
+	}
+	else if(def->parms.flags.pushIntoOutsideAreas)
+	{
+        tr.viewCount++;
+		def->world->PushIntoOutsideAreas(def, NULL);
+		return;
+	}
+#endif
+
 #ifdef _D3BFG_CULLING
     if(harm_r_occlusionCulling.GetBool())
     {
@@ -222,7 +237,7 @@ void R_CreateEntityRefs(idRenderEntityLocal *def)
 
         // push these points down the BSP tree into areas
         def->world->PushFrustumIntoTree(def, NULL, ID_RENDER_MATRIX def->inverseBaseModelProject, bounds_unitCube);
-        
+
         // return;
     }
     else

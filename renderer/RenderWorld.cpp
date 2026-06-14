@@ -1765,82 +1765,6 @@ void idRenderWorldLocal::AddEntityRefToArea(idRenderEntityLocal *def, portalArea
 	ref->areaPrev = area->entityRefs.areaPrev;
 	ref->areaNext->areaPrev = ref;
 	ref->areaPrev->areaNext = ref;
-#ifdef _SPLASHDAMAGE //karin: entity push into connected/outside areas
-	// find connected areas
-	if(def->parms.flags.pushIntoConnectedOutsideAreas)
-	{
-		for (portal_t *p = area->portals ; p ; p = p->next) {
-			portalArea_t *a = &portalAreas[ p->intoArea ];
-			// check pushed
-			bool pushed = false;
-			for (ref = a->entityRefs.areaNext; ref != &a->entityRefs; ref = ref->areaNext) {
-				if(ref->entity == def)
-				{
-					pushed = true;
-					break;
-				}
-			}
-			if(pushed)
-				continue;
-
-			ref = areaReferenceAllocator.Alloc();
-
-			tr.pc.c_entityReferences++;
-
-			ref->entity = def;
-
-			// link to entityDef
-			ref->ownerNext = def->entityRefs;
-			def->entityRefs = ref;
-
-			// link to end of area list
-			ref->area = a;
-			ref->areaNext = &a->entityRefs;
-			ref->areaPrev = a->entityRefs.areaPrev;
-			ref->areaNext->areaPrev = ref;
-			ref->areaPrev->areaNext = ref;
-		}
-	}
-
-	// all areas
-	if(def->parms.flags.pushIntoOutsideAreas)
-	{
-		for (int i = 0 ; i < numPortalAreas ; i++) {
-			portalArea_t *a = &portalAreas[ i ];
-			if(a == area)
-				continue;
-
-			// check pushed
-			bool pushed = false;
-			for (ref = a->entityRefs.areaNext; ref != &a->entityRefs; ref = ref->areaNext) {
-				if(ref->entity == def)
-				{
-					pushed = true;
-					break;
-				}
-			}
-			if(pushed)
-				continue;
-
-			ref = areaReferenceAllocator.Alloc();
-
-			tr.pc.c_entityReferences++;
-
-			ref->entity = def;
-
-			// link to entityDef
-			ref->ownerNext = def->entityRefs;
-			def->entityRefs = ref;
-
-			// link to end of area list
-			ref->area = a;
-			ref->areaNext = &a->entityRefs;
-			ref->areaPrev = a->entityRefs.areaPrev;
-			ref->areaNext->areaPrev = ref;
-			ref->areaPrev->areaNext = ref;
-		}
-	}
-#endif
 }
 
 /*
@@ -4193,6 +4117,54 @@ struct atmosLightProjection_t * idRenderWorldLocal::FindAtmosLightProjection( in
 	return NULL;
 }
 
+void idRenderWorldLocal::PushIntoOutsideAreas(idRenderEntityLocal *def, idRenderLightLocal *light)
+{
+	portalArea_t *area;
+
+	for (int i = 0 ; i < numPortalAreas ; i++) {
+		area = &portalAreas[ i ];
+
+		if(area->portalFlags & (1 << PORTAL_OUTSIDE))
+		{
+			if( def != NULL )
+			{
+				AddEntityRefToArea( def, area );
+			}
+			if( light != NULL )
+			{
+				AddLightRefToArea( light, area );
+			}
+		}
+	}
+}
+
+void idRenderWorldLocal::PushIntoConnectedOutsideAreas(const idVec3 &point, idRenderEntityLocal *def, idRenderLightLocal *light)
+{
+	portalArea_t *area;
+
+	int areaNum = PointInArea(point);
+	if ( areaNum == -1 )
+		return;
+
+	for (int i = 0 ; i < numPortalAreas ; i++) {
+		if(i == areaNum || AreasAreConnected(areaNum, i, PS_BLOCK_VIEW/*1*/))
+		{
+			area = &portalAreas[ i ];
+
+			if(area->portalFlags & (1 << PORTAL_OUTSIDE))
+			{
+				if( def != NULL )
+				{
+					AddEntityRefToArea( def, area );
+				}
+				if( light != NULL )
+				{
+					AddLightRefToArea( light, area );
+				}
+			}
+		}
+	}
+}
 #endif
 
 #ifdef _D3BFG_CULLING

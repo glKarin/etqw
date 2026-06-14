@@ -280,6 +280,9 @@ class idRenderWorldLocal : public idRenderWorld
 		idRenderModel 			*ParseModel_Binary(idFile *file, const idStrList &materialsTable);
 		void					ParseInterAreaPortals_Binary(idFile *file);
 		bool					InitFromMap_Binary(const char *name);
+
+		void					PushIntoOutsideAreas(idRenderEntityLocal *def, idRenderLightLocal *light);
+		void					PushIntoConnectedOutsideAreas(const idVec3 &point, idRenderEntityLocal *def, idRenderLightLocal *light);
 #endif
 
 #ifdef _D3BFG_CULLING
