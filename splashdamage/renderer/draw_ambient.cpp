@@ -10,6 +10,7 @@ idCVar harm_r_skipAreaAmbient("harm_r_skipAreaAmbient", "0", CVAR_BOOL | CVAR_RE
 static idCVar harm_r_builtinAreaAmbient("harm_r_builtinAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "Using built-in global illumination for area ambient rendering");
 
 idCVar harm_r_areaAmbientScale("harm_r_areaAmbientScale", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Area ambient scale");
+idCVar harm_r_areaAmbientAlpha("harm_r_areaAmbientAlpha", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Area ambient alpha");
 
 extern void RB_CreateSingleDrawAreaAmbient(const drawSurf_t *drawSurf, void (*DrawInteraction)(const drawInteraction_t *));
 
@@ -75,7 +76,7 @@ static void RB_DrawAreaAmbient_external(const drawInteraction_t *din)
 
     const sdDeclAmbientCubeMap *areaAmbient = din->surf->space->areaAmbient;
     ambientBasicShader->BindVector("ambientBrightness", areaAmbient->GetBrightness());
-    ambientBasicShader->BindVector("ambientScale", areaAmbient->GetBrightness(), harm_r_areaAmbientScale.GetFloat());
+    ambientBasicShader->BindVector("ambientScale", harm_r_areaAmbientScale.GetFloat(), harm_r_areaAmbientAlpha.GetFloat());
     ambientBasicShader->BindVector("diffuseMatrix_s", din->diffuseMatrix[0]);
     ambientBasicShader->BindVector("diffuseMatrix_t", din->diffuseMatrix[1]);
     ambientBasicShader->BindVector("bumpMatrix_s", din->bumpMatrix[0]);
