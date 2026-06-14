@@ -11,7 +11,7 @@
 #define DC_PLACEHOLDER(...) //Sys_Printf(__VA_ARGS__)
 #define DC_DRAW(...) R_DC_DebugType(__VA_ARGS__) //Sys_Printf(__VA_ARGS__)
 #define DC_DEBUG_MATERIAL(...) //R_DC_DebugMaterial(__VA_ARGS__)
-#define DC_DEBUG_POS(x, y) R_DC_DebugPos(x, y)
+#define DC_DEBUG_POS(x, y) //R_DC_DebugPos(x, y)
 #else
 #define DC_PLACEHOLDER(...)
 #define DC_DRAW(...)
@@ -74,7 +74,7 @@ sdDeviceContextLocal::sdDeviceContextLocal()
 {
 	xScale = 0.0;
 	SetSize(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
-	enableClipping = false;
+	enableClipping = true;
 	clipRects.Clear();
 	tempColor = vec4_one;
 	usingTempColor = false;
@@ -945,13 +945,7 @@ void sdDeviceContextLocal::SetFontSize( const int pointSize ) {
 
 void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect, unsigned int flags ) {
 	bool wrap = (flags & DTF_WORDWRAP) || (flags & DTF_SINGLELINE) == 0;
-	int textAlign;
-	if (flags & DTF_CENTER)
-		textAlign = ALIGN_CENTER;
-	else if (flags & DTF_RIGHT)
-		textAlign = ALIGN_RIGHT;
-	else
-		textAlign = ALIGN_LEFT;
+	int textAlign = flags & (DTF_CENTER | DTF_RIGHT | DTF_LEFT | DTF_VCENTER | DTF_BOTTOM | DTF_TOP);
 	
 	//printf("xxx %ls |%f %f |%f %f\n", text, rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight());
 	fontManagerLocal.DrawText(text, rect, textAlign, wrap, !wrap, tr.gameGuiModel->CurrentColor());
@@ -963,13 +957,7 @@ void sdDeviceContextLocal::DrawText( const wchar_t* text, const sdBounds2D& rect
 
 void sdDeviceContextLocal::GetTextDimensions( const wchar_t* text, const sdBounds2D& rect, unsigned int flags, const qhandle_t font, const int pointSize, int& width, int& height, float* scale, int** charAdvances, idList< int >* lineBreaks ) {
 	bool wrap = (flags & DTF_WORDWRAP) || (flags & DTF_SINGLELINE) == 0;
-	int textAlign;
-	if (flags & DTF_CENTER)
-		textAlign = ALIGN_CENTER;
-	else if (flags & DTF_RIGHT)
-		textAlign = ALIGN_RIGHT;
-	else
-		textAlign = ALIGN_LEFT;
+	int textAlign = flags & (DTF_CENTER | DTF_RIGHT | DTF_LEFT | DTF_VCENTER | DTF_BOTTOM | DTF_TOP);
 
 	fontManagerLocal.GetTextDimensions(text, rect, textAlign, wrap, !wrap, font, pointSize, width, height, scale, charAdvances, lineBreaks);
 	//printf("zzz %ls |%f %f |%f %f |%d %d\n", text, rect.GetLeft(), rect.GetTop(), rect.GetWidth(), rect.GetHeight(), width, height);
@@ -994,6 +982,21 @@ bool sdDeviceContextLocal::ClippedCoords(float *x, float *y, float *w, float *h,
 
     while (--c > 0) {
         sdBounds2D *clipRect = &clipRects[c];
+
+#if 0 // for debug
+		{
+			idVec4 color = colorRed;
+			float x = clipRect->GetLeft();
+			float y = clipRect->GetTop();
+			float w = clipRect->GetWidth();
+			float h = clipRect->GetHeight();
+			float size = 2;
+			DrawStretchPic(x, y, size, h, 0, 0, 0, 0, whiteImage, &color);
+			DrawStretchPic(x + w - size, y, size, h, 0, 0, 0, 0, whiteImage, &color);
+			DrawStretchPic(x, y, w, size, 0, 0, 0, 0, whiteImage, &color);
+			DrawStretchPic(x, y + h - size, w, size, 0, 0, 0, 0, whiteImage, &color);
+		}
+#endif
 
         float ox = *x;
         float oy = *y;
