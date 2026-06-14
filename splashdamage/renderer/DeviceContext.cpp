@@ -336,6 +336,9 @@ void sdDeviceContextLocal::DrawMaskedMaterial( float x, float y, float w, float 
 	v0 += offsetY;
 	v1 += offsetY;
 
+	u0 = v0 = 0;
+	u1 = v1 = 1;
+
 	if (angle == 0.0f && ClippedCoords(&x, &y, &w, &h, &u0, &v0, &u1, &v1)) {
 		return;
 	}
