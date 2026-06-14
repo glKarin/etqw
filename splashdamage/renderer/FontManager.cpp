@@ -3,8 +3,8 @@
 
 #include "idlib/precompiled.h"
 
-#include "FontManager_local.h"
 #include "DeviceContext_local.h"
+#include "FontManager_local.h"
 #include "renderer/tr_local.h"
 
 #define DEFAULT_FONT_TEXTURE_SIZE 1024
@@ -455,6 +455,19 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
 	SetFontByScale(textScale);
 
+	y = lineSkip + rectDraw.GetTop();
+#if 0
+	if(!wrap) // single line only
+	{
+		if (textAlign & ALIGN_BOTTOM) {
+			y = rectDraw.GetBottom() - lineSkip;
+		} else if (textAlign & ALIGN_MIDDLE) {
+			y = lineSkip + rectDraw.GetTop() + (rectDraw.GetHeight() - lineSkip) * 0.5f;
+			//y = rectDraw.GetBottom() - (rectDraw.GetHeight() - lineSkip) * 0.5f;
+		}
+	}
+#endif
+
 	textWidth = 0;
 	newLinePtr = NULL;
 	if (charAdvances && text && text[0])
@@ -462,7 +475,7 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
-			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
+			DrawEditCursor(rectDraw.GetLeft(), y, textScale, &color);
 		}
 
 		if(rSize)
@@ -475,8 +488,6 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 
 	tHeight = lineSkip;
 	textPtr = text;
-
-	y = lineSkip + rectDraw.GetTop();
 	len = 0;
 	buff[0] = '\0';
 	newLine = 0;
@@ -536,9 +547,9 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
 			if (lineBreak || wordBreak) {
 				float x = rectDraw.GetLeft();
 
-				if (textAlign == ALIGN_RIGHT) {
+				if (textAlign & ALIGN_RIGHT) {
 					x = rectDraw.GetRight() - newLineWidth;
-				} else if (textAlign == ALIGN_CENTER) {
+				} else if (textAlign & ALIGN_CENTER) {
 					x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
 				}
 
@@ -683,9 +694,9 @@ int sdFontManagerLocal::DrawText(const char *text, float textScale, int textAlig
                 }
 
                 // Align text if needed
-            	if( textAlign == ALIGN_RIGHT ) {
+            	if( textAlign & ALIGN_RIGHT ) {
                     x = rectDraw.GetRight() - textWidth;
-                } else if( textAlign == ALIGN_CENTER ) {
+                } else if( textAlign & ALIGN_CENTER ) {
                     x = rectDraw.GetLeft() + ( rectDraw.GetWidth() - textWidth ) / 2;
                 }
 
@@ -965,6 +976,19 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 
 	SetFontByScale(textScale);
 
+	y = lineSkip + rectDraw.GetTop();
+#if 0
+	if(!wrap) // single line only
+	{
+		if (textAlign & ALIGN_BOTTOM) {
+			y = rectDraw.GetBottom() - lineSkip;
+		} else if (textAlign & ALIGN_MIDDLE) {
+			y = lineSkip + rectDraw.GetTop() + (rectDraw.GetHeight() - lineSkip) * 0.5f;
+			//y = rectDraw.GetBottom() - (rectDraw.GetHeight() - lineSkip) * 0.5f;
+		}
+	}
+#endif
+
 	textWidth = 0;
 	newLinePtr = NULL;
 	if (charAdvances && text && text[0])
@@ -972,7 +996,7 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 
 	if (!calcOnly && !(text && *text)) {
 		if (cursor == 0) {
-			DrawEditCursor(rectDraw.GetLeft(), lineSkip + rectDraw.GetTop(), textScale, &color);
+			DrawEditCursor(rectDraw.GetLeft(), y, textScale, &color);
 		}
 
 		if(rSize)
@@ -986,7 +1010,6 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
 	tHeight = lineSkip;
 	textPtr = text;
 
-	y = lineSkip + rectDraw.GetTop();
 	len = 0;
 	buff[0] = L'\0';
 	newLine = 0;
@@ -1040,9 +1063,9 @@ int sdFontManagerLocal::DrawText(const wchar_t *text, float textScale, int textA
         if( lineBreak || wordBreak ) {
         	float x = rectDraw.GetLeft();
 
-        	if (textAlign == ALIGN_RIGHT) {
+        	if (textAlign & ALIGN_RIGHT) {
         		x = rectDraw.GetRight() - newLineWidth;
-        	} else if (textAlign == ALIGN_CENTER) {
+        	} else if (textAlign & ALIGN_CENTER) {
         		x = rectDraw.GetLeft() + (rectDraw.GetWidth() - newLineWidth) / 2;
         	}
 

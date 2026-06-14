@@ -19,9 +19,12 @@ struct sdLocFont_t {
 };
 
 enum {
-	ALIGN_LEFT,
-	ALIGN_CENTER,
-	ALIGN_RIGHT
+	ALIGN_LEFT = DTF_LEFT,
+	ALIGN_CENTER = DTF_CENTER,
+	ALIGN_RIGHT = DTF_RIGHT,
+	ALIGN_TOP = DTF_TOP,
+	ALIGN_MIDDLE = DTF_VCENTER,
+	ALIGN_BOTTOM = DTF_BOTTOM,
 };
 
 class sdFontManagerLocal : public sdFontManager
