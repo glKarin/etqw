@@ -86,6 +86,7 @@ private:
 	void					UnsetTempColor();
 	void					LineDrawVerts(const idVec2 &start, const idVec2 &end, float width, idDrawVert verts[4], glIndex_t indexes[6]);
 	void					CirclePoints(float x, float y, float xRadius, float yRadius, int numSides, idList<idVec2> &verts);
+	void					CirclePoints(float x, float y, float xRadius, float yRadius, int numSides, float start, float percent, idList<idVec2> &verts);
 
 private:
 	float					xScale;

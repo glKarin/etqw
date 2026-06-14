@@ -616,8 +616,8 @@ void sdDeviceContextLocal::DrawCircleMaterial( const float x, const float y, con
 	for(i = 0; i < numSides; i++, vert++)
 	{
 		idVec2 &outer = outerPoints[i];
-		const idVec2 &uv = uvs[i];
-		AdjustCoords(&outer[0], &outer[1], NULL, NULL);
+		idVec2 &uv = uvs[i];
+		AdjustCoords(&outer[0], &outer[1], &uv[0], &uv[1]);
 
 		vert->xyz[0] = outer[0];
 		vert->xyz[1] = outer[1];
@@ -732,8 +732,8 @@ void sdDeviceContextLocal::DrawCircleMaterialMasked( const float x, const float 
 	for(i = 0; i < numSides; i++, vert++)
 	{
 		idVec2 &outer = outerPoints[i];
-		const idVec2 &uv = uvs[i];
-		AdjustCoords(&outer[0], &outer[1], NULL, NULL);
+		idVec2 &uv = uvs[i];
+		AdjustCoords(&outer[0], &outer[1], &uv[0], &uv[1]);
 
 		vert->xyz[0] = outer[0];
 		vert->xyz[1] = outer[1];
@@ -902,6 +902,74 @@ void sdDeviceContextLocal::DrawFilledArc( const float x, const float y, const fl
 
 	if(!material)
 		return;
+
+	if (color.w == 0.0f) {
+		return;
+	}
+
+	idList<idVec2> outerPoints;
+	idList<idVec2> uvs;
+	int start, i;
+
+	CirclePoints(x, y, radius, radius, numSides, startAngle, percent, outerPoints);
+	CirclePoints(0.5f, 0.5f, 0.5f, 0.5f, numSides, startAngle, percent, uvs);
+
+	idList<idDrawVert> verts;
+	verts.SetNum(outerPoints.Num() + 1);
+	idDrawVert *vert = verts.Ptr();
+	idList<glIndex_t> indexes;
+	indexes.SetNum(outerPoints.Num() * 3);
+	glIndex_t *idx = indexes.Ptr();
+
+	vert->xyz[0] = x;
+	vert->xyz[1] = y;
+	vert->xyz[2] = 0;
+	vert->st[0] = 0.5f;
+	vert->st[1] = 0.5f;
+	vert->normal[0] = 0;
+	vert->normal[1] = 0;
+	vert->normal[2] = 1;
+	vert->tangents[0][0] = 1;
+	vert->tangents[0][1] = 0;
+	vert->tangents[0][2] = 0;
+	vert->tangents[1][0] = 0;
+	vert->tangents[1][1] = 1;
+	vert->tangents[1][2] = 0;
+
+	vert++;
+
+	for(i = 0; i < outerPoints.Num(); i++, vert++)
+	{
+		idVec2 &outer = outerPoints[i];
+		idVec2 &uv = uvs[i];
+		AdjustCoords(&outer[0], &outer[1], &uv[0], &uv[1]);
+
+		vert->xyz[0] = outer[0];
+		vert->xyz[1] = outer[1];
+		vert->xyz[2] = 0;
+		vert->st[0] = uv[0];
+		vert->st[1] = uv[1];
+		vert->normal[0] = 0;
+		vert->normal[1] = 0;
+		vert->normal[2] = 1;
+		vert->tangents[0][0] = 1;
+		vert->tangents[0][1] = 0;
+		vert->tangents[0][2] = 0;
+		vert->tangents[1][0] = 0;
+		vert->tangents[1][1] = 1;
+		vert->tangents[1][2] = 0;
+
+		if (i == 0)
+			continue;
+
+		start = (i - 1);
+		idx[0] = 0;
+		idx[1] = start;
+		idx[2] = i;
+		idx += 3;
+	}
+
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), material, false, &color);
 }
 
 void sdDeviceContextLocal::DrawFilledArcMasked( const float x, const float y, const float radius, int numSides, float percent, const idVec4 &color, float s11, float t11, float s12, float t12, float startAngle, const idMaterial *material ) {
@@ -909,11 +977,144 @@ void sdDeviceContextLocal::DrawFilledArcMasked( const float x, const float y, co
 
 	if(!material)
 		return;
+
+	if (color.w == 0.0f) {
+		return;
+	}
+
+	idList<idVec2> outerPoints;
+	idList<idVec2> uvs;
+	int start, i;
+
+	CirclePoints(x, y, radius, radius, numSides, startAngle, percent, outerPoints);
+	CirclePoints(0.5f, 0.5f, 0.5f, 0.5f, numSides, startAngle, percent, uvs);
+
+	idList<idDrawVert> verts;
+	verts.SetNum(outerPoints.Num() + 1);
+	idDrawVert *vert = verts.Ptr();
+	idList<glIndex_t> indexes;
+	indexes.SetNum(outerPoints.Num() * 3);
+	glIndex_t *idx = indexes.Ptr();
+
+	vert->xyz[0] = x;
+	vert->xyz[1] = y;
+	vert->xyz[2] = 0;
+	vert->st[0] = 0.5f;
+	vert->st[1] = 0.5f;
+	vert->normal[0] = 0;
+	vert->normal[1] = 0;
+	vert->normal[2] = 1;
+	vert->tangents[0][0] = 1;
+	vert->tangents[0][1] = 0;
+	vert->tangents[0][2] = 0;
+	vert->tangents[1][0] = 0;
+	vert->tangents[1][1] = 1;
+	vert->tangents[1][2] = 0;
+
+	vert++;
+
+	for(i = 0; i < outerPoints.Num(); i++, vert++)
+	{
+		idVec2 &outer = outerPoints[i];
+		idVec2 &uv = uvs[i];
+		AdjustCoords(&outer[0], &outer[1], &uv[0], &uv[1]);
+
+		vert->xyz[0] = outer[0];
+		vert->xyz[1] = outer[1];
+		vert->xyz[2] = 0;
+		vert->st[0] = uv[0];
+		vert->st[1] = uv[1];
+		vert->normal[0] = 0;
+		vert->normal[1] = 0;
+		vert->normal[2] = 1;
+		vert->tangents[0][0] = 1;
+		vert->tangents[0][1] = 0;
+		vert->tangents[0][2] = 0;
+		vert->tangents[1][0] = 0;
+		vert->tangents[1][1] = 1;
+		vert->tangents[1][2] = 0;
+
+		if (i == 0)
+			continue;
+
+		start = (i - 1);
+		idx[0] = 0;
+		idx[1] = start;
+		idx[2] = i;
+		idx += 3;
+	}
+
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), material, false, &color);
 }
 
 void sdDeviceContextLocal::DrawArc( const float x, const float y, const float radius, const float width, const int numSides, const float percent, const idVec4 &color, const float startAngle ) {
 	DC_UNUSED_ON_GAME
 	DC_PLACEHOLDER("DC:DrawArc\n");
+
+	if (color.w == 0.0f) {
+		return;
+	}
+
+	idList<idVec2> outerPoints;
+	int start, i;
+
+	CirclePoints(x, y, radius, radius, numSides, startAngle, percent, outerPoints);
+
+	idList<idDrawVert> verts;
+	verts.SetNum(outerPoints.Num() + 1);
+	idDrawVert *vert = verts.Ptr();
+	idList<glIndex_t> indexes;
+	indexes.SetNum(outerPoints.Num() * 3);
+	glIndex_t *idx = indexes.Ptr();
+
+	vert->xyz[0] = x;
+	vert->xyz[1] = y;
+	vert->xyz[2] = 0;
+	vert->st[0] = 0;
+	vert->st[1] = 0;
+	vert->normal[0] = 0;
+	vert->normal[1] = 0;
+	vert->normal[2] = 1;
+	vert->tangents[0][0] = 1;
+	vert->tangents[0][1] = 0;
+	vert->tangents[0][2] = 0;
+	vert->tangents[1][0] = 0;
+	vert->tangents[1][1] = 1;
+	vert->tangents[1][2] = 0;
+
+	vert++;
+
+	for(i = 0; i < outerPoints.Num(); i++, vert++)
+	{
+		idVec2 &outer = outerPoints[i];
+		AdjustCoords(&outer[0], &outer[1], NULL, NULL);
+
+		vert->xyz[0] = outer[0];
+		vert->xyz[1] = outer[1];
+		vert->xyz[2] = 0;
+		vert->st[0] = 0;
+		vert->st[1] = 0;
+		vert->normal[0] = 0;
+		vert->normal[1] = 0;
+		vert->normal[2] = 1;
+		vert->tangents[0][0] = 1;
+		vert->tangents[0][1] = 0;
+		vert->tangents[0][2] = 0;
+		vert->tangents[1][0] = 0;
+		vert->tangents[1][1] = 1;
+		vert->tangents[1][2] = 0;
+
+		if (i == 0)
+			continue;
+
+		start = (i - 1);
+		idx[0] = 0;
+		idx[1] = start;
+		idx[2] = i;
+		idx += 3;
+	}
+
+	tr.gameGuiModel->DrawStretchPicWithColor(&verts[0], &indexes[0], verts.Num(), indexes.Num(), whiteImage, false, &color);
 }
 
 void sdDeviceContextLocal::DrawTimer( const float x, const float y, const float w, const float h, float percent, const idVec4 &color, const idMaterial* material, bool invert, const idVec2& st0, const idVec2& st1 ) {
@@ -1394,6 +1595,40 @@ void sdDeviceContextLocal::CirclePoints(float x, float y, float xRadius, float y
 	}
 
 	verts[i] = verts[0];
+}
+
+void sdDeviceContextLocal::CirclePoints(float x, float y, float xRadius, float yRadius, int numSides, float start, float percent, idList<idVec2> &verts)
+{
+	float r;
+	int i;
+	float last, cur;
+
+	verts.SetNum(numSides + 1);
+	last = -1.0f;
+	
+	float step = 360.0f / (float)numSides;
+	float end = 360.0f * percent + start;
+
+	for(i = 0; i < numSides; i++)
+	{
+		cur = step * (float)i;
+		if(cur < start)
+		{
+			last = cur;
+			continue;
+		}
+		if(cur > start && (last >= 0.0f && last < start))
+			r = DEG2RAD(start);
+		else if(cur > end && (last >= 0.0f && last < end))
+			r = DEG2RAD(end);
+		else
+			r = DEG2RAD(cur);
+		verts[i][0] = x + xRadius * idMath::Cos(r);
+		verts[i][1] = y + yRadius * idMath::Sin(r);
+		last = cur;
+		if(cur > end)
+			break;
+	}
 }
 
 sdDeviceContextLocal deviceContextLocal;
