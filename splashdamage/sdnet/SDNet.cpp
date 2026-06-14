@@ -7,6 +7,8 @@
 
 #include "SDNetTask_local.h"
 
+static idCVar harm_com_autoLogin("harm_com_autoLogin", "", CVAR_SYSTEM | CVAR_ARCHIVE, "login username automatic when game start");
+
 //===============================================================
 //
 //	sdNetService
@@ -31,6 +33,25 @@ bool sdNetService_Local::Init() {
 	serviceState = SS_INITIALIZED;
 	dedicatedState = DS_ONLINE;
 	isInitialized = true;
+	if(harm_com_autoLogin.GetString() && harm_com_autoLogin.GetString()[0])
+	{
+		bool found = false;
+		for(int i = 0; i < userList.Num(); i++) {
+			sdNetUser *user = userList[i];
+			if(!idStr::Cmp(user->GetRawUsername(), harm_com_autoLogin.GetString()))
+			{
+				user->Activate();
+				found = true;
+				common->Printf("Login user '%s' automatic\n", user->GetRawUsername());
+				break;
+			}
+		}
+		if(!found)
+		{
+			common->Warning("Login user '%s' not found", harm_com_autoLogin.GetString());
+			harm_com_autoLogin.SetString("");
+		}
+	}
 	return isInitialized;
 }
 
@@ -207,9 +228,9 @@ sdNetTask* sdNetService_Local::GetAccountsForLicense( idStrList& accountNames, c
 
 	// Get a user's profile
 const idDict* sdNetService_Local::GetProfileProperties( sdNetClientId userID ) const {
-	for (idList<sdNetUser_Local *>::ConstIterator itor = userList.Begin(); itor != userList.End(); ++itor) {
+	for(int i = 0; i < userList.Num(); i++) {
 		sdNetClientId id;
-		sdNetUser *user = (sdNetUser *)*itor;
+		sdNetUser *user = userList[i];
 		user->GetAccount().GetNetClientId(id);
 		if (id == userID) {
 			return &user->GetProfile().GetProperties();
