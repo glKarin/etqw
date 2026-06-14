@@ -31,6 +31,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "AsyncNetwork.h"
 
+#ifdef _SPLASHDAMAGE //karin: check map changed
+#include "../Session_local.h"
+#endif
+
 idAsyncServer		idAsyncNetwork::server;
 idAsyncClient		idAsyncNetwork::client;
 
@@ -365,6 +369,21 @@ void idAsyncNetwork::SpawnServer_f(const idCmdArgs &args)
 
 	// use serverMapRestart if we already have a running server
 	if (server.IsActive()) {
+#ifdef _SPLASHDAMAGE //karin: check map changed, disconnect first if call spawnServer in gaming
+		idStr cvarMap = cvarSystem->GetCVarString("si_map");
+		cvarMap.StripLeadingOnce("maps/");
+		cvarMap.StripFileExtension();
+		idStr srvMap = sessLocal.mapSpawnData.serverInfo.GetString("si_map");
+		srvMap.StripLeadingOnce("maps/");
+		srvMap.StripFileExtension();
+		if(cvarMap.Icmp(srvMap))
+		{
+			common->Printf("Server map changed.\n");
+			cmdSystem->BufferCommandText(CMD_EXEC_NOW, "disconnect");
+			server.Spawn();
+		}
+		else
+#endif
 		cmdSystem->BufferCommandText(CMD_EXEC_NOW, "serverMapRestart");
 	} else {
 		server.Spawn();
