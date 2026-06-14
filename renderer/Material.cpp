@@ -2619,6 +2619,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	//karin: must have 1 image in ::textures(same as ::texture)
 	if(isInteractionProgram || (!spd.declRenderProgram && !imageName[0] && hasInteractionMap)) {
 		CompleteInterationStage(ss, spd);
+		if(ss->hasAlphaTest && !isInteractionProgram)
+			coverage = MC_TRANSLUCENT;
 	} else if (spd.declRenderProgram) {
 		if(ts->image) {
 			idList<stageTexture_t> texList;
@@ -4992,11 +4994,6 @@ void idMaterial::CompleteInterationStage( shaderStage_t *ss, stageParseData_t& s
 		}
 	}
 
-	if(ss->hasAlphaTest && (coverage == MC_BAD || coverage == MC_OPAQUE))
-	{
-		coverage = MC_PERFORATED;
-	}
-	
 	//Sys_Printf("xxxxxxxxxxxxxxxxx %s\n\n", GetName());
 }
 
