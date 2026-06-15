@@ -1011,6 +1011,13 @@ void sdGuiModel::DrawStretchPicWithColor(const idDrawVert *dverts, const glIndex
 		colors[2] = COLOR_FTOUB((*color)[2]);
 		colors[3] = COLOR_FTOUB((*color)[3]);
 	}
+	else if(surf)
+	{
+		colors[0] = COLOR_FTOUB(surf->color[0]);
+		colors[1] = COLOR_FTOUB(surf->color[1]);
+		colors[2] = COLOR_FTOUB(surf->color[2]);
+		colors[3] = COLOR_FTOUB(surf->color[3]);
+	}
 	else
 	{
 		colors[0] = 255;

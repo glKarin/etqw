@@ -1122,8 +1122,8 @@ int idDeclFile::LoadAndParse()
 			for(const char *d = src.GetNextDependency(cd); d; d = src.GetNextDependency(cd)) {
 				newDecl->AddIncludeDependency(d);
 			}
-			for(idStrList::ConstIterator itor = dependencies.Begin(); itor != dependencies.End(); ++itor) {
-				newDecl->AddIncludeDependency(*itor);
+			for(int m = 0; m < dependencies.Num(); m++) {
+				newDecl->AddIncludeDependency(dependencies[m]);
 			}
 		}
 #endif
