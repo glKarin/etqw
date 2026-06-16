@@ -243,6 +243,15 @@ void R_CreateEntityRefs(idRenderEntityLocal *def)
     else
     {
 #endif
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+    // bump the view count so we can tell if an
+    // area already has a reference
+    tr.viewCount++;
+
+    // push these points down the BSP tree into areas
+    const idBox box( def->referenceBounds, def->parms.origin, def->parms.axis );
+    def->world->PushPolytopeIntoTree(def, NULL, NULL, &box, NULL, 0);
+#else
 	for (i = 0 ; i < 8 ; i++) {
 		v[0] = def->referenceBounds[i&1][0];
 		v[1] = def->referenceBounds[(i>>1)&1][1];
@@ -257,6 +266,7 @@ void R_CreateEntityRefs(idRenderEntityLocal *def)
 
 	// push these points down the BSP tree into areas
     def->world->PushVolumeIntoTree(def, NULL, 8, transformed);
+#endif
 #ifdef _D3BFG_CULLING
     }
 #endif
@@ -842,7 +852,22 @@ void R_CreateLightRefs(idRenderLightLocal *light)
 		else
 #endif
 		// push these points down the BSP tree into areas
+#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+		{
+			if (light->parms.flags.pointLight)
+			{
+				const idBox box( light->parms.origin, light->parms.lightRadius, light->parms.axis );
+				light->world->PushPolytopeIntoTree(NULL, light, NULL, &box, NULL, 0);
+			}
+			else
+			{
+				const idBox box( light->frustumTris->bounds );
+				light->world->PushPolytopeIntoTree(NULL, light, NULL, &box, points, tri->numVerts);
+			}
+		}
+#else
         light->world->PushVolumeIntoTree(NULL, light, tri->numVerts, points);
+#endif
 	}
 #ifdef _D3BFG_CULLING
     }

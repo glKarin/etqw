@@ -2779,16 +2779,9 @@ void idRenderWorldLocal::PushEffectDef(int effectHandle) {
     }
 }
 
-#if 1
-void idRenderWorldLocal::PushPolytopeIntoTree_r(
-		idRenderEntityLocal *def,
-		idRenderLightLocal *light,
-		rvRenderEffectLocal *reffect,
-		const idBox *box,
-		const idVec3 *points,
-		int numPoints,
-		int nodeNum)
+void idRenderWorldLocal::PushPolytopeIntoTree_r(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints, int nodeNum)
 {
+#if 1
     int i;
     areaNode_t	*node;
     bool	front, back;
@@ -2838,9 +2831,37 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
 
 	// if the bounding sphere is completely on one side, don't
 	// bother checking the individual points
+#if 1
+	const idVec3 normal = node->plane.Normal();
+	const idMat3 &axis = box->GetAxis();
+	const idVec3 &extents = box->GetExtents();
+	const float distance = box->GetCenter() * normal + node->plane[3];
+	const float radius =
+		idMath::Fabs( ( axis[0] * normal ) * extents[0] ) +
+		idMath::Fabs( ( axis[1] * normal ) * extents[1] ) +
+		idMath::Fabs( ( axis[2] * normal ) * extents[2] );
+
+	if ( distance - radius >= 0.0f ) {
+		nodeNum = node->children[0];
+        if (nodeNum) {	// 0 = solid
+            PushPolytopeIntoTree_r(def, light, reffect, box, points, numPoints, nodeNum);
+        }
+
+        return;
+	}
+
+	if ( distance + radius <= 0.0f ) {
+		nodeNum = node->children[1];
+        if (nodeNum) {	// 0 = solid
+            PushPolytopeIntoTree_r(def, light, reffect, box, points, numPoints, nodeNum);
+        }
+
+        return;
+	}
+#else
     float sd = box->PlaneDistance(node->plane);
 
-    if (sd > 0.0f) {
+    if (sd >= 0.0f) {
         nodeNum = node->children[0];
 
         if (nodeNum) {	// 0 = solid
@@ -2850,7 +2871,7 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
         return;
     }
 
-    if (sd < 0.0f) {
+    if (sd <= 0.0f) {
         nodeNum = node->children[1];
 
         if (nodeNum) {	// 0 = solid
@@ -2859,6 +2880,7 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
 
         return;
     }
+#endif
 
     if (numPoints == 0) { //karin: if sd == 0.0 and no points goto LABEL_60
         nodeNum = node->children[0];
@@ -2876,7 +2898,6 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
         return;
     }
 
-#if 1 //karin: from PushVolumeIntoTree_r
     front = back = false;
 
 #ifdef MACOS_X	//loop unrolling & pre-fetching for performance
@@ -2886,33 +2907,46 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
 
     for (i = 0 ; i < numPoints - 4; i+=4) {
         D0 = points[i+0] * norm + plane3;
+
+        if (!front && D0 > 0.0f) {
+            front = true;
+        } else if (!back && D0 < 0.0f) {
+            back = true;
+        }
+
+        if (back && front) {
+            break;
+        }
+
         D1 = points[i+1] * norm + plane3;
 
-        if (!front && D0 >= 0.0f) {
+        if (!front && D1 > 0.0f) {
             front = true;
-        } else if (!back && D0 <= 0.0f) {
+        } else if (!back && D1 < 0.0f) {
             back = true;
         }
 
-        D2 = points[i+1] * norm + plane3;
+        if (back && front) {
+            break;
+        }
 
-        if (!front && D1 >= 0.0f) {
+        D2 = points[i+2] * norm + plane3;
+
+        if (!front && D2 > 0.0f) {
             front = true;
-        } else if (!back && D1 <= 0.0f) {
+        } else if (!back && D2 < 0.0f) {
             back = true;
         }
 
-        D3 = points[i+1] * norm + plane3;
-
-        if (!front && D2 >= 0.0f) {
-            front = true;
-        } else if (!back && D2 <= 0.0f) {
-            back = true;
+        if (back && front) {
+            break;
         }
 
-        if (!front && D3 >= 0.0f) {
+        D3 = points[i+3] * norm + plane3;
+
+        if (!front && D3 > 0.0f) {
             front = true;
-        } else if (!back && D3 <= 0.0f) {
+        } else if (!back && D3 < 0.0f) {
             back = true;
         }
 
@@ -2926,9 +2960,9 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
             float d;
             d = points[i] * node->plane.Normal() + node->plane[3];
 
-            if (d >= 0.0f) {
+            if (!front && d > 0.0f) {
                 front = true;
-            } else if (d <= 0.0f) {
+            } else if (!back && d < 0.0f) {
                 back = true;
             }
 
@@ -2943,9 +2977,9 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
 
         d = points[i] * node->plane.Normal() + node->plane[3];
 
-        if (d >= 0.0f) {
+        if (d > 0.0f) {
             front = true;
-        } else if (d <= 0.0f) {
+        } else if (d < 0.0f) {
             back = true;
         }
 
@@ -2970,191 +3004,106 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(
             PushPolytopeIntoTree_r(def, light, reffect, box, points, numPoints, nodeNum);
         }
     }
+#elif  0
+	while ( nodeNum >= 0 ) {
+		areaNode_t *node = areaNodes + nodeNum;
+
+		if ( r_useNodeCommonChildren.GetBool() &&
+				node->commonChildrenArea != CHILDREN_HAVE_MULTIPLE_AREAS &&
+				portalAreas[ node->commonChildrenArea ].viewCount == tr.viewCount ) {
+			return;
+		}
+
+		const idVec3 normal = node->plane.Normal();
+		const idMat3 &axis = box->GetAxis();
+		const idVec3 &extents = box->GetExtents();
+		const float distance = box->GetCenter() * normal + node->plane[3];
+		const float radius =
+			idMath::Fabs( ( axis[0] * normal ) * extents[0] ) +
+			idMath::Fabs( ( axis[1] * normal ) * extents[1] ) +
+			idMath::Fabs( ( axis[2] * normal ) * extents[2] );
+
+		float sd = box->PlaneDistance(node->plane);
+
+		if ( distance - radius >= 0.0f ) {
+			nodeNum = node->children[0];
+			if ( !nodeNum ) {
+				return;
+			}
+			continue;
+		}
+
+		if ( distance + radius <= 0.0f ) {
+			nodeNum = node->children[1];
+			if ( !nodeNum ) {
+				return;
+			}
+			continue;
+		}
+
+		if ( points != NULL && numPoints > 0 ) {
+			bool front = false;
+			bool back = false;
+
+			for ( int i = 0; i < numPoints; ++i ) {
+				const float d = points[i] * normal + node->plane[3];
+				if ( d > 0.0f ) {
+					front = true;
+				} else if ( d < 0.0f ) {
+					back = true;
+				}
+
+				if ( front && back ) {
+					break;
+				}
+			}
+
+			if ( front && back ) {
+				if ( node->children[0] ) {
+					PushPolytopeIntoTree_r( def, light, reffect, box, points, numPoints, node->children[0] );
+				}
+				nodeNum = node->children[1];
+				if ( !nodeNum ) {
+					return;
+				}
+				continue;
+			}
+
+			if ( front ) {
+				nodeNum = node->children[0];
+				if ( !nodeNum ) {
+					return;
+				}
+				continue;
+			}
+		} else {
+			if ( node->children[0] ) {
+				PushPolytopeIntoTree_r( def, light, reffect, box, points, numPoints, node->children[0] );
+			}
+		}
+
+		nodeNum = node->children[1];
+		if ( !nodeNum ) {
+			return;
+		}
+	}
+
+	portalArea_t *area = &portalAreas[ -1 - nodeNum ];
+	if ( area->viewCount == tr.viewCount ) {
+		return;
+	}
+	area->viewCount = tr.viewCount;
+
+	if ( def ) {
+		AddEntityRefToArea( def, area );
+	}
+	if ( light ) {
+		AddLightRefToArea( light, area );
+	}
+    if (reffect) {
+        AddEffectRefToArea(reffect, area);
+    }
 #else
-    int v10; // esi
-	idRenderWorldLocal *v11; // edi
-	bool v12; // sf
-	idPlane *v13; // esi
-	int v14; // eax
-	float v15; // st7
-	float v16; // st6
-	int v17; // eax
-	char v18; // cl
-	char v19; // dl
-	float *p_y; // edi
-	float v21; // st7
-	bool v22; // zf
-	float v23; // st7
-	bool v24; // zf
-	float v25; // st7
-	bool v26; // zf
-	float v27; // st7
-	bool v28; // zf
-	float *v29; // edi
-	float v30; // st7
-	bool v31; // zf
-	portalArea_s *v32; // esi
-	areaReference_s *v33; // eax
-	areaReference_s *v34; // eax
-	areaReference_s *areaNext; // edx
-	areaReference_s *p_effectRefs; // esi
-	float v37; // [esp+10h] [ebp-8h]
-	float boxa; // [esp+28h] [ebp+10h]
-	int numPointsa; // [esp+30h] [ebp+18h]
-	int i; // [esp+34h] [ebp+1Ch]
-    areaNode_t	*node;
-
-    v17 = 0;
-    v18 = false;
-    v19 = false;
-
-    // v19 back v21 d
-    for(numPointsa = 0; numPointsa < numPoints - 4; numPointsa+=4)
-    {
-        v21 = v13->Distance(points[numPointsa]);
-        if ( v21 <= 0.0f )
-        {
-            if ( v21 < 0.0f )
-            {
-                v19 = true;
-                v22 = v18 == false;
-            }
-        }
-        else
-        {
-            v18 = true;
-            v22 = v19 == false;
-        }
-        if ( !v22 )
-            break; // goto LABEL_42;
-
-        v23 = v13->Distance(points[numPointsa + 1]);
-        if ( v23 <= 0.0f )
-        {
-            if ( v23 < 0.0f )
-            {
-                v19 = true;
-                v24 = v18 == false;
-            }
-        }
-        else
-        {
-            v18 = true;
-            v24 = v19 == false;
-        }
-        if ( !v24 )
-            break; //goto LABEL_42;
-
-        v25 = v13->Distance(points[numPointsa + 2]);
-        if ( v25 <= 0.0f )
-        {
-            if ( v25 < 0.0f )
-            {
-                v19 = true;
-                v26 = v18 == false;
-            }
-        }
-        else
-        {
-            v18 = true;
-            v26 = v19 == false;
-        }
-        if ( !v26 )
-            break; // goto LABEL_42;
-
-        v27 = v13->Distance(points[numPointsa + 3]);
-        if ( v27 > 0.0 )
-        {
-            v18 = true;
-            v28 = v19 == false;
-            if ( !v28 )
-                break; // goto LABEL_42;
-        }
-        else if ( v27 < 0.0 )
-        {
-            v19 = true;
-            v28 = v18 == false;
-        }
-        if ( !v28 )
-            break; // goto LABEL_42;
-    }
-
-// LABEL_34
-    for (; numPointsa < numPoints ; numPointsa++)
-    {
-        v30 = v13->Distance(points[numPointsa]);
-        if ( v30 > 0.0 )
-            break;
-        if ( v30 < 0.0 )
-        {
-            v19 = true;
-            v31 = v18 == false;
-            if ( !v31 )
-                break; // goto LABEL_42;
-        }
-    }
-    if(v31)
-    {
-        v18 = true;
-        v31 = v19 == false;
-    }
-
-    if ( v18 && v19 )
-    {
-        nodeNum = node->children[0]; // v13 + 16
-        if(nodeNum)
-            PushPolytopeIntoTree_r(
-                    def,
-                    light,
-                    reffect,
-                    box,
-                    points,
-                    numPoints,
-                    nodeNum);
-
-        return;
-    }
-    else if ( v18 )
-    {
-        nodeNum = node->children[1]; // *(_DWORD *)(v13 + 16);
-
-        if(nodeNum)
-            PushPolytopeIntoTree_r(
-                    def,
-                    light,
-                    reffect,
-                    box,
-                    points,
-                    numPoints,
-                    nodeNum);
-
-        return;
-    }
-#endif
-}
-
-void idRenderWorldLocal::PushPolytopeIntoTree(
-        idRenderEntityLocal *def,
-        idRenderLightLocal *light,
-        rvRenderEffectLocal *reffect,
-        const idBox *box,
-        const idVec3 *points,
-        int numPoints) {
-
-    if (areaNodes == NULL) {
-        return;
-    }
-
-    //c_lightReferences = tr.pc.c_lightReferences;
-    PushPolytopeIntoTree_r(def, light, reffect, box, points, numPoints, 0);
-/*    if (light)
-        light->numPortalsCrossed = tr.pc.c_lightReferences - c_lightReferences;*/
-    //++tr.pc.c_numVolumePushes;
-}
-
-#else
-void idRenderWorldLocal::PushPolytopeIntoTree_r(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints, int nodeNum)
-{
     int			i;
     areaNode_t	*node;
     bool	front, back;
@@ -3342,43 +3291,20 @@ void idRenderWorldLocal::PushPolytopeIntoTree_r(idRenderEntityLocal *def, idRend
             PushPolytopeIntoTree_r(def, light, reffect, box, points, numPoints, nodeNum);
         }
     }
+#endif
 }
 
-void idRenderWorldLocal::PushPolytopeIntoTree(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints)
-{
-    int i;
-    float radSquared, lr;
-    idVec3 mid, dir;
-
+void idRenderWorldLocal::PushPolytopeIntoTree(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints) {
     if (areaNodes == NULL) {
         return;
     }
 
-    // calculate a bounding sphere for the points
-    mid.Zero();
-
-    for (i = 0; i < numPoints; i++) {
-        mid += points[i];
-    }
-
-    mid *= (1.0f / numPoints);
-
-    radSquared = 0;
-
-    for (i = 0; i < numPoints; i++) {
-        dir = points[i] - mid;
-        lr = dir * dir;
-
-        if (lr > radSquared) {
-            radSquared = lr;
-        }
-    }
-
-    idSphere sphere(mid, sqrt(radSquared));
-
+    //c_lightReferences = tr.pc.c_lightReferences;
     PushPolytopeIntoTree_r(def, light, reffect, box, points, numPoints, 0);
+/*    if (light)
+        light->numPortalsCrossed = tr.pc.c_lightReferences - c_lightReferences;*/
+    //++tr.pc.c_numVolumePushes;
 }
-#endif
 
 void idRenderWorldLocal::AddEffectRefToArea(rvRenderEffectLocal *reffect, portalArea_t *area)
 {

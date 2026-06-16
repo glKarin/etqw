@@ -208,19 +208,15 @@ class idRenderWorldLocal : public idRenderWorld
         void					PushPolytopeIntoTree(idRenderEntityLocal *def, idRenderLightLocal *light, rvRenderEffectLocal *reffect, const idBox *box, const idVec3 *points, int numPoints);
 #endif
 
-	    idList<rvRenderEffectLocal*>	effectDefs;
-#endif
-#ifdef _RAVEN
-        int                             procVersion; //karin: for compat doom3 proc
-#endif
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 		// RAVEN BEGIN
-    	// jscott: handling of effects
+		// jscott: handling of effects
 		virtual qhandle_t		AddEffectDef(const renderEffect_t* reffect, int time);
 		virtual bool			UpdateEffectDef(qhandle_t effectHandle, const renderEffect_t* reffect, int time);
 		virtual void			StopEffectDef(qhandle_t effectHandle);
 		virtual void			FreeEffectDef(qhandle_t effectHandle);
 		// RAVEN END
+
+	    idList<rvRenderEffectLocal*>	effectDefs;
 #endif
 
 #ifdef _SPLASHDAMAGE
@@ -325,6 +321,9 @@ class idRenderWorldLocal : public idRenderWorld
 
 
 		bool					generateAllInteractionsCalled;
+#ifdef _RAVEN
+		int                             procVersion; //karin: for compat doom3 proc
+#endif
 #ifdef _SPLASHDAMAGE
 		const sdDeclAtmosphere	*atmosphere;
 		idList<class sdOcclusionTestLocal *> occlusionTestDefs;
