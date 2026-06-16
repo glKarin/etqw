@@ -729,18 +729,6 @@ R_CreateLightRefs
 #define	MAX_LIGHT_VERTS	40
 void R_CreateLightRefs(idRenderLightLocal *light)
 {
-#ifdef _SPLASHDAMAGE //karin: using computed light areaNum
-	if(light->parms.numAreas > 0)
-	{
-        tr.viewCount++;
-		light->areaNum = light->parms.areas[0];
-		for(int i = 0; i < light->parms.numAreas; i++)
-		{
-			light->world->AddLightRefToArea(light, &light->world->portalAreas[light->parms.areas[i]]);
-		}
-		return;
-	}
-#endif
 #ifdef _D3BFG_CULLING
     if(harm_r_occlusionCulling.GetBool())
     {
@@ -772,6 +760,19 @@ void R_CreateLightRefs(idRenderLightLocal *light)
         }
         else
         {
+#ifdef _SPLASHDAMAGE //karin: using computed light areaNum / light push into areas
+			if(light->parms.numAreas > 0)
+			{
+				light->areaNum = light->parms.areas[0];
+				for(int m = 0; m < light->parms.numAreas; m++)
+				{
+					light->world->AddLightRefToArea(light, &light->world->portalAreas[light->parms.areas[m]]);
+				}
+			}
+			else if(light->parms.flags.atmosphereLight)
+				light->world->PushIntoConnectedOutsideAreas(light->parms.origin, NULL, light);
+			else
+#endif
             // push the light frustum down the BSP tree into areas
             light->world->PushFrustumIntoTree( NULL, light, ID_RENDER_MATRIX light->inverseBaseLightProject, bounds_zeroOneCube );
         }
@@ -827,6 +828,19 @@ void R_CreateLightRefs(idRenderLightLocal *light)
 	{
 		light->world->FlowLightThroughPortals(light);
 	} else {
+#ifdef _SPLASHDAMAGE //karin: using computed light areaNum / light push into areas
+		if(light->parms.numAreas > 0)
+		{
+			light->areaNum = light->parms.areas[0];
+			for(int m = 0; m < light->parms.numAreas; m++)
+			{
+				light->world->AddLightRefToArea(light, &light->world->portalAreas[light->parms.areas[m]]);
+			}
+		}
+		else if(light->parms.flags.atmosphereLight)
+			light->world->PushIntoConnectedOutsideAreas(light->parms.origin, NULL, light);
+		else
+#endif
 		// push these points down the BSP tree into areas
         light->world->PushVolumeIntoTree(NULL, light, tri->numVerts, points);
 	}

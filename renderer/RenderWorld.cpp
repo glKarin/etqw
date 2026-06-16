@@ -2756,31 +2756,25 @@ void idRenderWorldLocal::MarkEffectDef(int effectHandle) {
 }
 
 void idRenderWorldLocal::PushEffectDef(int effectHandle) {
-    int num; // edx
-    rvRenderEffectLocal *v3; // edi
+    int num;
+    rvRenderEffectLocal *effect;
 
     num = effectDefs.Num();
     if (effectHandle < 0 || effectHandle >= num) {
-        common->Error(
-                "idRenderWorld::PushEffectDef: invalid handle %i >= %i\n",
-                effectHandle,
-                num);
+        common->Error("idRenderWorld::PushEffectDef: invalid handle %i >= %i\n", effectHandle, num);
     } else {
-        v3 = effectDefs[effectHandle];
-        if (v3) {
-            R_AxisToModelMatrix(v3->parms.axis, v3->parms.origin, v3->modelMatrix);
-            v3->lastModifiedFrameNum = tr.frameCount;
+        effect = effectDefs[effectHandle];
+        if (effect) {
+            R_AxisToModelMatrix(effect->parms.axis, effect->parms.origin, effect->modelMatrix);
+            effect->lastModifiedFrameNum = tr.frameCount;
             ++tr.viewCount;
-            if (v3->world->areaNodes) {
-                idBox box(v3->referenceBounds, v3->parms.origin, v3->parms.axis);
-                PushPolytopeIntoTree_r(NULL, NULL, v3, &box, NULL, 0, 0);
+            if (effect->world->areaNodes) {
+                idBox box(effect->referenceBounds, effect->parms.origin, effect->parms.axis);
+                PushPolytopeIntoTree_r(NULL, NULL, effect, &box, NULL, 0, 0);
                 //++tr.pc.c_numVolumePushes;
             }
         } else {
-            common->Error(
-                    "idRenderWorld::PushEffectDef: handle %i [0, %i] is NULL\n",
-                    effectHandle,
-                    num);
+            common->Error("idRenderWorld::PushEffectDef: handle %i [0, %i] is NULL\n", effectHandle, num);
         }
     }
 }
