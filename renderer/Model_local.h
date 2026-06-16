@@ -613,10 +613,10 @@ private:
 #endif
 
 #ifdef _SPLASHDAMAGE //karin: decal as model
-class idRenderModel_decal : public idRenderModelStatic
+class sdRenderModel_decal : public idRenderModelStatic
 {
 	public:
-		idRenderModel_decal(void)
+		sdRenderModel_decal(void)
 		{ }
 
 		void Reset(void) {

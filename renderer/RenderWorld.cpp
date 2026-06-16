@@ -3822,19 +3822,26 @@ void idRenderWorldLocal::UpdateOcclusionTests( void )
 {
 }
 
-idRenderModelDecal * idRenderModel_decal::Create(void) {
+idRenderModelDecal * sdRenderModel_decal::Create(void) {
 	return idRenderModelDecal::Alloc();
 }
 
 idRenderModel* idRenderWorldLocal::CreateDecalModel() {
 	//karin: must return new idRenderModelStatic, it will be call idRenderWorld::UpdateEntityDef and cause NULL hModel error
 	// it will free by idRenderModelManager::FreeModel when game shutdown
-	return new idRenderModel_decal;
+	return new sdRenderModel_decal;
 }
 
 void idRenderWorldLocal::AddToProjectedDecal( const idFixedWinding& winding, const idVec3 &projectionOrigin, const bool parallel, const idVec4& color, idRenderModel* decalModel, int entityNum, const idMaterial** onlyMaterials, const int numOnlyMaterials ) {
 	if (!decalModel) {
 		common->Warning("idRenderWorld::AddToProjectedDecal: NULL decal model");
+		return;
+	}
+
+	if(entityNum == WORLD_SPAWN_ID)
+	{
+		int startTime = gameEdit->GetGameTime();
+		ProjectDecalOntoWorld(winding, projectionOrigin, parallel, false, tr.defaultMaterial, startTime);
 		return;
 	}
 
@@ -3856,9 +3863,9 @@ void idRenderWorldLocal::AddToProjectedDecal( const idFixedWinding& winding, con
 	idBounds bounds;
 	bounds.FromTransformedBounds(model->Bounds(&def->parms), def->parms.origin, def->parms.axis);
 
-	idRenderModel_decal *decal = static_cast<idRenderModel_decal *>(decalModel);
+	sdRenderModel_decal *decal = static_cast<sdRenderModel_decal *>(decalModel);
 
-	int startTime = idMath::Ftoi(tr.frameShaderTime * 1000.0f);
+	int startTime = gameEdit->GetGameTime();
 	for(int i = 0; i < numOnlyMaterials; i++) {
 		const idMaterial *material = onlyMaterials[i];
 		if(!material)
@@ -3889,7 +3896,7 @@ void idRenderWorldLocal::ResetDecalModel( idRenderModel* model ) {
 	if(!model)
 		return;
 
-	idRenderModel_decal *decal = static_cast<idRenderModel_decal *>(model);
+	sdRenderModel_decal *decal = static_cast<sdRenderModel_decal *>(model);
 	decal->Reset();
 }
 
