@@ -129,7 +129,8 @@ renderprogram game/scopeModel {
 	%> }
 
 	program fragment glsl { <%
-		varying vec2 texCoord0;
+		varying vec2 texCoord0; // WPOS 
+		$define texCoord0 gl_FragCoord.xy // unuse original texCoord0
 		varying vec2 center;
 		varying vec4 color;
 
