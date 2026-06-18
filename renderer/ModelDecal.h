@@ -120,6 +120,9 @@ class idRenderModelDecal
 		// The part of the winding at the front side of both fade planes is not faded.
 		// The parts at the back sides of the fade planes are faded with the given depth.
 		void						AddDepthFadedWinding(const idWinding &w, const idMaterial *decalMaterial, const idPlane fadePlanes[2], float fadeDepth, int startTime);
+#ifdef _SPLASHDAMAGE //karin: decal model
+		friend class sdRenderModelDecal;
+#endif
 };
 
 #endif /* !__MODELDECAL_H__ */

@@ -612,18 +612,4 @@ private:
 // END HUMANHEAD
 #endif
 
-#ifdef _SPLASHDAMAGE //karin: decal as model
-class sdRenderModel_decal : public idRenderModelStatic
-{
-	public:
-		sdRenderModel_decal(void)
-		{ }
-
-		void Reset(void) {
-		}
-
-		class idRenderModelDecal * Create(void);
-};
-#endif
-
 #endif /* !__MODEL_LOCAL_H__ */
