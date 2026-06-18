@@ -24,6 +24,8 @@ static idCVar r_useDitherMask("r_useDitherMask", "0", CVAR_RENDERER | CVAR_BOOL,
 static idCVar r_shaderSkipSpecCubeMaps("r_shaderSkipSpecCubeMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
 static idCVar alphatest_kill("alphatest_kill", "1", CVAR_RENDERER | CVAR_BOOL, "");
 
+static idCVar harm_r_printShaderSource("harm_r_printShaderSource", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "print external converted shader source");
+
 extern void RB_GLSL_ConvertGL2ESVertexShader(idStr &ret, const char *text, int version);
 extern void RB_GLSL_ConvertGL2ESFragmentShader(idStr &ret, const char *text, int version);
 
@@ -297,26 +299,30 @@ void sdRenderProgram::Unbind(const materialStage_t *stage) const
 
 void sdRenderProgram::LoadSource(idStr &vsOut, idStr &fsOut) const
 {
-    common->Printf("Convert GLSL shader %s:\n\n", declRenderProgram->GetName());
+	if (harm_r_printShaderSource.GetBool())
+		common->Printf("Convert GLSL shader %s:\n\n", declRenderProgram->GetName());
     LoadVertexSource(vsOut);
     LoadFragmentSource(fsOut);
 
-	const int Length = 1024; // max is 4096 for idCommon::VPrintf
-    common->Printf("Vertex shader:\n");
-    for (int i = 0; i < vsOut.Length(); i += Length)
-    {
-	    idStr str = vsOut.Mid(i, Length);
-		common->Printf("%s", str.c_str());
-    }
-	common->Printf("\n\n");
-
-	common->Printf("Fragment shader:\n");
-	for (int i = 0; i < fsOut.Length(); i += Length)
+	if (harm_r_printShaderSource.GetBool())
 	{
-		idStr str = fsOut.Mid(i, Length);
-		common->Printf("%s", str.c_str());
+		const int Length = 2048; // max is 4096 for idCommon::VPrintf
+		common->Printf("Vertex shader:\n");
+		for (int i = 0; i < vsOut.Length(); i += Length)
+		{
+			idStr str = vsOut.Mid(i, Length);
+			common->Printf("%s", str.c_str());
+		}
+		common->Printf("\n\n");
+
+		common->Printf("Fragment shader:\n");
+		for (int i = 0; i < fsOut.Length(); i += Length)
+		{
+			idStr str = fsOut.Mid(i, Length);
+			common->Printf("%s", str.c_str());
+		}
+		common->Printf("\n\n");
 	}
-	common->Printf("\n\n");
 }
 
 void sdRenderProgram::LoadVertexSource(idStr &out) const {
@@ -506,13 +512,16 @@ void sdRenderProgram::GetLocations(shaderHandle_t handle)
 	textureUnits.Resize(textureUnits.Num());
 	textureUnits.SetGranularity(1);
 
-	common->Printf("Shader %s: uniforms %d, texture units %d\n", declRenderProgram->GetName(), bindings.Num(), numTextureUnits);
-	for(int i = 0; i < bindings.Num(); i++)
+	if (harm_r_printShaderSource.GetBool())
 	{
-		idStr str = textureUnits[i] >= 0 ? "sampler" : "variant";
-		if(textureUnits[i] >= 0)
-			str.Append(va("(%d)", textureUnits[i]));
-		common->Printf("%2d: %s location %d, %s, %s\n", i, bindingNames[i].c_str(), locations[i], bindings[i] ? "custom" : "builtin", str.c_str());
+		common->Printf("Shader %s: uniforms %d, texture units %d\n", declRenderProgram->GetName(), bindings.Num(), numTextureUnits);
+		for(int i = 0; i < bindings.Num(); i++)
+		{
+			idStr str = textureUnits[i] >= 0 ? "sampler" : "variant";
+			if(textureUnits[i] >= 0)
+				str.Append(va("(%d)", textureUnits[i]));
+			common->Printf("%2d: %s location %d, %s, %s\n", i, bindingNames[i].c_str(), locations[i], bindings[i] ? "custom" : "builtin", str.c_str());
+		}
 	}
 }
 
@@ -820,11 +829,19 @@ void sdRenderProgram::BindImage(const char *name, idImage *image) const
 }
 
 void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const {
-	float texelSize[] = {
-		img ? (float)img->uploadWidth : 0.0f,
-		img ? (float)img->uploadHeight : 0.0f,
-		0.0f,
-		1.0f
-	};
+	float texelSize[4];
+	if (img) {
+		texelSize[0] = (float)img->uploadWidth;
+		texelSize[1] = (float)img->uploadHeight;
+		texelSize[2] = (float)img->sourceWidth;
+		texelSize[3] = (float)img->sourceHeight;
+	}
+	else
+	{
+		texelSize[0] = 0.0f;
+		texelSize[1] = 0.0f;
+		texelSize[2] = 0.0f;
+		texelSize[3] = 0.0f;
+	}
 	BindVector(TEXEL_SIZE_NAME(name), texelSize);
 }

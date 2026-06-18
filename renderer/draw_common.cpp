@@ -652,15 +652,18 @@ static void RB_SetBuiltinProgramEnvironment(void)
 	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
 	pot = globalImages->currentRenderImage->uploadWidth;
 	parm[0] = w;
+	//parm[2] = pot;
 
 	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
 	pot = globalImages->currentRenderImage->uploadHeight;
 	parm[1] = h;
+	//parm[3] = pot;
 
 	// window coord to 0.0 to 1.0 conversion
 	parm[2] = 1.0f / (float)w;
 	parm[3] = 1.0f / (float)h;
 
+	// SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT // 640 480 0.0015625 0.0020833
 	backEnd.parms.currentRenderTexelSize[0] = parm[0];
 	backEnd.parms.currentRenderTexelSize[1] = parm[1];
 	backEnd.parms.currentRenderTexelSize[2] = parm[2];
@@ -742,7 +745,7 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	float parm[4];
 	parm[3] = 1.0;
 
-	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize);
+	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize); // SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT // 640 480 0.0015625 0.0020833
 
 	program->BindVector("postTint", backEnd.parms.postTint);
 	program->BindVector("postSaturationContrast", backEnd.parms.postSaturationContrast);

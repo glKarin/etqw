@@ -587,13 +587,15 @@ void idGLSLShaderManager::R_ExportGLSLShaderSource_f(const idCmdArgs &args)
     const char *vs;
     const char *fs;
     const char *macros;
-    idStr path = NULL;
+    idStr path;
     idStrList target;
 
+#if 0
     if(args.Argc() > 1)
         path = args.Argv(args.Argc() - 1);
+#endif
 
-    for(int i = 1; i < args.Argc() - 1; i++)
+    for(int i = 1; i < args.Argc()/* - 1*/; i++)
     {
         target.Append(args.Argv(i));
     }
