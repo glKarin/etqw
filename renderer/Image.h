@@ -516,10 +516,14 @@ class idImageManager
 		idImage 			*alphaRampImage;				// 0-255 in alpha, 255 in RGB
 		idImage 			*alphaNotchImage;			// 2x1 texture with just 1110 and 1111 with point sampling
 		idImage 			*whiteImage;					// full of 0xff
-#ifdef _SPLASHDAMAGE
+#ifdef _SPLASHDAMAGE //karin: globals built-in images
 	    idImage			    *grayImage;					// full of 0x77
 		idImage 			*blackCubeMapImage;			// RGB is 0, A is 255
 		idImage				*postProcessBuffers[2];
+	    idImage			    *diffusionMaskImage;		// store in alpha bit
+	    idImage			    *cinematicYImage;			// GL_LUMINANCE8
+	    idImage			    *cinematicUImage;			// GL_LUMINANCE8
+	    idImage			    *cinematicVImage;			// GL_LUMINANCE8
 		idImage 			*ImageFromFunctor(const char *name, const idImageGeneratorFunctorBase *generatorFunctor);
 #endif
 		idImage 			*blackImage;					// full of 0x00
