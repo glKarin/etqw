@@ -251,6 +251,8 @@ bool sdRenderModelClust::ParseBinary(void)
         }
     }
 
+    fileSystem->CloseFile(file);
+
     bounds.Clear();
     for (int i = 0; i < surfaces.Num(); i++) {
         bounds.AddBounds(surfaces[i].GetBounds());
