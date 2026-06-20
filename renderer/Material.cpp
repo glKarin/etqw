@@ -5054,6 +5054,7 @@ materialStage_t * idMaterial::AllocAndCopyStage(const materialStage_t *ss)
 	newSS->textureMatrices = NULL;
 	//karin: don't keep alpha test if not diffuse map
 	newSS->hasAlphaTest = false;
+	//newSS->ignoreAlphaTest = true;
 
 	return newSS;
 }

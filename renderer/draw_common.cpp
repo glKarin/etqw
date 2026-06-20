@@ -845,6 +845,53 @@ void RB_QueryOcclusionTesting(void)
 	occlusionTestManager->Ready();
 }
 
+// postprocess buffer width and height is 1/4
+ID_INLINE static void RB_BeginDrawPostprocess(int destinationBuffer)
+{
+	postprocessBuffer.Begin(destinationBuffer);
+#if 1
+	// set the window clipping
+	qglViewport(0, 0, postprocessBuffer.RenderWidth(), postprocessBuffer.RenderHeight());
+	// the scissor may be smaller than the viewport for subviews
+	if (r_useScissor.GetBool())
+		qglScissor(0, 0, postprocessBuffer.RenderWidth(), postprocessBuffer.RenderHeight());
+#else
+	// set the window clipping
+	qglViewport(tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
+			tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
+			(backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1) * 0.25f,
+			(backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1) * 0.25f);
+
+	// the scissor may be smaller than the viewport for subviews
+	if (r_useScissor.GetBool()) {
+		qglScissor(tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				(backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1) * 0.25f,
+				(backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1) * 0.25f);
+	}
+#endif
+}
+
+ID_INLINE static void RB_EndDrawPostprocess(void)
+{
+	postprocessBuffer.End();
+
+	// set the window clipping
+	qglViewport(tr.viewportOffset[0] + backEnd.viewDef->viewport.x1,
+			tr.viewportOffset[1] + backEnd.viewDef->viewport.y1,
+			backEnd.viewDef->viewport.x2 + 1 - backEnd.viewDef->viewport.x1,
+			backEnd.viewDef->viewport.y2 + 1 - backEnd.viewDef->viewport.y1);
+
+	// the scissor may be smaller than the viewport for subviews
+	if (r_useScissor.GetBool()) {
+		qglScissor(tr.viewportOffset[0] + backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1,
+				tr.viewportOffset[1] + backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
+				backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
+				backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1);
+	}
+}
+
+
 extern void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs );
 #endif
 
@@ -1058,8 +1105,10 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 			if(pStage->destinationBuffer != -1)
 			{
-				postprocessBuffer.Begin(pStage->destinationBuffer);
+				RB_BeginDrawPostprocess(pStage->destinationBuffer);
 			}
+
+			GL_State( pStage->drawStateBits );
 
 			int oldDrawBits = renderProgram->SetupState();
 
@@ -1094,7 +1143,6 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			color[1] = regs[ pStage->color.registers[1] ];
 			color[2] = regs[ pStage->color.registers[2] ];
 			color[3] = regs[ pStage->color.registers[3] ];
-#ifdef _SPLASHDAMAGE //karin: fade by distance
 			if (surf->space->fadeFraction > 0.0f) {
 				const float fade = 1.0f - surf->space->fadeFraction;
 				color[0] *= fade;
@@ -1102,10 +1150,8 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				color[2] *= fade;
 				color[3] *= fade;
 			}
-#endif
-			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
 
-			GL_State( pStage->drawStateBits );
+			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
 
 			if((backEnd.glState.glStateBits & GLS_POLYMODE_LINE) == 0)
 				RB_DrawElementsWithCounters( tri );
@@ -1129,7 +1175,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 			if(pStage->destinationBuffer != -1)
 			{
-				postprocessBuffer.End();
+				RB_EndDrawPostprocess();
 			}
 
 			renderProgram->Unbind(pStage);
@@ -1355,7 +1401,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 #ifdef _SPLASHDAMAGE //karin: postprocess buffer
 		if(pStage->destinationBuffer != -1)
 		{
-			postprocessBuffer.Begin(pStage->destinationBuffer);
+			RB_BeginDrawPostprocess(pStage->destinationBuffer);
 		}
 #endif
 
@@ -1475,7 +1521,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 #ifdef _SPLASHDAMAGE //karin: postprocess buffer
 		if(pStage->destinationBuffer != -1)
 		{
-			postprocessBuffer.End();
+			RB_EndDrawPostprocess();
 		}
 #endif
 	}

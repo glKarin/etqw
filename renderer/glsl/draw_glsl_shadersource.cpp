@@ -256,6 +256,8 @@ void RB_GLSL_ConvertGL2ESVertexShader(idStr &ret, const char *text, int version)
 
     ret += "uniform lowp vec4 u_glColor;\n";
     ret += "uniform highp mat4 u_modelViewProjectionMatrix;\n";
+	//ret += "uniform lowp float u_colorModulate; // 0 or 1/255\n";
+	//ret += "uniform lowp float u_colorAdd; // 0 or 1\n";
     ret += "\n";
 
     ret += source;

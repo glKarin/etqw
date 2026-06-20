@@ -19,11 +19,11 @@ sdPostprocessBuffer::sdPostprocessBuffer()
     }
 }
 
-bool sdPostprocessBuffer::Init(int w, int h)
+bool sdPostprocessBuffer::Init(int w, int h, float scale)
 {
 	if(fb)
 	{
-		if(w != width || h != height)
+		if(w != fb->Width() || h != fb->Height())
 		{
 			Shutdown();
 		}
@@ -33,9 +33,17 @@ bool sdPostprocessBuffer::Init(int w, int h)
 		}
 	}
 
-	width = w;
-	height = h;
-	fb = new idFramebuffer("sdPostprocessBuffer", width, height);
+	if(scale == 1.0f)
+	{
+		width = w;
+		height = h;
+	}
+	else
+	{
+		width = idMath::Ftoi((float)w * scale);
+		height = idMath::Ftoi((float)h * scale);
+	}
+	fb = new idFramebuffer("sdPostprocessBuffer", w, h);
 	for(int k = 0; k < sizeof(globalImages->postProcessBuffers) / sizeof(globalImages->postProcessBuffers[0]); k++)
 	{
 		images[k] = globalImages->GetImage(va("_postProcessBuffer_%d", k));
@@ -79,14 +87,14 @@ void sdPostprocessBuffer::Begin(int index)
 void sdPostprocessBuffer::UploadImage(void) const
 {
     assert(currentBuffer != -1 && images[currentBuffer]);
-	if(images[currentBuffer]->uploadWidth < width || images[currentBuffer]->uploadHeight < height)
+	if(images[currentBuffer]->uploadWidth < fb->Width() || images[currentBuffer]->uploadHeight < fb->Height())
 	{
-		int nw = MakePowerOfTwo(width);
-		int nh = MakePowerOfTwo(height);
+		int nw = MakePowerOfTwo(fb->Width());
+		int nh = MakePowerOfTwo(fb->Height());
 		byte *pic = (byte *)Mem_ClearedAlloc(nw * nh * 4);
 		images[currentBuffer]->GenerateImage(pic, nw, nh, TF_LINEAR, false, TR_CLAMP, TD_HIGH_QUALITY);
-		images[currentBuffer]->sourceWidth = width;
-		images[currentBuffer]->sourceHeight = height;
+		images[currentBuffer]->sourceWidth = fb->Width();
+		images[currentBuffer]->sourceHeight = fb->Height();
 		Mem_Free(pic);
 	}
 }
@@ -101,22 +109,22 @@ void sdPostprocessBuffer::End(void)
 	*/
 #if 0
 	static idCVar ppp("ppp", "0", 0, "");
-	int width = images[currentBuffer]->uploadWidth;
-	int height = images[currentBuffer]->uploadHeight;
+	int w = images[currentBuffer]->uploadWidth;
+	int h = images[currentBuffer]->uploadHeight;
 	if (ppp.GetBool())
 	{
 		GLint packAlign;
 		qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 		qglPixelStorei(GL_PACK_ALIGNMENT, 1);	// otherwise small rows get padded to 32 bits
 
-		byte *data = (byte *)malloc(width * height * 4);
-		qglReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		byte *data = (byte *)malloc(w * h * 4);
+		qglReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		qglPixelStorei(GL_PACK_ALIGNMENT, packAlign);	// otherwise small rows get padded to 32 bits
 
-		extern void R_WritePNG(const char *filename, const byte *data, int width, int height, int comp, bool flipVertical = false, int quality = 100, const char *basePath = NULL);
-		//R_WritePNG(va("texturesxxx/%d_%d.png", tr.frameCount, currentBuffer), data, width, height,4);
+		extern void R_WritePNG(const char *filename, const byte *data, int w, int h, int comp, bool flipVertical = false, int quality = 100, const char *basePath = NULL);
+		//R_WritePNG(va("texturesxxx/%d_%d.png", tr.frameCount, currentBuffer), data, w, h, 4);
 
-		//fileSystem->WriteTGA(va("texturesxxx/%d_%d.tga", tr.frameCount, currentBuffer), data, width, height);
+		//fileSystem->WriteTGA(va("texturesxxx/%d_%d.tga", tr.frameCount, currentBuffer), data, w, h);
 		free(data);
 	}
 #endif
@@ -130,14 +138,14 @@ void sdPostprocessBuffer::End(void)
 		qglGetIntegerv(GL_PACK_ALIGNMENT, &packAlign);
 		qglPixelStorei(GL_PACK_ALIGNMENT, 1);	// otherwise small rows get padded to 32 bits
 
-		byte *data = (byte *)malloc(width * height * 4);
-		qglReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		byte *data = (byte *)malloc(w * h * 4);
+		qglReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		qglPixelStorei(GL_PACK_ALIGNMENT, packAlign);	// otherwise small rows get padded to 32 bits
 
-		extern void R_WritePNG(const char *filename, const byte *data, int width, int height, int comp, bool flipVertical = false, int quality = 100, const char *basePath = NULL);
-		//R_WritePNG(va("texturesxxx/%d_%d.png", tr.frameCount, currentBuffer), data, width, height,4);
+		extern void R_WritePNG(const char *filename, const byte *data, int w, int h, int comp, bool flipVertical = false, int quality = 100, const char *basePath = NULL);
+		//R_WritePNG(va("texturesxxx/%d_%d.png", tr.frameCount, currentBuffer), data, w, h,4);
 
-		fileSystem->WriteTGA(va("texturesxxx/%d_%d.tga", tr.frameCount, currentBuffer), data, width, height);
+		fileSystem->WriteTGA(va("texturesxxx/%d_%d.tga", tr.frameCount, currentBuffer), data, w, h);
 		free(data);
 	}
 #endif

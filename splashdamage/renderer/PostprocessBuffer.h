@@ -12,14 +12,14 @@ class sdPostprocessBuffer
         void				Begin(int index);
         void				End(void);
 		void				Clear(void) const;
-		bool				Init(int width, int height);
+		bool				Init(int width, int height, float scale = 1.0f);
 		void				Shutdown(void);
 		uint32_t			GetFramebuffer(void) const;
         // framebuffer size
-        int					Width(void) const {
+        int					RenderWidth(void) const {
             return width;
         }
-        int					Height(void) const {
+        int					RenderHeight(void) const {
             return height;
         }
         // texture size
