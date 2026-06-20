@@ -1289,8 +1289,8 @@ bool R_LoadHalfSphereToCube(const char *imgName, byte *pics[6], int *outSize, ID
 		idStr filename="half/";
 		filename.Append(imgName);
 		filename.StripFileExtension();
-		filename.Append(va("_%d.tga", side));
-		R_WriteTGA(filename, *pic, scaled_height, scaled_height, false);
+		filename.Append(va("_%d.png", side));
+		R_WritePNG(filename, *pic, scaled_height, scaled_height, 4);
 #endif
 	}
 	Mem_Free(block);

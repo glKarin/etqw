@@ -342,6 +342,18 @@ static void R_BlackImage(idImage *image)
 
 	// solid black texture
 	memset(data, 0, sizeof(data));
+#ifdef _SPLASHDAMAGE //karin: fill alpha bit to 1.0 for console background material. it not necessary in OpenGL, but it is fully transparent in OpenGLES
+#if !defined(__ANDROID__)
+	if(!USING_GL)
+#endif
+	for (int y = 0; y < DEFAULT_SIZE; y++)
+	{
+		for (int x = 0; x < DEFAULT_SIZE; x++)
+		{
+			data[y][x][3] = 255;
+		}
+	}
+#endif
 	image->GenerateImage((byte *)data, DEFAULT_SIZE, DEFAULT_SIZE,
 	                     TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT);
 }
