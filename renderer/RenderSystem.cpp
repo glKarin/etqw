@@ -570,7 +570,11 @@ void idRenderSystemLocal::DrawSmallStringExt(int x, int y, const char *string, c
 				if (*(s+1) == C_COLOR_DEFAULT) {
 					SetColor(setColor);
 				} else {
+#ifdef _SPLASHDAMAGE
+					color = idStr::ColorForChar(*(s+1));
+#else
 					color = idStr::ColorForIndex(*(s+1));
+#endif
 					color[3] = setColor[3];
 					SetColor(color);
 				}
@@ -649,7 +653,11 @@ void idRenderSystemLocal::DrawBigStringExt(int x, int y, const char *string, con
 				if (*(s+1) == C_COLOR_DEFAULT) {
 					SetColor(setColor);
 				} else {
+#ifdef _SPLASHDAMAGE
+					color = idStr::ColorForChar(*(s+1));
+#else
 					color = idStr::ColorForIndex(*(s+1));
+#endif
 					color[3] = setColor[3];
 					SetColor(color);
 				}

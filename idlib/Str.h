@@ -451,6 +451,8 @@ class idStr
 		static int			ColorIndex(int c);
 		static idVec4 		&ColorForIndex(int i);
 #ifdef _SPLASHDAMAGE
+		static int			ColorChar(int c);
+		static const idVec4&ColorForChar( int c );
     	static bool			CharIsHex( int c );
     	static const char*	StrForColorIndex( int i );
     	static int			HexForChar( int c );
@@ -1503,6 +1505,11 @@ ID_INLINE int idStr::HexForChar( int c )
 ID_INLINE bool idStr::IsValidEmailAddress( void )
 {
     return IsValidEmailAddress( data );
+}
+
+ID_INLINE int idStr::ColorChar(int c)
+{
+    return ( c & COLOR_BITS ) + '0';
 }
 #endif
 

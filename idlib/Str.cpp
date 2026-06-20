@@ -220,6 +220,15 @@ idVec4 &idStr::ColorForIndex(int i)
 #ifdef _SPLASHDAMAGE
 /*
 ============
+idStr::ColorForChar
+============
+*/
+const idVec4& idStr::ColorForChar( int c ) {
+	return g_color_table[ ColorIndex( c ) ].color;
+}
+
+/*
+============
 idStr::StrForColorIndex
 ============
 */
