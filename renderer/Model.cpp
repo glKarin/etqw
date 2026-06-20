@@ -6131,11 +6131,7 @@ bool idRenderModelStatic::LoadModelBinary(const char *fileName)
 		modelSurface_t surf;
 		surf.id = i;
 		surf.geometry = tri;
-#ifdef _SPLASHDAMAGE
 		surf.material = declManager->FindMaterial(shader);
-#else
-		surf.shader = declManager->FindMaterial(shader);
-#endif
 		AddSurface(surf);
 	}
 

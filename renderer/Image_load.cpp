@@ -319,6 +319,18 @@ void idImage::SetImageFilterAndRepeat() const
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			break;
+		case TR_MIRROR:
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			break;
+		case TR_MIRROR_X:
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			break;
+		case TR_MIRROR_Y:
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			qglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+			break;
 #endif
 		default:
 			common->FatalError("R_CreateImage: bad texture repeat");
@@ -2884,6 +2896,15 @@ void idImage::Print() const
 			break;
 		case TR_CLAMP_Y:
 			common->Printf("clpy ");
+			break;
+		case TR_MIRROR:
+			common->Printf("mir ");
+			break;
+		case TR_MIRROR_X:
+			common->Printf("mirx ");
+			break;
+		case TR_MIRROR_Y:
+			common->Printf("miry ");
 			break;
 #endif
 		default:

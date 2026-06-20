@@ -81,6 +81,9 @@ typedef enum {
 	,
 	TR_CLAMP_X,				// only clamp x direction
 	TR_CLAMP_Y,				// only clamp y direction
+	TR_MIRROR,
+	TR_MIRROR_X,
+	TR_MIRROR_Y,
 #endif
 } textureRepeat_t;
 
