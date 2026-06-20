@@ -32,7 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 
 #ifdef _SPLASHDAMAGE //karin: vis dist check
-extern  idCVar harm_r_skipVisDistCheck;
+extern idCVar harm_r_skipVisDistCheck;
+extern idCVar harm_r_visDistCheckType;
 #endif
 
 /*
@@ -1469,8 +1470,28 @@ void idInteraction::AddActiveInteraction(void)
 		&& !entityDef->parms.imposter //karin: using imposter if too far
 		&& !harm_r_skipVisDistCheck.GetBool())
 	{
-		idVec3 origin = entityDef->GetVisDistOrigin();
-		float distance = tr.viewDef->renderView.vieworg.Dist(origin);
+		float distance;
+		if(harm_r_visDistCheckType.GetInteger() == 0)
+		{
+			idBounds bounds = entityDef->GetVisDistWorldBounds(model);
+			distance = bounds.ShortestDistance(tr.viewDef->renderView.vieworg);
+			//session->rw->DebugBounds(colorGreen, bounds, vec3_origin, 1);
+		}
+		else if(harm_r_visDistCheckType.GetInteger() == 2)
+		{
+			idBounds bounds = entityDef->GetVisDistWorldBounds(model);
+			idVec3 center = bounds.GetCenter();
+			distance = tr.viewDef->renderView.vieworg.Dist(center) - bounds.GetRadius(center);
+			//idBounds b(center);
+			//b.ExpandSelf(bounds.GetRadius(center));
+			//session->rw->DebugBounds(colorRed, b, vec3_origin, 1);
+		}
+		else
+		{
+			idVec3 origin = entityDef->GetVisDistOrigin();
+			distance = tr.viewDef->renderView.vieworg.Dist(origin);
+		}
+
 		if (entityDef->parms.minVisDist > 0.0f && distance < entityDef->parms.minVisDist)
 			return;
 		if (entityDef->parms.maxVisDist > 0.0f)

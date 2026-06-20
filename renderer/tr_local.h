@@ -427,6 +427,7 @@ public:
 		void					UpdateInstanceList(void);
 		void					FreeInstanceList(void);
 		idVec3					GetVisDistOrigin(void) const;
+		idBounds				GetVisDistWorldBounds(idRenderModel *model) const;
 #endif
 };
 

@@ -278,4 +278,47 @@ idVec3 idRenderEntityLocal::GetVisDistOrigin(void) const
 
 	return origin;
 }
+
+idBounds idRenderEntityLocal::GetVisDistWorldBounds(idRenderModel *model) const
+{
+	if(!model/* && !parms.callback*/)
+		model = parms.hModel;
+
+	if (model)
+	{
+		if(!idStr::Icmpn(model->Name(), "_lodentity_", 11))
+		{
+			if(parms.flags.pushByCenter && !parms.origin.IsZero())
+			{
+				idBounds bounds = model->Bounds(&parms);
+				bounds.RotateSelf(parms.axis);
+				bounds.TranslateSelf(parms.origin);
+				return bounds;
+			}
+			else
+			{
+				if(parms.flags.overridenBounds)
+					return model->Bounds(&parms);
+				else
+					return parms.bounds;
+			}
+		}
+		else if(!idStr::Icmpn(model->Name(), "_area", 5))
+		{
+			return model->Bounds(&parms);
+		}
+		else
+		{
+			idBounds bounds = model->Bounds(&parms);
+			bounds.RotateSelf(parms.axis);
+			bounds.TranslateSelf(parms.origin);
+			return bounds;
+		}
+	}
+	else // parms.callback != NULL
+	{
+		return parms.bounds;
+	}
+}
+
 #endif

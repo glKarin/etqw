@@ -33,6 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef _SPLASHDAMAGE //karin: vis dist check
 idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
+idCVar harm_r_visDistCheckType("harm_r_visDistCheckType", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "entity visible distance check type. 0 = bounds, 1 = origin, 2 = sphere", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
 idCVar harm_r_drawVisDistCheck("harm_r_drawVisDistCheck", "0", CVAR_INTEGER | CVAR_RENDERER, "draw entity visible distance check");
 idCVar harm_r_visDistLightFallOff("harm_r_visDistLightFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "light fade by view distance");
 idCVar harm_r_visDistEntityFallOff("harm_r_visDistEntityFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "entity fade by view distance");
@@ -807,10 +808,31 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 			&& !entity->parms.imposter //karin: using imposter if too far
 			&& !harm_r_skipVisDistCheck.GetBool()) 
 		{
-			idVec3 origin = entity->GetVisDistOrigin();
-			float distance = tr.viewDef->renderView.vieworg.Dist(origin);
+			float distance;
+			if(harm_r_visDistCheckType.GetInteger() == 0)
+			{
+				idBounds bounds = entity->GetVisDistWorldBounds(NULL);
+				distance = bounds.ShortestDistance(tr.viewDef->renderView.vieworg);
+				session->rw->DebugBounds(colorGreen, bounds, vec3_origin, 1);
+			}
+			else if(harm_r_visDistCheckType.GetInteger() == 2)
+			{
+				idBounds bounds = entity->GetVisDistWorldBounds(NULL);
+				idVec3 center = bounds.GetCenter();
+				distance = tr.viewDef->renderView.vieworg.Dist(center) - bounds.GetRadius(center);
+				//idBounds b(center);
+				//b.ExpandSelf(bounds.GetRadius(center));
+				//session->rw->DebugBounds(colorRed, b, vec3_origin, 1);
+			}
+			else
+			{
+				idVec3 origin = entity->GetVisDistOrigin();
+				distance = tr.viewDef->renderView.vieworg.Dist(origin);
+			}
+
 			if(harm_r_drawVisDistCheck.GetInteger() & 1)
 			{
+				idVec3 origin = entity->GetVisDistOrigin();
 				const idVec4 *color;
 				if ((entity->parms.minVisDist > 0.0f && distance < entity->parms.minVisDist) || (entity->parms.maxVisDist > 0.0f && distance > entity->parms.maxVisDist))
 					color = &colorRed;
@@ -880,9 +902,25 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 				float fadeRange = range * harm_r_visDistFalloff.GetFloat();
 #endif
 				float nofadeRange = range - fadeRange;
-				idVec3 origin = entity->GetVisDistOrigin();
-				float distance = tr.viewDef->renderView.vieworg.Dist(origin);
+				float distance;
+				if(harm_r_visDistCheckType.GetInteger() == 0)
+				{
+					idBounds bounds = entity->GetVisDistWorldBounds(NULL);
+					distance = bounds.ShortestDistance(tr.viewDef->renderView.vieworg);
+				}
+				else if(harm_r_visDistCheckType.GetInteger() == 2)
+				{
+					idBounds bounds = entity->GetVisDistWorldBounds(NULL);
+					idVec3 center = bounds.GetCenter();
+					distance = tr.viewDef->renderView.vieworg.Dist(center) - bounds.GetRadius(center);
+				}
+				else
+				{
+					idVec3 origin = entity->GetVisDistOrigin();
+					distance = tr.viewDef->renderView.vieworg.Dist(origin);
+				}
 				distance -= entity->parms.minVisDist;
+
 				if (distance > nofadeRange) {
 					vEnt->fadeFraction = /*1.0f - */idMath::ClampFloat(0.0f, 1.0f, (distance - nofadeRange) / fadeRange);
 					// fade = 1.0 - fadeFraction, so 0.0 is full light
