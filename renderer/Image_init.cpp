@@ -343,7 +343,7 @@ static void R_BlackImage(idImage *image)
 	// solid black texture
 	memset(data, 0, sizeof(data));
 #ifdef _SPLASHDAMAGE //karin: fill alpha bit to 1.0 for console background material. it not necessary in OpenGL, but it is fully transparent in OpenGLES
-#if !defined(__ANDROID__)
+#if 0 // !defined(__ANDROID__)
 	if(!USING_GL)
 #endif
 	for (int y = 0; y < DEFAULT_SIZE; y++)
@@ -478,6 +478,27 @@ void R_Luminance8Image(idImage *image)
 	image->GenerateImage((byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT);
 }
 
+static void R_ImageProgramStringToCompressedFileName_f(const idCmdArgs &args)
+{
+	if (args.Argc() < 2) {
+		common->Printf("usage: %s <image program>\n", args.Argv(0));
+		return;
+	}
+
+	idStr program;
+	for (int i = 1; i < args.Argc(); i++)
+	{
+		program.Append(args.Argv(i));
+		program.Append(" ");
+	}
+	program.StripTrailingWhiteSpace();
+
+	idImage image;
+	char	filename[MAX_IMAGE_NAME] = {0};
+	image.ImageProgramStringToCompressedFileName(program, filename);
+	common->Printf("Image program: %s\n", program.c_str());
+	common->Printf("Compressed file name: %s\n", filename);
+}
 #endif
 
 
@@ -2450,6 +2471,9 @@ void idImageManager::Init()
 	cmdSystem->AddCommand("reloadImages", R_ReloadImages_f, CMD_FL_RENDERER, "reloads images");
 	cmdSystem->AddCommand("listImages", R_ListImages_f, CMD_FL_RENDERER, "lists images");
 	cmdSystem->AddCommand("combineCubeImages", R_CombineCubeImages_f, CMD_FL_RENDERER, "combines six images for roq compression");
+#ifdef _SPLASHDAMAGE
+	cmdSystem->AddCommand("imageProgramStringToCompressedFileName", R_ImageProgramStringToCompressedFileName_f, CMD_FL_RENDERER, "print compressed image name from raw image program");
+#endif
 
 	// should forceLoadImages be here?
 #ifdef _SHADOW_MAPPING
