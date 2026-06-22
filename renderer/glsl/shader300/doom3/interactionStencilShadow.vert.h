@@ -41,7 +41,6 @@ GLSL_SHADER const char ES3_INTERACTION_STENCIL_SHADOW_VERT[] =
 "uniform vec4 u_lightProjectionQ;\n"
 "uniform lowp float u_colorModulate; // 0 or 1/255\n"
 "uniform lowp float u_colorAdd; // 0 or 1\n"
-"uniform lowp vec4 u_glColor;\n"
 "\n"
 "uniform vec4 u_lightOrigin;\n"
 "uniform vec4 u_viewOrigin;\n"
