@@ -1125,10 +1125,10 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			}
 
 			// set the color([0, 255])
-			color[0] = regs[ pStage->color.registers[0] ] * 255.0f;
-			color[1] = regs[ pStage->color.registers[1] ] * 255.0f;
-			color[2] = regs[ pStage->color.registers[2] ] * 255.0f;
-			color[3] = regs[ pStage->color.registers[3] ] * 255.0f;
+			color[0] = regs[ pStage->color.registers[0] ];
+			color[1] = regs[ pStage->color.registers[1] ];
+			color[2] = regs[ pStage->color.registers[2] ];
+			color[3] = regs[ pStage->color.registers[3] ];
 			if (surf->space->fadeFraction > 0.0f) {
 				const float fade = 1.0f - surf->space->fadeFraction;
 				color[0] *= fade;
@@ -1139,6 +1139,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 			switch (pStage->vertexColor) {
 			case SVC_MODULATE:
+				// glColorPointer() -> vertex.color(UB[0,255]) * (1.0/255.0) + 0.0 -> output float [0,1]
 				renderProgram->BindVector("colorModulate", oneModulate[0]);
 				renderProgram->BindVector("colorAdd", zero[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
@@ -1146,6 +1147,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				renderProgram->BindVector("u_glColor", zero[0]);
 				break;
 			case SVC_INVERSE_MODULATE:
+				// glColorPointer() -> vertex.color(UB[0,255]) * -(1.0/255.0) + 0.0 -> output float [-1,0]
 				renderProgram->BindVector("colorModulate", negOneModulate[0]);
 				renderProgram->BindVector("colorAdd", one[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
@@ -1154,11 +1156,12 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				break;
 			case SVC_IGNORE:
 			default:
+				// glColor() -> vertex.color(UB[0,255]) * 0.0 + glColor -> output float [0,1]
 				renderProgram->BindVector("colorModulate", zero[0]);
-				renderProgram->BindVector("colorAdd", one[0]);
+				renderProgram->BindVector("colorAdd", color);
 				// glColor() -> vertex.color(UB[0,255]) * 0.0 + glColor -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", zero[0]);
-				renderProgram->BindVector("u_glColor", color);
+				renderProgram->BindVector("u_glColor", color[0] * 255.0f, color[1] * 255.0f, color[2] * 255.0f, color[3] * 255.0f);
 				break;
 			}
 
