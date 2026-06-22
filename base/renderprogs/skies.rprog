@@ -410,7 +410,7 @@ renderProgram skies/skybox {
 			R0.x = dot ( $positionAttrib , $diffuseMatrix_s );
 			R0.y = dot ( $positionAttrib , $diffuseMatrix_t );
 			R0.zw = $positionAttrib.zw;
-			var_Color = BYTE_COLOR($colorAttrib);
+			var_Color =  VERTEX_BYTE_COLOR( $colorAttrib );
 			var_TexCoord = $texCoordAttrib;
 			gl_Position = u_modelViewProjectionMatrix * R0;
 		}

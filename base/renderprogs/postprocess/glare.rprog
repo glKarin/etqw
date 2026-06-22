@@ -21,7 +21,7 @@ renderProgram postprocess/downsample {
 			texCoord1 = coord + vec2(2.0, 0.0);
 			texCoord2 = coord + vec2(2.0, 2.0);
 			texCoord3 = coord + vec2(0.0, 2.0);
-			col = BYTE_COLOR($colorAttrib);
+			col = VERTEX_BYTE_COLOR($colorAttrib);
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }

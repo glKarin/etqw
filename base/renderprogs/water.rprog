@@ -54,7 +54,7 @@ renderProgram water/simple_cube {
 			var_TexCoord5.x = dot ( $tangentAttrib.xyz , $transposedModelMatrix_z.xyz );
 			var_TexCoord5.y = dot ( bitangent.xyz , $transposedModelMatrix_z.xyz );
 			var_TexCoord5.z = dot ( $normalAttrib.xyz , $transposedModelMatrix_z.xyz );
-			var_Color = BYTE_COLOR($colorAttrib);
+			var_Color = VERTEX_BYTE_COLOR($colorAttrib);
 			// this doesn't even change per vertex so don't bother to calculate it per pixel 
 			// texture 1 takes the deform magnitude and scales it by the projection distance 
 			vec4 vec = vec4(1.0,0.0,0.0,1.0);

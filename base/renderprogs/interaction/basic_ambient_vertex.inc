@@ -58,7 +58,7 @@ $else
 	mat4 mvp = u_modelViewProjectionMatrix;
 	oPos = gl_Position;
 	// Transform the vertex to clip coordinates.
-	R0.x = parameters.x * BYTE_COLOR( $colorAttrib.w );
+	R0.x = parameters.x * VERTEX_BYTE_COLOR( $colorAttrib.w );
 	_pos.xyz = R0.x * $normalAttrib + $positionAttrib;
 	_pos.w = $positionAttrib.w;
 	oPos.x = dot ( mvp[0], _pos );

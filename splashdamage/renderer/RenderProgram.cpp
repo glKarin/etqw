@@ -420,6 +420,10 @@ void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
 		cvar = cvarSystem->Find(CvarMacros[i]);
 		InsertMacro(buf, CvarMacros[i], cvar ? cvar->GetString() : "0");
 	}
+
+	//karin: glColorPointer/glColor
+	InsertMacro(buf, "VERTEX_COLOR(x)", "( ( x ) * u_glColorPointer + u_glColor4ub )");
+	InsertMacro(buf, "VERTEX_BYTE_COLOR(x)", "BYTE_COLOR( VERTEX_COLOR( x ) )");
 }
 
 void sdRenderProgram::InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
@@ -473,14 +477,23 @@ void sdRenderProgram::InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDec
 
 void sdRenderProgram::InsertBindings(sdStringBuilder_Heap &buf, const sdRenderProgramShader *shader) const {
     const sdDeclRenderBinding *binding;
+	const char *name;
+	idList<idStr> appendList;
 
     for (int i = 0; i < shader->NumBindings(); i++) {
         binding = shader->GetBinding(i);
+    	name = shader->GetPlaceholder(i);
 		if(binding)
-			InsertBinding(buf, binding, shader->GetPlaceholder(i));
+			InsertBinding(buf, binding, name);
 		else
-			InsertBuiltinBinding(buf, shader->GetPlaceholder(i));
+			InsertBuiltinBinding(buf, name);
+    	appendList.Append(name);
     }
+
+	if (appendList.FindIndex("u_glColorPointer") == -1)
+		InsertBuiltinBinding(buf, "u_glColorPointer");
+	if (appendList.FindIndex("u_glColor4ub") == -1)
+		InsertBuiltinBinding(buf, "u_glColor4ub");
 }
 
 void sdRenderProgram::GetLocations(shaderHandle_t handle)
@@ -677,6 +690,8 @@ GLint sdRenderProgram::GetBindingLocation(const sdDeclRenderBinding *binding) co
 void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char *rawName) const {
 	const char *Builtin_Variables[] = {
 		"currentRenderTexelSize",
+		"u_glColorPointer", // using vertex color by glColorPointer
+		"u_glColor4ub", // using uniform color by glColor
 	};
 	for (int i = 0; i < sizeof(Builtin_Variables) / sizeof(Builtin_Variables[0]); i++) {
 		if(!idStr::Icmp(rawName, Builtin_Variables[i])) {
@@ -684,6 +699,7 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 			return;
 		}
 	}
+
 	const char *BuiltinMat4_Variables[] = {
 		"u_projectionMatrix",
 		"u_modelViewMatrix",
@@ -698,6 +714,7 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 			return;
 		}
 	}
+
 	int index = idStr::FindText(rawName, TEXEL_SIZE_SUFFIX);
 	if(index == -1 || index != idStr::Length(rawName) - idStr::Length(TEXEL_SIZE_SUFFIX))
 		common->Warning("sdRenderProgram::InsertBuiltinBinding: unknown render built-in binding '%s'", rawName);
@@ -833,15 +850,13 @@ void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const 
 	if (img) {
 		texelSize[0] = (float)img->uploadWidth;
 		texelSize[1] = (float)img->uploadHeight;
-		texelSize[2] = (float)img->sourceWidth;
-		texelSize[3] = (float)img->sourceHeight;
 	}
 	else
 	{
 		texelSize[0] = 0.0f;
 		texelSize[1] = 0.0f;
-		texelSize[2] = 0.0f;
-		texelSize[3] = 0.0f;
 	}
+	texelSize[2] = 0.0f;
+	texelSize[3] = 1.0f;
 	BindVector(TEXEL_SIZE_NAME(name), texelSize);
 }

@@ -741,9 +741,10 @@ void RB_CopyParms(const void *data)
 	backEnd.parms = cmd->parms;
 }
 
-static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf, const shaderStage_t *pStage)
+static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf)
 {
 	float parm[4];
+
 	parm[3] = 1.0;
 
 	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize); // SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT // 640 480 0.0015625 0.0020833
@@ -759,23 +760,7 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindVector("sunDirection", localSunDir);
 	program->BindVector("ambientBrightness", backEnd.parms.ambientBrightness);
 	program->BindVector("ambientAvgColor", backEnd.parms.ambientAvgColor);
-	program->BindVector("ambientScale", vec3_one);
-
-	switch (pStage->vertexColor) {
-		case SVC_MODULATE:
-			program->BindVector("colorModulate", oneModulate[0]);
-			program->BindVector("colorAdd", zero[0]);
-			break;
-		case SVC_INVERSE_MODULATE:
-			program->BindVector("colorModulate", negOneModulate[0]);
-			program->BindVector("colorAdd", one[0]);
-			break;
-		case SVC_IGNORE:
-		default:
-			program->BindVector("colorModulate", zero[0]);
-			program->BindVector("colorAdd", one[0]);
-			break;
-	}
+	program->BindVector("ambientScale", backEnd.parms.ambientScale);
 
     idMat4 modelMatrix;
     memcpy(&modelMatrix, surf->space->modelMatrix, sizeof(modelMatrix));
@@ -1124,7 +1109,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				RB_SetBuiltinProgramEnvironment();
 
 				// bind builtin program variables
-				RB_BindBuiltinProgramEnvironment(renderProgram, surf, pStage);
+				RB_BindBuiltinProgramEnvironment(renderProgram, surf);
 
 				// set standard transformations
 				GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), rb_MVP);
@@ -1139,11 +1124,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				materialBuiltinVariablesLoaded.Append(renderProgram->GetShaderProgram());
 			}
 
-			// set the color
-			color[0] = regs[ pStage->color.registers[0] ];
-			color[1] = regs[ pStage->color.registers[1] ];
-			color[2] = regs[ pStage->color.registers[2] ];
-			color[3] = regs[ pStage->color.registers[3] ];
+			// set the color([0, 255])
+			color[0] = regs[ pStage->color.registers[0] ] * 255.0f;
+			color[1] = regs[ pStage->color.registers[1] ] * 255.0f;
+			color[2] = regs[ pStage->color.registers[2] ] * 255.0f;
+			color[3] = regs[ pStage->color.registers[3] ] * 255.0f;
 			if (surf->space->fadeFraction > 0.0f) {
 				const float fade = 1.0f - surf->space->fadeFraction;
 				color[0] *= fade;
@@ -1152,7 +1137,30 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				color[3] *= fade;
 			}
 
-			GL_Uniform4fv(SHADER_PARM_ADDR(glColor), color);
+			switch (pStage->vertexColor) {
+			case SVC_MODULATE:
+				renderProgram->BindVector("colorModulate", oneModulate[0]);
+				renderProgram->BindVector("colorAdd", zero[0]);
+				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
+				renderProgram->BindVector("u_glColorPointer", one[0]);
+				renderProgram->BindVector("u_glColor", zero[0]);
+				break;
+			case SVC_INVERSE_MODULATE:
+				renderProgram->BindVector("colorModulate", negOneModulate[0]);
+				renderProgram->BindVector("colorAdd", one[0]);
+				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
+				renderProgram->BindVector("u_glColorPointer", one[0]);
+				renderProgram->BindVector("u_glColor", zero[0]);
+				break;
+			case SVC_IGNORE:
+			default:
+				renderProgram->BindVector("colorModulate", zero[0]);
+				renderProgram->BindVector("colorAdd", one[0]);
+				// glColor() -> vertex.color(UB[0,255]) * 0.0 + glColor -> output float [0,255]
+				renderProgram->BindVector("u_glColorPointer", zero[0]);
+				renderProgram->BindVector("u_glColor", color);
+				break;
+			}
 
 			if((backEnd.glState.glStateBits & GLS_POLYMODE_LINE) == 0)
 				RB_DrawElementsWithCounters( tri );

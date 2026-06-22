@@ -12,8 +12,8 @@ renderProgram guiBlur {
 			coord.y = 1.0 - coord.y;
 
 			texCoord0 = coord * $currentRenderTexelSize.xy;
-			col = BYTE_COLOR($colorAttrib);
-    gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+			col = VERTEX_BYTE_COLOR($colorAttrib);
+            gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
 
@@ -66,8 +66,8 @@ renderProgram guiBlur_4x4 {
 			coord.y = 1.0 - coord.y;
 
 			texCoord0 = coord * $currentRenderTexelSize.xy;
-			col = BYTE_COLOR($colorAttrib);
-    gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+			col = VERTEX_BYTE_COLOR($colorAttrib);
+            gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
 

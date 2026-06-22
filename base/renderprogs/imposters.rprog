@@ -5,7 +5,7 @@ renderProgram imposters/lit {
 
 	program vertex glsl { <%
 		$define indata_pos $positionAttrib.xyz
-		$define indata_color BYTE_COLOR( $colorAttrib )
+		$define indata_color VERTEX_BYTE_COLOR( $colorAttrib )
 		$if r_32ByteVtx
 		$define indata_signs $signAttrib
 		$endif

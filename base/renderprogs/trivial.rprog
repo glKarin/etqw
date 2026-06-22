@@ -979,7 +979,7 @@ renderProgram trivialMaskImage {
 
 	program vertex glsl { <%
 		$define pos $positionAttrib
-		$define color BYTE_COLOR($colorAttrib)
+		$define color VERTEX_BYTE_COLOR($colorAttrib)
 		$define tex0 var_TexCoord0
 		$define tex1 var_TexCoord1
 		$define col var_Color
@@ -1115,7 +1115,7 @@ renderProgram trivialMaskImageScreen {
 			tex1.z = $parameters.z;
 			tex1.y = $parameters.y * 480.0 / $currentRenderTexelSize.y;
 			tex1.w = $parameters.w;
-			col = BYTE_COLOR(color);
+			col = VERTEX_BYTE_COLOR(color);
 			
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}

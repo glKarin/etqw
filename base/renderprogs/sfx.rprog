@@ -1296,7 +1296,7 @@ renderProgram sfx/blendFilterFade {
 
 			var_TexCoord.x = dot( tex, diffuse_s);
 			var_TexCoord.y = dot( tex, diffuse_t );
-			col = BYTE_COLOR($colorAttrib);
+			col = VERTEX_BYTE_COLOR($colorAttrib);
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
@@ -1323,7 +1323,7 @@ renderProgram sfx/blendDecalBlendFade {
 	hwSkinningVersion 	sfx/blendDecalBlendFade_HardSkin sfx/blendDecalBlendFade_HardSkin
 
 	program vertex glsl { <%
-		$define col BYTE_COLOR($colorAttrib)
+		$define col VERTEX_BYTE_COLOR($colorAttrib)
 		$define diffuse_s $diffuseMatrix_s
 		$define diffuse_t $diffuseMatrix_t
 		$define timeParms $parameters.xyz // Current time, 1 / length of time to fade

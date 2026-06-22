@@ -105,7 +105,7 @@ renderProgram heatHazeWithVertex {
 			// clamp the distance so the the deformations don't get too wacky near the view
 			R1 = min ( R1 , vec4( 0.02 ) );
 			var_TexCoord2 = R1 * $deformMagnitude;
-			var_Color = BYTE_COLOR($colorAttrib);
+			var_Color = VERTEX_BYTE_COLOR($colorAttrib);
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
@@ -269,7 +269,7 @@ renderProgram heatHazeWithMaskAndVertex {
 			// clamp the distance so the the deformations don't get too wacky near the view
 			R1 = min ( R1 , 0.02 );
 			var_TexCoord2 = R1 * $deformMagnitude;
-			var_Color = BYTE_COLOR($colorAttrib);
+			var_Color = VERTEX_BYTE_COLOR($colorAttrib);
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 	%> }
