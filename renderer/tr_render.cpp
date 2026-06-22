@@ -1321,9 +1321,7 @@ void RB_CreateSingleDrawAreaAmbient(const drawSurf_t *drawSurf, void (*DrawInter
     drawInteraction_t inter;
     memset(&inter, 0, sizeof(inter));
 	//karin: alpha test in interaction stage
-#ifdef INTERACTION_ALPHA_TEST //karin: alpha test in interaction stage
 	inter.alphaTest = 0.0f;
-#endif
     inter.surf = drawSurf;
 
     // tranform the view origin into model local space
@@ -1407,11 +1405,9 @@ void RB_CreateSingleDrawAreaAmbient(const drawSurf_t *drawSurf, void (*DrawInter
                 R_SetDrawInteraction(surfaceStage, surfaceRegs, &inter.diffuseImage,
                                      inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr());
                 inter.vertexColor = surfaceStage->vertexColor;
-#ifdef INTERACTION_ALPHA_TEST //karin: alpha test in interaction stage
 				if (surfaceStage->hasAlphaTest) {
 					inter.alphaTest = surfaceRegs[surfaceStage->alphaTestRegister];
 				}
-#endif
                 break;
             }
 
