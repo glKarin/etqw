@@ -534,7 +534,7 @@ const char *idKeyInput::KeyNumToString(int keynum, bool localized)
 					case K_PRINT_SCR:
 						return OSX_GetLocalizedString(kn->name);
 						break;
-				default :
+					default :
 #ifdef _SPLASHDAMAGE //karin: land dict is wstr
 						mbName = WStrToStr(common->GetLanguageDict()->GetString(kn->strId));
 						return mbName.c_str();

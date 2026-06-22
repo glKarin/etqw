@@ -1125,8 +1125,6 @@ void sdGuiModel::DrawStretchPicWithColor(const idDrawVert *dverts, const glIndex
 
 void sdGuiModel::EndCurrentView(void)
 {
-	viewDef_t	*viewDef;
-
 	if (surfaces[0].numVerts == 0) {
 		return;
 	}

@@ -226,7 +226,7 @@ int &rb_debugPolygonTime = rb_debugPolygonTimes[_frameIndex];
 
 idCVar harm_r_renderToolsMultithread("harm_r_renderToolsMultithread", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Enable render tools debug with GLES in multi-threading.");
 
-#include "rb/QueueList.h"
+#include "containers/QueueList.h"
 typedef struct showViewEntityBounds_s {
 	float modelViewMatrix[16];
 	idBounds referenceBounds;

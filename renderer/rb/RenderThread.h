@@ -1,7 +1,7 @@
 #ifndef _RENDERTHREAD_H
 #define _RENDERTHREAD_H
 
-#include "QueueList.h"
+#include "../containers/QueueList.h"
 
 #define RENDER_THREAD_NAME "render_thread"
 
