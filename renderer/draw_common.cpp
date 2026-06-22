@@ -31,7 +31,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
 #include "renderer/RenderProgram.h"
-#include "renderer/OcclusionTest.h"
+extern idCVar harm_r_areaAmbientScale;
 #endif
 
 #ifdef _K_DEV //karin: debug shader pass
@@ -722,6 +722,7 @@ void R_AddCopyParmsCmd(const viewDef_t *view)
 		builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
 		builtinUniforms.skyGradientCubeMap = globalImages->ambientNormalMap;
 	}
+	builtinUniforms.ambientScale = harm_r_areaAmbientScale.GetFloat();
 
 	copyParmsCommand_t	*cmd;
 

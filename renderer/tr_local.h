@@ -693,6 +693,7 @@ typedef struct materialStageBuiltinUniform_s {
 	idImage	*skyGradientCubeMap;
 	idVec2 sunHaloParameters; // scale, bias
 	idImage	*ambientCubeMap;
+	float ambientScale;
 } materialStageBuiltinUniform_t;
 
 typedef struct {
