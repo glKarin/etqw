@@ -40,8 +40,8 @@ bool sdPostprocessBuffer::Init(int w, int h, float scale)
 	}
 	else
 	{
-		width = idMath::Ftoi((float)w * scale);
-		height = idMath::Ftoi((float)h * scale);
+		width = idMath::Ftoi(roundf((float)w * scale));
+		height = idMath::Ftoi(roundf((float)h * scale));
 	}
 	fb = new idFramebuffer("sdPostprocessBuffer", w, h);
 	for(int k = 0; k < sizeof(globalImages->postProcessBuffers) / sizeof(globalImages->postProcessBuffers[0]); k++)
