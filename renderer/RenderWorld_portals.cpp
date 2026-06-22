@@ -803,26 +803,30 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 
 		//karin: check visible distance range
 		bool checkVisDist = false;
+		float distance = 0.0f;
 		if ((entity->parms.minVisDist > 0.0f || entity->parms.maxVisDist > 0.0f)
 			//&& entity->parms.flags.disableLODs
 			&& !entity->parms.imposter //karin: using imposter if too far
 			&& !harm_r_skipVisDistCheck.GetBool()) 
 		{
-			float distance;
 			if(harm_r_visDistCheckType.GetInteger() == 0)
 			{
 				idBounds bounds = entity->GetVisDistWorldBounds(NULL);
 				distance = bounds.ShortestDistance(tr.viewDef->renderView.vieworg);
-				session->rw->DebugBounds(colorGreen, bounds, vec3_origin, 1);
+				if(harm_r_drawVisDistCheck.GetBool())
+					DebugBounds(colorGreen, bounds, vec3_origin, 1);
 			}
 			else if(harm_r_visDistCheckType.GetInteger() == 2)
 			{
 				idBounds bounds = entity->GetVisDistWorldBounds(NULL);
 				idVec3 center = bounds.GetCenter();
 				distance = tr.viewDef->renderView.vieworg.Dist(center) - bounds.GetRadius(center);
-				//idBounds b(center);
-				//b.ExpandSelf(bounds.GetRadius(center));
-				//session->rw->DebugBounds(colorRed, b, vec3_origin, 1);
+				if(harm_r_drawVisDistCheck.GetBool())
+				{
+					idBounds b(center);
+					b.ExpandSelf(bounds.GetRadius(center));
+					DebugBounds(colorGreen, b, vec3_origin, 1);
+				}
 			}
 			else
 			{
@@ -902,23 +906,6 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 				float fadeRange = range * harm_r_visDistFalloff.GetFloat();
 #endif
 				float nofadeRange = range - fadeRange;
-				float distance;
-				if(harm_r_visDistCheckType.GetInteger() == 0)
-				{
-					idBounds bounds = entity->GetVisDistWorldBounds(NULL);
-					distance = bounds.ShortestDistance(tr.viewDef->renderView.vieworg);
-				}
-				else if(harm_r_visDistCheckType.GetInteger() == 2)
-				{
-					idBounds bounds = entity->GetVisDistWorldBounds(NULL);
-					idVec3 center = bounds.GetCenter();
-					distance = tr.viewDef->renderView.vieworg.Dist(center) - bounds.GetRadius(center);
-				}
-				else
-				{
-					idVec3 origin = entity->GetVisDistOrigin();
-					distance = tr.viewDef->renderView.vieworg.Dist(origin);
-				}
 				distance -= entity->parms.minVisDist;
 
 				if (distance > nofadeRange) {

@@ -291,6 +291,8 @@ idBounds idRenderEntityLocal::GetVisDistWorldBounds(idRenderModel *model) const
 			if(parms.flags.pushByCenter && !parms.origin.IsZero())
 			{
 				idBounds bounds = model->Bounds(&parms);
+				if(bounds.IsCleared())
+					return idBounds(parms.origin);
 				bounds.RotateSelf(parms.axis);
 				bounds.TranslateSelf(parms.origin);
 				return bounds;
@@ -298,7 +300,10 @@ idBounds idRenderEntityLocal::GetVisDistWorldBounds(idRenderModel *model) const
 			else
 			{
 				if(parms.flags.overridenBounds)
-					return model->Bounds(&parms);
+				{
+					idBounds bounds = model->Bounds(&parms);
+					return bounds.IsCleared() ? idBounds(parms.origin) : bounds;
+				}
 				else
 					return parms.bounds;
 			}
@@ -310,6 +315,8 @@ idBounds idRenderEntityLocal::GetVisDistWorldBounds(idRenderModel *model) const
 		else
 		{
 			idBounds bounds = model->Bounds(&parms);
+			if(bounds.IsCleared())
+				return idBounds(parms.origin);
 			bounds.RotateSelf(parms.axis);
 			bounds.TranslateSelf(parms.origin);
 			return bounds;

@@ -229,8 +229,8 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
 	ret.Append(GLSL_SHADER_SOURCE("occlusionTest", SHADER_OCCLUSIONTEST, &occlusionTestShader, OCCLUSIONTEST_VERT, OCCLUSIONTEST_FRAG, "", ""));
 
     // newStage
+#if !defined(_SPLASHDAMAGE)
 	ret.Append(GLSL_SHADER_SOURCE("colorProcess", SHADER_COLORPROCESS, &colorProcessShader, COLORPROCESS_VERT, COLORPROCESS_FRAG, "", ""));
-#if !defined(_SPLASHDAMAGE) //karin: it binding special uniform
 	ret.Append(GLSL_SHADER_SOURCE("heatHaze", SHADER_HEATHAZE, &heatHazeShader, HEATHAZE_VERT, HEATHAZE_FRAG, "", ""));
 	ret.Append(GLSL_SHADER_SOURCE("heatHazeWithMask", SHADER_HEATHAZE_WITH_MASK, &heatHazeWithMaskShader, HEATHAZEWITHMASK_VERT, HEATHAZEWITHMASK_FRAG, "", ""));
 	ret.Append(GLSL_SHADER_SOURCE("heatHazeWithMaskAndVertex", SHADER_HEATHAZE_WITH_MASK_AND_VERTEX, &heatHazeWithMaskAndVertexShader, HEATHAZEWITHMASKANDVERTEX_VERT, HEATHAZEWITHMASKANDVERTEX_FRAG, "", ""));
