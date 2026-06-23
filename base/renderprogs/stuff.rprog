@@ -75,7 +75,7 @@ renderProgram stuff/grass {
 			r3.x = dot ( r0 , waveDistortx );
 			r3.y = dot ( r0 , waveDistorty );
 			// Calculate the amount of warping 
-			r4.xy = r3.xy * $colorAttrib.w;
+			r4.xy = r3.xy * VERTEX_BYTE_COLOR($colorAttrib).w;
 			r4.z = 0.0;
 			// Displace the vertex 
 			r2.w = 1.0;
@@ -100,7 +100,7 @@ renderProgram stuff/grass {
 			r2 = r2 * 0.5 + 0.5;
 			var_Color.xyz = ( r2 * $sunColor ).xyz;
 			// multiply with sunlight color (WARNING: if the lightscale is to high this will get clamped to 0 ".." 1!) 
-			var_Color2 = $colorAttrib;
+			var_Color2 = VERTEX_BYTE_COLOR($colorAttrib);
 			// vertex color 
 			r0 = $positionAttrib - $viewOrigin;
 			scale = vec4( dot ( r0 .xyz , r0 .xyz ) );

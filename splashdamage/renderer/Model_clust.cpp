@@ -332,9 +332,10 @@ void sdRenderModelClust::UpdateInstanceSurface(const instance_t *inst, const stu
         R_LocalVectorToGlobal(inst->modelMatrix, src->normal, dv->normal);
         R_LocalVectorToGlobal(inst->modelMatrix, src->tangents[0], dv->tangents[0]);
         R_LocalVectorToGlobal(inst->modelMatrix, src->tangents[1], dv->tangents[1]);
-        dv->color[0] = (byte)((float)src->color[0] * inst->instance->GetColor()[0]);
-        dv->color[1] = (byte)((float)src->color[1] * inst->instance->GetColor()[1]);
-        dv->color[2] = (byte)((float)src->color[2] * inst->instance->GetColor()[2]);
+        dv->color[0] = (byte)(inst->instance->GetColor()[0] * 255.0f);
+        dv->color[1] = (byte)(inst->instance->GetColor()[1] * 255.0f);
+        dv->color[2] = (byte)(inst->instance->GetColor()[2] * 255.0f);
+		dv->color[3] = 255;
     }
 
     for (int i = 0; i < surf->geometry->numIndexes; i++) {
