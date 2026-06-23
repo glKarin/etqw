@@ -4,7 +4,7 @@ renderprogram game/scope {
 		varying vec2 center;
 		varying vec4 color;
 		
-		$define col $colorAttrib
+		$define col VERTEX_BYTE_COLOR($colorAttrib)
 		$define screenSize $currentRenderTexelSize
 
 		void main() {
@@ -100,7 +100,7 @@ renderprogram game/scope {
 
 renderprogram game/scopeModel {
 	program vertex glsl { <%
-		$define col $colorAttrib
+		$define col VERTEX_BYTE_COLOR($colorAttrib)
 
 		varying vec2 texCoord0;
 		varying vec2 center;
@@ -197,7 +197,7 @@ renderprogram game/scopeModel {
 
 renderprogram game/scopeStatix {
 	program vertex glsl { <%
-		$define col $colorAttrib
+		$define col VERTEX_BYTE_COLOR($colorAttrib)
 
 		varying vec2 texCoord0;
 		varying vec2 center;

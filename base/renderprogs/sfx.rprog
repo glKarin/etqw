@@ -912,7 +912,7 @@ renderProgram sfx/fadeedge {
 
 		void main ( void ) { 
 			// ARB_position_invariant; 
-			var_Color = $colorAttrib;
+			var_Color = VERTEX_BYTE_COLOR($colorAttrib);
 			var_TexCoord0.x = dot ( $texCoordAttrib , $maskMatrix_s );
 			var_TexCoord0.y = dot ( $texCoordAttrib , $maskMatrix_t );
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
@@ -1005,7 +1005,7 @@ renderProgram sfx/stroggForceField {
 			R1 = R1 * $diffuseColor;
 			R1 = 1.0 - R1;
 			color = R1 + R1;
-			color.w = $colorAttrib.w;
+			color.w = VERTEX_BYTE_COLOR($colorAttrib).w;
 			R1 = $colorAttrib * $colorModulate + $colorAdd;
 			color.w = ($diffuseColor * R1).w;
 			vec4 _F1;
