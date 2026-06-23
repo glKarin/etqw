@@ -268,6 +268,9 @@ typedef enum {
 typedef enum {
 	SVC_IGNORE,
 	SVC_MODULATE,
+#ifdef _SPLASHDAMAGE
+	SVC_MODULATE_ALPHA,
+#endif
 	SVC_INVERSE_MODULATE
 } stageVertexColor_t;
 
@@ -1349,6 +1352,7 @@ class idMaterial : public idDecl
 		const sdDeclSurfaceTypeMap*	surfaceTypeMapDecl;
 		//const sdSurfaceTypeMap*		surfaceTypeMap;
 		idVec3				surfaceColor;
+		bool				writeDepth;
 #endif
 #ifdef _NO_LIGHT
 		bool 				noLight;

@@ -178,6 +178,7 @@ void idMaterial::CommonInit()
 	surfaceTypeDecl = NULL;
 	surfaceTypeMapDecl = NULL;
 	surfaceColor.Zero();
+	writeDepth = false;
 #endif
 #ifdef _NO_LIGHT
 	noLight = false;
@@ -2415,6 +2416,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("vertexAlpha")) { // vertexAlpha
+			ss->vertexColor = SVC_MODULATE_ALPHA;
 			continue;
 		}
 		if (!token.Icmp("cullFace")) { // cullFace front none
@@ -2427,6 +2429,8 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			continue;
 		}
 		if (!token.Icmp("writeDepth")) {
+			ss->drawStateBits &= ~GLS_DEPTHMASK;
+			writeDepth = true;
 			continue;
 		}
 		if (!token.Icmp("fillMode")) { // fillMode	lines	1
@@ -3722,27 +3726,30 @@ bool idMaterial::Parse(const char *text, const int textLength)
 				const stageTexture_t &st = pStage->textures[j];
 				if (st.image == globalImages->currentRenderImage) {
 					if (sort != SS_PORTAL_SKY && sort != SS_GUI) {
-						sort = SS_POST_PROCESS;
+						if(sort < SS_POST_PROCESS)
+							sort = SS_POST_PROCESS;
 						coverage = MC_TRANSLUCENT;
 					}
 
 					i = numStages;
 					break;
 				}
+
 				hasPostProcess = false;
 				for(int k = 0; k < sizeof(globalImages->postProcessBuffers) / sizeof(globalImages->postProcessBuffers[0]); k++)
 				{
 					if (st.image == globalImages->postProcessBuffers[k]) {
-						if (sort != SS_PORTAL_SKY) {
-							sort = SS_POST_PROCESS;
-							coverage = MC_TRANSLUCENT;
-						}
-
 						hasPostProcess = true;
 						break;
 					}
 				}
 				if(hasPostProcess) {
+					if (sort != SS_PORTAL_SKY) {
+						if(sort < SS_POST_PROCESS)
+							sort = SS_POST_PROCESS;
+						coverage = MC_TRANSLUCENT;
+					}
+
 					i = numStages;
 					break;
 				}
@@ -3750,7 +3757,8 @@ bool idMaterial::Parse(const char *text, const int textLength)
 
 			if(!hasPostProcess && pStage->renderProgram->GetDeclRenderProgram()->HasPostprocess()) {
 				if (sort != SS_PORTAL_SKY) {
-					sort = SS_POST_PROCESS;
+					if(sort < SS_POST_PROCESS)
+						sort = SS_POST_PROCESS;
 					coverage = MC_TRANSLUCENT;
 				}
 				hasPostProcess = true;
@@ -3771,6 +3779,11 @@ bool idMaterial::Parse(const char *text, const int textLength)
 			pStage->drawStateBits |= GLS_DEPTHFUNC_LESS;
 		} else if (coverage == MC_TRANSLUCENT || pStage->ignoreAlphaTest) {
 			// translucent surfaces can extend past the exactly marked depth buffer
+#ifdef _SPLASHDAMAGE //karin: force write depth
+			if(writeDepth)
+				pStage->drawStateBits |= GLS_DEPTHFUNC_LESS;
+			else
+#endif
 			pStage->drawStateBits |= GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK;
 		} else {
 			// opaque and perforated surfaces must exactly match the depth buffer,
