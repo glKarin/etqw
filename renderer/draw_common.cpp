@@ -813,6 +813,8 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindImage("ambientCubeMap", ambientCubeMap);
 	program->BindImage("environmentCubeMap", environmentCubeMap);
 	program->BindImage("skyGradientCubeMap", skyGradientCubeMap);
+
+	program->BindVector("stuffParameters", 1.0f, 0.0f, 0.0f, 1.0f);
 }
 
 ID_INLINE static void RB_OcclusionTesting(void)
@@ -1144,7 +1146,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				renderProgram->BindVector("colorAdd", zero[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", one[0]);
-				renderProgram->BindVector("u_glColor", zero[0]);
+				renderProgram->BindVector("u_glColor4ub", zero[0]);
 				break;
 			case SVC_INVERSE_MODULATE:
 				// glColorPointer() -> vertex.color(UB[0,255]) * -(1.0/255.0) + 0.0 -> output float [-1,0]
@@ -1152,7 +1154,15 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				renderProgram->BindVector("colorAdd", one[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", one[0]);
-				renderProgram->BindVector("u_glColor", zero[0]);
+				renderProgram->BindVector("u_glColor4ub", zero[0]);
+				break;
+			case SVC_MODULATE_ALPHA:
+				// glColorPointer() -> vertex.color(UB[0,255]) * (1.0/255.0) + 0.0 -> output float [0,1]
+				renderProgram->BindVector("colorModulate", zero[0], zero[0], zero[0], oneModulate[0]);
+				renderProgram->BindVector("colorAdd", zero[0]);
+				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
+				renderProgram->BindVector("u_glColorPointer", zero[0], zero[0], zero[0], one[0]);
+				renderProgram->BindVector("u_glColor4ub", zero[0]);
 				break;
 			case SVC_IGNORE:
 			default:
@@ -1161,7 +1171,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				renderProgram->BindVector("colorAdd", color);
 				// glColor() -> vertex.color(UB[0,255]) * 0.0 + glColor -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", zero[0]);
-				renderProgram->BindVector("u_glColor", color[0] * 255.0f, color[1] * 255.0f, color[2] * 255.0f, color[3] * 255.0f);
+				renderProgram->BindVector("u_glColor4ub", color[0] * 255.0f, color[1] * 255.0f, color[2] * 255.0f, color[3] * 255.0f);
 				break;
 			}
 

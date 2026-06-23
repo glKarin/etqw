@@ -58,6 +58,7 @@ private:
     void									InsertBuiltinMacros(sdStringBuilder_Heap &buf) const;
 	void									GetLocations(shaderHandle_t handle);
 	void									GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader);
+	void									GetBuiltinLocations(GLuint glHandle);
     int										GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const;
     void									BindStageUniform(const materialStage_t *stage, const float *regs) const;
     void									BindMaterialUniform(const idMaterial *mat, const float *regs) const;

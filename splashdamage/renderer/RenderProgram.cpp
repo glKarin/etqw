@@ -15,6 +15,10 @@
 #define TEXEL_SIZE_SUFFIX "TexSize"
 #define TEXEL_SIZE_NAME(x) va("%s" TEXEL_SIZE_SUFFIX, x)
 
+static const char *Builtin_Vectors[] = {
+	"u_glColorPointer", // using vertex color by glColorPointer
+	"u_glColor4ub", // using uniform color by glColor
+};
 static idCVar r_shaderQuality("r_shaderQuality", "3", CVAR_RENDERER | CVAR_INTEGER, "");
 static idCVar r_megaDrawMethod("r_megaDrawMethod", "0", CVAR_RENDERER | CVAR_BOOL, "");
 static idCVar r_normalizeNormalMaps("r_normalizeNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
@@ -490,10 +494,11 @@ void sdRenderProgram::InsertBindings(sdStringBuilder_Heap &buf, const sdRenderPr
     	appendList.Append(name);
     }
 
-	if (appendList.FindIndex("u_glColorPointer") == -1)
-		InsertBuiltinBinding(buf, "u_glColorPointer");
-	if (appendList.FindIndex("u_glColor4ub") == -1)
-		InsertBuiltinBinding(buf, "u_glColor4ub");
+    for (int i = 0; i < sizeof(Builtin_Vectors) / sizeof(Builtin_Vectors[0]); i++) {
+		name = Builtin_Vectors[i];
+		if (appendList.FindIndex(name) == -1)
+			InsertBuiltinBinding(buf, name);
+	}
 }
 
 void sdRenderProgram::GetLocations(shaderHandle_t handle)
@@ -513,6 +518,7 @@ void sdRenderProgram::GetLocations(shaderHandle_t handle)
 
 	GetShaderLocations(shader->program, declRenderProgram->GetVertexShader());
 	GetShaderLocations(shader->program, declRenderProgram->GetFragmentShader());
+	GetBuiltinLocations(shader->program);
 
 	bindings.Resize(bindings.Num());
 	bindings.SetGranularity(1);
@@ -575,6 +581,30 @@ void sdRenderProgram::GetShaderLocations(GLuint glHandle, const sdRenderProgramS
 				textureUnits.Append(-1);
 			}
 		}
+    }
+}
+
+void sdRenderProgram::GetBuiltinLocations(GLuint glHandle)
+{
+    GLint location;
+	const char *name;
+	int index;
+	numTextureUnits = 0;
+	int unit;
+
+    for (int i = 0; i < sizeof(Builtin_Vectors) / sizeof(Builtin_Vectors[0]); i++) {
+		name = Builtin_Vectors[i];
+		if(bindingNames.FindIndex(name) >= 0)
+			continue;
+		location = GetLocation(glHandle, NULL, name);
+        if(location < 0)
+            continue;
+		bindings.Append(NULL);
+		index = bindingNames.Append(name);
+		locations.Append(location);
+		nameHash.Append(idStr::Hash(name));
+		unit = GetUniformType(glHandle, location, numTextureUnits);
+		textureUnits.Append(unit);
     }
 }
 
