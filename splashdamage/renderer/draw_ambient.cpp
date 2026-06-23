@@ -5,12 +5,12 @@
 #include "RenderProgram.h"
 #include "RenderProgramManager.h"
 
-idCVar harm_r_skipAreaAmbient("harm_r_skipAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "Skip areas ambient before draw interactions");
+idCVar harm_r_skipAreaAmbient("harm_r_skipAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "skip areas ambient rendering before draw interactions");
 
-static idCVar harm_r_builtinAreaAmbient("harm_r_builtinAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "Using built-in global illumination for area ambient rendering");
+static idCVar harm_r_builtinAreaAmbient("harm_r_builtinAreaAmbient", "0", CVAR_BOOL | CVAR_RENDERER, "using built-in global illumination for area ambient rendering");
 
-idCVar harm_r_areaAmbientScale("harm_r_areaAmbientScale", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Area ambient scale");
-idCVar harm_r_areaAmbientAlpha("harm_r_areaAmbientAlpha", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "Area ambient alpha");
+idCVar harm_r_areaAmbientScale("harm_r_areaAmbientScale", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "area ambient scale");
+idCVar harm_r_areaAmbientAlpha("harm_r_areaAmbientAlpha", "1.0", CVAR_FLOAT | CVAR_RENDERER | CVAR_ARCHIVE, "area ambient alpha");
 
 extern void RB_CreateSingleDrawAreaAmbient(const drawSurf_t *drawSurf, void (*DrawInteraction)(const drawInteraction_t *));
 

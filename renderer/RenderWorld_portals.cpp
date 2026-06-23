@@ -32,8 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 
 #ifdef _SPLASHDAMAGE //karin: vis dist check
-idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip entity visible distance check");
-idCVar harm_r_visDistCheckType("harm_r_visDistCheckType", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "entity visible distance check type. 0 = bounds, 1 = origin, 2 = sphere", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+idCVar harm_r_skipVisDistCheck("harm_r_skipVisDistCheck", "0", CVAR_BOOL | CVAR_RENDERER, "skip entity visible distance check");
+idCVar harm_r_visDistCheckType("harm_r_visDistCheckType", "0", CVAR_INTEGER | CVAR_RENDERER, "entity visible distance check type. 0 = bounds, 1 = origin, 2 = sphere", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
 idCVar harm_r_drawVisDistCheck("harm_r_drawVisDistCheck", "0", CVAR_INTEGER | CVAR_RENDERER, "draw entity visible distance check");
 idCVar harm_r_visDistLightFallOff("harm_r_visDistLightFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "light fade by view distance");
 idCVar harm_r_visDistEntityFallOff("harm_r_visDistEntityFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "entity fade by view distance");

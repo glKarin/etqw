@@ -5,7 +5,7 @@
 
 #include "PostprocessBuffer.h"
 
-static idCVar harm_r_clearPostprocessBuffer("harm_r_clearPostprocessBuffer", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "Clear postprocess buffer image on every draw");
+static idCVar harm_r_clearPostprocessBuffer("harm_r_clearPostprocessBuffer", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "clear postprocess buffer image on every draw");
 
 sdPostprocessBuffer::sdPostprocessBuffer()
 	: width(-1),

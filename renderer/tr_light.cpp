@@ -33,7 +33,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _SPLASHDAMAGE //karin: imposter
 #include "renderer/ImposterGeometry.h"
 
-static idCVar harm_r_skipImposter("harm_r_skipImposter", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "skip imposter for static model");
+static idCVar harm_r_skipImposter("harm_r_skipImposter", "0", CVAR_BOOL | CVAR_RENDERER, "skip imposter rendering for static model");
 #endif
 
 static const float CHECK_BOUNDS_EPSILON = 1.0f;
