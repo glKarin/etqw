@@ -673,63 +673,82 @@ static void RB_SetBuiltinProgramEnvironment(void)
 // call in frontend thread
 void R_AddCopyParmsCmd(const viewDef_t *view)
 {
-	materialStageBuiltinUniform_s builtinUniforms;
+	copyParmsCommand_t	*cmd;
+
+	cmd = (copyParmsCommand_t *)R_GetCommandBuffer(sizeof(*cmd));
+	cmd->commandId = RC_COPY_PARMS;
+
+	materialStageBuiltinUniform_s &builtinUniforms = cmd->parms;
 	const sdDeclAtmosphere *atmosphere;
 	const sdDeclAmbientCubeMap *amb;
 
+	// atmosphere
 	if(view->renderWorld && view->renderWorld->GetAtmosphere())
 	{
 		atmosphere = view->renderWorld->GetAtmosphere();
 
 		const sdDeclAtmosphere::postProcessParms_t &ppParms = atmosphere->GetPostProcessParms();
 
+		// postprocess
 		builtinUniforms.postTint = ppParms.tint;
 		builtinUniforms.postSaturationContrast.Set(ppParms.saturation, ppParms.contrast);
 		builtinUniforms.postGlareParameters = ppParms.glareParms;
+		// sun
 		builtinUniforms.sunDir = atmosphere->GetSunDirection();
 		builtinUniforms.sunColor = atmosphere->GetSunColor();
-		builtinUniforms.fogColor = atmosphere->GetFogColor();
 		builtinUniforms.sunHaloParameters.Set(atmosphere->GetSunHaloScale(), atmosphere->GetSunHaloBias());
+		// fog
+		builtinUniforms.fogColor = atmosphere->GetFogColor();
+		builtinUniforms.fogParams.Set(1.0f / atmosphere->GetFogDistHalf(), 1.0f / atmosphere->GetFogHeightHalf(), atmosphere->GetFogHeightOffset()); // 101
+		const float fogStart = atmosphere->GetFogStart();
+		const float fogEnd = atmosphere->GetFogEnd();
+		builtinUniforms.fogDepths.Set(fogStart, fogEnd, 1.0f / (fogEnd - fogStart), -fogStart / (fogEnd - fogStart)); // 102
+		// float								fogDistHalf; // 192
+		// float								fogHeightHalf; // 196
+		// float								fogHeightOffset; // 200
+		// idVec3								fogColor; // 204
+		// float								fogStart; // 216
+		// float								fogEnd; // 220
 
+		// ambient
 		builtinUniforms.skyGradientCubeMap = atmosphere->GetSkyGradientImage();
-
 		amb = atmosphere->GetAmbientCubeMap();
 		if(amb)
 		{
-			builtinUniforms.environmentCubeMap = globalImages->ImageFromFile(amb->GetEnvironmentMap(), TF_DEFAULT, true, TR_CLAMP, TD_DEFAULT, CF_NATIVE);
-
 			builtinUniforms.ambientBrightness = amb->GetBrightness();
 			builtinUniforms.ambientAvgColor = amb->GetAvgAmbientColor();
+			builtinUniforms.environmentCubeMap = globalImages->ImageFromFile(amb->GetEnvironmentMap(), TF_DEFAULT, true, TR_CLAMP, TD_DEFAULT, CF_NATIVE);
 		}
 		else
 		{
-			builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
 			builtinUniforms.ambientBrightness = 1.0f;
 			builtinUniforms.ambientAvgColor.Set(1.0f, 1.0f, 1.0f, 1.0f);
+			builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
 		}
 	}
 	else
 	{
+		// postprocess
 		builtinUniforms.postTint.Set(1.0f, 1.0f, 1.0f);
 		builtinUniforms.postSaturationContrast.Set(1.0f, 1.0f);
 		builtinUniforms.postGlareParameters.Set(1.0f, 0.0f, 1.0f, 1.0f);
+		// sun
 		builtinUniforms.sunDir.Set(0.0f, 0.0f, -1.0f);
 		builtinUniforms.sunColor.Set(1.0f, 1.0f, 1.0f);
+		builtinUniforms.sunHaloParameters.Set(1.0f, 0.0f);
+		// fog
 		builtinUniforms.fogColor.Set(1.0f, 1.0f, 1.0f);
+		builtinUniforms.fogParams.Set(0.0f, 0.0, 0.0f);
+		builtinUniforms.fogDepths.Set(0.0f, 0.0f, 0.0f, 0.0f);
+		// ambient
+		builtinUniforms.skyGradientCubeMap = globalImages->ambientNormalMap;
 		builtinUniforms.ambientBrightness = 1.0f;
 		builtinUniforms.ambientAvgColor.Set(1.0f, 1.0f, 1.0f, 1.0f);
-		builtinUniforms.sunHaloParameters.Set(1.0f, 0.0f);
 		builtinUniforms.environmentCubeMap = globalImages->ambientNormalMap;
-		builtinUniforms.skyGradientCubeMap = globalImages->ambientNormalMap;
 	}
+
+	// cvars
 	builtinUniforms.ambientScale = harm_r_areaAmbientScale.GetFloat();
-
-	copyParmsCommand_t	*cmd;
-
-	cmd = (copyParmsCommand_t *)R_GetCommandBuffer(sizeof(*cmd));
-	cmd->commandId = RC_COPY_PARMS;
-
-	cmd->parms = builtinUniforms;
 }
 
 void RB_CopyParms(const void *data)
@@ -743,50 +762,55 @@ void RB_CopyParms(const void *data)
 
 static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, const drawSurf_t *surf)
 {
-	float parm[4];
-
-	parm[3] = 1.0;
-
-	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize); // SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT // 640 480 0.0015625 0.0020833
-
+	// postprocess
 	program->BindVector("postTint", backEnd.parms.postTint);
 	program->BindVector("postSaturationContrast", backEnd.parms.postSaturationContrast);
 	program->BindVector("postGlareParameters", backEnd.parms.postGlareParameters);
+	// sun
 	program->BindVector("sunDirectionWorld", backEnd.parms.sunDir);
 	program->BindVector("sunColor", backEnd.parms.sunColor);
 	program->BindVector("sunHaloParameters", backEnd.parms.sunHaloParameters);
     idVec3 localSunDir;
     R_GlobalVectorToLocal(surf->space->modelMatrix, backEnd.parms.sunDir, localSunDir);
 	program->BindVector("sunDirection", localSunDir);
-	program->BindVector("ambientBrightness", backEnd.parms.ambientBrightness);
-	program->BindVector("ambientAvgColor", backEnd.parms.ambientAvgColor);
-	program->BindVector("ambientScale", backEnd.parms.ambientScale);
+	// fog
+	program->BindVector("fogColor", backEnd.parms.fogColor);
+	program->BindVector("fogParams", backEnd.parms.fogParams);
+	program->BindVector("fogDepths", backEnd.parms.fogDepths);
 
+	// matrix
+	// model matrix
     idMat4 modelMatrix;
     memcpy(&modelMatrix, surf->space->modelMatrix, sizeof(modelMatrix));
     modelMatrix.TransposeSelf();
 	program->BindVector("transposedModelMatrix_x", modelMatrix[0]);
 	program->BindVector("transposedModelMatrix_y", modelMatrix[1]);
 	program->BindVector("transposedModelMatrix_z", modelMatrix[2]);
-
 	//program->BindMat4("transposedModelMatrix", modelMatrix);
 
+	// modelview matrix
 	program->BindMat4("u_modelViewMatrix", surf->space->modelViewMatrix);
 	float mat[16];
 	R_TransposeGLMatrix(surf->space->modelViewMatrix, mat);
 	program->BindMat4("transposedModelViewMatrix", mat);
 
+	// projection matrix
 	//program->BindMat4("u_projectionMatrix", backEnd.viewDef->projectionMatrix);
 	R_TransposeGLMatrix(backEnd.viewDef->projectionMatrix, mat);
 	program->BindMat4("transposedProjectionMatrix", mat);
 
+	// view
     idVec4 localViewOrigin;
     R_GlobalPointToLocal(surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewOrigin.ToVec3());
     localViewOrigin[3] = 1.0f;
 	program->BindVector("viewOrigin", localViewOrigin);
-
 	program->BindVector("viewOriginWorld", backEnd.viewDef->renderView.vieworg);
 
+	// ambient
+	program->BindVector("ambientBrightness", backEnd.parms.ambientBrightness);
+	program->BindVector("ambientAvgColor", backEnd.parms.ambientAvgColor);
+	program->BindVector("ambientScale", backEnd.parms.ambientScale);
+	// ambient map
 	idImage *ambientCubeMap = NULL;
 	idImage *environmentCubeMap = NULL;
 	idImage *skyGradientCubeMap = NULL;
@@ -814,7 +838,9 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindImage("environmentCubeMap", environmentCubeMap);
 	program->BindImage("skyGradientCubeMap", skyGradientCubeMap);
 
+	// unknown/constants
 	program->BindVector("stuffParameters", 1.0f, 0.0f, 0.0f, 1.0f);
+	program->BindVector("currentRenderTexelSize", backEnd.parms.currentRenderTexelSize); // SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f / SCREEN_WIDTH, 1.0f / SCREEN_HEIGHT // 640 480 0.0015625 0.0020833
 }
 
 ID_INLINE static void RB_OcclusionTesting(void)

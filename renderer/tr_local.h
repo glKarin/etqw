@@ -694,6 +694,8 @@ typedef struct materialStageBuiltinUniform_s {
 	idVec2 sunHaloParameters; // scale, bias
 	idImage	*ambientCubeMap;
 	float ambientScale;
+	idVec3 fogParams; // distHalf, heightHalf, heightOffset
+	idVec4 fogDepths; // ?, ?, start, end
 } materialStageBuiltinUniform_t;
 
 typedef struct {
