@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #if defined( ID_WIN_X86_SSE )
 
-#include "../math/Simd_InstructionMacros.h"
+#include "math/Simd_InstructionMacros.h"
 
 #define VEC5_SIZE	5*4			// sizeof( idVec5 )
 
