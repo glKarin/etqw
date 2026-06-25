@@ -287,11 +287,11 @@ void sdRenderProgram::UnbindUniform(const materialStage_t *stage) const
 		GL_SelectTexture( i );
 		globalImages->BindNull();
 	}
-    GL_SelectTextureForce(0);
 }
 
 void sdRenderProgram::Unbind(void) const
 {
+    GL_SelectTextureForce(0);
     GL_UseProgram(NULL);
 }
 

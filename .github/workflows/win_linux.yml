@@ -84,7 +84,7 @@ jobs:
       - name: Configure project with CMake(Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          cmake ${{ steps.vcpkg_setup.outputs.vcpkg-cmake-config }} -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DDIRECTXSDK_INCLUDE_PATH=${{ github.workspace }}/vcpkg/packages/directxsdk_${{steps.strings.outputs.arch}}-windows/include/directxsdk -A ${{ matrix.bits == 32 && 'Win32' || 'x64' }} -DTOOLS=OFF -DDEDICATED=OFF -DBUILD_D3=ON -DBUILD_Q4=ON -DBUILD_PREY=ON -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
+          cmake ${{ steps.vcpkg_setup.outputs.vcpkg-cmake-config }} -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DDIRECTXSDK_INCLUDE_PATH=${{ github.workspace }}/vcpkg/packages/directxsdk_${{steps.strings.outputs.arch}}-windows/include/directxsdk  -G "Visual Studio 17 2022" -A ${{ matrix.bits == 32 && 'Win32' || 'x64' }} -DTOOLS=OFF -DDEDICATED=OFF -DBUILD_D3=ON -DBUILD_Q4=ON -DBUILD_PREY=ON -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
 
       - name: Run apt
         if: matrix.os == 'ubuntu-latest'

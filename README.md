@@ -12,16 +12,18 @@
 * [-] Environment lighting
 * [-] Occlusion query
 * [-] ASCII file parsing(if binary file missing)
+* [ ] Atmosphere rendering
 * ...
 
 
 > Bugs
-* [ ] Atmosphere
 * [-] Postprocess view effect
 * [x] Some vehicles AAS error
 * [ ] BSE
 * [ ] Fonts on GUIs
+* [ ] OK in game command GUIs by mouse clicking
 * [ ] Multiplayer game
+* [ ] Formatter text
 * ...
 
 
@@ -29,6 +31,8 @@
 * All dds files decoding by software for OpenGLES
 * Always using DOOM3's interaction shader
 * Playing with bots only
+* Using command map texture instead of terrain mega texture: [megatextures.mtr](base/materials/megatextures.mtr ':include') [megatextures_sdk.mtr](base/materials/megatextures_sdk.mtr ':include')
+* Only support GLSL(100 es/300 es) shader source: [renderprogs](base/renderprogs ':include')
 
 -------------------
 
@@ -56,6 +60,12 @@
 * [idAASFileLocal::Trace](tools/compilers/aas/AASFile_sample.cpp ':include')
 * [idAASFileLocal::BoundsReachableAreaNum_r](tools/compilers/aas/AASFile_sample.cpp ':include')
 * [idAASFileLocal::TraceHeight](tools/compilers/aas/AASFile_sample.cpp ':include')
+* [sdDeclAmbientCubeMap::ScaleCubeMapColor](splashdamage/decllib/declAmbientCubeMap.cpp ':include')
+* [sdDeclAmbientCubeMap::BakeLight](splashdamage/decllib/declAmbientCubeMap.cpp ':include')
+* [sdDeclAmbientCubeMap::BakeGradientMap](splashdamage/decllib/declAmbientCubeMap.cpp ':include')
+* [sdDeclAmbientCubeMap::AmbientCubeMapImage](splashdamage/decllib/declAmbientCubeMap.cpp ':include')
+* [sdDeclAmbientCubeMap::LightCubeMapImage](splashdamage/decllib/declAmbientCubeMap.cpp ':include')
+* [sdDeclAmbientCubeMap::SpecularCubeMapImage](splashdamage/decllib/declAmbientCubeMap.cpp ':include')
 
 > Raven BSE
 * [Raven BSE](raven/bse/ ':include')
