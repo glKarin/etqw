@@ -92,3 +92,4 @@
 "    float NormZComp = (" #far " + " #near ") / (" #far " - " #near ") - (2.0 * " #far " * " #near ") / (" #far " - " #near ") / LocalZcomp;\n" \
 "    return (NormZComp + 1.0) * 0.5;\n" \
 "}\n"
+
