@@ -148,18 +148,6 @@ idVec3 idAASFileLocal::AreaReachableGoal(int areaNum) const
 
 	center = vec3_origin;
 
-	int _numEdges = 0;
-
-	for (i = 0; i < area->numEdges; i++) {
-		int edgeNum = edgeIndex[area->firstEdge + i];
-
-		center += EdgeCenter(abs(edgeNum));
-		_numEdges++;
-	}
-
-	if (_numEdges > 0) {
-		center /= _numEdges;
-	}
 	numFaces = 0;
 
 	for (i = 0; i < area->numFaces; i++) {

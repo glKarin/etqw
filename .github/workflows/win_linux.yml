@@ -25,11 +25,11 @@ jobs:
 
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, windows-2022 ]
         build_type: [ Release ]
         bits: [ 64, 32 ]
         include:
-          - os: windows-latest
+          - os: windows-2022
             c_compiler: cl
             cpp_compiler: cl
           - os: ubuntu-latest
@@ -66,13 +66,13 @@ jobs:
           format: "YYYYMMDD.HHmmss"
 
       - name: Install CMake and Ninja
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         uses: lukka/get-cmake@latest
         with:
           cmakeVersion: "3.25.2"
 
       - name: Setup vcpkg and install depends
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         id: vcpkg_setup
         uses: johnwason/vcpkg-action@v6
         with:
@@ -82,7 +82,7 @@ jobs:
           github-binarycache: true
 
       - name: Configure project with CMake(Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         run: |
           cmake ${{ steps.vcpkg_setup.outputs.vcpkg-cmake-config }} -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DDIRECTXSDK_INCLUDE_PATH=${{ github.workspace }}/vcpkg/packages/directxsdk_${{steps.strings.outputs.arch}}-windows/include/directxsdk  -G "Visual Studio 17 2022" -A ${{ matrix.bits == 32 && 'Win32' || 'x64' }} -DTOOLS=OFF -DDEDICATED=OFF -DBUILD_D3=ON -DBUILD_Q4=ON -DBUILD_PREY=ON -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
 
@@ -114,12 +114,12 @@ jobs:
           cmake --build ${{ steps.strings.outputs.name }} --config ${{ matrix.build_type }}
 
       - name: Copy OpenAL32.dll
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         run: |
           xcopy /Y/Q ${{ github.workspace }}\vcpkg\packages\openal-soft_x${{ steps.strings.outputs.arch }}-windows\bin\OpenAL32.dll ${{ steps.strings.outputs.name }}\${{ matrix.build_type }}\
 
       - name: Prepare package
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         run: |
           dir ${{ steps.strings.outputs.name }}\${{ matrix.build_type }}
           mkdir ${{ matrix.build_type }}
@@ -128,7 +128,7 @@ jobs:
           dir ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}
 
       - name: Package to zip
-        if: matrix.os == 'windows-latest'
+        if: matrix.os == 'windows-2022'
         uses: vimtor/action-zip@v1.2
         with:
           files: ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
