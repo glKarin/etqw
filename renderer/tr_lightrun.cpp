@@ -852,7 +852,20 @@ void R_CreateLightRefs(idRenderLightLocal *light)
 		else
 #endif
 		// push these points down the BSP tree into areas
-#if defined(_RAVEN) || defined(_SPLASHDAMAGE)
+#ifdef _RAVEN
+		{
+			if (light->parms.pointLight)
+			{
+				const idBox box( light->parms.origin, light->parms.lightRadius, light->parms.axis );
+				light->world->PushPolytopeIntoTree(NULL, light, NULL, &box, NULL, 0);
+			}
+			else
+			{
+				const idBox box( light->frustumTris->bounds );
+				light->world->PushPolytopeIntoTree(NULL, light, NULL, &box, points, tri->numVerts);
+			}
+		}
+#elif defined(_SPLASHDAMAGE)
 		{
 			if (light->parms.flags.pointLight)
 			{
