@@ -157,7 +157,7 @@ int idGLSLShaderManager::FindIndex(const char *name) const
 int idGLSLShaderManager::FindIndex(GLuint openGLHandle) const
 {
 	if(openGLHandle == 0)
-		return NULL;
+		return -1;
 	for (int i = 0; i < shaders.Num(); i++)
 	{
 		const shaderProgram_t *shader = shaders[i];

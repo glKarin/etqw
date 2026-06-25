@@ -2790,6 +2790,7 @@ void idMaterial::ParseDeform(idLexer &src)
 		cullType = CT_TWO_SIDED;
 		src.SkipRestOfLine();
 		SetMaterialFlag(MF_NOSHADOWS);
+		SetMaterialFlag(MF_CLUSTERTRANSFORM);
 		return;
 	}
 #endif
@@ -3462,6 +3463,51 @@ void idMaterial::ParseMaterial(idLexer &src)
 			continue;
 		} else if (!token.Icmp("updateCurrentRender")) { // updateCurrentRender
 			SetMaterialFlag(MF_UPDATECURRENTRENDER);
+			continue;
+		} else if (!token.Icmp("noAmbient")) {
+			SetMaterialFlag(MF_NOAMBIENT);
+			continue;
+		} else if (!token.Icmp("onlyAtmosphereInteraction")) {
+			SetMaterialFlag(MF_ONLYATMOSPHEREINTERACTION);
+			continue;
+		} else if (!token.Icmp("noAtmosphereInteraction")) {
+			SetMaterialFlag(MF_NOATMOSPHEREINTERACTION);
+			continue;
+		} else if (!token.Icmp("shadowsCastOnlyFromStaticObjects")) {
+			SetMaterialFlag(MF_SHADOWSCASTONLYFROMSTATICOBJECTS);
+			continue;
+		} else if (!token.Icmp("noImplicitStages")) {
+			SetMaterialFlag(MF_NOIMPLICITSTAGES);
+			continue;
+		} else if (!token.Icmp("receivesLightingOnBackSides")) {
+			SetMaterialFlag(MF_RECEIVESLIGHTINGONBACKSIDES);
+			continue;
+		} else if (!token.Icmp("translucentInteraction")) {
+			SetMaterialFlag(MF_TRANSLUCENTINTERACTION);
+			continue;
+		} else if (!token.Icmp("bakedInAtmosLightCol")) {
+			SetMaterialFlag(MF_BAKEDINATMOSLIGHTCOL);
+			continue;
+		} else if (!token.Icmp("forceSourceNormals")) {
+			SetMaterialFlag(MF_FORCESOURCENORMALS);
+			continue;
+		} else if (!token.Icmp("vertexPositionOnly")) {
+			SetMaterialFlag(MF_VERTEXPOSITIONONLY);
+			continue;
+		} else if (!token.Icmp("noSurfaceMerge")) {
+			SetMaterialFlag(MF_NOSURFACEMERGE);
+			continue;
+		} else if (!token.Icmp("fullScreenPostProcess")) {
+			SetMaterialFlag(MF_FULLSCREENPOSTPROCESS);
+			continue;
+		} else if (!token.Icmp("forceTangents")) {
+			SetMaterialFlag(MF_FORCETANGENTS);
+			continue;
+		} else if (!token.Icmp("occlusionQuery")) {
+			SetMaterialFlag(MF_OCCLUSION_QUERY);
+			continue;
+		} else if (!token.Icmp("flipBacksidedNormals")) {
+			SetMaterialFlag(MF_FLIPBACKSIDENORMALS);
 			continue;
 #endif
 
