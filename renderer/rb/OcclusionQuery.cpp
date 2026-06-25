@@ -2,6 +2,8 @@
 
 #include "../tr_local.h"
 
+#include <limits.h>
+
 static idCVar harm_r_drawOcclusionTris("harm_r_drawOcclusionTris", "0", CVAR_BOOL | CVAR_RENDERER, "render occlusion tris");
 idCVar harm_r_skipOcclusionTesting("harm_r_skipOcclusionTesting", "0", CVAR_BOOL | CVAR_RENDERER, "disable occlusion testing");
 
@@ -394,7 +396,11 @@ void idOcclusionTestJob::Ready(void)
 	{
 		if(!parms.bounds.IsCleared())
 		{
+#ifdef _SPLASHDAMAGE
 			session->rw->DebugBounds(lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.bounds, parms.origin, parms.axis, 0);
+#else
+			session->rw->DebugBounds(lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.bounds, parms.origin, 0);
+#endif
 			session->rw->DrawText(va("%d: %d: %d = %d", index, query ? query->QueryID() : -1, lastResult, query ? query->GetResult() : -2), parms.origin + idVec3(0, 0, parms.bounds[1].z + 50), 1.0f, lastResult > 0 ? colorGreen : (lastResult < 0 ? colorBlue : colorRed), parms.axis);
 		}
 		else
