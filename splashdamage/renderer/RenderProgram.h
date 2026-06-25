@@ -2,6 +2,9 @@
 #ifndef _KARIN_RENDERPROGRAM_H
 #define _KARIN_RENDERPROGRAM_H
 
+// color byte to float
+#define NORMALIZE_BYTE_COLOR 1
+
 class idMaterial;
 class idImage;
 class sdDeclRenderProgram;

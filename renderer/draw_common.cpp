@@ -41,6 +41,14 @@ extern idCVar harm_r_areaAmbientScale;
 static idCVar harm_r_skipShaderPass("harm_r_skipShaderPass", "0", CVAR_INTEGER|CVAR_RENDERER, "1. TG_EXPLICIT, 2. TG_DIFFUSE_CUBE, 3. TG_REFLECT_CUBE, 4. TG_SKYBOX_CUBE, 5. TG_WOBBLESKY_CUBE, 6. TG_SCREEN, 7. TG_SCREEN2, 8. TG_GLASSWARP, 9. TG_REFLECT_CUBE(Bumpy), 9000. All. greater than 0: skip, less than 0: only, 0 disabled.");
 #endif
 
+extern const float zero[] = { 0.0f };
+extern const float one[] = { 1.0f };
+extern const float negOne[] = { -1.0f };
+#ifdef COLOR_MODULATE_IS_NORMALIZED
+extern const float oneModulate[] = { 1.0f / 255.0f };
+extern const float negOneModulate[] = { -1.0f / 255.0f };
+#endif
+
 /*
 =====================
 RB_BakeTextureMatrixIntoTexgen
@@ -777,6 +785,9 @@ static void RB_BindBuiltinProgramEnvironment(const sdRenderProgram *program, con
 	program->BindVector("fogColor", backEnd.parms.fogColor);
 	program->BindVector("fogParams", backEnd.parms.fogParams);
 	program->BindVector("fogDepths", backEnd.parms.fogDepths);
+	program->BindVector("fogRotation_x", 1.0f, 0.0f, 0.0f, 1.0f);
+	program->BindVector("fogRotation_y", 0.0f, 1.0f, 0.0f, 1.0f);
+	program->BindVector("fogRotation_z", 0.0f, 0.0f, 1.0f, 1.0f);
 
 	// matrix
 	// model matrix
@@ -1144,7 +1155,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), ac->st.ToFloatPtr());
+#ifdef NORMALIZE_BYTE_COLOR
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Color), 4, GL_UNSIGNED_BYTE, true, sizeof(idDrawVert), &ac->color);
+#else
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Color), 4, GL_UNSIGNED_BYTE, false, sizeof(idDrawVert), &ac->color);
+#endif
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Normal), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->normal.ToFloatPtr());
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Tangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[0].ToFloatPtr());
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Bitangent), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->tangents[1].ToFloatPtr());
@@ -1168,7 +1183,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			switch (pStage->vertexColor) {
 			case SVC_MODULATE:
 				// glColorPointer() -> vertex.color(UB[0,255]) * (1.0/255.0) + 0.0 -> output float [0,1]
+#ifdef NORMALIZE_BYTE_COLOR
+				renderProgram->BindVector("colorModulate", one[0]);
+#else
 				renderProgram->BindVector("colorModulate", oneModulate[0]);
+#endif
 				renderProgram->BindVector("colorAdd", zero[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", one[0]);
@@ -1176,7 +1195,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				break;
 			case SVC_INVERSE_MODULATE:
 				// glColorPointer() -> vertex.color(UB[0,255]) * -(1.0/255.0) + 0.0 -> output float [-1,0]
+#ifdef NORMALIZE_BYTE_COLOR
+				renderProgram->BindVector("colorModulate", negOne[0]);
+#else
 				renderProgram->BindVector("colorModulate", negOneModulate[0]);
+#endif
 				renderProgram->BindVector("colorAdd", one[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", one[0]);
@@ -1184,7 +1207,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				break;
 			case SVC_MODULATE_ALPHA:
 				// glColorPointer() -> vertex.color(UB[0,255]) * (1.0/255.0) + 0.0 -> output float [0,1]
+#ifdef NORMALIZE_BYTE_COLOR
+				renderProgram->BindVector("colorModulate", zero[0], zero[0], zero[0], one[0]);
+#else
 				renderProgram->BindVector("colorModulate", zero[0], zero[0], zero[0], oneModulate[0]);
+#endif
 				renderProgram->BindVector("colorAdd", zero[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", zero[0], zero[0], zero[0], one[0]);
@@ -1197,7 +1224,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				renderProgram->BindVector("colorAdd", color);
 				// glColor() -> vertex.color(UB[0,255]) * 0.0 + glColor -> output float [0,255]
 				renderProgram->BindVector("u_glColorPointer", zero[0]);
+#ifdef NORMALIZE_BYTE_COLOR
+				renderProgram->BindVector("u_glColor4ub", color);
+#else
 				renderProgram->BindVector("u_glColor4ub", color[0] * 255.0f, color[1] * 255.0f, color[2] * 255.0f, color[3] * 255.0f);
+#endif
 				break;
 			}
 
@@ -1226,7 +1257,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				RB_EndDrawPostprocess();
 			}
 
-			renderProgram->Unbind(pStage);
+			renderProgram->Unbind(/*pStage*/);
 
 			continue;
 		}

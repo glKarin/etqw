@@ -125,13 +125,13 @@ void sdRenderProgram::BindStageUniform(const materialStage_t *stage, const float
 	for(int j = 0; j < locations.Num(); j++)
 	{
 		binding = bindings[j];
-		location = locations[j];
-		bool handled = false;
 
 		if(!binding) // external binding
 		{
 			continue;
 		}
+		location = locations[j];
+		bool handled = false;
 
 		if(binding->GetBindingType() == sdDeclRenderBinding::BT_VECTOR)
 		{
@@ -287,11 +287,11 @@ void sdRenderProgram::UnbindUniform(const materialStage_t *stage) const
 		GL_SelectTexture( i );
 		globalImages->BindNull();
 	}
+    GL_SelectTextureForce(0);
 }
 
 void sdRenderProgram::Unbind(void) const
 {
-    GL_SelectTextureForce(0);
     GL_UseProgram(NULL);
 }
 
@@ -407,6 +407,9 @@ void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
 	InsertMacro(buf, "_GLES", "1");
 	//InsertMacro(buf, "_DEBUG", "0");
 	InsertMacro(buf, "_HARM", "1");
+#ifdef NORMALIZE_BYTE_COLOR
+	InsertMacro(buf, "NORMALIZE_BYTE_COLOR", "1");
+#endif
 
 	const char *CvarMacros[] = {
 		"r_shaderQuality",
@@ -427,7 +430,15 @@ void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
 
 	//karin: glColorPointer/glColor
 	InsertMacro(buf, "VERTEX_COLOR(x)", "( ( x ) * u_glColorPointer + u_glColor4ub )");
+#ifdef NORMALIZE_BYTE_COLOR
+	buf.Append("#ifdef NORMALIZE_BYTE_COLOR\n");
+	InsertMacro(buf, "VERTEX_BYTE_COLOR(x)", "( x )");
+	buf.Append("#else\n");
 	InsertMacro(buf, "VERTEX_BYTE_COLOR(x)", "BYTE_COLOR( VERTEX_COLOR( x ) )");
+	buf.Append("#endif\n");
+#else
+	InsertMacro(buf, "VERTEX_BYTE_COLOR(x)", "BYTE_COLOR( VERTEX_COLOR( x ) )");
+#endif
 }
 
 void sdRenderProgram::InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
