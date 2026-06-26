@@ -344,28 +344,20 @@ void sdDeclAmbientCubeMap::ScaleCubeMapColor( float* cubeMap[6], const int faceS
 }
 
 void sdDeclAmbientCubeMap::CubeMapFtob( float* cubeMapFloat[6], byte* cubeMapByte[6], const int faceSize ) {
-	byte ** v3; // esif
-	int v4; // edx
-	int v5; // ebp
-	int i; // ecx
-	float v7; // [esp+14h] [ebp-10h]
-	float ** fptr = cubeMapFloat;
+	int length;
+	int m;
+	int i;
+	float comp;
 
-	v3 = cubeMapByte;
-	v4 = 4 * faceSize * faceSize;
-	v5 = 6;
-	do
+	length = 4 * faceSize * faceSize;
+	for( m = 0; m < 6; m++)
 	{
-		for (i = 0; i < v4; ++i)
+		for (i = 0; i < length; i++)
 		{
-			v7 = (*fptr)[i] * 255.0f;
-			(*v3)[i] = (byte)fminf(fmaxf(v7, 0.0f), 255.0f);
+			comp = cubeMapFloat[m][i] * 255.0f;
+			cubeMapByte[m][i] = (byte)fminf(fmaxf(comp, 0.0f), 255.0f);
 		}
-		++v3;
-		fptr++;
-		--v5;
 	}
-	while (v5);
 }
 
 void sdDeclAmbientCubeMap::BakeLight( float* cubeMap[6], const int faceSize, const idVec3& lightDir, const idVec3& lightColor) {
@@ -567,10 +559,8 @@ void sdDeclAmbientCubeMap::BakeLight( float* cubeMap[6], const int faceSize, con
 }
 
 void sdDeclAmbientCubeMap::BakeGradientMap( byte* pic, const int size, const idVec3& ambientColor, const idVec3& highLightColor ) {
-	int v5; // edi
 	byte *v6; // ecx
-	double v7; // st4
-	int v8; // [esp+Ch] [ebp-58h]
+	float v7; // st4
 	float v9; // [esp+Ch] [ebp-58h]
 	float v10; // [esp+Ch] [ebp-58h]
 	idVec3 v11; // v11 v12 v13
@@ -578,31 +568,27 @@ void sdDeclAmbientCubeMap::BakeGradientMap( byte* pic, const int size, const idV
 	idVec3 v17; // v17 v18 v19
 	idVec3 v20; // v20 v21 v22
 	float v23; // [esp+6Ch] [ebp+8h]
+	int i;
 
-	v5 = 0;
-	v8 = 0;
 	if ( size > 0 )
 	{
 		v23 = (float)(size - 1);
-		v6 = pic + 2;
-		do
+		v6 = pic;
+		for(i = 0; i < size; i++)
 		{
-			v9 = (double)v8 / v23;
+			v9 = (float)i / v23;
 			v7 = v9;
 			v10 = 1.0f - v9;
 			v14 = highLightColor * v7;
 			v11 = ambientColor * v10;
 			v17 = v11 + v14;
-			v20 = v17 * 255.0;
-			*(v6 - 2) = (byte)fminf(fmaxf(v20.x, 0.0), 255.0);
-			*(v6 - 1) = (byte)fminf(fmaxf(v20.y, 0.0), 255.0);
-			++v5;
-			*v6 = (byte)fminf(fmaxf(v20.z, 0.0), 255.0);
-			v6[1] = -1;
+			v20 = v17 * 255.0f;
+			v6[0] = (byte)fminf(fmaxf(v20.x, 0.0f), 255.0f);
+			v6[1] = (byte)fminf(fmaxf(v20.y, 0.0f), 255.0f);
+			v6[2] = (byte)fminf(fmaxf(v20.z, 0.0f), 255.0f);
+			v6[3] = 255;
 			v6 += 4;
-			v8 = v5;
 		}
-		while ( v5 < size );
 	}
 }
 
@@ -618,21 +604,19 @@ void sdDeclAmbientCubeMap::UploadCubeMap( idImage* image, const byte* cubeMap[6]
 	for ( i = 0; i < 6; ++i )
 	{
 		qglTexImage2D(i + GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA/*GL_RGBA8*/, faceSize, faceSize, 0, GL_RGBA, GL_UNSIGNED_BYTE, cubeMap[i]);
-#if 0
-		fileSystem->WriteTGA(va("textures/%s_%d.tga", image->imgName.c_str(), i), cubeMap[i], faceSize, faceSize);
-		/*
-		extern void R_WriteJPG(const char *filename, const byte *data, int width, int height, int comp, bool flipVertical = false, int compression = 0, const char *basePath = NULL);
-		R_WriteJPG(va("textures/%s_%d.jpg", image->imgName.c_str(), i), cubeMap[i], faceSize, faceSize,4);
-		*/
+	}
 #endif
+#if 0
+	for ( int i = 0; i < 6; ++i )
+	{
+		//fileSystem->WriteTGA(va("textures/%s_%d.tga", image->imgName.c_str(), i), cubeMap[i], faceSize, faceSize);
+		extern void R_WriteJPG(const char *filename, const byte *data, int width, int height, int comp, bool flipVertical = false, int compression = 0, const char *basePath = NULL);
+		R_WriteJPG(va("texturesxxx/%s_%d.jpg", image->imgName.c_str(), i), cubeMap[i], faceSize, faceSize,4);
 	}
 #endif
 }
 
 void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
-	int v4; // ebx
-	int v6; // edi
-	sdDeclAmbientCubeMap::ambientLight_t *list; // ecx
 	float **v8; // ecx
 	int v9; // edx
 	int v10; // eax
@@ -653,43 +637,37 @@ void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
 	float v25; // [esp+18h] [ebp-4h]
 	float v26; // [esp+18h] [ebp-4h]
 	float v27; // [esp+18h] [ebp-4h]
+	int i;
 
-	for(int i = 0; i < 6; i++)
+	for(i = 0; i < 6; i++)
 	{
 		cubeMapFloat[i] = &cubeMapDataFloat[BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * i];
 		cubeMapByte[i] = &cubeMapDataByte[BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * i];
 	}
 
-	float **off_81DA44 = &cubeMapFloat[0];
-	byte **off_81DA5C = &cubeMapByte[0];
+	//float **off_81DA44 = &cubeMapFloat[0];
+	//byte **off_81DA5C = &cubeMapByte[0];
 
-	v4 = 0;
 	//image->generatorFunctor = NULL;
 	//image->Reload(false, true, true); // (_DWORD *)image->vtbl + 11
-	for (int i = 0; i < 6; i++ )
+	for ( i = 0; i < 6; i++ )
 	{
-		memset(*off_81DA44++, 0, 0x10000u);
-		memset(*off_81DA5C++, 0, 0x4000u);
+		memset(cubeMapFloat[i]/**off_81DA44++*/, 0, BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * sizeof(float)/*0x10000u*/);
+		memset(cubeMapByte[i]/**off_81DA5C++*/, 0, BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4/*0x4000u*/);
 	}
 
-	if ( this->ambientLights.Num() > 0 )
+	for ( i = 0; i < this->ambientLights.Num(); i++ )
 	{
-		v6 = 0;
-		do
-		{
-			list = this->ambientLights.Ptr();
-			if ( list[v6].ambient )
-				sdDeclAmbientCubeMap::BakeLight(cubeMapFloat, BAKEDLIGHT_SIZE, list[v6].dir, list[v6].color);
-			++v4;
-			++v6;
-		}
-		while ( v4 < this->ambientLights.Num() );
+		const sdDeclAmbientCubeMap::ambientLight_t &light = this->ambientLights[i];
+		if ( light.ambient )
+			sdDeclAmbientCubeMap::BakeLight(cubeMapFloat, BAKEDLIGHT_SIZE, light.dir, light.color);
 	}
-	v8 = &cubeMapFloat[0];
+
 	this->avgAmbientColor.Zero();
-	v16 = 0.0;
-	do
+	v16 = 0.0f;
+	for ( i = 0; i < 6; i++ )
 	{
+		v8 = &cubeMapFloat[i];
 		v9 = -2;
 		v10 = 3;
 		do
@@ -721,9 +699,7 @@ void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
 			v16 = v25 + 1.0f;
 		}
 		while ( v9 + 2 < 0x4000 );
-		++v8;
 	}
-	while ( v8 < off_81DA44 );
 	v26 = v16 * 0.25f;
 	v27 = 1.0f / v26;
 	this->avgAmbientColor *= v27;
@@ -733,40 +709,30 @@ void sdDeclAmbientCubeMap::AmbientCubeMapImage( idImage* image ) {
 }
 
 void sdDeclAmbientCubeMap::LightCubeMapImage( idImage* image ) {
-	int v3; // ebx
-	int v6; // edi
-	sdDeclAmbientCubeMap::ambientLight_t *list; // ecx
+	int i;
 
-	for(int i = 0; i < 6; i++)
+	for(i = 0; i < 6; i++)
 	{
 		cubeMapFloat[i] = &cubeMapDataFloat[BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * i];
 		cubeMapByte[i] = &cubeMapDataByte[BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * i];
 	}
 
-	float **off_81DA44 = &cubeMapFloat[0];
-	byte **off_81DA5C = &cubeMapByte[0];
+	//float **off_81DA44 = &cubeMapFloat[0];
+	//byte **off_81DA5C = &cubeMapByte[0];
 
-	v3 = 0;
 	//image->generatorFunctor = NULL;
 	//image->Reload(false, true, true); // (_DWORD *)image->vtbl + 11
-	for (int i = 0; i < 6; i++ )
+	for ( i = 0; i < 6; i++ )
 	{
-		memset(*off_81DA44++, 0, 0x10000u);
-		memset(*off_81DA5C++, 0, 0x4000u);
+		memset(cubeMapFloat[i]/**off_81DA44++*/, 0, BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * sizeof(float)/*0x10000u*/);
+		memset(cubeMapByte[i]/**off_81DA5C++*/, 0, BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4/*0x4000u*/);
 	}
 
-	if ( this->ambientLights.Num() > 0 )
+	for ( i = 0; i < this->ambientLights.Num(); i++ )
 	{
-		v6 = 0;
-		do
-		{
-			list = this->ambientLights.Ptr();
-			if ( list[v6].ambient )
-				sdDeclAmbientCubeMap::BakeLight(cubeMapFloat/*off_81DA44*/, BAKEDLIGHT_SIZE, list[v6].dir, list[v6].color);
-			++v3;
-			++v6;
-		}
-		while ( v3 < this->ambientLights.Num() );
+		const sdDeclAmbientCubeMap::ambientLight_t &light = this->ambientLights[i];
+		if ( light.ambient )
+			sdDeclAmbientCubeMap::BakeLight(cubeMapFloat/*off_81DA44*/, BAKEDLIGHT_SIZE, light.dir, light.color);
 	}
 	sdDeclAmbientCubeMap::ScaleCubeMapColor(cubeMapFloat/*off_81DA44*/, BAKEDLIGHT_SIZE, 0.25f);
 	if ( !this->indoors
@@ -781,40 +747,30 @@ void sdDeclAmbientCubeMap::LightCubeMapImage( idImage* image ) {
 }
 
 void sdDeclAmbientCubeMap::SpecularCubeMapImage( idImage* image ) {
-	int v3; // ebx
-	int v6; // esi
-	sdDeclAmbientCubeMap::ambientLight_t *list; // ecx
+	int i;
 
-	for(int i = 0; i < 6; i++)
+	for(i = 0; i < 6; i++)
 	{
 		cubeMapFloat[i] = &cubeMapDataFloat[BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * i];
 		cubeMapByte[i] = &cubeMapDataByte[BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * i];
 	}
 
-	float **off_81DA44 = &cubeMapFloat[0];
-	byte **off_81DA5C = &cubeMapByte[0];
+	//float **off_81DA44 = &cubeMapFloat[0];
+	//byte **off_81DA5C = &cubeMapByte[0];
 
-	v3 = 0;
 	//image->generatorFunctor = NULL;
 	//image->Reload(false, true, true); // (_DWORD *)image->vtbl + 11
-	for (int i = 0; i < 6; i++ )
+	for ( i = 0; i < 6; i++ )
 	{
-		memset(*off_81DA44++, 0, 0x10000u);
-		memset(*off_81DA5C++, 0, 0x4000u);
+		memset(cubeMapFloat[i]/**off_81DA44++*/, 0, BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4 * sizeof(float)/*0x10000u*/);
+		memset(cubeMapByte[i]/**off_81DA5C++*/, 0, BAKEDLIGHT_SIZE * BAKEDLIGHT_SIZE * 4/*0x4000u*/);
 	}
 
-	if ( this->ambientLights.Num() > 0 )
+	for ( i = 0; i < this->ambientLights.Num(); i++ )
 	{
-		v6 = 0;
-		do
-		{
-			list = this->ambientLights.Ptr();
-			if ( list[v6].specular )
-				sdDeclAmbientCubeMap::BakeLight(cubeMapFloat/*off_81DA44*/, BAKEDLIGHT_SIZE, list[v6].dir, list[v6].color, 16.0);
-			++v3;
-			++v6;
-		}
-		while ( v3 < this->ambientLights.Num() );
+		const sdDeclAmbientCubeMap::ambientLight_t &light = this->ambientLights[i];
+		if ( light.specular )
+			sdDeclAmbientCubeMap::BakeLight(cubeMapFloat/*off_81DA44*/, BAKEDLIGHT_SIZE, light.dir, light.color, 16.0f);
 	}
 	sdDeclAmbientCubeMap::CubeMapFtob(cubeMapFloat/*off_81DA44*/, cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
 	sdDeclAmbientCubeMap::UploadCubeMap(image, (const byte **)cubeMapByte/*off_81DA5C*/, BAKEDLIGHT_SIZE);
@@ -822,27 +778,14 @@ void sdDeclAmbientCubeMap::SpecularCubeMapImage( idImage* image ) {
 }
 
 void sdDeclAmbientCubeMap::GradientMapImage( idImage* image ) {
-	void *vtbl; // edx
-	//_DWORD v3[9]; // [esp-24h] [ebp-2Ch] BYREF
-
 	sdDeclAmbientCubeMap::BakeGradientMap(gradientMapData, GRADIENT_SIZE, ambientColor, highLightColor);
 	// vtbl = a2->vtbl;	// vtbl + 6)
-	//qmemcpy(v3, &unk_799FEC, sizeof(v3));
 
 	image->GenerateImage(gradientMapData, GRADIENT_SIZE, 1,
 	  TF_LINEAR, // 0
 	  false,
 	  TR_CLAMP, // 1
 	  TD_HIGH_QUALITY // 4
-	  /*v3[0],
-	  v3[1],
-	  v3[2],
-	  v3[3],
-	  v3[4],
-	  v3[5],
-	  v3[6],
-	  v3[7],
-	  v3[8]*/
 	  );
 }
 
