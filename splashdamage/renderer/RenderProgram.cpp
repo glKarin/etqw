@@ -19,14 +19,15 @@ static const char *Builtin_Vectors[] = {
 	"u_glColorPointer", // using vertex color by glColorPointer
 	"u_glColor4ub", // using uniform color by glColor
 };
-static idCVar r_shaderQuality("r_shaderQuality", "3", CVAR_RENDERER | CVAR_INTEGER, "");
-static idCVar r_megaDrawMethod("r_megaDrawMethod", "0", CVAR_RENDERER | CVAR_BOOL, "");
-static idCVar r_normalizeNormalMaps("r_normalizeNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
-static idCVar r_dxnNormalMaps("r_dxnNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
-static idCVar r_32ByteVtx("r_32ByteVtx", "0", CVAR_RENDERER | CVAR_BOOL, "");
-static idCVar r_useDitherMask("r_useDitherMask", "0", CVAR_RENDERER | CVAR_BOOL, "");
-static idCVar r_shaderSkipSpecCubeMaps("r_shaderSkipSpecCubeMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
-static idCVar alphatest_kill("alphatest_kill", "1", CVAR_RENDERER | CVAR_BOOL, "");
+
+idCVar r_shaderQuality("r_shaderQuality", "3", CVAR_RENDERER | CVAR_INTEGER, "");
+idCVar r_megaDrawMethod("r_megaDrawMethod", "0", CVAR_RENDERER | CVAR_BOOL, "");
+idCVar r_normalizeNormalMaps("r_normalizeNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
+idCVar r_dxnNormalMaps("r_dxnNormalMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
+idCVar r_32ByteVtx("r_32ByteVtx", "0", CVAR_RENDERER | CVAR_BOOL, "");
+idCVar r_useDitherMask("r_useDitherMask", "0", CVAR_RENDERER | CVAR_BOOL, "");
+idCVar r_shaderSkipSpecCubeMaps("r_shaderSkipSpecCubeMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
+idCVar alphatest_kill("alphatest_kill", "1", CVAR_RENDERER | CVAR_BOOL, "");
 
 static idCVar harm_r_printShaderSource("harm_r_printShaderSource", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "print external converted shader source");
 

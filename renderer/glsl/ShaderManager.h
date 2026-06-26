@@ -125,6 +125,7 @@ private:
 	int FindIndex(GLuint openGLHandle) const; // return raw index
     GLSLShaderProp * FindCustom(const char *name, int *index = NULL);
 	void Resize(int type);
+	void ReloadShader(int index);
 
 private:
 	idList<shaderProgram_t *> shaders; // available shaders, include internal shaders and loaded custom shaders

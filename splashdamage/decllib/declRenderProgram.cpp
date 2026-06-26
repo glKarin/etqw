@@ -789,3 +789,7 @@ bool sdDeclRenderProgram::ParseState(idParser &src)
 	return true;
 }
 
+bool sdDeclRenderProgram::HasDefine(const char *macro) const
+{
+	return (vertex.IsValid() && vertex.HasDefine(macro)) || (fragment.IsValid() && fragment.HasDefine(macro));
+}

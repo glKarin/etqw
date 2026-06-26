@@ -60,6 +60,9 @@ class sdRenderProgramShader
 		}
 		void						ExportSource(const char *path, const char *filename, const char *name, bool raw = false) const;
 		bool						HasPostprocessTexture(void) const;
+		bool						HasDefine(const char *macro) const {
+			return defines.FindIndex(macro) != -1;
+		}
 
 	private:
 		void						HandleInclude(sdStringBuilder_Heap &buf, const char *program, const char *fileName);
@@ -109,6 +112,7 @@ public:
 	int								DrawStateBits(void) const {
 		return drawStateBits;
 	}
+	bool							HasDefine(const char *macro) const;
 
 	void							ExportSource(const char *path, bool raw = false) const;
 	static void						ExportDeclRenderPrograms_f(const idCmdArgs &args);

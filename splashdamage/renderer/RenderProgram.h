@@ -9,6 +9,15 @@ class idMaterial;
 class idImage;
 class sdDeclRenderProgram;
 
+extern idCVar r_shaderQuality;
+extern idCVar r_megaDrawMethod;
+extern idCVar r_normalizeNormalMaps;
+extern idCVar r_dxnNormalMaps;
+extern idCVar r_32ByteVtx;
+extern idCVar r_useDitherMask;
+extern idCVar r_shaderSkipSpecCubeMaps;
+extern idCVar alphatest_kill;
+
 class sdRenderProgram
 {
 public:

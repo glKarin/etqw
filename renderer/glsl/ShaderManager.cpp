@@ -377,6 +377,54 @@ void idGLSLShaderManager::Shutdown(void)
     printf("idGLSLShaderManager shutdown\n");
 }
 
+void idGLSLShaderManager::ReloadShader(int i)
+{
+	shaderProgram_t *shader = shaders[i];
+	GLSLShaderProp *prop = &shaderProps[i];
+
+	common->Printf("Reload GLSL shader '%s'......\n", prop->name.c_str());
+
+	int type = prop->type;
+	if(type < 0)
+		return;
+	if(type >= SHADER_BASE_BEGIN && type <= SHADER_BASE_END)
+	{
+		RB_GLSL_LoadNotAllowError();
+	}
+	else
+	{
+		RB_GLSL_IgnoreLoadError();
+	}
+
+	if (shader)
+		RB_GLSL_DeleteShaderProgram(shader, false);
+	if(type < SHADER_CUSTOM)
+	{
+		if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
+			shaders[i] = prop->program;
+		}
+		else {
+			shaders[i] = NULL;
+			common->Printf("Reload GLSL shader error %d -> %s!\n", i, prop->name.c_str());
+		}
+	}
+	else if (prop->program)
+	{
+		if (prop->read_source)
+			prop->read_source(prop);
+		if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
+			shaders[i] = prop->program;
+			if (prop->load_finish)
+				prop->load_finish(prop);
+		}
+		else
+		{
+			shaders[i] = NULL;
+			common->Printf("Reload custom GLSL shader error %d -> %s!\n", i, prop->name.c_str());
+		}
+	}
+}
+
 void idGLSLShaderManager::ReloadShaders(void)
 {
 	// idList<GLSLShaderProp> Props;
@@ -389,49 +437,7 @@ void idGLSLShaderManager::ReloadShaders(void)
 
 	for(int i = 0; i < shaderProps.Num(); i++)
 	{
-		shaderProgram_t *shader = shaders[i];
-		GLSLShaderProp *prop = &shaderProps[i];
-		common->Printf("Reload GLSL shader %d -> %s......\n", i, prop->name.c_str());
-
-		int type = prop->type;
-		if(type < 0)
-			continue;
-		if(type >= SHADER_BASE_BEGIN && type <= SHADER_BASE_END)
-		{
-			RB_GLSL_LoadNotAllowError();
-		}
-		else
-		{
-			RB_GLSL_IgnoreLoadError();
-		}
-
-		if (shader)
-			RB_GLSL_DeleteShaderProgram(shader, false);
-		if(type < SHADER_CUSTOM)
-		{
-			if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
-				shaders[i] = prop->program;
-			}
-			else {
-				shaders[i] = NULL;
-				common->Printf("Reload GLSL shader error %d -> %s!\n", i, prop->name.c_str());
-			}
-		}
-		else if (prop->program)
-		{
-			if (prop->read_source)
-				prop->read_source(prop);
-			if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
-				shaders[i] = prop->program;
-				if (prop->load_finish)
-					prop->load_finish(prop);
-			}
-			else
-			{
-				shaders[i] = NULL;
-				common->Printf("Reload custom GLSL shader error %d -> %s!\n", i, prop->name.c_str());
-			}
-		}
+		ReloadShader(i);
 	}
 
 	int endMs = Sys_Milliseconds();
@@ -442,6 +448,9 @@ void idGLSLShaderManager::ReloadShaders(void)
 
 void idGLSLShaderManager::ReloadShaders(const idStrList &names)
 {
+	if(names.Num() == 0)
+		return;
+
 	// idList<GLSLShaderProp> Props;
 	// RB_GLSL_GetShaderSources(Props);
 	shaderProgram_t *originShader = backEnd.glState.currentProgram;
@@ -452,52 +461,10 @@ void idGLSLShaderManager::ReloadShaders(const idStrList &names)
 
 	for(int i = 0; i < shaderProps.Num(); i++)
 	{
-		shaderProgram_t *shader = shaders[i];
-		GLSLShaderProp *prop = &shaderProps[i];
-		if (names.FindIndex(prop->name) == -1)
+		if (names.FindIndex(shaderProps[i].name) == -1)
 			continue;
 
-		common->Printf("Reload GLSL shader '%s'......\n", prop->name.c_str());
-
-		int type = prop->type;
-		if(type < 0)
-			continue;
-		if(type >= SHADER_BASE_BEGIN && type <= SHADER_BASE_END)
-		{
-			RB_GLSL_LoadNotAllowError();
-		}
-		else
-		{
-			RB_GLSL_IgnoreLoadError();
-		}
-
-		if (shader)
-			RB_GLSL_DeleteShaderProgram(shader, false);
-		if(type < SHADER_CUSTOM)
-		{
-			if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
-				shaders[i] = prop->program;
-			}
-			else {
-				shaders[i] = NULL;
-				common->Printf("Reload GLSL shader error %d -> %s!\n", i, prop->name.c_str());
-			}
-		}
-		else if (prop->program)
-		{
-			if (prop->read_source)
-				prop->read_source(prop);
-			if(RB_GLSL_LoadShaderProgramFromProp(prop)) {
-				shaders[i] = prop->program;
-				if (prop->load_finish)
-					prop->load_finish(prop);
-			}
-			else
-			{
-				shaders[i] = NULL;
-				common->Printf("Reload custom GLSL shader error %d -> %s!\n", i, prop->name.c_str());
-			}
-		}
+		ReloadShader(i);
 	}
 
 	int endMs = Sys_Milliseconds();

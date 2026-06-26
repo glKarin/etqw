@@ -163,7 +163,6 @@ void rvBSE::UpdateSoundEmitter(const rvSegmentTemplate* st, rvSegment* seg)
     memset(&parms, 0, sizeof(parms));
     parms.volume = seg->mSoundVolume;
 #ifdef _SPLASHDAMAGE
-
     emitter->UpdateEmitter(mCurrentOrigin, /*listener number*/0, &parms);
 #else
     parms.frequencyShift = seg->mFreqShift;

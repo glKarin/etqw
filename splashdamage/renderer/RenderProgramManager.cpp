@@ -51,6 +51,157 @@ const sdRenderProgram * sdRenderProgramManager::Find(const char *name) {
     return NULL;
 }
 
+void sdRenderProgramManager::ReloadAll(void) {
+	idStrList shaderNames;
+	shaderNames.Resize(programs.Num());
+    for (int i = 0; i < programs.Num(); i++) {
+        shaderNames.Append(programs[i]->GetDeclRenderProgram()->GetName());
+    }
+
+	if(shaderNames.Num() > 0)
+		shaderManager->ReloadShaders(shaderNames);
+}
+
+void sdRenderProgramManager::CheckCVars(void) {
+#if 1
+	const sdDeclRenderProgram *program;
+	idStrList shaderNames;
+	shaderNames.Resize(programs.Num());
+    for (int i = 0; i < programs.Num(); i++) {
+		program = programs[i]->GetDeclRenderProgram();
+		if(r_shaderQuality.IsModified())
+		{
+			if(program->HasDefine(r_shaderQuality.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(r_megaDrawMethod.IsModified())
+		{
+			if(program->HasDefine(r_megaDrawMethod.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(r_normalizeNormalMaps.IsModified())
+		{
+			if(program->HasDefine(r_normalizeNormalMaps.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(r_dxnNormalMaps.IsModified())
+		{
+			if(program->HasDefine(r_dxnNormalMaps.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(r_32ByteVtx.IsModified())
+		{
+			if(program->HasDefine(r_32ByteVtx.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(r_useDitherMask.IsModified())
+		{
+			if(program->HasDefine(r_useDitherMask.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(r_shaderSkipSpecCubeMaps.IsModified())
+		{
+			if(program->HasDefine(r_shaderSkipSpecCubeMaps.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+		if(alphatest_kill.IsModified())
+		{
+			if(program->HasDefine(alphatest_kill.GetName()))
+			{
+				shaderNames.Append(program->GetName());
+				continue;
+			}
+		}
+	}
+
+	if(r_shaderQuality.IsModified())
+		r_shaderQuality.ClearModified();
+	if(r_megaDrawMethod.IsModified())
+		r_megaDrawMethod.ClearModified();
+	if(r_normalizeNormalMaps.IsModified())
+		r_normalizeNormalMaps.ClearModified();
+	if(r_dxnNormalMaps.IsModified())
+		r_dxnNormalMaps.ClearModified();
+	if(r_32ByteVtx.IsModified())
+		r_32ByteVtx.ClearModified();
+	if(r_useDitherMask.IsModified())
+		r_useDitherMask.ClearModified();
+	if(r_shaderSkipSpecCubeMaps.IsModified())
+		r_shaderSkipSpecCubeMaps.ClearModified();
+	if(alphatest_kill.IsModified())
+		alphatest_kill.ClearModified();
+
+	if(shaderNames.Num() > 0)
+		shaderManager->ReloadShaders(shaderNames);
+#else
+	bool changed = false;
+	if(r_shaderQuality.IsModified())
+	{
+		changed = true;
+		r_shaderQuality.ClearModified();
+	}
+	if(r_megaDrawMethod.IsModified())
+	{
+		changed = true;
+		r_megaDrawMethod.ClearModified();
+	}
+	if(r_normalizeNormalMaps.IsModified())
+	{
+		changed = true;
+		r_normalizeNormalMaps.ClearModified();
+	}
+	if(r_dxnNormalMaps.IsModified())
+	{
+		changed = true;
+		r_dxnNormalMaps.ClearModified();
+	}
+	if(r_32ByteVtx.IsModified())
+	{
+		changed = true;
+		r_32ByteVtx.ClearModified();
+	}
+	if(r_useDitherMask.IsModified())
+	{
+		changed = true;
+		r_useDitherMask.ClearModified();
+	}
+	if(r_shaderSkipSpecCubeMaps.IsModified())
+	{
+		changed = true;
+		r_shaderSkipSpecCubeMaps.ClearModified();
+	}
+	if(alphatest_kill.IsModified())
+	{
+		changed = true;
+		alphatest_kill.ClearModified();
+	}
+	
+	if(changed)
+		ReloadAll();
+#endif
+}
+
 static sdRenderProgramManager renderProgramManagerLocal;
 sdRenderProgramManager *renderProgramManager = &renderProgramManagerLocal;
 
@@ -61,6 +212,10 @@ void sdRenderProgramManager::LoadProgram_f(const idCmdArgs &args) {
     }
 
     renderProgramManagerLocal.LoadProgram(args.Argv(1));
+}
+
+void sdRenderProgramManager::ReloadAllPrograms_f(const idCmdArgs &) {
+    renderProgramManagerLocal.ReloadAll();
 }
 
 void sdRenderProgramManager::ListPrograms_f(const idCmdArgs &args) {
