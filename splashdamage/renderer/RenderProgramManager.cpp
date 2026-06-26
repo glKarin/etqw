@@ -65,92 +65,65 @@ void sdRenderProgramManager::ReloadAll(void) {
 void sdRenderProgramManager::CheckCVars(void) {
 #if 1
 	const sdDeclRenderProgram *program;
+	idStrList changes(8);
+
+	if(r_shaderQuality.IsModified())
+	{
+		changes.Append(r_shaderQuality.GetName());
+		r_shaderQuality.ClearModified();
+	}
+	if(r_megaDrawMethod.IsModified())
+	{
+		changes.Append(r_megaDrawMethod.GetName());
+		r_megaDrawMethod.ClearModified();
+	}
+	if(r_normalizeNormalMaps.IsModified())
+	{
+		changes.Append(r_normalizeNormalMaps.GetName());
+		r_normalizeNormalMaps.ClearModified();
+	}
+	if(r_dxnNormalMaps.IsModified())
+	{
+		changes.Append(r_dxnNormalMaps.GetName());
+		r_dxnNormalMaps.ClearModified();
+	}
+	if(r_32ByteVtx.IsModified())
+	{
+		changes.Append(r_32ByteVtx.GetName());
+		r_32ByteVtx.ClearModified();
+	}
+	if(r_useDitherMask.IsModified())
+	{
+		changes.Append(r_useDitherMask.GetName());
+		r_useDitherMask.ClearModified();
+	}
+	if(r_shaderSkipSpecCubeMaps.IsModified())
+	{
+		changes.Append(r_shaderSkipSpecCubeMaps.GetName());
+		r_shaderSkipSpecCubeMaps.ClearModified();
+	}
+	if(alphatest_kill.IsModified())
+	{
+		changes.Append(alphatest_kill.GetName());
+		alphatest_kill.ClearModified();
+	}
+
+	if (changes.Num() == 0)
+		return;
+
 	idStrList shaderNames;
 	shaderNames.Resize(programs.Num());
     for (int i = 0; i < programs.Num(); i++) {
-		program = programs[i]->GetDeclRenderProgram();
-		if(r_shaderQuality.IsModified())
-		{
-			if(program->HasDefine(r_shaderQuality.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(r_megaDrawMethod.IsModified())
-		{
-			if(program->HasDefine(r_megaDrawMethod.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(r_normalizeNormalMaps.IsModified())
-		{
-			if(program->HasDefine(r_normalizeNormalMaps.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(r_dxnNormalMaps.IsModified())
-		{
-			if(program->HasDefine(r_dxnNormalMaps.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(r_32ByteVtx.IsModified())
-		{
-			if(program->HasDefine(r_32ByteVtx.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(r_useDitherMask.IsModified())
-		{
-			if(program->HasDefine(r_useDitherMask.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(r_shaderSkipSpecCubeMaps.IsModified())
-		{
-			if(program->HasDefine(r_shaderSkipSpecCubeMaps.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
-		if(alphatest_kill.IsModified())
-		{
-			if(program->HasDefine(alphatest_kill.GetName()))
-			{
-				shaderNames.Append(program->GetName());
-				continue;
-			}
-		}
+    	program = programs[i]->GetDeclRenderProgram();
+    	for (int m = 0; m < changes.Num(); m++)
+    	{
+    		if(program->HasDefine(changes[m]))
+    		{
+    			shaderNames.Append(program->GetName());
+    			break;
+    		}
+    	}
 	}
-
-	if(r_shaderQuality.IsModified())
-		r_shaderQuality.ClearModified();
-	if(r_megaDrawMethod.IsModified())
-		r_megaDrawMethod.ClearModified();
-	if(r_normalizeNormalMaps.IsModified())
-		r_normalizeNormalMaps.ClearModified();
-	if(r_dxnNormalMaps.IsModified())
-		r_dxnNormalMaps.ClearModified();
-	if(r_32ByteVtx.IsModified())
-		r_32ByteVtx.ClearModified();
-	if(r_useDitherMask.IsModified())
-		r_useDitherMask.ClearModified();
-	if(r_shaderSkipSpecCubeMaps.IsModified())
-		r_shaderSkipSpecCubeMaps.ClearModified();
-	if(alphatest_kill.IsModified())
-		alphatest_kill.ClearModified();
 
 	if(shaderNames.Num() > 0)
 		shaderManager->ReloadShaders(shaderNames);

@@ -51,6 +51,7 @@ private:
 template<class T>
 ID_INLINE sdThreadLocal<T>::sdThreadLocal(void) {
 	char _assert[sizeof(T) <= sizeof(void *) ? 1 : -1];
+	(void)_assert;
 #if defined( _WIN32 )
 	tlsIndex = TlsAlloc();
 #else

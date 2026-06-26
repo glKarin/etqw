@@ -73,7 +73,7 @@ char*							sdDLLThread::s_errorThrown = NULL;
 #else
 
 #define STACK_SET( value )
-#define STACK_GET( value )
+#define STACK_GET( value ) value = 0
 #define PUSH_REGS
 #define POP_REGS
 
