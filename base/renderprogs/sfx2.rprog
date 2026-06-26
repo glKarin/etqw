@@ -872,7 +872,7 @@ renderProgram sfx/feAmbDecal {
 			$endif 
 			// modulate by ambient 
 			color = ambient * color;
-$if !r_shaderSkipSpecCubeMaps 
+			$if !r_shaderSkipSpecCubeMaps
 			// calc reflection vector: i - 2 * dot(i, n) * n 
 			vec4 refl;
 			R1 = vec4( dot ( var_TexCoord2.xyz , worldNormal.xyz ) );

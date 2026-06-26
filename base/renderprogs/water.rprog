@@ -17,6 +17,9 @@ renderProgram water/simple_cube {
 		varying vec4 var_TexCoord5;
 		varying vec4 var_Color;
 		varying vec4 var_TexCoord1;
+		$if r_megaDrawMethod != 0
+		varying vec4 var_Color2;
+		$endif
 
 		void main ( void ) { 
 			// ARB_position_invariant; 
@@ -77,7 +80,7 @@ renderProgram water/simple_cube {
 			_F1.x = dot ( _F2 , _F2 );
 			_F1.y = 1.0 / sqrt ( _F1.x );
 			_F1.x = _F1.y * _F1.x;
-			var_Color.secondary = _F1.x * $fogDepths.z + $fogDepths.w;
+			var_Color2 = vec4( _F1.x * $fogDepths.z + $fogDepths.w );
 			$endif 
 			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		} 

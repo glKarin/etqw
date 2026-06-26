@@ -120,7 +120,7 @@ renderProgram imposters/lit {
 
 			// Blend with different alpha
 			$if ( r_megaDrawMethod != 0 ) 
-			gl_FragColor = vec4( mix( diff.rgb * light, fogColor.rgb, extinct ), color.a * diff.a * 3);
+			gl_FragColor = vec4( mix( diff.rgb * light, $fogColor.rgb, extinct ), color.a * diff.a * 3.0);
 			$else
 			gl_FragColor = vec4( mix( diff.rgb * light, textureCube( fogColorMap, fogDir ).rgb, extinct ), color.a );
 			$endif

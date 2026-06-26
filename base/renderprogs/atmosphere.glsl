@@ -17,7 +17,7 @@ vec2 Extinction(vec3 inpos) {
 $if ( r_megaDrawMethod != 0 )
 	vec3 diff = inpos - fog_viewOrigin;
 	float d = length( diff );
-	return 1.f-clamp( d * fog_depths.z + fog_depths.w, 0.0, 1.0 );
+	return 1.0-clamp( d * fog_depths.z + fog_depths.w, 0.0, 1.0 );
 $else
 	vec3 eye = fog_eyePos;
 

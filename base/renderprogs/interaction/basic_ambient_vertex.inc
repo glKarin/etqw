@@ -129,6 +129,6 @@ $if ( r_megaDrawMethod != 0 )
 	R1.x = dot ( R2 .xyz , R2 .xyz );
 	R1.y = 1.0 / sqrt ( R1.x );
 	R1.x = R1.y * R1.x;
-	var_Color2 = R1.x * $fogDepths.z + $fogDepths.w;
+	var_Color2 = vec4( R1.x * $fogDepths.z + $fogDepths.w );
 $endif
 }

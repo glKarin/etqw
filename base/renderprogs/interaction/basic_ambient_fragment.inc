@@ -180,7 +180,7 @@ $ifdef strogg_effects
 $endif
     // modify by the vertex color
 $if (r_megaDrawMethod != 0)
-    color.rgb = mix (color, fogColor, var_Color2.x);
+    color.rgb = mix (color, $fogColor, var_Color2.x).xyz;
 $endif
     gl_FragColor = color * var_Color;
 $ifdef alphatest_alphatocoverage
