@@ -160,6 +160,9 @@ static void RB_CreateDrawAreaAmbient_external(const drawSurf_t *surf)
     }
     if(!surf->space->areaAmbient)
         return;
+    if (surf->material->TestMaterialFlag(MF_NOAMBIENT)) {
+        return;
+    }
 
     // set the vertex pointers
     idDrawVert	*ac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
@@ -202,6 +205,9 @@ static void RB_CreateDrawAreaAmbient_builtin(const drawSurf_t *surf)
     }
 	if(!surf->space->areaAmbient)
 		return;
+    if (surf->material->TestMaterialFlag(MF_NOAMBIENT)) {
+        return;
+    }
 
     // set the vertex pointers
     idDrawVert	*ac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
@@ -329,7 +335,7 @@ static void RB_DrawAreaAmbients_external( drawSurf_t **drawSurfs, int numDrawSur
     //k GL_SelectTexture( 0 );
 }
 
-void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs )
+void RB_DrawAreaAmbient( drawSurf_t **drawSurfs, int numDrawSurfs )
 {
     if(harm_r_skipAreaAmbient.GetBool())
         return;

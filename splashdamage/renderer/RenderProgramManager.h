@@ -13,9 +13,12 @@ public:
 
     // parse
     const sdRenderProgram *				LoadProgram(const char *name);
+	void								ReloadAll(void);
+	void								CheckCVars(void);
 
     static void							LoadProgram_f(const idCmdArgs &args);
     static void							ListPrograms_f(const idCmdArgs &args);
+    static void							ReloadAllPrograms_f(const idCmdArgs &args);
 
 private:
     const sdRenderProgram *				Alloc(const char *name);
