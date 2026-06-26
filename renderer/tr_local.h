@@ -1532,6 +1532,7 @@ void RB_ComputeMVP( const drawSurf_t * const surf, float mvp[16] );
 #define DRAWSURF_HAS_DEPTHHACK(surf) ((surf)->space->weaponDepthHack && (surf)->space->modelDepthHack == 0.0f)
 void RB_LoadProjectionMatrix( void );
 void RB_ComputeDrawSurfMVP( const drawSurf_t * const surf );
+void RB_SetupDrawSurfMVP( const drawSurf_t * const surf );
 extern float rb_MVP[16];
 
 /*

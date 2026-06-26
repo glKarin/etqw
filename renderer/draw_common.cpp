@@ -916,8 +916,8 @@ ID_INLINE static void RB_EndDrawPostprocess(void)
 	}
 }
 
-
-extern void RB_DrawAreaAmbients( drawSurf_t **drawSurfs, int numDrawSurfs );
+extern void RB_DrawAreaAmbient( drawSurf_t **drawSurfs, int numDrawSurfs );
+extern void RB_DrawAtmosphere( drawSurf_t **drawSurfs, int numDrawSurfs );
 #endif
 
 /*
@@ -2512,7 +2512,7 @@ void	RB_STD_DrawView(void)
 	   )
     {
 #ifdef _SPLASHDAMAGE //karin: render areas ambient
-		RB_DrawAreaAmbients(drawSurfs, numDrawSurfs);
+		RB_DrawAreaAmbient(drawSurfs, numDrawSurfs);
 #endif
 #ifdef _GLOBAL_ILLUMINATION
         if(HARM_RENDER_GLOBAL_ILLUMINATION())
@@ -2525,6 +2525,9 @@ void	RB_STD_DrawView(void)
 	// disable stencil shadow test
 	qglStencilFunc(GL_ALWAYS, 128, 255);
 
+#ifdef _SPLASHDAMAGE //karin: render atmosphere
+	RB_DrawAtmosphere(drawSurfs, numDrawSurfs);
+#endif
 	// uplight the entire screen to crutch up not having better blending range
 	RB_STD_LightScale();
 

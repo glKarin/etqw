@@ -213,7 +213,7 @@ void RB_ComputeDrawSurfMVP( const drawSurf_t * const surf )
 	myGlMultMatrix(surf->space->modelViewMatrix, rb_projectionMatrix, rb_MVP);
 }
 
-ID_INLINE void RB_SetupDrawSurfMVP( const drawSurf_t * const surf )
+void RB_SetupDrawSurfMVP( const drawSurf_t * const surf )
 {
 	RB_ComputeDrawSurfMVP(surf);
 	GL_UniformMatrix4fv(offsetof(shaderProgram_t, modelViewProjectionMatrix), rb_MVP);
