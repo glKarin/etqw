@@ -84,7 +84,7 @@ jobs:
       - name: Configure project with CMake(Windows)
         if: matrix.os == 'windows-2022'
         run: |
-          cmake ${{ steps.vcpkg_setup.outputs.vcpkg-cmake-config }} -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DDIRECTXSDK_INCLUDE_PATH=${{ github.workspace }}/vcpkg/packages/directxsdk_${{steps.strings.outputs.arch}}-windows/include/directxsdk  -G "Visual Studio 17 2022" -A ${{ matrix.bits == 32 && 'Win32' || 'x64' }} -DTOOLS=OFF -DDEDICATED=OFF -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
+          cmake ${{ steps.vcpkg_setup.outputs.vcpkg-cmake-config }} -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DDIRECTXSDK_INCLUDE_PATH=${{ github.workspace }}/vcpkg/packages/directxsdk_${{steps.strings.outputs.arch}}-windows/include/directxsdk  -G "Visual Studio 17 2022" -A ${{ matrix.bits == 32 && 'Win32' || 'x64' }} -DTOOLS=OFF -DDEDICATED=OFF -DBUILD_D3=ON -DBUILD_Q4=ON -DBUILD_PREY=ON -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
 
       - name: Run apt
         if: matrix.os == 'ubuntu-latest'
@@ -106,16 +106,9 @@ jobs:
       - name: Configure project with CMake(Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          cmake -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_SHARED_LINKER_FLAGS=-m${{ matrix.bits }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DUSE_MINIZ=ON -DUSE_LOCAL_SDL=OFF -DDEDICATED=OFF -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
+          cmake -B ${{ steps.strings.outputs.name }} -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} -DCMAKE_SHARED_LINKER_FLAGS=-m${{ matrix.bits }} -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DUSE_MINIZ=ON -DUSE_LOCAL_SDL=OFF -DDEDICATED=OFF -DBUILD_D3=ON -DBUILD_Q4=ON -DBUILD_PREY=ON -DBUILD_ETQW=ON -DBUILD_D3_MOD=OFF -DBUILD_Q4_MOD=OFF CMakeLists.txt
 
-      - name: Build with Ninja(Windows)
-        if: matrix.os == 'windows-2022'
-        run: |
-          dir ${{ steps.strings.outputs.name }}
-          cmake --build ${{ steps.strings.outputs.name }} --config ${{ matrix.build_type }} -- /v:detailed
-
-      - name: Build with Make(Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Build with Make/Ninja
         run: |
           ls ${{ steps.strings.outputs.name }}
           cmake --build ${{ steps.strings.outputs.name }} --config ${{ matrix.build_type }}
@@ -132,7 +125,6 @@ jobs:
           mkdir ${{ matrix.build_type }}
           xcopy /Y/Q ${{ steps.strings.outputs.name }}\${{ matrix.build_type }}\*.dll ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}\
           xcopy /Y/Q ${{ steps.strings.outputs.name }}\${{ matrix.build_type }}\*.exe ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}\
-          xcopy /E/I/Y/Q base ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}\base
           dir ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}
 
       - name: Package to zip
@@ -149,11 +141,10 @@ jobs:
           ls --color ${{ steps.strings.outputs.name }}
           mkdir ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}
           cp ${{ steps.strings.outputs.name }}/lib*.so ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
-          #cp ${{ steps.strings.outputs.name }}/Doom3 ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
-          #cp ${{ steps.strings.outputs.name }}/Quake4 ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
-          #cp ${{ steps.strings.outputs.name }}/Prey ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
+          cp ${{ steps.strings.outputs.name }}/Doom3 ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
+          cp ${{ steps.strings.outputs.name }}/Quake4 ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
+          cp ${{ steps.strings.outputs.name }}/Prey ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
           cp ${{ steps.strings.outputs.name }}/ETQW ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
-          cp -rf base/ ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
           tar zcvf idTech4A++-testing_${{ steps.current_datetime.outputs.time }}_${{ steps.strings.outputs.name }}.tar.gz ${{ steps.strings.outputs.name }}_${{ matrix.build_type }}/
 
       - uses: actions/upload-artifact@v4
