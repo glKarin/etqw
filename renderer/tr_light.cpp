@@ -1222,7 +1222,8 @@ idRenderModel *R_EntityDefDynamicModel(idRenderEntityLocal *def)
 				idVec3 dir = def->parms.origin - tr.viewDef->renderView.vieworg;
 				dir.z = 0.0f; // only axis to Z
 				dir.Normalize();
-				def->parms.axis = dir.ToMat3();
+				static idMat3 _flipXMat(-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+				def->parms.axis = _flipXMat * dir.ToMat3();
 
 				if (r_checkBounds.GetBool()) {
 					idBounds b = def->imposterModel->Bounds();
