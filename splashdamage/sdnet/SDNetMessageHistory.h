@@ -10,8 +10,6 @@
 //
 //===============================================================
 
-#include "idlib/precompiled.h"
-
 struct messageHistoryEntry_t {
 	idWStr			message;
 	time_t			timeStamp;
