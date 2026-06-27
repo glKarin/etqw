@@ -112,7 +112,7 @@ jobs:
         if: matrix.os == 'windows-2022'
         run: |
           dir ${{ steps.strings.outputs.name }}
-          cmake --build ${{ steps.strings.outputs.name }} --config ${{ matrix.build_type }} -- /v:detailed
+          cmake --build ${{ steps.strings.outputs.name }} --config ${{ matrix.build_type }} -- /v:detailed /showIncludes
 
       - name: Build with Make(Linux)
         if: matrix.os == 'ubuntu-latest'
