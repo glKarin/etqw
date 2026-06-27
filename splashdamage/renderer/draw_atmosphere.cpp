@@ -20,11 +20,9 @@ ID_INLINE static void RB_BindAtmosphereConstants(void)
     atmosphereShader->BindVector("fogColor", backEnd.parms.fogColor);
     atmosphereShader->BindVector("fogParams", backEnd.parms.fogParams);
     atmosphereShader->BindVector("fogDepths", backEnd.parms.fogDepths);
-	float mat[16];
-	R_TransposeGLMatrix(backEnd.viewDef->worldSpace.modelViewMatrix, mat);
-    atmosphereShader->BindVector("fogRotation_x", &mat[0]);
-    atmosphereShader->BindVector("fogRotation_y", &mat[4]);
-    atmosphereShader->BindVector("fogRotation_z", &mat[8]);
+    atmosphereShader->BindVector("fogRotation_x", 1.0f, 0.0f, 0.0f);
+    atmosphereShader->BindVector("fogRotation_y", 0.0f, 1.0f, 0.0f);
+    atmosphereShader->BindVector("fogRotation_z", 0.0f, 0.0f, 1.0f);
 	// view
     atmosphereShader->BindVector("viewOriginWorld", backEnd.viewDef->renderView.vieworg);
 }
