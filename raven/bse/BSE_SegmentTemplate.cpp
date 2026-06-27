@@ -60,9 +60,11 @@ void rvSegmentTemplate::Init(rvDeclEffect* decl)
 }
 
 /* --------------------------------------------------------------------- */
-void rvSegmentTemplate::CreateParticleTemplate(rvDeclEffect* effect,
-    idLexer* lexer,
-    int           particleType)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+void rvSegmentTemplate::CreateParticleTemplate(rvDeclEffect* effect, idParser* lexer, int particleType)
+#else
+void rvSegmentTemplate::CreateParticleTemplate(rvDeclEffect* effect, idLexer* lexer, int particleType)
+#endif
 {
     mParticleTemplate.Init();
     mParticleTemplate.mType = particleType;
@@ -348,9 +350,11 @@ void rvSegmentTemplate::EvaluateTrailSegment(rvDeclEffect* et)
 }
 
 /* --------------------------------------------------------------------- */
-bool rvSegmentTemplate::Parse(rvDeclEffect* effect,
-    int            segmentType,
-    idLexer* lexer)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvSegmentTemplate::Parse(rvDeclEffect* effect, int segmentType, idParser* lexer)
+#else
+bool rvSegmentTemplate::Parse(rvDeclEffect* effect, int segmentType, idLexer* lexer)
+#endif
 {
     idToken token;
     mSegType = segmentType;

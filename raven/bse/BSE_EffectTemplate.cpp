@@ -25,6 +25,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "BSE.h"
 
+#ifdef _SPLASHDAMAGE
+#include "framework/DeclParseHelper.h"
+#endif
+
 //==========================================================================//
 //  Local helpers
 //==========================================================================//
@@ -316,11 +320,13 @@ bool rvDeclEffect::Parse(const char* text, int textLength)
 bool rvDeclEffect::Parse(const char* text, int textLength, bool noCaching) 
 #endif
 {
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+    idParser lexer;
+    lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWPATHNAMES);
+	sdDeclParseHelper declHelper( this, text, textLength, lexer );
+#else
     idLexer lexer;
     lexer.LoadMemory(text, textLength, GetFileName(), GetLineNum());
-#ifdef _SPLASHDAMAGE //karin: allow '/' in name without quota
-    lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWPATHNAMES);
-#else
     lexer.SetFlags(LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWBACKSLASHSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS);
 #endif
 

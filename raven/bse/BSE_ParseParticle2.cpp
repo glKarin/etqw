@@ -43,7 +43,11 @@ ID_INLINE static void InitParms(rvParticleParms& p, int spawnType)
 //----------------------------------------------------------
 //  Helper for shape keyword errors (minimises boilerplate)
 //----------------------------------------------------------
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+ID_INLINE static void WarnBad(rvDeclEffect* effect, idParser* src, const char* what)
+#else
 ID_INLINE static void WarnBad(rvDeclEffect* effect, idLexer* src, const char* what)
+#endif
 {
     common->Warning("^4BSE:^1 Invalid %s parameter in '%s' "
                     "(file: %s, line: %d)",
@@ -550,8 +554,12 @@ float rvParticleTemplate::GetFurthestDistance() const {
 
 ===============================================================================
 */
-bool rvParticleTemplate::GetVector(idLexer* src, int components,
-    idVec3& out) {
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::GetVector(idParser* src, int components, idVec3& out)
+#else
+bool rvParticleTemplate::GetVector(idLexer* src, int components, idVec3& out)
+#endif
+{
     assert(components >= 1 && components <= 3);
 
     out.x = src->ParseFloat();
@@ -580,9 +588,11 @@ bool rvParticleTemplate::GetVector(idLexer* src, int components,
                                  } )
 ===============================================================================
 */
-bool rvParticleTemplate::ParseMotionParms(idLexer* src,
-    int           vecCount,
-    rvEnvParms& env)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseMotionParms(idParser* src, int vecCount, rvEnvParms& env)
+#else
+bool rvParticleTemplate::ParseMotionParms(idLexer* src, int vecCount, rvEnvParms& env)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
@@ -654,8 +664,11 @@ bool rvParticleTemplate::ParseMotionParms(idLexer* src,
 // ==========================================================================
 //  Motion-domain block
 // ==========================================================================
-bool rvParticleTemplate::ParseMotionDomains(rvDeclEffect* effect,
-    idLexer* src)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseMotionDomains(rvDeclEffect* effect, idParser* src)
+#else
+bool rvParticleTemplate::ParseMotionDomains(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
@@ -735,8 +748,11 @@ float rvParticleTemplate::GetMaxParmValue(const rvParticleParms* spawn, const rv
 // ==========================================================================
 //  Flag parsing shared by *every* spawn shape
 // ==========================================================================
-bool rvParticleTemplate::CheckCommonParms(idLexer* src,
-    rvParticleParms& p)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::CheckCommonParms(idParser* src, rvParticleParms& p)
+#else
+bool rvParticleTemplate::CheckCommonParms(idLexer* src, rvParticleParms& p)
+#endif
 {
     idToken tok;
     while (src->ReadToken(&tok)) {
@@ -764,10 +780,11 @@ bool rvParticleTemplate::CheckCommonParms(idLexer* src,
 // ==========================================================================
 //  Spawn-parameter parser  (point, line, box … model)
 // ==========================================================================
-bool rvParticleTemplate::ParseSpawnParms(rvDeclEffect* effect,
-    idLexer* src,
-    rvParticleParms& p,
-    int            vecCount)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseSpawnParms(rvDeclEffect* effect, idParser* src, rvParticleParms& p, int vecCount)
+#else
+bool rvParticleTemplate::ParseSpawnParms(rvDeclEffect* effect, idLexer* src, rvParticleParms& p, int vecCount)
+#endif
 {
     //----------------------------------------------------------
     //  Opening brace + first keyword
@@ -932,8 +949,11 @@ bool rvParticleTemplate::ParseSpawnParms(rvDeclEffect* effect,
 // ==========================================================================
 //  1.  SPAWN-DOMAIN BLOCK
 // ==========================================================================
-bool rvParticleTemplate::ParseSpawnDomains(rvDeclEffect* effect,
-    idLexer* src)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseSpawnDomains(rvDeclEffect* effect, idParser* src)
+#else
+bool rvParticleTemplate::ParseSpawnDomains(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
@@ -981,8 +1001,11 @@ bool rvParticleTemplate::ParseSpawnDomains(rvDeclEffect* effect,
 // ==========================================================================
 //  2.  DEATH-DOMAIN BLOCK   (plus automatic envelope fallbacks)
 // ==========================================================================
-bool rvParticleTemplate::ParseDeathDomains(rvDeclEffect* effect,
-    idLexer* src)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseDeathDomains(rvDeclEffect* effect, idParser* src)
+#else
+bool rvParticleTemplate::ParseDeathDomains(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
@@ -1015,8 +1038,11 @@ bool rvParticleTemplate::ParseDeathDomains(rvDeclEffect* effect,
 // ==========================================================================
 //  3.  IMPACT BLOCK     (bounce / remove / effect)
 // ==========================================================================
-bool rvParticleTemplate::ParseImpact(rvDeclEffect* effect,
-    idLexer* src)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseImpact(rvDeclEffect* effect, idParser* src)
+#else
+bool rvParticleTemplate::ParseImpact(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
@@ -1072,8 +1098,11 @@ bool rvParticleTemplate::ParseImpact(rvDeclEffect* effect,
 // ==========================================================================
 //  4.  TIMEOUT BLOCK    (effect list only)
 // ==========================================================================
-bool rvParticleTemplate::ParseTimeout(rvDeclEffect* effect,
-    idLexer* src)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseTimeout(rvDeclEffect* effect, idParser* src)
+#else
+bool rvParticleTemplate::ParseTimeout(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
@@ -1112,8 +1141,11 @@ bool rvParticleTemplate::ParseTimeout(rvDeclEffect* effect,
 // ==========================================================================
 //  5.  BLEND-MODE PARSER  (currently only “add” is recognised)
 // ==========================================================================
-bool rvParticleTemplate::ParseBlendParms(rvDeclEffect* effect,
-    idLexer* src)
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::ParseBlendParms(rvDeclEffect* effect, idParser* src)
+#else
+bool rvParticleTemplate::ParseBlendParms(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     idToken tok;
     if (!src->ReadToken(&tok))
@@ -1360,7 +1392,11 @@ void rvParticleTemplate::Finish(void)
 /* ========================================================================
    3.  Parse() – master lexer loop
    ======================================================================== */
+#ifdef _SPLASHDAMAGE //karin: using idParser instead of idLexer
+bool rvParticleTemplate::Parse(rvDeclEffect* effect, idParser* src)
+#else
 bool rvParticleTemplate::Parse(rvDeclEffect* effect, idLexer* src)
+#endif
 {
     if (!src->ExpectTokenString("{"))
         return false;
