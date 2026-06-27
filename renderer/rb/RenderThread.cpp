@@ -1,5 +1,11 @@
 #include "RenderThread.h"
 
+#ifdef _SPLASHDAMAGE //karin: render threading
+#include "renderer/RenderProgramManager.h"
+
+extern void RB_QueryOcclusionTesting(void);
+#endif
+
 #define RENDER_THREAD_STARTED() (Sys_ThreadIsRunning(&render_thread))
 
 bool multithreadActive = false;
@@ -83,14 +89,15 @@ void idRenderThread::BackendThreadShutdown( void )
     common->Printf("[MainThread]: Render thread shutdown -> %zu(%s)\n", threadId, RENDER_THREAD_NAME);
 }
 
-#ifdef _SPLASHDAMAGE //karin: occlusion testing
-extern void RB_QueryOcclusionTesting(void);
-#endif
 // only render thread is running and main thread is waiting
 ID_INLINE static void RB_OnlyRenderThreadRunningAndMainThreadWaiting(void)
 {
     // Load custom GLSL shader or reload GLSL shaders
     RB_GLSL_HandleShaders();
+#ifdef _SPLASHDAMAGE //karin: reload render programs
+    // reload render programs
+    RB_ReloadRenderPrograms();
+#endif
     // debug tools
     RB_SetupRenderTools();
 #ifdef _SPLASHDAMAGE //karin: occlusion testing

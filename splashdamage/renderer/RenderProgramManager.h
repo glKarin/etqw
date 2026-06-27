@@ -16,9 +16,9 @@ public:
 	void								ReloadAll(void);
 	void								CheckCVars(void);
 
-    static void							LoadProgram_f(const idCmdArgs &args);
-    static void							ListPrograms_f(const idCmdArgs &args);
-    static void							ReloadAllPrograms_f(const idCmdArgs &args);
+    static void							LoadRenderProgram_f(const idCmdArgs &args);
+    static void							ListRenderPrograms_f(const idCmdArgs &args);
+    static void							ReloadAllRenderPrograms_f(const idCmdArgs &args);
 
 private:
     const sdRenderProgram *				Alloc(const char *name);
@@ -29,5 +29,10 @@ private:
 };
 
 extern sdRenderProgramManager *renderProgramManager;
+
+void R_CheckRenderProgramCVars(void);
+#ifdef _MULTITHREAD
+void RB_ReloadRenderPrograms(void);
+#endif
 
 #endif //_KARIN_RENDERPROGRAMMANAGER_H

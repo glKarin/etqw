@@ -2422,8 +2422,9 @@ void R_InitCommands(void)
 #endif
 
 #ifdef _SPLASHDAMAGE //karin: shader commands
-	cmdSystem->AddCommand("loadProgram", sdRenderProgramManager::LoadProgram_f, CMD_FL_RENDERER, "load shader program", idArgCompletionDecl_f<DECLTYPE_RENDERPROGRAM>);
-	cmdSystem->AddCommand("listPrograms", sdRenderProgramManager::ListPrograms_f, CMD_FL_RENDERER, "list shader programs");
+	cmdSystem->AddCommand("loadRenderProgram", sdRenderProgramManager::LoadRenderProgram_f, CMD_FL_RENDERER, "load shader program", idArgCompletionDecl_f<DECLTYPE_RENDERPROGRAM>);
+	cmdSystem->AddCommand("listRenderPrograms", sdRenderProgramManager::ListRenderPrograms_f, CMD_FL_RENDERER, "list shader programs");
+	cmdSystem->AddCommand("reloadRenderPrograms", sdRenderProgramManager::ReloadAllRenderPrograms_f, CMD_FL_RENDERER, "reload all shader programs");
 #endif
 }
 

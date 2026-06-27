@@ -29,6 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "tr_local.h"
+#ifdef _SPLASHDAMAGE //karin: cvars changed for shaders
+#include "renderer/RenderProgramManager.h"
+
+extern void R_UpdateOcclusionTesting(void);
+#endif
 
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
@@ -168,13 +173,12 @@ static void R_IssueRenderCommands(volatile frameData_t *fd)
 	}
 }
 
-#ifdef _SPLASHDAMAGE //karin: occlusion testing
-extern void R_UpdateOcclusionTesting(void);
-#endif
 // only main thread is running and render thread is waiting
 ID_INLINE static void R_OnlyMainThreadRunningAndRenderThreadWaiting(void)
 {
 #ifdef _SPLASHDAMAGE //karin: occlusion testing
+	// cvars changed for shaders
+	R_CheckRenderProgramCVars();
 	// occlusion query
 	R_UpdateOcclusionTesting();
 #endif
@@ -843,6 +847,9 @@ void idRenderSystemLocal::EndFrame(int *frontEndMsec, int *backEndMsec)
 	GLimp_CheckGLInitialized(); // check/wait EGL context
 
 	R_CheckBackEndCvars(); // check backend cvars state
+#ifdef _SPLASHDAMAGE //karin: cvars changed for shaders
+	R_CheckRenderProgramCVars();
+#endif
 
 	// start the back end up again with the new command list
 	R_IssueRenderCommands();
@@ -1251,6 +1258,9 @@ void idRenderSystemLocal::EndFrame(byte *data, int *frontEndMsec, int *backEndMs
 	{
 		GLimp_CheckGLInitialized(); // check/wait EGL context
 		R_CheckBackEndCvars(); // check backend cvars state
+#ifdef _SPLASHDAMAGE //karin: cvars changed for shaders
+		R_CheckRenderProgramCVars();
+#endif
 
 		// start the back end up again with the new command list
 		R_IssueRenderCommands();

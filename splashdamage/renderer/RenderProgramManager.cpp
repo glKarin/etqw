@@ -5,6 +5,8 @@
 #include "RenderProgram.h"
 #include "RenderProgramManager.h"
 
+static bool reloadRenderPrograms = false;
+
 sdRenderProgramManager::sdRenderProgramManager(void)
 {
 }
@@ -178,7 +180,7 @@ void sdRenderProgramManager::CheckCVars(void) {
 static sdRenderProgramManager renderProgramManagerLocal;
 sdRenderProgramManager *renderProgramManager = &renderProgramManagerLocal;
 
-void sdRenderProgramManager::LoadProgram_f(const idCmdArgs &args) {
+void sdRenderProgramManager::LoadRenderProgram_f(const idCmdArgs &args) {
     if (args.Argc() < 2) {
         common->Printf("Usage: %s <shader name>\n", args.Argv(0));
         return;
@@ -187,11 +189,16 @@ void sdRenderProgramManager::LoadProgram_f(const idCmdArgs &args) {
     renderProgramManagerLocal.LoadProgram(args.Argv(1));
 }
 
-void sdRenderProgramManager::ReloadAllPrograms_f(const idCmdArgs &) {
+void sdRenderProgramManager::ReloadAllRenderPrograms_f(const idCmdArgs &) {
+#ifdef _MULTITHREAD
+	if(multithreadActive)
+		reloadRenderPrograms = true;
+	else
+#endif
     renderProgramManagerLocal.ReloadAll();
 }
 
-void sdRenderProgramManager::ListPrograms_f(const idCmdArgs &args) {
+void sdRenderProgramManager::ListRenderPrograms_f(const idCmdArgs &args) {
 	common->Printf("----- %d shader programs -----\n", renderProgramManagerLocal.programs.Num());
 
     for (int i = 0; i < renderProgramManagerLocal.programs.Num(); i++) {
@@ -209,3 +216,68 @@ void sdRenderProgramManager::ListPrograms_f(const idCmdArgs &args) {
         }
     }
 }
+
+void R_CheckRenderProgramCVars(void)
+{
+	bool changed = false;
+	if(r_shaderQuality.IsModified())
+	{
+		changed = true;
+		r_shaderQuality.ClearModified();
+	}
+	if(r_megaDrawMethod.IsModified())
+	{
+		changed = true;
+		r_megaDrawMethod.ClearModified();
+	}
+	if(r_normalizeNormalMaps.IsModified())
+	{
+		changed = true;
+		r_normalizeNormalMaps.ClearModified();
+	}
+	if(r_dxnNormalMaps.IsModified())
+	{
+		changed = true;
+		r_dxnNormalMaps.ClearModified();
+	}
+	if(r_32ByteVtx.IsModified())
+	{
+		changed = true;
+		r_32ByteVtx.ClearModified();
+	}
+	if(r_useDitherMask.IsModified())
+	{
+		changed = true;
+		r_useDitherMask.ClearModified();
+	}
+	if(r_shaderSkipSpecCubeMaps.IsModified())
+	{
+		changed = true;
+		r_shaderSkipSpecCubeMaps.ClearModified();
+	}
+	if(alphatest_kill.IsModified())
+	{
+		changed = true;
+		alphatest_kill.ClearModified();
+	}
+	
+	if(!changed)
+		return;
+#ifdef _MULTITHREAD
+	if(multithreadActive)
+		reloadRenderPrograms = true;
+	else
+#endif
+	renderProgramManagerLocal.ReloadAll();
+}
+
+#ifdef _MULTITHREAD
+void RB_ReloadRenderPrograms(void)
+{
+	if(reloadRenderPrograms && multithreadActive)
+	{
+		renderProgramManagerLocal.ReloadAll();
+		reloadRenderPrograms = false;
+	}
+}
+#endif
