@@ -226,7 +226,9 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
     ret.Append(GLSL_SHADER_SOURCE("stencilToColor", SHADER_STENCIL_TO_COLOR, &stencilToColorShader, SIMPLE_VERTEX_TEXCOORD_VERT, STENCIL_TO_COLOR_FRAG, "", ""));
 #endif
 	ret.Append(GLSL_SHADER_SOURCE("texgen", SHADER_TEXGEN, &texgenShader, TEXGEN_VERT, TEXGEN_FRAG, "", ""));
+#ifdef _SPLASHDAMAGE //karin: Occlusion testing
 	ret.Append(GLSL_SHADER_SOURCE("occlusionTest", SHADER_OCCLUSIONTEST, &occlusionTestShader, OCCLUSIONTEST_VERT, OCCLUSIONTEST_FRAG, "", ""));
+#endif
 
     // newStage
 #if !defined(_SPLASHDAMAGE)

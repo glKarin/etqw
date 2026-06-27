@@ -749,6 +749,8 @@ void RB_ExecuteBackEndCommands(const emptyCommand_t *cmds)
 #include "rb/rb_debug.cpp"
 #ifdef _OPENGLES3
 #include "rb/rb_fencesync.cpp"
+#ifdef _SPLASHDAMAGE //karin: Occlusion testing
 #include "rb/OcclusionQuery.cpp"
+#endif
 #endif
 

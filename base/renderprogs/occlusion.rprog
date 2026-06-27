@@ -1,32 +1,24 @@
 renderProgram occlusion {
 
-	program vertex cg { <%
-		struct VsInputs {
-			float3 pos	: $positionAttrib;
-		};
+	program vertex glsl { <%
 
-		struct VsOutputs {
-			float4 color	: COLOR0;
-		};
+		varying vec4 color;
 
 
-		VsOutputs vertex(VsInputs indata) {
-			VsOutputs outdata;
-			outdata.color = 1.f;
-			return outdata;
+		void main() {
+			color = vec4( 1.0 );
+            gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
 		}
 
 	%> }
 	
-	program fragment cg { <%
+	program fragment glsl { <%
 
-		struct VsOutputs {
-			float4 color	: COLOR0;
-		};
+		varying vec4 color;
 
-		float4 fragment(VsOutputs  indata) : COLOR {
+		void main() {
 		
-			return indata.color;
+			gl_FragColor = color;
 		}	
 	%> }
 }

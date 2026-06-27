@@ -1146,7 +1146,9 @@ extern idCVar r_useETC2;				// ETC2 compression
 extern idCVar harm_r_useFenceSync;
 extern void RB_FenceSync(void);
 
+#ifdef _SPLASHDAMAGE //karin: Occlusion testing
 #include "rb/OcclusionQuery.h"
+#endif
 #endif
 //#define DEBUG_SYNC_MIN_INTERVAL 1
 #ifdef DEBUG_SYNC_MIN_INTERVAL
@@ -1726,7 +1728,9 @@ typedef enum {
 #endif
 	SHADER_DIFFUSECUBEMAP,
 	// SHADER_GLASSWARP,
+#ifdef _SPLASHDAMAGE //karin: Occlusion testing
 	SHADER_OCCLUSIONTEST,
+#endif
 	SHADER_TEXGEN,
 	// new stage
 #if !defined(_SPLASHDAMAGE)
