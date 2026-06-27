@@ -422,12 +422,8 @@ renderProgram skies/skybox {
 
 		void main() {
 			vec4 top = texture2D( $mask, var_TexCoord.xy );
-#ifdef _HARM
-			gl_FragColor = top * $skies_cloudColor;
-#else
 			vec4 side = texture2D( $map, var_TexCoord.xy + vec2( 0.75, 1.0 ) );
 			gl_FragColor = mix( top, side, var_Color.x ) * $skies_cloudColor;
-#endif
 		}
 	%> }		
 }

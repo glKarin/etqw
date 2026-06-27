@@ -484,7 +484,14 @@ bool sdDeclAtmosphere::ParseCloudLayer( idParser& src ) {
 				if (token.type == TT_INTEGER)
 					item.style = token.GetIntValue();
 				else
-					item.style = 0; // old
+				{
+					if(!token.Icmp("skybox"))
+						item.style = 1;
+					else if(!token.Icmp("old"))
+						item.style = 0;
+					else
+						item.style = 0; // old
+				}
 			}
 			continue;
 		}
