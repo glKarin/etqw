@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "tr_local.h"
+static idCVar harm_r_fillDepthFast("harm_r_fillDepthFast", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "fill depth buffer fast");
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
 #include "renderer/RenderProgram.h"
 extern idCVar harm_r_areaAmbientScale;
@@ -507,6 +508,340 @@ void RB_STD_FillDepthBuffer(drawSurf_t **drawSurfs, int numDrawSurfs)
 
     GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
     GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+	GL_UseProgram(NULL);
+	qglEnable(GL_BLEND); //dante: add
+}
+
+#include "containers/PODList.h"
+static idPODList<const drawSurf_t *> perforatedDrawSurfs(1024);
+static idPODList<int> perforatedDrawSurfStages(1024);
+static int perforatedDrawSurfStageIndex = 0;
+/*
+==================
+RB_T_FillDepthBufferOpaque
+==================
+*/
+void RB_T_FillDepthBufferOpaque(const drawSurf_t *surf)
+{
+	int			stage;
+	const idMaterial	*shader;
+	const shaderStage_t *pStage;
+	const float	*regs;
+	float		color[4];
+	const srfTriangles_t	*tri;
+	//const float	one[1] = { 1 };
+
+	tri = surf->geo;
+	shader = surf->material;
+
+	if (backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace) {
+		idPlane plane;
+
+		R_GlobalPlaneToLocal(surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane);
+		plane[3] += 0.5;  // the notch is in the middle
+
+		GL_Uniform4fv(offsetof(shaderProgram_t, clipPlane), plane.ToFloatPtr());
+	}
+
+	if (!shader->IsDrawn()) {
+		return;
+	}
+
+	// some deforms may disable themselves by setting numIndexes = 0
+	if (!tri->numIndexes) {
+		return;
+	}
+
+	// translucent surfaces don't put anything in the depth buffer and don't
+	// test against it, which makes them fail the mirror clip plane operation
+	if (shader->Coverage() == MC_TRANSLUCENT) {
+		return;
+	}
+
+	if (!tri->ambientCache) {
+		common->Printf("RB_T_FillDepthBufferOpaque: !tri->ambientCache\n");
+		return;
+	}
+
+	// get the expressions for conditionals / color / texcoords
+	regs = surf->shaderRegisters;
+
+	// if all stages of a material have been conditioned off, don't do anything
+	for (stage = 0; stage < shader->GetNumStages() ; stage++) {
+		pStage = shader->GetStage(stage);
+
+		// check the stage enable condition
+		if (regs[ pStage->conditionRegister ] != 0) {
+			break;
+		}
+	}
+
+	if (stage == shader->GetNumStages()) {
+		return;
+	}
+
+	// we may have multiple alpha tested stages
+	if (shader->Coverage() == MC_PERFORATED) {
+		// if the only alpha tested stages are condition register omitted,
+		// draw a normal opaque surface
+		bool	didDraw = false;
+
+		// perforated surfaces may have multiple alpha tested stages
+		for (stage = 0; stage < shader->GetNumStages() ; stage++) {
+			pStage = shader->GetStage(stage);
+
+			if (!pStage->hasAlphaTest) {
+				continue;
+			}
+
+			// check the stage enable condition
+			if (regs[ pStage->conditionRegister ] == 0) {
+				continue;
+			}
+
+			// if we at least tried to draw an alpha tested stage,
+			// we won't draw the opaque surface
+			didDraw = true;
+
+			// set the alpha modulate
+			color[3] = regs[ pStage->color.registers[3] ];
+
+			// skip the entire stage if alpha would be black
+			if (color[3] <= 0) {
+				continue;
+			}
+
+			// save to list
+			perforatedDrawSurfs.Append(surf);
+			perforatedDrawSurfStages.Append(stage);
+		}
+
+		if (didDraw) {
+			perforatedDrawSurfStages.Append(-1); // append end mark
+			return;
+		}
+	}
+
+	// set polygon offset if necessary
+	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
+		qglEnable(GL_POLYGON_OFFSET_FILL);
+		qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
+	}
+
+	// subviews will just down-modulate the color buffer by overbright
+	if (shader->GetSort() == SS_SUBVIEW) {
+		qglEnable(GL_BLEND);
+		GL_State(GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS);
+		color[0] =
+		        color[1] =
+		                color[2] = (1.0 / backEnd.overBright);
+		color[3] = 1;
+	} else {
+		// others just draw black
+		color[0] = 0;
+		color[1] = 0;
+		color[2] = 0;
+		color[3] = 1;
+	}
+
+	idDrawVert *ac = (idDrawVert *)vertexCache.Position(tri->ambientCache);
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), reinterpret_cast<void *>(&ac->st));
+
+	// draw the entire surface solid
+	GL_Uniform4fv(offsetof(shaderProgram_t, glColor), color);
+
+	// draw it
+	RB_DrawElementsWithCounters(tri);
+
+	// reset polygon offset
+	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
+		qglDisable(GL_POLYGON_OFFSET_FILL);
+	}
+
+	// reset blending
+	if (shader->GetSort() == SS_SUBVIEW) {
+		GL_State(GLS_DEPTHFUNC_LESS);
+		qglDisable(GL_BLEND);
+	}
+}
+
+/*
+==================
+RB_T_FillDepthBufferPerforated
+==================
+*/
+void RB_T_FillDepthBufferPerforated(const drawSurf_t *surf)
+{
+	int			stage;
+	const idMaterial	*shader;
+	const shaderStage_t *pStage;
+	const float	*regs;
+	float		color[4];
+	const srfTriangles_t	*tri;
+	//const float	one[1] = { 1 };
+
+	tri = surf->geo;
+	shader = surf->material;
+
+	// don't need check rendering
+
+	// get the expressions for conditionals / color / texcoords
+	regs = surf->shaderRegisters;
+
+	// set polygon offset if necessary
+	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
+		qglEnable(GL_POLYGON_OFFSET_FILL);
+		qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset());
+	}
+
+	// subviews will just down-modulate the color buffer by overbright
+	if (shader->GetSort() == SS_SUBVIEW) {
+		qglEnable(GL_BLEND);
+		GL_State(GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS);
+		color[0] =
+		        color[1] =
+		                color[2] = (1.0 / backEnd.overBright);
+		color[3] = 1;
+	} else {
+		// others just draw black
+		color[0] = 0;
+		color[1] = 0;
+		color[2] = 0;
+		color[3] = 1;
+	}
+
+	idDrawVert *ac = (idDrawVert *)vertexCache.Position(tri->ambientCache);
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
+	GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), reinterpret_cast<void *>(&ac->st));
+
+	while ((stage = perforatedDrawSurfStages[perforatedDrawSurfStageIndex++]) != -1) {
+		pStage = shader->GetStage(stage);
+
+		// set the alpha modulate
+		color[3] = regs[ pStage->color.registers[3] ];
+
+		GL_Uniform4fv(offsetof(shaderProgram_t, glColor), color);
+		GL_Uniform1fv(offsetof(shaderProgram_t, alphaTest), &regs[pStage->alphaTestRegister]);
+
+		// bind the texture
+		pStage->texture.image->Bind();
+
+		// set texture matrix and texGens
+		RB_PrepareStageTexturing(pStage, surf, ac);
+
+		// draw it
+		RB_DrawElementsWithCounters(tri);
+
+		RB_FinishStageTexturing(pStage, surf, ac);
+	}
+
+	// reset polygon offset
+	if ((shader->TestMaterialFlag(MF_POLYGONOFFSET))&&((r_offsetFactor.GetFloat()!=0)&&(r_offsetUnits.GetFloat()!=0))) {
+		qglDisable(GL_POLYGON_OFFSET_FILL);
+	}
+
+	// reset blending
+	if (shader->GetSort() == SS_SUBVIEW) {
+		GL_State(GLS_DEPTHFUNC_LESS);
+		qglDisable(GL_BLEND);
+	}
+}
+
+void RB_STD_FillDepthBufferOpt(drawSurf_t **drawSurfs, int numDrawSurfs)
+{
+	if(numDrawSurfs == 0) {
+		return;
+	}
+
+	// if we are just doing 2D rendering, no need to fill the depth buffer
+	if (!backEnd.viewDef->viewEntitys) {
+		return;
+	}
+
+	RB_LogComment("---------- RB_STD_FillDepthBufferOpt ----------\n");
+
+	qglDisable(GL_BLEND); //dante: add
+
+	// the first texture will be used for alpha tested surfaces
+	//GL_SelectTexture(0); //k2023
+	// Texture 0 will be used for alpha tested surfaces. It should be already active.
+	// Bind it to white image by default
+	globalImages->whiteImage->Bind(); //k2023
+
+	// decal surfaces may enable polygon offset
+	qglPolygonOffset(r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat());
+
+	GL_State(GLS_DEPTHFUNC_LESS);
+
+	// Enable stencil test if we are going to be using it for shadows.
+	// If we didn't do this, it would be legal behavior to get z fighting
+	// from the ambient pass and the light passes.
+	if (r_shadows.GetBool())
+	{
+	qglEnable(GL_STENCIL_TEST);
+	qglStencilFunc(GL_ALWAYS, 1, 255);
+	}
+
+	// handle subview with alpha testing first
+	int numSubviewSurfs = 0;
+	for(; numSubviewSurfs < numDrawSurfs; numSubviewSurfs++)
+	{
+		if (drawSurfs[numSubviewSurfs]->material->GetSort() > SS_SUBVIEW) {
+			break;
+		}
+	}
+	if(numSubviewSurfs > 0)
+	{
+		GL_UseProgram(&depthFillShader);
+
+		GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+		GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+		RB_RenderDrawSurfListWithFunction(drawSurfs, numSubviewSurfs, RB_T_FillDepthBuffer);
+
+		GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+		GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+		drawSurfs += numSubviewSurfs;
+		numDrawSurfs -= numSubviewSurfs;
+		if(numDrawSurfs == 0)
+		{
+			GL_UseProgram(NULL);
+			qglEnable(GL_BLEND); //dante: add
+			return;
+		}
+	}
+
+	// handle non-alpha testing and store perforated surfs
+	GL_UseProgram(&depthFillNoAlphaTestShader);
+
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+    GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+	RB_RenderDrawSurfListWithFunction(drawSurfs, numDrawSurfs, RB_T_FillDepthBufferOpaque);
+
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+    GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+	// handle perforated surfs with alpha testing
+	if (perforatedDrawSurfs.Num() > 0) {
+		GL_UseProgram(&depthFillShader);
+
+		GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+		GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+		RB_RenderDrawSurfListWithFunction((drawSurf_t **)perforatedDrawSurfs.Ptr(), perforatedDrawSurfs.Num(), RB_T_FillDepthBufferPerforated);
+
+		GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
+		GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
+
+		// clear perforated draw surfs
+		perforatedDrawSurfs.SetNum(0);
+		perforatedDrawSurfStages.SetNum(0);
+		perforatedDrawSurfStageIndex = 0;
+	}
 
 	GL_UseProgram(NULL);
 	qglEnable(GL_BLEND); //dante: add
@@ -2498,6 +2833,11 @@ void	RB_STD_DrawView(void)
 
 	// fill the depth buffer and clear color buffer to black except on
 	// subviews
+#if 0
+	if(harm_r_fillDepthFast.GetBool() && backEnd.viewDef->numClipPlanes == 0)
+		RB_STD_FillDepthBufferOpt(drawSurfs, numDrawSurfs);
+	else
+#endif
 	RB_STD_FillDepthBuffer(drawSurfs, numDrawSurfs);
 
 #ifdef _SPLASHDAMAGE //karin: render occlusion testing
