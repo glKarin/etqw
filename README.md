@@ -121,8 +121,9 @@
 
 | Command | Description | Usage | Scope | Remark | Platform |
 |:---|:---|:---|:---|:---|:---:|
-| loadProgram | load external shader program force |  | Engine/Renderer |  | All |
-| listPrograms | list loaded external shader program |  | Engine/Renderer |  | All |
+| loadRenderProgram | load external render program force |  | Engine/Renderer |  | All |
+| listRenderPrograms | list loaded external render program |  | Engine/Renderer |  | All |
+| reloadRenderPrograms | reload external render program |  | Engine/Renderer |  | All |
 | imageProgramStringToCompressedFileName | print compressed image name from raw image program |  | Engine/Renderer |  | All |
 | declbToText | convert declb to text files |  | Engine/Framework |  | All |
 | exportDeclSource | export decl source text files |  | Engine/Framework |  | All |
