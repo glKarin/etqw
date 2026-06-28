@@ -28,7 +28,7 @@ extern bool R_ExportTrueTypeFont(const char *fontPath, const char *fontType, con
 idList<fontInfoEx_t> sdFontManagerLocal::fonts;
 idList<sdLocFont_t> sdFontManagerLocal::fontConfigs;
 
-static idCVar harm_r_fontDefaultScale("harm_r_fontDefaultScale", "0.3", CVAR_FLOAT | CVAR_ARCHIVE | CVAR_RENDERER, "default font scale in GUIs");
+static idCVar harm_r_fontDefaultScale("harm_r_fontDefaultScale", "0.27", CVAR_FLOAT | CVAR_ARCHIVE | CVAR_RENDERER, "default font scale in GUIs");
 #define DC_DEFAULT_FONT_SCALE (harm_r_fontDefaultScale.GetFloat())
 
 sdFontManagerLocal::sdFontManagerLocal()
