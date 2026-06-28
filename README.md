@@ -83,15 +83,15 @@
 
 | Extension | Origin extension | Description | Class | Structure |
 |:---------:|:----------------:|:------------|:-----:|:---------:|
-| aasb | aas_player/aas_vehicle | Area Awareness System | idAASFileLocal | [aasb](zzz/binary/aasb.struct.txt ':include') |
-| cacheb | | Global parser token cache | | [cacheb](zzz/binary/cacheb.struct.txt ':include') |
-| clustb | |Model clust for map terrain. e.g. tree, grass | | [clustb](zzz/binary/clustb.struct.txt ':include') |
-| cmb | cm | Map collision model | idCollisionModelManagerLocal | [cmb](zzz/binary/cmb.struct.txt ':include') |
-| declb | def/gui... | Compressed Decl(All idDecl) | idDeclManagerLocal | [declb](zzz/binary/declb.struct.txt ':include') |
-| md5b | md5mesh | MD5Mesh v11 model(include LODs, GUI surfaces) | idRenderModelMD5 | [md5b](zzz/binary/md5b.struct.txt ':include') |
-| mega | mega | Mega texture | | [mega](zzz/binary/mega.struct.txt ':include') |
-| modelb | lwo/ase | Static model | idRenderModelStatic | [modelb](zzz/binary/modelb.struct.txt ':include') |
-| procb | proc | Processed map render model | idRenderWorldLocal | [procb](zzz/binary/procb.struct.txt ':include') |
+| aasb | aas_player/aas_vehicle | Area Awareness System | idAASFileLocal | [aasb](binary/aasb.struct.txt ':include') |
+| cacheb | | Global parser token cache | | [cacheb](binary/cacheb.struct.txt ':include') |
+| clustb | |Model clust for map terrain. e.g. tree, grass | | [clustb](binary/clustb.struct.txt ':include') |
+| cmb | cm | Map collision model | idCollisionModelManagerLocal | [cmb](binary/cmb.struct.txt ':include') |
+| declb | def/gui... | Compressed Decl(All idDecl) | idDeclManagerLocal | [declb](binary/declb.struct.txt ':include') |
+| md5b | md5mesh | MD5Mesh v11 model(include LODs, GUI surfaces) | idRenderModelMD5 | [md5b](binary/md5b.struct.txt ':include') |
+| mega | mega | Mega texture | | [mega](binary/mega.struct.txt ':include') |
+| modelb | lwo/ase | Static model | idRenderModelStatic | [modelb](binary/modelb.struct.txt ':include') |
+| procb | proc | Processed map render model | idRenderWorldLocal | [procb](binary/procb.struct.txt ':include') |
 
 -------------------
 

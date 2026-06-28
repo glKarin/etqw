@@ -1,3 +1,0 @@
-The Quake Wars demo included the PDB debug file for the Quake Wars demo executable.
-Before you get too excited, this won't compile. However using Hex Rays I dumped the decompiled functions to source files. The functions have proper naming, and most of the variables have proper names(code was compiled in release, so a lot of variable names are missing, as code was optimized by the compiler).
-The header files are files included from the Quake Wars SDK. 
