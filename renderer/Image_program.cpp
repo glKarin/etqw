@@ -360,7 +360,7 @@ static void R_ImageAdd(byte *data1, int width1, int height1, byte *data2, int wi
 // we build a canonical token form of the image program here
 static char parseBuffer[MAX_IMAGE_NAME];
 #ifdef _SPLASHDAMAGE //karin: save image program stage parms
-idStrList stageParms;
+idStrList stageParms(10);
 
 idStr R_RestorePastImageProgram(const char *img, bool clearParms)
 {
@@ -376,6 +376,31 @@ idStr R_RestorePastImageProgram(const char *img, bool clearParms)
 		stageParms.Clear();
 
 	return buf.c_str();
+}
+
+void R_LoadImageProgramParms(textureFilter_t &tf, textureRepeat_t &trp, textureDepth_t &td, cubeFiles_t &cubeMap, bool &allowPicmip)
+{
+#define SETUP_STAGE_PROGRAM_PARMS() \
+	for(int _i = 0; _i < stageParms.Num(); _i++) { \
+		const idStr &_p = stageParms[_i]; \
+		if(!idStr::Icmp(_p, "clamp")) { trp = TR_CLAMP; } \
+		else if(!idStr::Icmp(_p, "clamp_x")) { trp = TR_CLAMP_X; } \
+		else if(!idStr::Icmp(_p, "clamp_y")) { trp = TR_CLAMP_Y; } \
+		else if(!idStr::Icmp(_p, "nopicmip")) { allowPicmip = false; } \
+		else if(!idStr::Icmp(_p, "linear")) { tf = TF_LINEAR; } \
+		else if(!idStr::Icmp(_p, "nearest")) { tf = TF_NEAREST; } \
+		else if(!idStr::Icmp(_p, "highquality")) { \
+			if (!globalImages->image_ignoreHighQuality.GetInteger()) td = TD_HIGH_QUALITY; \
+		} \
+		else if(!idStr::Icmp(_p, "forceHighQuality")) { td = TD_HIGH_QUALITY; } \
+		else if(!idStr::Icmp(_p, "zeroClamp")) { trp = TR_CLAMP_TO_ZERO; } \
+		else if(!idStr::Icmp(_p, "alphazeroclamp")) { trp = TR_CLAMP_TO_ZERO_ALPHA; } \
+		else if(!idStr::Icmp(_p, "nopicmip")) { allowPicmip = false; } \
+		else if(!idStr::Icmp(_p, "cubeMap")) { cubeMap = CF_NATIVE; } \
+		else if(!idStr::Icmp(_p, "partialLoad")) {} \
+	}
+
+	SETUP_STAGE_PROGRAM_PARMS();
 }
 
 /*

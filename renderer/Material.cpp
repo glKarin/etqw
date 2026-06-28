@@ -46,30 +46,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/RenderProgram.h"
 #include "renderer/RenderProgramManager.h"
 
-extern idStrList stageParms;
-#define SETUP_STAGE_PROGRAM_PARMS() \
-	for(int _i = 0; _i < stageParms.Num(); _i++) { \
-		const idStr &p = stageParms[_i]; \
-		if(!idStr::Icmp(p, "clamp")) trp = TR_CLAMP; \
-		else if(!idStr::Icmp(p, "clamp_x")) trp = TR_CLAMP_X; \
-		else if(!idStr::Icmp(p, "clamp_y")) trp = TR_CLAMP_Y; \
-		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
-		else if(!idStr::Icmp(p, "linear")) tf = TF_LINEAR; \
-		else if(!idStr::Icmp(p, "nearest")) tf = TF_NEAREST; \
-		else if(!idStr::Icmp(p, "highquality")) { \
-			if (!globalImages->image_ignoreHighQuality.GetInteger()) td = TD_HIGH_QUALITY; \
-		} \
-		else if(!idStr::Icmp(p, "forceHighQuality")) td = TD_HIGH_QUALITY; \
-		else if(!idStr::Icmp(p, "zeroClamp")) trp = TR_CLAMP_TO_ZERO; \
-		else if(!idStr::Icmp(p, "alphazeroclamp")) trp = TR_CLAMP_TO_ZERO_ALPHA; \
-		else if(!idStr::Icmp(p, "nopicmip")) allowPicmip = false; \
-		else if(!idStr::Icmp(p, "cubeMap")) cubeMap = CF_NATIVE; \
-		else if(!idStr::Icmp(p, "partialLoad")) {} \
-	}
-
-static idCVar harm_r_windSpeedScale("harm_r_windSpeedScale", "0.0254", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "wind speed scale"); // DOOM_TO_METERS
+//static idCVar harm_r_windSpeedScale("harm_r_windSpeedScale", "1", CVAR_RENDERER | CVAR_FLOAT, "wind speed scale");
 
 extern idStr R_RestorePastImageProgram(const char *img, bool clearParms);
+extern void R_LoadImageProgramParms(textureFilter_t &tf, textureRepeat_t &trp, textureDepth_t &td, cubeFiles_t &cubeMap, bool &allowPicmip);
 
 ID_INLINE static void R_AllocMaterialStageDefaultTexture(materialStage_t *stage, const sdDeclRenderBinding *binding = NULL)
 {
@@ -1663,7 +1643,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			str = R_ParsePastImageProgram(src);
 			idStr::Copynz(imageName, str, sizeof(imageName));
 #ifdef _SPLASHDAMAGE //karin: setup image program stage parms
-			SETUP_STAGE_PROGRAM_PARMS();
+			R_LoadImageProgramParms(tf, trp, td, cubeMap, allowPicmip);
 			// map also is a binding
 			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
 #endif
@@ -1762,7 +1742,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			cubeMap = CF_NATIVE;
 #ifdef _SPLASHDAMAGE //karin: setup image program stage parms
-			SETUP_STAGE_PROGRAM_PARMS();
+			R_LoadImageProgramParms(tf, trp, td, cubeMap, allowPicmip);
 			if (!imageBinding)
 			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
 #endif
@@ -1774,7 +1754,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			idStr::Copynz(imageName, str, sizeof(imageName));
 			cubeMap = CF_CAMERA;
 #ifdef _SPLASHDAMAGE //karin: setup image program stage parms
-			SETUP_STAGE_PROGRAM_PARMS();
+			R_LoadImageProgramParms(tf, trp, td, cubeMap, allowPicmip);
 			if (!imageBinding)
 			imageBinding = static_cast<const sdDeclRenderBinding *>(declManager->FindType(DECL_RENDERBINDING, token.c_str(), false));
 #endif
@@ -2435,6 +2415,14 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 		}
 		if (!token.Icmp("fillMode")) { // fillMode	lines	1
 			ParseFillMode(src, ss);
+			continue;
+		}
+		if (!token.Icmp("clamp_x")) {
+			trp = TR_CLAMP_X;
+			continue;
+		}
+		if (!token.Icmp("clamp_y")) {
+			trp = TR_CLAMP_Y;
 			continue;
 		}
 
@@ -3417,6 +3405,12 @@ void idMaterial::ParseMaterial(idLexer &src)
 			idToken t;
 			src.ExpectAnyToken(&t);
 			continue;
+		} else if (!token.Icmp("clamp_x")) {
+			trpDefault = TR_CLAMP_X;
+			continue;
+		} else if (!token.Icmp("clamp_y")) {
+			trpDefault = TR_CLAMP_Y;
+			continue;
 		} else if (!token.Icmp("noatmosphere")) { // noatmosphere
 			SetMaterialFlag(MF_NOATMOSPHERE);
 			continue;
@@ -4084,7 +4078,7 @@ void idMaterial::EvaluateRegisters(float *registers, const float shaderParms[MAX
 		float windRad = DEG2RAD(atmosphere->GetWindAngle());
 		float windX = idMath::Cos(windRad);
 		float windY = idMath::Sin(windRad);
-		float speed = atmosphere->GetWindStrength() * harm_r_windSpeedScale.GetFloat();
+		float speed = atmosphere->GetWindStrength() * DOOM_TO_METERS/* * harm_r_windSpeedScale.GetFloat()*/;
 		registers[EXP_REG_WIND_X] = windX * speed;
 		registers[EXP_REG_WIND_Y] = windY * speed;
 	}
@@ -4772,15 +4766,15 @@ int idMaterial::ParseProgramStageVector( idParser &src, stageParseData_t& spd, c
 
 int idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd, const sdDeclRenderBinding *binding )
 {
-	idToken token;
-	stageTexture_t *texture;
-	const char *str;
+	const char			*str;
 	textureFilter_t		tf;
 	textureRepeat_t		trp;
 	textureDepth_t		td;
-	bool				allowPicmip;
 	cubeFiles_t			cubeMap;
+	bool				allowPicmip;
+	idToken				token;
 	idImage *img;
+	stageTexture_t *texture;
 
 	if (!src.ReadToken(&token)) {
 		src.Warning("idMaterial::ParseProgramStageTexture: excepted binding name");
@@ -4793,7 +4787,7 @@ int idMaterial::ParseProgramStageTexture( idParser &src, stageParseData_t& spd, 
 	cubeMap = CF_2D;
 
 	str = R_ParsePastImageProgram(src);
-	SETUP_STAGE_PROGRAM_PARMS();
+	R_LoadImageProgramParms(tf, trp, td, cubeMap, allowPicmip);
 
 	if (spd.numTextures >= MAX_STAGE_TEXTURES) {
 		src.Warning("idMaterial::ParseProgramStageTexture: stage textures num over %d", MAX_STAGE_TEXTURES);
