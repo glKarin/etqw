@@ -29,6 +29,12 @@ idCVar r_useDitherMask("r_useDitherMask", "0", CVAR_RENDERER | CVAR_BOOL, "");
 idCVar r_shaderSkipSpecCubeMaps("r_shaderSkipSpecCubeMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
 idCVar alphatest_kill("alphatest_kill", "1", CVAR_RENDERER | CVAR_BOOL, "");
 
+idCVar r_useAlphaToCoverage("r_useAlphaToCoverage", "0", CVAR_BOOL | CVAR_RENDERER, "");
+idCVar r_softParticles("r_softParticles", "0", CVAR_BOOL | CVAR_RENDERER, "");
+idCVar image_diffusePicMip("image_diffusePicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+idCVar image_bumpPicMip("image_bumpPicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+idCVar image_specularPicMip("image_specularPicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+
 static idCVar harm_r_printShaderSource("harm_r_printShaderSource", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "print external converted shader source");
 
 extern void RB_GLSL_ConvertGL2ESVertexShader(idStr &ret, const char *text, int version);
@@ -551,7 +557,7 @@ void sdRenderProgram::GetLocations(shaderHandle_t handle)
 			idStr str = textureUnits[i] >= 0 ? "sampler" : "variant";
 			if(textureUnits[i] >= 0)
 				str.Append(va("(%d)", textureUnits[i]));
-			common->Printf("%2d: %s location %d, %s, %s\n", i, bindingNames[i].c_str(), locations[i], bindings[i] ? "custom" : "builtin", str.c_str());
+			common->Printf("%2d: %s location %d, %s, %s\n", i, bindingNames[i].c_str(), locations[i], bindings[i] ? "binding" : "builtin", str.c_str());
 		}
 	}
 }

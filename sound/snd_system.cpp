@@ -114,6 +114,12 @@ idCVar s_micInputLevel("s_micInputLevel", "6", CVAR_SOUND | CVAR_ARCHIVE | CVAR_
 #ifdef _HUMANHEAD //k: for main menu gui
 idCVar s_musicvolume_dB("s_musicvolume_dB", "0", CVAR_SOUND | CVAR_ARCHIVE | CVAR_INTEGER, "music volume in dB");
 #endif
+#ifdef _SPLASHDAMAGE //karin: for main menu gui
+idCVar s_useAdpcmCompression("s_useAdpcmCompression", "0", CVAR_BOOL | CVAR_SOUND, "");
+idCVar s_volume_VoIPIn_dB("s_volume_VoIPIn_dB", "0", CVAR_INTEGER | CVAR_SOUND, "");
+idCVar s_volume_VoIPOut_dB("s_volume_VoIPOut_dB", "0", CVAR_INTEGER | CVAR_SOUND, "");
+idCVar s_volume_VoIPScale("s_volume_VoIPScale", "0", CVAR_INTEGER | CVAR_SOUND, "");
+#endif
 
 bool idSoundSystemLocal::useOpenAL = false;
 bool idSoundSystemLocal::useEAXReverb = false;

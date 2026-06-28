@@ -111,7 +111,7 @@ jobs:
       - name: Build with Ninja(Windows)
         if: matrix.os == 'windows-2022'
         env:
-          CL: "/showIncludes"
+          #CL: "/showIncludes"
         run: |
           dir ${{ steps.strings.outputs.name }}
           cmake --build ${{ steps.strings.outputs.name }} --config ${{ matrix.build_type }} -- /v:detailed

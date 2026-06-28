@@ -12,7 +12,7 @@
 * [-] Environment lighting
 * [-] Occlusion query
 * [-] ASCII file parsing(if binary file missing)
-* [ ] Atmosphere rendering
+* [-] Atmosphere rendering
 * ...
 
 
@@ -99,7 +99,7 @@
 
 | CVar | Type | Default | Description | Flag | Range | Scope | Remark | Platform |
 |:---|:---:|:--:|:---|:---:|:---:|:---|:---|:---:|
-| harm_r_fontDefaultScale | Float | 0.3 | default font scale in GUIs | ARCHIVE |  | Engine/Renderer |  | All |
+| harm_r_fontDefaultScale | Float | 0.27 | default font scale in GUIs | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_clearPostprocessBuffer | Bool | 0 | clear postprocess buffer image on every draw | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_printShaderSource | Bool | 0 | print external converted shader source | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_skipAreaAmbient | Bool | 0 | skip areas ambient rendering before draw interactions |  |  | Engine/Renderer |  | All |
@@ -112,6 +112,7 @@
 | harm_r_drawVisDistCheck | Bool | 0 | draw entity visible distance check |  |  | Engine/Renderer |  | All |
 | harm_r_visDistLightFallOff | Float | 0.2 | light fade by view distance | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_visDistEntityFallOff | Float | 0.2 | entity fade by view distance | ARCHIVE |  | Engine/Renderer |  | All |
+| harm_r_skipVisDistFade | Bool | 0 | skip visible distance fade | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_com_autoLogin | String |  | login username automatic when game start | ARCHIVE |  | Engine/Framework |  | All |
 
 -------------------
@@ -146,4 +147,4 @@ cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF
 
 > Run
 1. Put `base/renderprogs`, `base/materials` into game `base` folder(`etqwbase` on Android).
-2. Execute `ETQW +set r_multithread 0 +set r_useShadowMapping 1 +set r_forceShadowMapsOnAlphaTestedSurfaces 1`.
+2. Execute `ETQW +set r_multithread 0 +set r_useShadowMapping 1 +set r_forceShadowMapsOnAlphaTestedSurfaces 1 +set si_pure 0 +set net_serverAllowServerMod 1 +set s_useOpenAL 1`.

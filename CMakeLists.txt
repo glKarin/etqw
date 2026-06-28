@@ -110,7 +110,7 @@ endif()
 option(DEDICATED							"Build the dedicated server" 												OFF)
 option(ONATIVE								"Optimize for the host CPU" 												OFF)
 option(REPRODUCIBLE_BUILD 					"Replace __DATE__ and __TIME__ by hardcoded values for reproducible builds" OFF)
-option(CONSOLE								"Run on console" 															ON)
+option(CONSOLE								"Run on console" 															OFF)
 if(LINUX AND NOT ANDROID)
 	option(USE_X11							"Use X11"																	OFF) # else SDL2
 	option(USE_LOCAL_SDL					"Use local SDL library"														OFF) # else system
