@@ -110,7 +110,7 @@ jobs:
 
       - name: Build with Ninja(Windows)
         if: matrix.os == 'windows-2022'
-        env:
+        #env:
           #CL: "/showIncludes"
         run: |
           dir ${{ steps.strings.outputs.name }}
