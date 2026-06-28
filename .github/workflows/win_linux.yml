@@ -198,7 +198,7 @@ jobs:
         with:
           repo_token: "${{ secrets.TOKEN }}"
           automatic_release_tag: "win_linux_testing"
-          prerelease: true
+          prerelease: false
           title: "[${{steps.release_datetime.outputs.time}}] Windows/Linux testing (Non-release. Automatic CI builds)"
           files: |
             idTech4A++-testing_*
