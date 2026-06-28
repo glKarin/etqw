@@ -37,6 +37,7 @@ idCVar harm_r_visDistCheckType("harm_r_visDistCheckType", "0", CVAR_INTEGER | CV
 idCVar harm_r_drawVisDistCheck("harm_r_drawVisDistCheck", "0", CVAR_INTEGER | CVAR_RENDERER, "draw entity visible distance check");
 idCVar harm_r_visDistLightFallOff("harm_r_visDistLightFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "light fade by view distance");
 idCVar harm_r_visDistEntityFallOff("harm_r_visDistEntityFallOff", "0.2", CVAR_RENDERER | CVAR_FLOAT | CVAR_ARCHIVE, "entity fade by view distance");
+idCVar harm_r_skipVisDistFade("harm_r_skipVisDistFade", "0", CVAR_BOOL | CVAR_RENDERER, "skip visible distance fade");
 #endif
 
 /*
@@ -889,7 +890,7 @@ void idRenderWorldLocal::AddAreaEntityRefs(int areaNum, const portalStack_t *ps)
 			vEnt->areaAmbient = atmosphere->GetAmbientCubeMap();
 
 		vEnt->fadeFraction = 0.0f;
-		if (checkVisDist)
+		if (checkVisDist && !harm_r_skipVisDistFade.GetBool())
 		{
 		    float falloff = entity->parms.visDistFalloff > 0.0f ? entity->parms.visDistFalloff : harm_r_visDistEntityFallOff.GetFloat();
 #if 1

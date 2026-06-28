@@ -1507,49 +1507,47 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 			color[1] = regs[ pStage->color.registers[1] ];
 			color[2] = regs[ pStage->color.registers[2] ];
 			color[3] = regs[ pStage->color.registers[3] ];
+#ifdef NORMALIZE_BYTE_COLOR
+			float vertexColorMod = one[0];
+#else
+			float vertexColorMod = oneModulate[0];
+#endif
+			float colorPointerMod = one[0];
 			if (surf->space->fadeFraction > 0.0f) {
 				const float fade = 1.0f - surf->space->fadeFraction;
 				color[0] *= fade;
 				color[1] *= fade;
 				color[2] *= fade;
 				color[3] *= fade;
+
+				vertexColorMod *= fade;
+				colorPointerMod *= fade;
 			}
 
 			switch (pStage->vertexColor) {
 			case SVC_MODULATE:
 				// glColorPointer() -> vertex.color(UB[0,255]) * (1.0/255.0) + 0.0 -> output float [0,1]
-#ifdef NORMALIZE_BYTE_COLOR
-				renderProgram->BindVector("colorModulate", one[0]);
-#else
-				renderProgram->BindVector("colorModulate", oneModulate[0]);
-#endif
+				renderProgram->BindVector("colorModulate", vertexColorMod);
 				renderProgram->BindVector("colorAdd", zero[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
-				renderProgram->BindVector("u_glColorPointer", one[0]);
+				renderProgram->BindVector("u_glColorPointer", colorPointerMod);
 				renderProgram->BindVector("u_glColor4ub", zero[0]);
 				break;
 			case SVC_INVERSE_MODULATE:
 				// glColorPointer() -> vertex.color(UB[0,255]) * -(1.0/255.0) + 0.0 -> output float [-1,0]
-#ifdef NORMALIZE_BYTE_COLOR
-				renderProgram->BindVector("colorModulate", negOne[0]);
-#else
-				renderProgram->BindVector("colorModulate", negOneModulate[0]);
-#endif
+				vertexColorMod = -vertexColorMod;
+				renderProgram->BindVector("colorModulate", vertexColorMod);
 				renderProgram->BindVector("colorAdd", one[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
-				renderProgram->BindVector("u_glColorPointer", one[0]);
+				renderProgram->BindVector("u_glColorPointer", colorPointerMod);
 				renderProgram->BindVector("u_glColor4ub", zero[0]);
 				break;
 			case SVC_MODULATE_ALPHA:
 				// glColorPointer() -> vertex.color(UB[0,255]) * (1.0/255.0) + 0.0 -> output float [0,1]
-#ifdef NORMALIZE_BYTE_COLOR
-				renderProgram->BindVector("colorModulate", zero[0], zero[0], zero[0], one[0]);
-#else
-				renderProgram->BindVector("colorModulate", zero[0], zero[0], zero[0], oneModulate[0]);
-#endif
+				renderProgram->BindVector("colorModulate", zero[0], zero[0], zero[0], vertexColorMod);
 				renderProgram->BindVector("colorAdd", zero[0]);
 				// glColorPointer() -> vertex.color(UB[0,255]) * 1.0 + 0.0 -> output float [0,255]
-				renderProgram->BindVector("u_glColorPointer", zero[0], zero[0], zero[0], one[0]);
+				renderProgram->BindVector("u_glColorPointer", zero[0], zero[0], zero[0], colorPointerMod);
 				renderProgram->BindVector("u_glColor4ub", zero[0]);
 				break;
 			case SVC_IGNORE:
@@ -1851,6 +1849,33 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 //        static const float one[4] = { 1, 1, 1, 1 };
 //        static const float negOne[4] = { -1, -1, -1, -1 };
 
+#ifdef _SPLASHDAMAGE //karin: fade by distance
+		if (surf->space->fadeFraction > 0.0f) {
+			const float fade = 1.0f - surf->space->fadeFraction;
+			color[0] *= fade;
+			color[1] *= fade;
+			color[2] *= fade;
+			color[3] *= fade;
+			float vertexColorMod = oneModulate[0] * fade;
+			switch (pStage->vertexColor) {
+				case SVC_MODULATE:
+					GL_Uniform1fv(offsetof(shaderProgram_t, colorModulate), &vertexColorMod);
+					GL_Uniform1fv(offsetof(shaderProgram_t, colorAdd), zero);
+					break;
+				case SVC_INVERSE_MODULATE:
+					vertexColorMod = -vertexColorMod;
+					GL_Uniform1fv(offsetof(shaderProgram_t, colorModulate), &vertexColorMod);
+					GL_Uniform1fv(offsetof(shaderProgram_t, colorAdd), one);
+					break;
+				case SVC_IGNORE:
+				default:
+					GL_Uniform1fv(offsetof(shaderProgram_t, colorModulate), zero);
+					GL_Uniform1fv(offsetof(shaderProgram_t, colorAdd), one);
+					break;
+			}
+		}
+		else
+#endif
 		switch (pStage->vertexColor) {
 			case SVC_MODULATE:
 				GL_Uniform1fv(offsetof(shaderProgram_t, colorModulate), oneModulate);
@@ -1867,15 +1892,6 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 				break;
 		}
 
-#ifdef _SPLASHDAMAGE //karin: fade by distance
-		if (surf->space->fadeFraction > 0.0f) {
-			const float fade = 1.0f - surf->space->fadeFraction;
-			color[0] *= fade;
-			color[1] *= fade;
-			color[2] *= fade;
-			color[3] *= fade;
-		}
-#endif
 		GL_Uniform4fv(offsetof(shaderProgram_t, glColor), color);
 
 		// bind the texture
