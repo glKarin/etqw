@@ -13,6 +13,7 @@
 * [-] Occlusion query
 * [-] ASCII file parsing(if binary file missing)
 * [-] Atmosphere rendering
+* [ ] Cinematic and bik video
 * ...
 
 
