@@ -1042,16 +1042,10 @@ void R_AddCopyParmsCmd(const viewDef_t *view)
 		builtinUniforms.sunHaloParameters.Set(atmosphere->GetSunHaloScale(), atmosphere->GetSunHaloBias());
 		// fog
 		builtinUniforms.fogColor = atmosphere->GetFogColor();
-		builtinUniforms.fogParams.Set(1.0f / atmosphere->GetFogDistHalf(), 1.0f / atmosphere->GetFogHeightHalf(), atmosphere->GetFogHeightOffset()); // 101
+		builtinUniforms.fogParams.Set(1.0f / atmosphere->GetFogDistHalf(), 1.0f / atmosphere->GetFogHeightHalf(), atmosphere->GetFogHeightOffset());
 		const float fogStart = atmosphere->GetFogStart();
 		const float fogEnd = atmosphere->GetFogEnd();
-		builtinUniforms.fogDepths.Set(fogStart, fogEnd, 1.0f / (fogEnd - fogStart), -fogStart / (fogEnd - fogStart)); // 102
-		// float								fogDistHalf; // 192
-		// float								fogHeightHalf; // 196
-		// float								fogHeightOffset; // 200
-		// idVec3								fogColor; // 204
-		// float								fogStart; // 216
-		// float								fogEnd; // 220
+		builtinUniforms.fogDepths.Set(fogStart, fogEnd, 1.0f / (fogEnd - fogStart), -fogStart / (fogEnd - fogStart));
 
 		// ambient
 		builtinUniforms.skyGradientCubeMap = atmosphere->GetSkyGradientImage();

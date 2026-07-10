@@ -411,65 +411,6 @@ int idAASFileLocal::PointReachableAreaNum(const idVec3 &origin, const idBounds &
 /*
 ============
 idAASFileLocal::BoundsReachableAreaNum_r
- * Calc area of reachable in node by bounds
- * @param bounds_a2 bounds
- * @param nodeNum_a3 nodeNum
- * @param areaFlags_a4 has area's flags
- * @param excludeTravelFlags_a5 exclude area's travelFlags
- * @return areaNum, 0 is not found
-============
-*/
-int idAASFileLocal::BoundsReachableAreaNum_r(const idBounds *bounds_a2, int nodeNum_a3, int areaFlags_a4, int excludeTravelFlags_a5) const {
-
-	int areaNum_v5;
-	bool isAreaNum_v6;
-	const aasNode_t *v8;
-	int side_v9;
-	int result;
-	const aasArea_t *area_v11;
-
-	areaNum_v5 = nodeNum_a3;
-	isAreaNum_v6 = nodeNum_a3 < 0;
-	if ( !nodeNum_a3 )
-		return 0;
-	while ( !isAreaNum_v6 )
-	{
-		v8 = &this->nodes[areaNum_v5];
-		side_v9 = bounds_a2->PlaneSide(this->planeList[v8->planeNum], ON_EPSILON);
-		if ( side_v9 == PLANESIDE_BACK )
-		{
-			areaNum_v5 = v8->children[1];
-		}
-		else
-		{
-			if ( side_v9 )
-			{
-				result = idAASFileLocal::BoundsReachableAreaNum_r(bounds_a2, v8->children[1], areaFlags_a4, excludeTravelFlags_a5);
-				if ( result )
-					return result;
-			}
-			areaNum_v5 = v8->children[0];
-		}
-		isAreaNum_v6 = areaNum_v5 < 0;
-		if ( !areaNum_v5 )
-			return 0;
-	}
-	area_v11 = &this->areas[-areaNum_v5];
-	if ( (area_v11->flags & (unsigned short)areaFlags_a4) != 0 && (area_v11->travelFlags & (unsigned short)excludeTravelFlags_a5) == 0 )
-		return -areaNum_v5;
-	else
-		return 0;
-}
-
-/*
-============
-idAASFileLocal::BoundsReachableAreaNum_r
- * Calc area of reachable in node by bounds
- * @param nodeNum nodeNum
- * @param bounds bounds
- * @param areaFlags has area's flags
- * @param excludeTravelFlags exclude area's travelFlags
- * @return areaNum
 ============
 */
 int idAASFileLocal::BoundsReachableAreaNum_r(int nodeNum, const idBounds &bounds, const int areaFlags, const int excludeTravelFlags) const
@@ -510,16 +451,11 @@ int idAASFileLocal::BoundsReachableAreaNum_r(int nodeNum, const idBounds &bounds
 /*
 ============
 idAASFileLocal::BoundsReachableAreaNum
- * Calc area of reachable by bounds
- * @param bounds bounds
- * @param areaFlags has area's flags
- * @param excludeTravelFlags exclude area's travelFlags
- * @return areaNum, 0 is not found
 ============
 */
 int idAASFileLocal::BoundsReachableAreaNum(const idBounds &bounds, const int areaFlags, const int excludeTravelFlags) const
 {
-#if 1
+#ifdef _SPLASHDAMAGE
 	return BoundsReachableAreaNum_r(&bounds, 1, areaFlags, excludeTravelFlags);
 #else
 	return BoundsReachableAreaNum_r(1, bounds, areaFlags, excludeTravelFlags);
@@ -834,6 +770,60 @@ int idAASFileLocal::MaxTreeDepth(void) const
 }
 
 #ifdef _SPLASHDAMAGE
+
+/*
+============
+idAASFileLocal::BoundsReachableAreaNum_r
+ * Calc area of reachable in node by bounds
+ * @param bounds_a2 bounds
+ * @param nodeNum_a3 nodeNum
+ * @param areaFlags_a4 has area's flags
+ * @param excludeTravelFlags_a5 exclude area's travelFlags
+ * @return areaNum, 0 is not found
+============
+*/
+int idAASFileLocal::BoundsReachableAreaNum_r(const idBounds *bounds_a2, int nodeNum_a3, int areaFlags_a4, int excludeTravelFlags_a5) const {
+
+	int areaNum_v5;
+	bool isAreaNum_v6;
+	const aasNode_t *v8;
+	int side_v9;
+	int result;
+	const aasArea_t *area_v11;
+
+	areaNum_v5 = nodeNum_a3;
+	isAreaNum_v6 = nodeNum_a3 < 0;
+	if ( !nodeNum_a3 )
+		return 0;
+	while ( !isAreaNum_v6 )
+	{
+		v8 = &this->nodes[areaNum_v5];
+		side_v9 = bounds_a2->PlaneSide(this->planeList[v8->planeNum], ON_EPSILON);
+		if ( side_v9 == PLANESIDE_BACK )
+		{
+			areaNum_v5 = v8->children[1];
+		}
+		else
+		{
+			if ( side_v9 )
+			{
+				result = idAASFileLocal::BoundsReachableAreaNum_r(bounds_a2, v8->children[1], areaFlags_a4, excludeTravelFlags_a5);
+				if ( result )
+					return result;
+			}
+			areaNum_v5 = v8->children[0];
+		}
+		isAreaNum_v6 = areaNum_v5 < 0;
+		if ( !areaNum_v5 )
+			return 0;
+	}
+	area_v11 = &this->areas[-areaNum_v5];
+	if ( (area_v11->flags & (unsigned short)areaFlags_a4) != 0 && (area_v11->travelFlags & (unsigned short)excludeTravelFlags_a5) == 0 )
+		return -areaNum_v5;
+	else
+		return 0;
+}
+
 /*
 ============
 idAASFileLocal::PushPointIntoArea
