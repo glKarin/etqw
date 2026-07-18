@@ -702,12 +702,12 @@ renderProgram sfx/cubeMapHardSkinningMatrix {
 */
 renderProgram sfx/litsmoke {
 
-	program vertex cg { <%
-		$include "litsmoke.hg"	
+	program vertex glsl { <%
+		$include "litsmoke.vert.glsl"	
 	%> }
 
-	program fragment cg { <%
-		$include "litsmoke.hg"	
+	program fragment glsl { <%
+		$include "litsmoke.frag.glsl"	
 	%> }
 }
 
@@ -716,14 +716,14 @@ renderProgram sfx/litsmoke {
 */
 renderProgram sfx/litsmoke_1 {
 
-	program vertex cg { <%
+	program vertex glsl { <%
 		#define LIGHT_1
-		$include "litsmoke.hg"		
+		$include "litsmoke.vert.glsl"	
 	%> }
 
-	program fragment cg { <%
+	program fragment glsl { <%
 		#define LIGHT_1
-		$include "litsmoke.hg"	
+		$include "litsmoke.frag.glsl"	
 	%> }
 }
 
@@ -734,14 +734,14 @@ renderProgram sfx/litsmoke_1 {
 */
 renderProgram sfx/littrail {
 
-	program vertex cg { <%
+	program vertex glsl { <%
 		#define TRAIL
-		$include "litsmoke.hg"	
+		$include "litsmoke.vert.glsl"	
 	%> }
 
-	program fragment cg { <%
+	program fragment glsl { <%
 		#define TRAIL
-		$include "litsmoke.hg"
+		$include "litsmoke.frag.glsl"	
 	%> }
 }
 
