@@ -668,10 +668,12 @@ elseif(ANDROID)
 else() #TODO linux
 	set(sys_libs ${sys_libs} dl pthread)
 	if(USE_X11)
+		find_package(X11 REQUIRED)
+		find_package(EGL REQUIRED)
 		set(LINUX_SDL FALSE)
 		set(LINUX_X11 TRUE)
 		message(STATUS "use X11 + EGL")
-		set(sys_libs ${sys_libs} X11 EGL)
+		set(sys_libs ${sys_libs} X11::Xt EGL::EGL)
 	else() # SDL2
 	    if(USE_LOCAL_SDL)
 	        add_subdirectory(externlibs/SDL2)
@@ -1578,7 +1580,7 @@ endif() # ogg
 
 if(REQUIRE_FREETYPE)
 	if(USE_SYSTEM_FREETYPE)
-		find_package(FREETYPE QUIET)
+		find_package(Freetype QUIET)
 		if(FREETYPE_FOUND)
 			set(freetype_inc ${FREETYPE_INCLUDE_DIRS})
 			set(freetype_lib ${FREETYPE_LIBRARIES})
