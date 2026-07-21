@@ -78,7 +78,7 @@ jobs:
         with:
           pkgs: 'SDL2 curl openal-soft zlib' # directxsdk
           triplet: x${{ steps.strings.outputs.arch }}-windows
-          token: ${{ secrets.TOKEN }}
+          #token: ${{ secrets.TOKEN }}
           github-binarycache: true
 
       - name: Configure project with CMake(Windows)
