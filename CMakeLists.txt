@@ -191,7 +191,6 @@ endif()
 # Quake4
 if(BUILD_Q4)
 option(RAVEN								"Build the raven core" 														ON)
-option(RAVEN_NULL							"Null BSE on Quake 4" 														OFF)
 option(QUAKE4								"Build the quake4 game code" 												ON)
 option(Q4_MOD_FULL_BODY_AWARENESS			"Build quake4 full body awareness mod support" 								ON)
 option(Q4_MOD_BOTS							"Build quake4 bots mod support" 											ON)
@@ -1917,11 +1916,7 @@ if(RAVEN OR QUAKE4 OR BUILD_Q4_MOD)
 	if(NOT MSVC)
 		set_target_properties(idlib_raven PROPERTIES COMPILE_FLAGS "-fPIC")
 	endif()
-	set(bse_compile_definitions "")
-	if(RAVEN_NULL)
-		set(bse_compile_definitions "_BSE_NULL")
-	endif()
-	set_target_properties(idlib_raven PROPERTIES COMPILE_DEFINITIONS "_RAVEN;${bse_compile_definitions}")
+	set_target_properties(idlib_raven PROPERTIES COMPILE_DEFINITIONS "_RAVEN")
 	target_include_directories(idlib_raven PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/raven")
 
 	source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} PREFIX neo FILES ${src_idlib_raven})
@@ -2700,7 +2695,6 @@ if(RAVEN)
 			${src_dmap}
 			)
 
-	if(NOT RAVEN_NULL)
 		set(raven_bse_src
 				raven/bse/BSE_Effect.cpp
 				raven/bse/BSE_EffectTemplate.cpp
@@ -2719,14 +2713,7 @@ if(RAVEN)
 		list(APPEND src_core_raven ${raven_bse_src})
 		add_globbed_headers(src_core_raven "raven")
 		message(STATUS "Build Raven BSE")
-	else()
-		set(raven_null_bse_src
-				raven/fx/BSE_Null.cpp
-				)
-		list(APPEND src_core_raven ${raven_null_bse_src})
-		add_globbed_headers(raven_null_bse_src "raven")
-		message(STATUS "Build Null BSE")
-	endif()
+
 	add_globbed_headers(raven_renderer_src "raven")
 	add_globbed_headers(raven_framework_src "raven")
 
