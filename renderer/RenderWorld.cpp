@@ -1557,97 +1557,6 @@ bool idRenderWorldLocal::Trace(modelTrace_t &trace, const idVec3 &start, const i
 			if (!traceBounds.IntersectsBounds(bounds) || !bounds.LineIntersection(start, trace.point)) {
 				continue;
 			}
-#ifdef _SPLASHDAMAGExxx //karin: trigger models only used by collision model manager
-			if(model->NumSurfaces() == 0)
-			{
-				// transform the points into local space
-				R_AxisToModelMatrix(def->parms.axis, def->parms.origin, modelMatrix);
-				R_GlobalPointToLocal(modelMatrix, start, localStart);
-				R_GlobalPointToLocal(modelMatrix, end, localEnd);
-
-				tri = R_AllocStaticTriSurf();
-
-				tri->numIndexes = 36;
-				R_AllocStaticTriSurfIndexes(tri, tri->numIndexes);
-				// bottom
-				tri->indexes[0] = 0;
-				tri->indexes[1] = 1;
-				tri->indexes[2] = 2;
-				tri->indexes[3] = 0;
-				tri->indexes[4] = 2;
-				tri->indexes[5] = 3;
-				// top
-				tri->indexes[6] = 4;
-				tri->indexes[7] = 6;
-				tri->indexes[8] = 5;
-				tri->indexes[9] = 4;
-				tri->indexes[10] = 7;
-				tri->indexes[11] = 6;
-				// left
-				tri->indexes[12] = 0;
-				tri->indexes[13] = 3;
-				tri->indexes[14] = 4;
-				tri->indexes[15] = 3;
-				tri->indexes[16] = 7;
-				tri->indexes[17] = 4;
-				// right
-				tri->indexes[18] = 1;
-				tri->indexes[19] = 5;
-				tri->indexes[20] = 2;
-				tri->indexes[21] = 2;
-				tri->indexes[22] = 5;
-				tri->indexes[23] = 6;
-				// forward
-				tri->indexes[24] = 0;
-				tri->indexes[25] = 4;
-				tri->indexes[26] = 1;
-				tri->indexes[27] = 1;
-				tri->indexes[28] = 4;
-				tri->indexes[29] = 5;
-				// backward
-				tri->indexes[30] = 3;
-				tri->indexes[31] = 2;
-				tri->indexes[32] = 7;
-				tri->indexes[33] = 2;
-				tri->indexes[34] = 6;
-				tri->indexes[35] = 7;
-
-				tri->numVerts = 8;
-				R_AllocStaticTriSurfVerts(tri, tri->numVerts);
-				idVec3 points[8];
-				model->Bounds().ToPoints(points);
-				for (int i = 0; i < 8; i++)
-				{
-					idDrawVert &dv = tri->verts[i];
-					dv.Clear();
-					dv.xyz = points[i];
-				}
-
-				localTrace = R_LocalTrace(localStart, localEnd, radius, tri);
-
-				if (localTrace.fraction < trace.fraction) {
-					trace.fraction = localTrace.fraction;
-					R_LocalPointToGlobal(modelMatrix, localTrace.point, trace.point);
-					trace.normal = localTrace.normal * def->parms.axis;
-					const idMaterial *defaultMaterial = declManager->FindMaterial(CM_DEFAULT_COLLISION_SHADER);
-					trace.material = defaultMaterial;
-
-					trace.surfaceType = trace.material ? trace.material->GetSurfaceType() : NULL;
-					trace.surfaceColor = trace.material ? trace.material->GetSurfaceColor() : vec3_one;
-
-					trace.entity = &def->parms;
-					trace.jointNumber = model->NearestJoint(j, localTrace.indexes[0], localTrace.indexes[1], localTrace.indexes[2]);
-
-					traceBounds.Clear();
-					traceBounds.AddPoint(start);
-					traceBounds.AddPoint(start + trace.fraction *(end - start));
-				}
-
-				R_FreeStaticTriSurf(tri);
-
-				continue;
-			}
-#endif
 
 			// check all model surfaces
 			for (j = 0; j < model->NumSurfaces(); j++) {
@@ -2685,14 +2594,6 @@ const idMaterial *R_RemapShaderBySkin(const idMaterial *shader, const idDeclSkin
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE) //karin: BSE
 
-#ifdef _RAVEN_FX
-#define ASSERT_EFFECT_HANDLE(effectHandle) \
-	if (effectHandle < 0 || effectHandle > LUDICROUS_INDEX) { \
-		common->Error("idRenderWorld::%s: index = %i in [0, %d)", __func__, effectHandle, LUDICROUS_INDEX); \
-	}
-#include "../raven/fx/BSE.h"
-#endif
-
 rvRenderEffectLocal::rvRenderEffectLocal()
 {
     memset(&parms, 0, sizeof(parms));
@@ -2711,16 +2612,6 @@ rvRenderEffectLocal::rvRenderEffectLocal()
     effectRefs = NULL;
     index = -1;
     referenceBounds.Zero();
-
-#ifdef _RAVEN_FX
-    gameTime = 0;
-    serviceTime = 0;
-    newEffect = false;
-    expired = false;
-    remove = false;
-    updateFramenum = 0;
-    //referenceBounds.Clear();
-#endif
 }
 
 rvRenderEffectLocal::~rvRenderEffectLocal()
@@ -2730,7 +2621,7 @@ rvRenderEffectLocal::~rvRenderEffectLocal()
 }
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
-#ifdef _RAVEN_BSE
+#if !defined(_BSE_NULL)
 
 #define ASSERT_EFFECT_HANDLE(effectHandle) \
 	if (effectHandle < 0 || effectHandle > LUDICROUS_INDEX) { \
@@ -3424,36 +3315,8 @@ void idRenderWorldLocal::AddEffectRefToArea(rvRenderEffectLocal *reffect, portal
 AddEffectDef
 ===================
 */
-qhandle_t idRenderWorldLocal::AddEffectDef(const renderEffect_t* reffect, int time) { 
-#ifdef _RAVEN_FX
-	BSE_VERBOSE("AddEffectDef %p %d %f %f\n", reffect, time, reffect->startTime, tr.frameShaderTime);
-	int effectHandle = effectDefs.FindNull();
-	if (effectHandle == -1) {
-		effectHandle = effectDefs.Append(NULL);
-	}
-
-	if (effectDefs[effectHandle] == NULL) {
-		effectDefs[effectHandle] = new rvRenderEffectLocal();
-	}
-
-	rvRenderEffectLocal *effect = effectDefs[effectHandle];
-	//rvRenderEffectLocal_Init(effect);
-	effect->parms = *reffect;
-	effect->gameTime = time;
-	effect->world = this;
-	effect->index = effectHandle;
-
-	float sec = MS2SEC(time);
-	if(!bse->PlayEffect(effect, reffect->startTime)) // last renderView->time
-	{
-		delete effectDefs[effectHandle];
-		effectDefs[effectHandle] = NULL;
-		return -1;
-	}
-	bse->ServiceEffect(effect, sec);
-
-	return effectHandle;
-#elif defined(_RAVEN_BSE)
+qhandle_t idRenderWorldLocal::AddEffectDef(const renderEffect_t* reffect, int time) {
+#if !defined(_BSE_NULL)
     int v8; // edi
 
     if ( !bse_enabled.GetBool() )
@@ -3485,15 +3348,7 @@ remove if return true
 */
 bool idRenderWorldLocal::UpdateEffectDef(qhandle_t effectHandle, const renderEffect_t* reffect, int time) {
 	// return true will remove effect
-#ifdef _RAVEN_FX
-	BSE_VERBOSE("UpdateEffectDef %d %p %d %f\n", effectHandle, reffect, time, tr.frameShaderTime);
-	ASSERT_EFFECT_HANDLE(effectHandle);
-
-	effectDefs[effectHandle]->parms = *reffect;
-	effectDefs[effectHandle]->gameTime = time;
-	float sec = MS2SEC(time);
-	return bse->ServiceEffect(effectDefs[effectHandle], sec);
-#elif defined(_RAVEN_BSE)
+#if !defined(_BSE_NULL)
     int v6; // esi
     rvRenderEffectLocal *v15; // ebx
     float v19; // [esp+0h] [ebp-28h]
@@ -3562,17 +3417,7 @@ bool idRenderWorldLocal::UpdateEffectDef(qhandle_t effectHandle, const renderEff
 }
 
 void idRenderWorldLocal::FreeEffectDef(qhandle_t effectHandle) {
-#ifdef _RAVEN_FX
-	BSE_VERBOSE("FreeEffectDef %d\n", effectHandle);
-	ASSERT_EFFECT_HANDLE(effectHandle);
-
-	bse->FreeEffect(effectDefs[effectHandle]);
-
-	if (effectDefs[effectHandle] != NULL)
-		delete effectDefs[effectHandle];
-	
-	effectDefs[effectHandle] = NULL;
-#elif defined(_RAVEN_BSE)
+#if !defined(_BSE_NULL)
     int num = effectDefs.Num(); // eax
     rvRenderEffectLocal *v5; // esi
 
@@ -3619,15 +3464,7 @@ void idRenderWorldLocal::FreeEffectDef(qhandle_t effectHandle) {
 }
 
 void idRenderWorldLocal::StopEffectDef(qhandle_t effectHandle) { 
-#ifdef _RAVEN_FX
-	BSE_VERBOSE("StopEffectDef %d\n", effectHandle);
-	ASSERT_EFFECT_HANDLE(effectHandle);
-
-	if (effectDefs[effectHandle] == NULL)
-		return;
-
-	bse->StopEffect(effectDefs[effectHandle]);
-#elif defined(_RAVEN_BSE)
+#if !defined(_BSE_NULL)
     rvRenderEffectLocal *v2; // esi
 
     if ( effectHandle < 0 || effectHandle >= effectDefs.Num() )
@@ -3658,11 +3495,7 @@ void idRenderWorldLocal::StopEffectDef(qhandle_t effectHandle) {
 
 #ifdef _RAVEN
 const class rvRenderEffectLocal* idRenderWorldLocal::GetEffectDef(qhandle_t effectHandle) const { 
-#ifdef _RAVEN_FX
-	ASSERT_EFFECT_HANDLE(effectHandle);
-
-	return effectDefs[effectHandle];
-#elif defined(_RAVEN_BSE)
+#if !defined(_BSE_NULL)
     int num; // esi
     const rvRenderEffectLocal *result; // eax
 
@@ -3694,9 +3527,7 @@ const class rvRenderEffectLocal* idRenderWorldLocal::GetEffectDef(qhandle_t effe
 }
 
 bool idRenderWorldLocal::EffectDefHasSound(const renderEffect_s* reffect) {
-#ifdef _RAVEN_FX
-    return bse->CheckDefForSound(reffect);
-#elif defined(_RAVEN_BSE)
+#if !defined(_BSE_NULL)
 	return reffect && bse->CheckDefForSound(reffect);
 #else
     return false;
