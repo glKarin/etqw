@@ -24,9 +24,9 @@ procb {
                 if type == "interAreaPortals": []InterAreaPortal_t
                 if type == "shadowModel": []ShadowModel_t
                 if type == "nodes": []Node_t
-                if type == "atmosLightProjection": ?
-                if type == "megaTextureInfo": ?
-                if type == "mapEnvBounds": ?
+                if type == "atmosLightProjection": AtmosLightProjection_t
+                if type == "megaTextureInfo": MegaTextureInfo_t
+                if type == "mapEnvBounds": []MapEnvBounds_t
 
                 # model
                 Model_t {
@@ -122,6 +122,75 @@ procb {
                             floats: [numFloats]float32
                             children0: int32
                             children1: int32
+                        }
+                }
+
+                # megaTextureInfo
+                MegaTextureInfo_t {
+                    numMinFloats: int32 # = 3
+                    bounds.min.x: float32
+                    bounds.min.y: float32
+                    bounds.min.z: float32
+                    numMaxFloats: int32 # = 3
+                    bounds.max.x: float32
+                    bounds.max.y: float32
+                    bounds.max.z: float32
+                    width: int32
+                    height: int32
+                    grids: [width * height]Grid_t
+                        Grid_t {
+                            numComps: int32 # = 2
+                            x: float32
+                            y: float32
+                        }
+                }
+
+                # atmosLightProjection
+                AtmosLightProjection_t {
+                    unknown: int32
+                    length: int32
+                    matrix3x3: [9]float32
+                    numBoundsFloats: int32 # = 6
+                    bounds.min.x: float32
+                    bounds.min.y: float32
+                    bounds.min.z: float32
+                    bounds.max.x: float32
+                    bounds.max.y: float32
+                    bounds.max.z: float32
+                    list: [length * length]uint8
+                }
+
+                # mapEnvBounds
+                MapEnvBounds_t {
+                    name: string
+                    numMinFloats: int32 # = 3
+                    bounds.min.x: float32
+                    bounds.min.y: float32
+                    bounds.min.z: float32
+                    numMaxFloats: int32 # = 3
+                    bounds.max.x: float32
+                    bounds.max.y: float32
+                    bounds.max.z: float32
+                    numEnvBounds: int32
+                    list: [num]EnvBounds_t
+                        EnvBounds_t {
+                            numMinFloats: int32 # = 3
+                            bounds.min.x: float32
+                            bounds.min.y: float32
+                            bounds.min.z: float32
+                            numMaxFloats: int32 # = 3
+                            bounds.max.x: float32
+                            bounds.max.y: float32
+                            bounds.max.z: float32
+                            numPlanes: int32
+                            planes: [numPlanes]Plane_t
+                                Plane_t {
+                                    numFloats: int32 # = 4
+                                    x: float32
+                                    y: float32
+                                    z: float32
+                                    d: float32
+                                }
                         }
                 }
         ...

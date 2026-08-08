@@ -4,13 +4,13 @@
 -------------------
 
 > Not supported
-* [ ] MegaTexture
-* [ ] Collision testing multi-threading
-* [ ] All ARB/CG type shader source
+* [-] MegaTexture (from Jmarshall23's DarklightNG, but not support external megatexture shaders)
+* [ ] Collision testing multi-threading(thread lock instead of thread local data)
+* [ ] All ARB/CG type shader source(only GLSL)
 * [x] GUIs on model
 * [ ] Some shaders
 * [-] Environment lighting
-* [-] Occlusion query
+* [-] Occlusion query(only query visible, not query visible pixels)
 * [-] ASCII file parsing(if binary file missing)
 * [-] Atmosphere rendering
 * [ ] Cinematic and bik video
@@ -29,10 +29,10 @@
 
 
 > Changes
-* All dds files decoding by software for OpenGLES
+* All DXT* dds files decoding by software for OpenGLES
 * Always using DOOM3's interaction shader
 * Playing with bots only
-* Using command map texture instead of terrain mega texture: [megatextures.mtr](base/materials/megatextures.mtr ':include') [megatextures_sdk.mtr](base/materials/megatextures_sdk.mtr ':include')
+* Not support external megatexture shaders, Jmarshall23's DarklightNG shader instead of interaction megatexture shader(no shadows, not support multithreading rendering).
 * Only support GLSL(100 es/300 es) shader source: [renderprogs](base/renderprogs ':include')
 
 -------------------
@@ -114,7 +114,6 @@
 | harm_r_visDistLightFallOff | Float | 0.2 | light fade by view distance | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_visDistEntityFallOff | Float | 0.2 | entity fade by view distance | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_skipVisDistFade | Bool | 0 | skip visible distance fade | ARCHIVE |  | Engine/Renderer |  | All |
-| harm_com_autoLogin | String |  | login username automatic when game start | ARCHIVE |  | Engine/Framework |  | All |
 
 -------------------
 
@@ -148,5 +147,5 @@ cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF
 -------------------
 
 > Run
-1. Put `base/renderprogs`, `base/materials` into game `base` folder(`etqwbase` on Android).
+1. Put `base/renderprogs` into game `base` folder(`etqwbase` on Android).
 2. Execute `ETQW +set r_multithread 0 +set r_useShadowMapping 1 +set r_forceShadowMapsOnAlphaTestedSurfaces 1 +set si_pure 0 +set net_serverAllowServerMod 1 +set s_useOpenAL 1`.

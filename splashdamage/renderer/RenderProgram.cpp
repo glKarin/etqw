@@ -34,6 +34,7 @@ idCVar r_softParticles("r_softParticles", "0", CVAR_BOOL | CVAR_RENDERER, "");
 idCVar image_diffusePicMip("image_diffusePicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
 idCVar image_bumpPicMip("image_bumpPicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
 idCVar image_specularPicMip("image_specularPicMip", "0", CVAR_BOOL | CVAR_RENDERER, "");
+idCVar r_megaTexturePreferConditional("r_megaTexturePreferConditional", "0", CVAR_BOOL | CVAR_RENDERER, "");
 
 static idCVar harm_r_printShaderSource("harm_r_printShaderSource", "1", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "print external converted shader source");
 
