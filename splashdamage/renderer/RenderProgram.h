@@ -17,6 +17,9 @@ extern idCVar r_32ByteVtx;
 extern idCVar r_useDitherMask;
 extern idCVar r_shaderSkipSpecCubeMaps;
 extern idCVar alphatest_kill;
+extern idCVar r_detailTexture;
+extern idCVar r_megaMultiply;
+extern idCVar r_useARBPositionInvariant;
 
 class sdRenderProgram
 {

@@ -3166,7 +3166,6 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/draw_ambient.cpp
 			splashdamage/renderer/draw_atmosphere.cpp
 			splashdamage/renderer/draw_blendLight.cpp
-			splashdamage/renderer/megatexture/draw_megatexture.cpp
 			splashdamage/renderer/Model_decal.cpp
 	)
 	set(splashdamage_megatexture_src
@@ -3175,6 +3174,7 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/megatexture/MegaTextureTileDecompressor.cpp
 			splashdamage/renderer/megatexture/MegaTextureTileDecompressor.cpp
 			splashdamage/renderer/megatexture/MegaTextureTileLoader.cpp
+			splashdamage/renderer/megatexture/draw_megatexture.cpp
 	)
 	set(splashdamage_decl_src
 			splashdamage/decllib/declAmbientCubeMap.cpp

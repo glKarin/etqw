@@ -209,9 +209,9 @@ void RB_CreateSingleMegaTextureDrawInteractions(const drawSurf_t *surf, void (*D
 #ifdef _NO_GAMMA //karin: r_brightness when unsupport gamma
 				if(RB_overbright > 1.0f)
 				{
-					din->diffuseColor[0] *= RB_overbright;
-					din->diffuseColor[1] *= RB_overbright;
-					din->diffuseColor[2] *= RB_overbright;
+					inter.diffuseColor[0] *= RB_overbright;
+					inter.diffuseColor[1] *= RB_overbright;
+					inter.diffuseColor[2] *= RB_overbright;
 				}
 #endif
 
@@ -430,9 +430,9 @@ void RB_CreateSingleMegaTextureDrawAmbients(const drawSurf_t *surf, void (*DrawI
 #ifdef _NO_GAMMA //karin: r_brightness when unsupport gamma
 			if(RB_overbright > 1.0f)
 			{
-				din->diffuseColor[0] *= RB_overbright;
-				din->diffuseColor[1] *= RB_overbright;
-				din->diffuseColor[2] *= RB_overbright;
+				inter.diffuseColor[0] *= RB_overbright;
+				inter.diffuseColor[1] *= RB_overbright;
+				inter.diffuseColor[2] *= RB_overbright;
 			}
 #endif
 
