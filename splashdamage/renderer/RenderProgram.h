@@ -34,7 +34,8 @@ public:
     bool									Bind(void) const;
     void									Unbind(void) const;
     bool									Bind(const materialStage_t *stage, const idMaterial *mat, const float *regs) const;
-    void									Unbind(const materialStage_t *stage) const;
+    void									Unbind(bool includeTexture) const;
+    void									UnbindTexture(void) const;
     int										SetupState(void) const;
 	void									BindVector(const char *name, const float v4[]) const;
 	void									BindVector(const char *name, const idVec3 &v3) const;
@@ -77,7 +78,6 @@ private:
     int										GetLocation(GLuint glHandle, const sdDeclRenderBinding *binding, const char *rawName) const;
     void									BindStageUniform(const materialStage_t *stage, const float *regs) const;
     void									BindMaterialUniform(const idMaterial *mat, const float *regs) const;
-    void									UnbindUniform(const materialStage_t *stage) const;
     GLint									GetBindingLocation(const sdDeclRenderBinding *binding) const;
 	void									BindTexelSize(const char *name, const idImage *img) const;
 	GLint									GetUniformLocation(const char *name) const;
