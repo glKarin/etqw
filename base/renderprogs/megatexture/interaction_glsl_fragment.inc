@@ -1,4 +1,4 @@
-
+/*
 		uniform sampler2D 	$lightFalloffMap;
 		uniform sampler2D 	$lightProjectionMap;
 		uniform sampler2D 	$megaTextureLevel_0;
@@ -18,6 +18,7 @@
 		uniform vec4 		$megaTextureParams_5;
 		uniform vec4 		$diffuseColor;
 		uniform vec4        $parameters;
+*/
 		
 		const vec4 defaultTexCoord = vec4( 0.0, 0.5, 0.0, 1.0 );
 

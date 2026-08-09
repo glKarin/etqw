@@ -1,5 +1,4 @@
 
-/*
 		attribute vec4 $positionAttrib;
 		attribute vec3 $normalAttrib;
 		attribute vec4 $texCoordAttrib;
@@ -19,20 +18,24 @@
 		uniform vec4 $lightFalloff_s;
 
 		uniform vec4 $lightOrigin;
-*/
 		
 		varying	vec4 texcoord3;
 		varying	vec4 texcoord4;
 		varying	vec4 texcoord6;
 		varying	vec4 texcoord7;
 		varying	vec4 vertexColor;
-
-		$define gl_Vertex attr_Vertex
 		
 
 		void main()
 		{
-			gl_Position = u_modelViewProjectionMatrix * attr_Vertex;
+			$if r_useARBPositionInvariant
+			gl_Position = ftransform();
+			$else
+			gl_Position.x = dot( vec4(gl_ModelViewProjectionMatrix[0].x, gl_ModelViewProjectionMatrix[1].x, gl_ModelViewProjectionMatrix[2].x, gl_ModelViewProjectionMatrix[3].x ) , gl_Vertex );
+			gl_Position.y = dot( vec4(gl_ModelViewProjectionMatrix[0].y, gl_ModelViewProjectionMatrix[1].y, gl_ModelViewProjectionMatrix[2].y, gl_ModelViewProjectionMatrix[3].y ) , gl_Vertex );
+			gl_Position.z = dot( vec4(gl_ModelViewProjectionMatrix[0].z, gl_ModelViewProjectionMatrix[1].z, gl_ModelViewProjectionMatrix[2].z, gl_ModelViewProjectionMatrix[3].z ) , gl_Vertex );
+			gl_Position.w = dot( vec4(gl_ModelViewProjectionMatrix[0].w, gl_ModelViewProjectionMatrix[1].w, gl_ModelViewProjectionMatrix[2].w, gl_ModelViewProjectionMatrix[3].w ) , gl_Vertex );
+			$endif
 
 			// Pack for best efficiency (reduces number of fragment shader instructions)
 			// This could ideally be done before sending the constants (would eliminate the need for the 3 lines below)
