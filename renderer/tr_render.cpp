@@ -41,7 +41,6 @@ If you have questions concerning this license or the applicable additional terms
 float RB_overbright = 1;
 #endif
 
-
 /*
 ================
 RB_DrawElementsWithCounters
