@@ -28,6 +28,7 @@ GNU General Public License for more details.
 #include "MegaTextureCodec.h"
 #include "MegaTextureTileLoader.h"
 #include "MegaTextureTileDecompressor.h"
+#include "renderer/RenderProgram.h"
 
 #ifdef _USING_STDCXX
 #include <chrono>
@@ -1175,6 +1176,82 @@ void idMegaTexture::MegaTextureDecodeTile_f( const idCmdArgs &args ) {
 	if ( !mega || !mega->DebugDecodeTile( atoi( args.Argv( 1 ) ), atoi( args.Argv( 2 ) ), atoi( args.Argv( 3 ) ), args.Argv( 4 ) ) ) {
 		common->Warning( "MegaTexture tile decode failed" );
 	}
+}
+
+void idMegaTexture::UpdateForViewOrigin( const idVec3 &origin, int time, const sdRenderProgram *renderProgram ) {
+#ifdef _USING_STDCXX
+	std::lock_guard<std::recursive_mutex> guard( lock );
+#else
+	sdLockGuard<sdRecursiveLock> guard( lock );
+#endif
+	if ( lastUsedFrame != tr.frameCount ) {
+		// Upload work completed for the previous center before requesting the next
+		// center.  This is the ordering used by the ETQW renderer and prevents a
+		// newly uploaded atlas offset from lagging one draw behind its image.
+		UploadTiles( time );
+		SetViewOrigin( origin );
+		lastUsedFrame = tr.frameCount;
+	}
+	for ( int shaderLevel = 0; shaderLevel < numLevels; ++shaderLevel ) {
+		UpdateLevelForViewOrigin( &levels[numLevels - shaderLevel - 1], shaderLevel, time, renderProgram );
+	}
+}
+
+void idMegaTexture::UpdateLevelForViewOrigin( idMegaTextureLevel *level, int index, int time, const sdRenderProgram *renderProgram ) {
+	if ( !level || index < 0 ) return;
+	const float hidden[4] = { -2.0f, -2.0f, 0.0f, 1.0f };
+	char parmName[32];
+
+	idStr::snPrintf(parmName, sizeof(parmName), "megaMaskParams_%d", index);
+	renderProgram->BindVector( parmName, level->ImageIsValid() ? level->GetParms() : hidden );
+
+	idStr::snPrintf(parmName, sizeof(parmName), "megaTextureParams_%d", index);
+    float opacitya = (float)(1 << (index + 1)) * 0.5f;
+	renderProgram->BindVector( parmName , opacitya );
+
+	const int fadeMilliseconds = r_megaFadeTime.GetInteger();
+	shaderLevelOpacity[index] = fadeMilliseconds > 0 ?
+		idMath::ClampFloat( 0.0f, 1.0f, ( time - level->GetFadeTime() ) / (float)fadeMilliseconds ) : 1.0f;
+}
+
+void idMegaTexture::BindForViewOrigin( const idVec3 origin, const sdRenderProgram *renderProgram ) {
+	if ( megaTextureTileLoader ) megaTextureTileLoader->SetActiveMegaTexture( this );
+	if ( megaTextureTileDecompressor ) megaTextureTileDecompressor->SetActiveMegaTexture( this );
+	const idVec3 &streamOrigin = stGrid && backEnd.viewDef ? backEnd.viewDef->renderView.vieworg : origin;
+	UpdateForViewOrigin( streamOrigin, Sys_Milliseconds(), renderProgram );
+
+	// ETQW's 32768 terrain layout uses five moving atlases, followed by the
+	// detail texture and detail mask.  All eight available Doom 3 units are used.
+	char texName[32];
+	for ( int i = 0; i < 5; ++i ) {
+		idStr::snPrintf(texName, sizeof(texName), "megaTextureLevel_%d", i);
+		if ( i < numLevels ) {
+			idMegaTextureLevel &level = levels[numLevels - 1 - i];
+			if ( r_showMegaTextureLevels.GetBool() )
+				renderProgram->BindImage(texName, ( i & 1 ? globalImages->blackImage : globalImages->whiteImage ));
+			else
+				renderProgram->BindImage(texName, level.GetImage());
+		} else {
+			renderProgram->BindImage(texName, globalImages->whiteImage);
+		}
+	}
+	renderProgram->BindImage("megaTextureLevel_5", globalImages->whiteImage); // unused
+
+	idImage *activeDetail = detailTexture && !detailTexture->defaulted ? detailTexture : globalImages->whiteImage;
+	idImage *activeDetailMask = r_detailTexture.GetBool() && detailTextureMask && !detailTextureMask->defaulted ?
+		detailTextureMask : globalImages->blackImage;
+	renderProgram->BindImage("megaDetailTexture", activeDetail);
+	renderProgram->BindImage("megaDetailTextureMask", activeDetailMask);
+
+	const float detailWidth = activeDetail->uploadWidth > 0 ? (float)activeDetail->uploadWidth : 1.0f;
+	const float detailParms[4] = {
+		( tilesPerAxis * MEGA_TEXTURE_TILE_SIZE / detailWidth ) * r_detailRatio.GetFloat(),
+		r_detailTexture.GetBool() ? 1.0f : 0.0f,
+		r_detailFade.GetFloat(),
+		0.0f
+	};
+	//R_SetGLSLProgramEnvParameter( GL_VERTEX_SHADER, 7, shaderLevelOpacity + 1 );
+	renderProgram->BindVector("megaDetailTextureParams", detailParms);
 }
 
 void R_InitMegaTextureSystem(void) {

@@ -1349,6 +1349,10 @@ void RB_GLSL_CreateDrawInteractions_shadowMapping(const drawSurf_t *surf)
         return;
     }
 
+#ifdef _SPLASHDAMAGE //karin: megatexture interaction
+    RB_GLSL_CreateDrawMegaTextureInteractions(surf);
+#endif
+
     // bind the vertex and fragment shader
     shaderProgram_t *shadowInteractionShader = RB_SelectShadowMappingInteractionShader(backEnd.vLight);
     GL_UseProgram(shadowInteractionShader);

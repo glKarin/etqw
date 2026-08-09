@@ -3165,6 +3165,8 @@ if(SPLASHDAMAGE)
 			splashdamage/renderer/OcclusionTest.cpp
 			splashdamage/renderer/draw_ambient.cpp
 			splashdamage/renderer/draw_atmosphere.cpp
+			splashdamage/renderer/draw_blendLight.cpp
+			splashdamage/renderer/megatexture/draw_megatexture.cpp
 			splashdamage/renderer/Model_decal.cpp
 	)
 	set(splashdamage_megatexture_src

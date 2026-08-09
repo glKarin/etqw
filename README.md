@@ -4,7 +4,7 @@
 -------------------
 
 > Not supported
-* [-] MegaTexture (from Jmarshall23's DarklightNG, but not support external megatexture shaders)
+* [-] MegaTexture (from Jmarshall23's DarklightNG, but only support raw stencil shadow with external megatexture shaders)
 * [ ] Collision testing multi-threading(thread lock instead of thread local data)
 * [ ] All ARB/CG type shader source(only GLSL)
 * [x] GUIs on model
@@ -32,7 +32,7 @@
 * All DXT* dds files decoding by software for OpenGLES
 * Always using DOOM3's interaction shader
 * Playing with bots only
-* Not support external megatexture shaders, Jmarshall23's DarklightNG shader instead of interaction megatexture shader(no shadows, not support multithreading rendering).
+* Only support raw stencil shadow with external megatexture shaders instead of Jmarshall23's DarklightNG shader(not support soft/translucent stencil shadow and soft shadow mapping).
 * Only support GLSL(100 es/300 es) shader source: [renderprogs](base/renderprogs ':include')
 
 -------------------
@@ -136,7 +136,7 @@
 
 > CMake
 ```
-cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF -DDEDICATED=OFF CMakeLists.txt
+cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF -DDEDICATED=OFF -DSUPPORT_OBJ CMakeLists.txt
 ```
 
 > Defined macros
@@ -148,4 +148,4 @@ cmake -DBUILD_ETQW=ON -DBUILD_D3=OFF -DBUILD_Q4=OFF -DBUILD_PREY=OFF -DTOOLS=OFF
 
 > Run
 1. Put `base/renderprogs` into game `base` folder(`etqwbase` on Android).
-2. Execute `ETQW +set r_multithread 0 +set r_useShadowMapping 1 +set r_forceShadowMapsOnAlphaTestedSurfaces 1 +set si_pure 0 +set net_serverAllowServerMod 1 +set s_useOpenAL 1`.
+2. Execute `ETQW +set r_multithread 0 +set r_useShadowMapping 0 +set harm_r_stencilShadowTranslucent 0 +set harm_r_stencilShadowSoft 0 +set r_forceShadowMapsOnAlphaTestedSurfaces 1 +set si_pure 0 +set net_serverAllowServerMod 1 +set s_useOpenAL 1`.

@@ -36,6 +36,7 @@ extern idCVar harm_r_areaAmbientScale;
 
 extern void RB_BlendLight_external(const shaderStage_t *pStage, const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2);
 
+extern idCVar harm_r_megatextureAmbient;
 #endif
 
 #ifdef _K_DEV //karin: debug shader pass
@@ -1447,7 +1448,7 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 		const sdRenderProgram *renderProgram = pStage->renderProgram;
 
-		if (renderProgram && renderProgram->IsValid()) {
+		if (renderProgram && renderProgram->IsValid() && (!pStage->newStage || !pStage->newStage->megaTexture)) {
 			if ( r_skipNewAmbient.GetBool() ) {
 				continue;
 			}
@@ -1597,6 +1598,10 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 		newShaderStage_t *newStage = pStage->newStage;
 
 		if (newStage) {
+#ifdef _SPLASHDAMAGE //karin: render megatexture interaction
+			if (!harm_r_megatextureAmbient.GetBool())
+				continue;
+#endif
 			//--------------------------
 			//
 			// new style stages

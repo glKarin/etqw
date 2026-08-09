@@ -164,6 +164,10 @@ void RB_GLSL_CreateDrawInteractions(const drawSurf_t *surf)
 		return;
 	}
 
+#ifdef _SPLASHDAMAGE //karin: megatexture interaction
+	RB_GLSL_CreateDrawMegaTextureInteractions(surf);
+#endif
+
 	// perform setup here that will be constant for all interactions
 	GL_State(GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE |
 			GLS_DEPTHMASK | //k: fix translucent interactions

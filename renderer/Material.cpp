@@ -2222,7 +2222,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 			if (src.ReadTokenOnLine(&token)) {
 				newStage.megaTexture = globalImages->MegaTextureFromFile(token.c_str());
 
-				spd.declRenderProgram = NULL; // only using built-in shader
+				//spd.declRenderProgram = NULL; // only using built-in shader
 				if (!newStage.megaTexture) {
 					SetMaterialFlag(MF_DEFAULTED);
 					continue;
@@ -2575,7 +2575,7 @@ void idMaterial::ParseStage(idLexer &src, const textureRepeat_t trpDefault)
 	if (newStage.fragmentProgram || newStage.vertexProgram)
 #else
 #ifdef _SPLASHDAMAGE //karin: check newStage
-	if ((newStage.fragmentProgram || newStage.vertexProgram || newStage.glslProgram) && !spd.declRenderProgram)
+	if ((newStage.fragmentProgram || newStage.vertexProgram || newStage.glslProgram)/* && !spd.declRenderProgram*/)
 #else
 	if (newStage.fragmentProgram || newStage.vertexProgram || newStage.glslProgram)
 #endif
