@@ -679,7 +679,7 @@ void RB_GLSL_DrawInteractions(void)
 	float clearColor[4];
 	if(ShadowMapping)
 	{
-		RB_getClearColor(clearColor);
+		RB_GetClearColor(clearColor);
 		if(r_dumpShadowMapFrontEnd)
 		{
 			r_dumpShadowMap = true;
