@@ -15,6 +15,13 @@
 #define TEXEL_SIZE_SUFFIX "TexSize"
 #define TEXEL_SIZE_NAME(x) va("%s" TEXEL_SIZE_SUFFIX, x)
 
+#ifdef _STENCIL_SHADOW_IMPROVE
+extern bool r_stencilShadowTranslucent;
+#ifdef _SOFT_STENCIL_SHADOW
+extern bool r_stencilShadowSoft;
+#endif
+#endif
+
 static const char *Builtin_Vectors[] = {
 	"u_glColorPointer", // using vertex color by glColorPointer
 	"u_glColor4ub", // using uniform color by glColor
@@ -426,25 +433,22 @@ void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
 	InsertMacro(buf, "_GLES", "1");
 	//InsertMacro(buf, "_DEBUG", "0");
 	InsertMacro(buf, "_HARM", "1");
+#ifdef _OPENGLES3
+	if(USING_GLES3)
+		InsertMacro(buf, "_GLES3", "1");
+	else
+#endif
+	InsertMacro(buf, "_GLES2", "1");
+
 #ifdef NORMALIZE_BYTE_COLOR
 	InsertMacro(buf, "NORMALIZE_BYTE_COLOR", "1");
 #endif
 
-	const char *CvarMacros[] = {
-		"r_shaderQuality",
-		"r_megaDrawMethod",
-		"r_normalizeNormalMaps",
-		"r_dxnNormalMaps",
-		"r_32ByteVtx",
-		"r_useDitherMask",
-		"r_shaderSkipSpecCubeMaps",
-		"alphatest_kill",
-		"r_detailTexture",
-		"r_megaMultiply",
-		"r_useARBPositionInvariant",
-		"r_skipDiffuse",
-		"r_skipBump",
-	};
+#define QSHADER_CVAR_PROC(x) #x
+#include "shader_cvars_proc.h"
+SHADER_CVARS(const char *CvarMacros);
+#undef QSHADER_CVAR_PROC
+
 	idCVar *cvar;
 	for(int i = 0; i < sizeof(CvarMacros) / sizeof(CvarMacros[0]); i++)
 	{
@@ -462,6 +466,15 @@ void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
 	buf.Append("#endif\n");
 #else
 	InsertMacro(buf, "VERTEX_BYTE_COLOR(x)", "BYTE_COLOR( VERTEX_COLOR( x ) )");
+#endif
+
+#ifdef _STENCIL_SHADOW_IMPROVE
+	if(r_stencilShadowTranslucent)
+		InsertMacro(buf, "harm_r_stencilShadowTranslucent", "1");
+#ifdef _SOFT_STENCIL_SHADOW
+	if(r_stencilShadowSoft)
+		InsertMacro(buf, "harm_r_stencilShadowSoft", "1");
+#endif
 #endif
 }
 
@@ -780,6 +793,36 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 		}
 	}
 
+	char	buffer[32];
+	for (int i = 0; i < MAX_UNIFORM_PARMS; i++) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_uniformParm%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "vec4");
+			return;
+		}
+	}
+	for (int i = 0; i < MAX_FRAGMENT_IMAGES; i++) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentMap%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "sampler2D");
+			return;
+		}
+	}
+	for (int i = 0; i < MAX_FRAGMENT_IMAGES; i++) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentIntMap%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "usampler2D");
+			return;
+		}
+	}
+	for ( int i = 0; i < MAX_FRAGMENT_IMAGES; i++ ) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentCubeMap%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "samplerCube");
+			return;
+		}
+	}
+
 	int index = idStr::FindText(rawName, TEXEL_SIZE_SUFFIX);
 	if(index == -1 || index != idStr::Length(rawName) - idStr::Length(TEXEL_SIZE_SUFFIX))
 		common->Warning("sdRenderProgram::InsertBuiltinBinding: unknown render built-in binding '%s'", rawName);
@@ -908,6 +951,21 @@ void sdRenderProgram::BindImage(const char *name, idImage *image) const
 		globalImages->BindNull();
 		BindTexelSize(name, NULL);
 	}
+}
+
+void sdRenderProgram::SelectImage(const char *name) const
+{
+	int index = FindIndex(name);
+	if(index < 0)
+		return;
+
+	GLint location = locations[index];
+	if(location < 0 || textureUnits[index] < 0)
+		return;
+
+	// setup sampler uniform
+	qglUniform1i(location, textureUnits[index]);
+	GL_SelectTexture( textureUnits[index] );
 }
 
 void sdRenderProgram::BindTexelSize(const char *name, const idImage *img) const {

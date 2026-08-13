@@ -68,21 +68,11 @@ void sdRenderProgramManager::CheckCVars(void) {
 #if 1
 	const sdDeclRenderProgram *program;
 
-	static idCVar * const ShaderCVars[] = {
-		&r_shaderQuality,
-		&r_megaDrawMethod,
-		&r_normalizeNormalMaps,
-		&r_dxnNormalMaps,
-		&r_32ByteVtx,
-		&r_useDitherMask,
-		&r_shaderSkipSpecCubeMaps,
-		&alphatest_kill,
-		&r_detailTexture,
-		&r_megaMultiply,
-		&r_useARBPositionInvariant,
-		&r_skipDiffuse,
-		&r_skipBump,
-	};
+#define QSHADER_CVAR_PROC(x) &x
+#include "shader_cvars_proc.h"
+	SHADER_CVARS(static idCVar * const ShaderCVars);
+#undef QSHADER_CVAR_PROC
+
 	static idStaticList<const idCVar *, sizeof(ShaderCVars) / sizeof(ShaderCVars[0])> changes;
 
 	for (int i = 0; i < sizeof(ShaderCVars) / sizeof(ShaderCVars[0]); i++) {
@@ -160,6 +150,23 @@ void sdRenderProgramManager::CheckCVars(void) {
 	if(changed)
 		ReloadAll();
 #endif
+}
+
+void sdRenderProgramManager::CVarChanged(const char *name) {
+	const sdDeclRenderProgram *program;
+
+	idStrList shaderNames;
+	shaderNames.Resize(programs.Num());
+	for (int i = 0; i < programs.Num(); i++) {
+		program = programs[i]->GetDeclRenderProgram();
+		if(program->HasDefine(name))
+		{
+			shaderNames.Append(program->GetName());
+		}
+	}
+
+	if(shaderNames.Num() > 0)
+		shaderManager->ReloadShaders(shaderNames);
 }
 
 static sdRenderProgramManager renderProgramManagerLocal;

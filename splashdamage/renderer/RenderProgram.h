@@ -46,6 +46,8 @@ public:
 	void									BindMat4(const char *name, const float mat4[]) const;
 	void									BindMat4(const char *name, const idMat4 &mat4) const;
 	void									BindImage(const char *name, idImage *img) const;
+	void									SelectImage(const char *name) const;
+	void									BindTexelSize(const char *name, const idImage *img) const;
 
     // state
     bool									IsValid(void) const {
@@ -79,7 +81,6 @@ private:
     void									BindStageUniform(const materialStage_t *stage, const float *regs) const;
     void									BindMaterialUniform(const idMaterial *mat, const float *regs) const;
     GLint									GetBindingLocation(const sdDeclRenderBinding *binding) const;
-	void									BindTexelSize(const char *name, const idImage *img) const;
 	GLint									GetUniformLocation(const char *name) const;
 	int										FindIndex(const char *name) const;
 	GLint									GetUniformType(GLuint glHandle, GLint location, GLint &unit);
