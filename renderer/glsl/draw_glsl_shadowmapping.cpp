@@ -61,15 +61,15 @@
 #define SHADOW_MAPPING_VOLUME 1 // render shadow volume
 #define SHADOW_MAPPING_SURFACE 2 // render model surface
 
-static bool r_shadowMapping = false; // using shadow mapping(include prelight shadow)
+bool r_shadowMapping = false; // using shadow mapping(include prelight shadow)
 bool r_useDepthTexture = true;
 bool r_useCubeDepthTexture = true;
 bool r_usePackColorAsDepth = false; // Only OpenGLES2.0 and depth texture not supported
 static bool r_dumpShadowMap = false; // backend
 static bool r_dumpShadowMapFrontEnd = false; // frontend
-static bool r_shadowMapPerforated = true;
-static bool r_shadowMapCombine = true;
-static int r_shadowMapParallelSplitFrustums = 0;
+bool r_shadowMapPerforated = true;
+bool r_shadowMapCombine = true;
+int r_shadowMapParallelSplitFrustums = 0;
 
 static shaderProgram_t *depthShader_2d = &depthShader;
 static shaderProgram_t *depthShader_cube = &depthShader;
