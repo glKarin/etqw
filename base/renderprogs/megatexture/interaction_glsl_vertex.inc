@@ -26,8 +26,6 @@
 		varying	vec4 texcoord6;
 		varying	vec4 texcoord7;
 		varying	vec4 vertexColor;
-
-		$define gl_Vertex attr_Vertex
 		
 
 		void main()
@@ -50,13 +48,13 @@
 				texcoord7.zw = ($texCoordAttrib.xy - 0.5) * $megaDetailTextureParams.x;
 			$endif
 			
-			texcoord6.x = dot(gl_Vertex, $lightProject_s);
-			texcoord6.y = dot(gl_Vertex, $lightProject_t);
-			texcoord6.z = dot(gl_Vertex, $lightFalloff_s);
-			texcoord6.w = dot(gl_Vertex, $lightProject_q);
+			texcoord6.x = dot(attr_Vertex, $lightProject_s);
+			texcoord6.y = dot(attr_Vertex, $lightProject_t);
+			texcoord6.z = dot(attr_Vertex, $lightFalloff_s);
+			texcoord6.w = dot(attr_Vertex, $lightProject_q);
 
 			// calculate vector to light in R0 (object space)
-			float LightIntensity = max(0.0, dot($normalAttrib, normalize($lightOrigin.xyz - gl_Vertex.xyz)));
+			float LightIntensity = max(0.0, dot($normalAttrib, normalize($lightOrigin.xyz - attr_Vertex.xyz)));
 			
 			vertexColor = vec4(LightIntensity, LightIntensity, LightIntensity, 1.0);
 		}

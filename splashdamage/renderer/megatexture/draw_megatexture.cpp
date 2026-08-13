@@ -10,6 +10,10 @@ extern idCVar harm_r_skipAreaAmbient;
 static const sdRenderProgram *megaTextureProgram = NULL;
 #ifdef _STENCIL_SHADOW_IMPROVE
 extern bool stencilShadowWithoutStencilTest;
+#ifdef _SOFT_STENCIL_SHADOW
+extern float RB_StencilShadowSoft_getBIAS(void);
+extern void RB_StencilShadowSoftInteraction_bindTexture(void);
+#endif
 #endif
 
 ID_INLINE static void R_SetMetaTextureDrawInteraction(const shaderStage_t *surfaceStage, const float *surfaceRegs, float color[4])
@@ -267,6 +271,57 @@ static void RB_MegaTexture_DrawInteraction(const drawInteraction_t *din)
 	megaTextureProgram->BindImage("lightProjectionMap", din->lightImage);
 	megaTextureProgram->BindVector("diffuseColor", din->diffuseColor);
 
+#ifdef _STENCIL_SHADOW_IMPROVE
+#ifdef _SOFT_STENCIL_SHADOW
+	if(r_stencilShadowSoft)
+	{
+		int iw = stencilTexture.UploadWidth();
+		int ih = stencilTexture.UploadHeight();
+		float	parm[4];
+		int		pot;
+
+		// screen power of two correction factor, assuming the copy to _currentRender
+		// also copied an extra row and column for the bilerp
+		//int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
+		int	 w = stencilTexture.Width();
+		pot = iw;
+		parm[0] = (float)w / pot;
+
+		//int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
+		int	 h = stencilTexture.Height();
+		pot = ih;
+		parm[1] = (float)h / pot;
+
+		parm[2] = 1.0 / iw;
+		parm[3] = 1.0 / ih;
+
+		megaTextureProgram->BindVector("u_uniformParm3", parm);
+
+		// window coord to 0.0 to 1.0 conversion
+		parm[0] = 1.0 / w;
+		parm[1] = 1.0 / h;
+		parm[2] = 0;
+		parm[3] = 1;
+		megaTextureProgram->BindVector("u_uniformParm4", parm);
+
+		// alpha
+		megaTextureProgram->BindVector("u_uniformParm0", 1.0 - r_stencilShadowAlpha);
+
+		// bias
+		megaTextureProgram->BindVector("u_uniformParm1", RB_StencilShadowSoft_getBIAS());
+
+		megaTextureProgram->SelectImage("u_fragmentIntMap6");
+		RB_StencilShadowSoftInteraction_bindTexture();
+		megaTextureProgram->BindTexelSize("u_fragmentIntMap6", stencilTexture.GetTextureImage());
+	}
+	else 
+#endif
+		if(r_stencilShadowTranslucent)
+	{
+		megaTextureProgram->BindVector("u_uniformParm0", stencilShadowWithoutStencilTest ? 1.0f - r_stencilShadowAlpha : r_stencilShadowAlpha);
+	}
+#endif
+
 	// draw it
 	RB_DrawElementsWithCounters(din->surf->geo);
 }
@@ -317,7 +372,7 @@ bool RB_DrawMegaTextureInteraction(const drawInteraction_t *din, const shaderSta
 	if (harm_r_megatextureAmbient.GetBool())
 		return false;
 
-#ifdef _STENCIL_SHADOW_IMPROVE //skip if fill transucent color first
+#ifdef _STENCIL_SHADOW_IMPROVExxx //skip if fill transucent color first
 	if(stencilShadowWithoutStencilTest)
 		return false;
 #endif

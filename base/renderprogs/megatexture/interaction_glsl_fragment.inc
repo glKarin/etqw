@@ -19,7 +19,13 @@
 		uniform vec4 		$diffuseColor;
 		uniform vec4        $parameters;
 */
-		
+		$ifdef harm_r_stencilShadowSoft
+			$define _SOFT
+		$elif defined(harm_r_stencilShadowTranslucent)
+			$define _TRANSLUCENT
+		$endif
+		$include "megatexture/interaction_glsl_fragment_stencilshadow.inc"
+
 		const vec4 defaultTexCoord = vec4( 0.0, 0.5, 0.0, 1.0 );
 
 		varying	vec4 		texcoord3;
@@ -87,4 +93,6 @@
 			$endif
 
 			gl_FragColor = vec4(combined.xyz * vertexColor.xyz, 0.0);
+
+			$include "megatexture/interaction_glsl_fragment_stencilshadow.inc"
 		}
