@@ -15,13 +15,6 @@
 #define TEXEL_SIZE_SUFFIX "TexSize"
 #define TEXEL_SIZE_NAME(x) va("%s" TEXEL_SIZE_SUFFIX, x)
 
-#ifdef _STENCIL_SHADOW_IMPROVE
-extern bool r_stencilShadowTranslucent;
-#ifdef _SOFT_STENCIL_SHADOW
-extern bool r_stencilShadowSoft;
-#endif
-#endif
-
 static const char *Builtin_Vectors[] = {
 	"u_glColorPointer", // using vertex color by glColorPointer
 	"u_glColor4ub", // using uniform color by glColor
@@ -35,9 +28,10 @@ idCVar r_32ByteVtx("r_32ByteVtx", "0", CVAR_RENDERER | CVAR_BOOL, "");
 idCVar r_useDitherMask("r_useDitherMask", "0", CVAR_RENDERER | CVAR_BOOL, "");
 idCVar r_shaderSkipSpecCubeMaps("r_shaderSkipSpecCubeMaps", "0", CVAR_RENDERER | CVAR_BOOL, "");
 idCVar alphatest_kill("alphatest_kill", "1", CVAR_RENDERER | CVAR_BOOL, "");
-idCVar r_detailTexture("r_detailTexture", "0", CVAR_BOOL | CVAR_RENDERER, "");
 idCVar r_megaMultiply("r_megaMultiply", "0", CVAR_BOOL | CVAR_RENDERER, "");
 idCVar r_useARBPositionInvariant("r_useARBPositionInvariant", "0", CVAR_BOOL | CVAR_RENDERER, "");
+idCVar r_detailTexture( "r_detailTexture", "1", CVAR_RENDERER | CVAR_BOOL, "Detail texture on landscape" );
+
 
 idCVar r_useAlphaToCoverage("r_useAlphaToCoverage", "0", CVAR_BOOL | CVAR_RENDERER, "");
 idCVar r_softParticles("r_softParticles", "0", CVAR_BOOL | CVAR_RENDERER, "");
@@ -803,12 +797,15 @@ GLint sdRenderProgram::GetBindingLocation(const sdDeclRenderBinding *binding) co
 }
 
 void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char *rawName) const {
+	int i;
+	char	buffer[32];
+
 	const char *Builtin_Variables[] = {
 		"currentRenderTexelSize",
 		"u_glColorPointer", // using vertex color by glColorPointer
 		"u_glColor4ub", // using uniform color by glColor
 	};
-	for (int i = 0; i < sizeof(Builtin_Variables) / sizeof(Builtin_Variables[0]); i++) {
+	for (i = 0; i < sizeof(Builtin_Variables) / sizeof(Builtin_Variables[0]); i++) {
 		if(!idStr::Icmp(rawName, Builtin_Variables[i])) {
 			InsertUniformBinding(buf, NULL, rawName, "vec4");
 			return;
@@ -823,39 +820,77 @@ void sdRenderProgram::InsertBuiltinBinding(sdStringBuilder_Heap &buf, const char
 		"transposedModelViewMatrix",
 		"transposedProjectionMatrix",
 	};
-	for (int i = 0; i < sizeof(BuiltinMat4_Variables) / sizeof(BuiltinMat4_Variables[0]); i++) {
+	for (i = 0; i < sizeof(BuiltinMat4_Variables) / sizeof(BuiltinMat4_Variables[0]); i++) {
 		if(!idStr::Icmp(rawName, BuiltinMat4_Variables[i])) {
 			InsertUniformBinding(buf, NULL, rawName, "mat4");
 			return;
 		}
 	}
 
-	char	buffer[32];
-	for (int i = 0; i < MAX_UNIFORM_PARMS; i++) {
+	// uniforms
+	for (i = 0; i < MAX_UNIFORM_PARMS; i++) {
 		idStr::snPrintf(buffer, sizeof(buffer), "u_uniformParm%d", i);
 		if(!idStr::Icmp(rawName, buffer)) {
 			InsertUniformBinding(buf, NULL, rawName, "vec4");
 			return;
 		}
 	}
-	for (int i = 0; i < MAX_FRAGMENT_IMAGES; i++) {
+	for (i = 0; i < MAX_UNIFORM_PARMS; i++) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_uniformIntParm%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "lowp ivec4");
+			return;
+		}
+	}
+	for (i = 0; i < MAX_UNIFORM_PARMS; i++) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_uniformMatrixParm%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "mat4");
+			return;
+		}
+	}
+	// array
+	for (i = 0; i < MAX_UNIFORM_PARMS; i++) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_uniformMatrixArrayParm%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformArrayBinding(buf, NULL, rawName, "mat4", 6);
+			return;
+		}
+	}
+
+	// samplers
+	for (i = 0; i < MAX_FRAGMENT_IMAGES; i++) {
 		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentMap%d", i);
 		if(!idStr::Icmp(rawName, buffer)) {
 			InsertUniformBinding(buf, NULL, rawName, "sampler2D");
 			return;
 		}
 	}
-	for (int i = 0; i < MAX_FRAGMENT_IMAGES; i++) {
+	for ( i = 0; i < MAX_FRAGMENT_IMAGES; i++ ) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentCubeMap%d", i);
+		if(!idStr::Icmp(rawName, buffer)) {
+			InsertUniformBinding(buf, NULL, rawName, "samplerCube");
+			return;
+		}
+	}
+
+#ifdef _OPENGLES3
+	if(USING_GLES3)
+#endif
+	for (i = 0; i < MAX_FRAGMENT_IMAGES; i++) {
 		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentIntMap%d", i);
 		if(!idStr::Icmp(rawName, buffer)) {
 			InsertUniformBinding(buf, NULL, rawName, "usampler2D");
 			return;
 		}
 	}
-	for ( int i = 0; i < MAX_FRAGMENT_IMAGES; i++ ) {
-		idStr::snPrintf(buffer, sizeof(buffer), "u_fragmentCubeMap%d", i);
+#ifdef _OPENGLES3
+	if(USING_GLES3)
+#endif
+	for ( i = 0; i < MAX_FRAGMENT_IMAGES; i++ ) {
+		idStr::snPrintf(buffer, sizeof(buffer), "u_fragment2DArrayShadowMap%d", i);
 		if(!idStr::Icmp(rawName, buffer)) {
-			InsertUniformBinding(buf, NULL, rawName, "samplerCube");
+			InsertUniformBinding(buf, NULL, rawName, "sampler2DArrayShadow");
 			return;
 		}
 	}
@@ -940,6 +975,15 @@ void sdRenderProgram::BindVector(const char *name, float x, float y, float z, fl
 	qglUniform4f(location, x, y, z, w);
 }
 
+void sdRenderProgram::BindIVector(const char *name, int i) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniform4i(location, i, i, i, i);
+}
+
 void sdRenderProgram::BindMat4(const char *name, const float mat4[]) const
 {
 	GLint location = GetUniformLocation(name);
@@ -956,6 +1000,15 @@ void sdRenderProgram::BindMat4(const char *name, const idMat4 &mat4) const
 		return;
 
 	qglUniformMatrix4fv(location, 1, false, mat4.ToFloatPtr());
+}
+
+void sdRenderProgram::BindMat4Array(const char *name, const float *mat4, int num) const
+{
+	GLint location = GetUniformLocation(name);
+	if(location < 0)
+		return;
+
+	qglUniformMatrix4fv(location, num, false, mat4);
 }
 
 void sdRenderProgram::BindImage(const char *name, idImage *image) const
@@ -985,8 +1038,14 @@ void sdRenderProgram::BindImage(const char *name, idImage *image) const
 	}
 	else
 	{
+#if 1
 		globalImages->BindNull();
 		BindTexelSize(name, NULL);
+#else
+		image = globalImages->defaultImage;
+		image->Bind();
+		BindTexelSize(name, image);
+#endif
 	}
 }
 

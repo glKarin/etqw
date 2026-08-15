@@ -26,6 +26,10 @@
 		varying	vec4 texcoord6;
 		varying	vec4 texcoord7;
 		varying	vec4 vertexColor;
+
+		$ifdef r_useShadowMapping
+		$include "megatexture/interaction_glsl_vertex_shadowmapping.inc"
+		$endif
 		
 
 		void main()
@@ -57,4 +61,8 @@
 			float LightIntensity = max(0.0, dot($normalAttrib, normalize($lightOrigin.xyz - attr_Vertex.xyz)));
 			
 			vertexColor = vec4(LightIntensity, LightIntensity, LightIntensity, 1.0);
+
+			$ifdef r_useShadowMapping
+			$include "megatexture/interaction_glsl_vertex_shadowmapping.inc"
+			$endif
 		}

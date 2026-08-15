@@ -1,6 +1,7 @@
 $if !defined(STENCIL_SHADOW_INCLUDEAD)
 $define STENCIL_SHADOW_INCLUDEAD
 
+$ifdef _SOFT
 $define ES3_STENCIL_SHADOW_SAMPLE_POISSON_DISK
         $define SAMPLES 16
         $define SAMPLE_MULTIPLICATOR (1.0 / 16.0)
@@ -24,7 +25,6 @@ $define ES3_STENCIL_SHADOW_SAMPLE_POISSON_DISK
             // , vec2( 0.0, 0.0 )
         );
 
-$ifdef _SOFT
 $define u_nonPowerOfTwo $u_uniformParm3
 $define u_windowCoords $u_uniformParm4
 

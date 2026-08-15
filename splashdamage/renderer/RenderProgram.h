@@ -43,8 +43,10 @@ public:
 	void									BindVector(const char *name, const idVec2 &v2) const;
 	void									BindVector(const char *name, float f) const;
 	void									BindVector(const char *name, float x, float y, float z = 0.0f, float w = 1.0f) const;
+	void									BindIVector(const char *name, int i) const;
 	void									BindMat4(const char *name, const float mat4[]) const;
 	void									BindMat4(const char *name, const idMat4 &mat4) const;
+	void									BindMat4Array(const char *name, const float *mat4, int num) const;
 	void									BindImage(const char *name, idImage *img) const;
 	void									SelectImage(const char *name) const;
 	void									BindTexelSize(const char *name, const idImage *img) const;
@@ -72,8 +74,10 @@ private:
     void									InsertAttribBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void									InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const;
     void									InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName, const char *type) const;
-    void									InsertMacro(sdStringBuilder_Heap &buf, const char *name, const char *value = NULL) const;
+    void									InsertUniformArrayBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName, const char *type, int length) const;
+    void									InsertMacro(sdStringBuilder_Heap &buf, const char *name, const char *value = NULL, bool check = false) const;
     void									InsertBuiltinMacros(sdStringBuilder_Heap &buf) const;
+    void									InsertCVarMacro(sdStringBuilder_Heap &buf, const char *name) const;
 	void									GetLocations(shaderHandle_t handle);
 	void									GetShaderLocations(GLuint glHandle, const sdRenderProgramShader *shader);
 	void									GetBuiltinLocations(GLuint glHandle);

@@ -808,7 +808,11 @@ typedef struct {
 #endif
 } tmu_t;
 
+#ifdef _SPLASHDAMAGE //karin: for megatexture in shadow mapping
+const int MAX_MULTITEXTURE_UNITS =	16;
+#else
 const int MAX_MULTITEXTURE_UNITS =	8;
+#endif
 typedef struct {
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
 	int			currenttmu;
@@ -2457,8 +2461,11 @@ extern bool r_shadowMapCombine;
 extern bool r_shadowMapPerforated;
 extern int r_shadowMapParallelSplitFrustums;
 
+extern const float SampleFactors[MAX_SHADOWMAP_RESOLUTIONS];
+
 void R_SetupShadowMappingLOD(const idRenderLightLocal *light, viewLight_t *vLight);
 void R_SetupShadowMappingProjectionMatrix(idRenderLightLocal *light);
+idImage * RB_ShadowMappingInteraction_GetTexture(void);
 #endif
 
 #if defined(_SHADOW_MAPPING) || defined(_D3BFG_CULLING)
