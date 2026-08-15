@@ -418,7 +418,24 @@ void sdRenderProgram::InsertUniformBinding(sdStringBuilder_Heap &buf, const sdDe
     buf.Append(";\n");
 }
 
-void sdRenderProgram::InsertMacro(sdStringBuilder_Heap &buf, const char *name, const char *value) const {
+void sdRenderProgram::InsertUniformArrayBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName, const char *type, int length) const {
+	buf.Append("uniform ");
+	buf.Append(type);
+	buf.Append(" ");
+	buf.Append(rawName);
+	buf.Append("[");
+	buf.Append(va("%d", length));
+	buf.Append("]");
+	buf.Append(";\n");
+}
+
+void sdRenderProgram::InsertMacro(sdStringBuilder_Heap &buf, const char *name, const char *value, bool check) const {
+	if (check)
+	{
+		if (!declRenderProgram->HasDefine(name))
+			return;
+	}
+
     buf.Append("#define ");
     buf.Append(name);
 	if(value)
@@ -427,6 +444,12 @@ void sdRenderProgram::InsertMacro(sdStringBuilder_Heap &buf, const char *name, c
 		buf.Append(value);
 	}
     buf.Append("\n");
+}
+
+void sdRenderProgram::InsertCVarMacro(sdStringBuilder_Heap &buf, const char *name) const
+{
+	const idCVar *cvar = cvarSystem->Find(name);
+	InsertMacro(buf, name, cvar ? cvar->GetString() : "0", true);
 }
 
 void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
@@ -449,11 +472,9 @@ void sdRenderProgram::InsertBuiltinMacros(sdStringBuilder_Heap &buf) const {
 SHADER_CVARS(const char *CvarMacros);
 #undef QSHADER_CVAR_PROC
 
-	idCVar *cvar;
 	for(int i = 0; i < sizeof(CvarMacros) / sizeof(CvarMacros[0]); i++)
 	{
-		cvar = cvarSystem->Find(CvarMacros[i]);
-		InsertMacro(buf, CvarMacros[i], cvar ? cvar->GetString() : "0");
+		InsertCVarMacro(buf, CvarMacros[i]);
 	}
 
 	//karin: glColorPointer/glColor
@@ -468,14 +489,30 @@ SHADER_CVARS(const char *CvarMacros);
 	InsertMacro(buf, "VERTEX_BYTE_COLOR(x)", "BYTE_COLOR( VERTEX_COLOR( x ) )");
 #endif
 
-#ifdef _STENCIL_SHADOW_IMPROVE
-	if(r_stencilShadowTranslucent)
-		InsertMacro(buf, "harm_r_stencilShadowTranslucent", "1");
+	const char *shadowMacros = NULL;
+#ifdef _SHADOW_MAPPING
+	if(r_shadowMapping)
+	{
+		shadowMacros = "r_useShadowMapping";
+#ifdef _OPENGLES3
+		if (!USING_GLES3)
+#endif
+		{
+			if (r_usePackColorAsDepth && (!r_useDepthTexture || !r_useCubeDepthTexture))
+				InsertMacro(buf, "r_usePackColorAsDepth", "1", true);
+		}
+	}
+#endif
 #ifdef _SOFT_STENCIL_SHADOW
-	if(r_stencilShadowSoft)
-		InsertMacro(buf, "harm_r_stencilShadowSoft", "1");
+	if(r_stencilShadowSoft && !shadowMacros)
+		shadowMacros = "harm_r_stencilShadowSoft";
 #endif
+#ifdef _STENCIL_SHADOW_IMPROVE
+	if(r_stencilShadowTranslucent && !shadowMacros)
+		shadowMacros = "harm_r_stencilShadowTranslucent";
 #endif
+	if (shadowMacros)
+		InsertMacro(buf, shadowMacros, "1", true);
 }
 
 void sdRenderProgram::InsertTextureBinding(sdStringBuilder_Heap &buf, const sdDeclRenderBinding *binding, const char *rawName) const {
