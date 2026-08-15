@@ -11,7 +11,8 @@ public:
     									sdRenderProgramManager(void);
     									~sdRenderProgramManager();
 
-    // parse
+	void								Init(void);
+	void								Shutdown(void);
     const sdRenderProgram *				LoadProgram(const char *name);
 	void								ReloadAll(void);
 	void								CheckCVars(void);
