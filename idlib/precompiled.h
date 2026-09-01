@@ -49,9 +49,7 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 #endif
 
-#if !defined(_SPLASHDAMAGE)
 #define ID_TIME_T time_t
-#endif
 #ifdef _RAVEN
 typedef unsigned char		byte;		// 8 bits
 

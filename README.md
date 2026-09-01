@@ -100,7 +100,6 @@
 
 | CVar | Type | Default | Description | Flag | Range | Scope | Remark | Platform |
 |:---|:---:|:--:|:---|:---:|:---:|:---|:---|:---:|
-| harm_r_fontDefaultScale | Float | 0.27 | default font scale in GUIs | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_clearPostprocessBuffer | Bool | 0 | clear postprocess buffer image on every draw | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_printShaderSource | Bool | 0 | print external converted shader source | ARCHIVE |  | Engine/Renderer |  | All |
 | harm_r_skipAreaAmbient | Bool | 0 | skip areas ambient rendering before draw interactions |  |  | Engine/Renderer |  | All |
