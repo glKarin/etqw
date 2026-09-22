@@ -29,7 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "tr_local.h"
-static idCVar harm_r_fillDepthFast("harm_r_fillDepthFast", "0", CVAR_RENDERER | CVAR_BOOL | CVAR_ARCHIVE, "fill depth buffer fast");
 #ifdef _SPLASHDAMAGE //karin: custom stage shader
 #include "renderer/RenderProgram.h"
 extern idCVar harm_r_areaAmbientScale;
