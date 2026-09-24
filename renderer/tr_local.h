@@ -630,6 +630,9 @@ typedef struct {
 	idVec4				bumpMatrix[2];
 	idVec4				diffuseMatrix[2];
 	idVec4				specularMatrix[2];
+#if defined(_SPLASHDAMAGE) //karin: alpha test in interaction stage
+	float				alphaTest;
+#endif
 } drawInteraction_t;
 
 
