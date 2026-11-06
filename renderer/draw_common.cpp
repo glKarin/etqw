@@ -49,8 +49,8 @@ extern const float zero[] = { 0.0f };
 extern const float one[] = { 1.0f };
 extern const float negOne[] = { -1.0f };
 #ifdef COLOR_MODULATE_IS_NORMALIZED
-extern const float oneModulate[] = { 1.0f / 255.0f };
-extern const float negOneModulate[] = { -1.0f / 255.0f };
+float oneModulate[] = { 1.0f / 255.0f };
+float negOneModulate[] = { -1.0f / 255.0f };
 #endif
 
 /*

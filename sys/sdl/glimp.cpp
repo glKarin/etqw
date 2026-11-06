@@ -119,6 +119,26 @@ const int GRAB_RELATIVEMOUSE = (1 << 2);
 #include "imgui.cpp"
 #endif
 
+#ifdef _VULKAN
+#include <SDL_vulkan.h>
+#ifdef _WIN32
+#include <SDL_syswm.h>
+#include <windows.h>
+static void * Sys_GetWindowNativeID()
+{
+    if(!window)
+        return NULL;
+
+    SDL_SysWMinfo sys;
+    SDL_VERSION(&sys.version);
+    if(!SDL_GetWindowWMInfo(window, &sys))
+        return NULL;
+
+    return sys.info.win.window;
+}
+#endif
+#endif
+
 static void SetSDLIcon()
 {
 	Uint32 rmask, gmask, bmask, amask;
@@ -165,8 +185,25 @@ static void SetSDLIcon()
 #include "../../renderer/qgl_proc.h"
 #undef QGLPROC
 
+#ifdef _VULKAN
+#include "../../renderer/vulkan/vk_gl.h"
+static void R_LoadVulkanOpenGLCompatFunc(void)
+{
+#define QGLPROC(name, rettype, args) q##name = name;
+
+#include "../../renderer/qgl_proc.h"
+}
+#endif
+
 static void R_LoadOpenGLFunc(void)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		R_LoadVulkanOpenGLCompatFunc();
+		return;
+	}
+#endif
 #define QGLPROC(name, rettype, args) \
 	q##name = (rettype(GL_APIENTRYP)args)GLimp_ExtensionPointer(#name); \
 	if (!q##name) \
@@ -175,17 +212,414 @@ static void R_LoadOpenGLFunc(void)
 #include "../../renderer/qgl_proc.h"
 }
 
+
+#ifdef _VULKAN
+static bool VKimp_Init(glimpParms_t parms) {
+	common->Printf("Initializing Vulkan subsystem\n");
+
+	assert(SDL_WasInit(SDL_INIT_VIDEO));
+
+    Uint32 flags = 0; // SDL_WINDOW_VULKAN;
+
+	if (parms.fullScreen == 1)
+	{
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+		if(r_fullscreenDesktop.GetBool())
+			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		else
+#endif
+			flags |= SDL_WINDOW_FULLSCREEN;
+	}
+
+	int colorbits = 24;
+	int depthbits = 24;
+	int stencilbits = 8;
+
+    int multisamples = parms.multiSamples;
+
+    int tcolorbits = colorbits;
+    int tdepthbits = depthbits;
+    int tstencilbits = stencilbits;
+
+    int channelcolorbits = 8;
+
+    int talphabits = channelcolorbits;
+
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+
+    const char* windowMode = "";
+    if(r_fullscreen.GetBool()) {
+        windowMode = r_fullscreenDesktop.GetBool() ? "desktop-fullscreen-" : "fullscreen-";
+    }
+
+    common->Printf("Will create a %swindow with resolution %dx%d (r_mode = %d)\n",
+                   windowMode, parms.width, parms.height, r_mode.GetInteger());
+
+    int displayIndex = 0;
+#if SDL_VERSION_ATLEAST(2, 0, 4)
+    // try to put the window on the display the mousecursor currently is on
+    {
+        int x, y;
+        SDL_GetGlobalMouseState(&x, &y);
+
+        int numDisplays = SDL_GetNumVideoDisplays();
+        common->Printf("SDL detected %d displays: \n", numDisplays);
+        bool found = false;
+        for ( int j=0; j<numDisplays; ++j ) {
+            SDL_Rect rect;
+            if (SDL_GetDisplayBounds(j, &rect) == 0) {
+                common->Printf(" %d: %dx%d at (%d, %d) to (%d, %d)\n", j, rect.w, rect.h,
+                               rect.x, rect.y, rect.x+rect.w, rect.y+rect.h);
+                if ( !found && x >= rect.x && x < rect.x + rect.w
+                    && y >= rect.y && y < rect.y + rect.h )
+                {
+                    displayIndex = j;
+                    found = true;
+                }
+            }
+        }
+        common->Printf("Will use display %d because mouse cursor is at (%d, %d).\n",
+                       displayIndex, x, y);
+    }
+#endif
+
+    int win_x;
+    int win_y;
+    if(parms.fullScreen)
+    {
+        win_x = SDL_WINDOWPOS_UNDEFINED_DISPLAY(displayIndex);
+        win_y = SDL_WINDOWPOS_UNDEFINED_DISPLAY(displayIndex);
+    }
+    else
+    {
+        win_x = win_xpos.GetInteger();
+        win_y = win_ypos.GetInteger();
+        if(win_x < 0)
+            win_x = SDL_WINDOWPOS_UNDEFINED_DISPLAY(displayIndex);
+        if(win_y < 0)
+            win_y = SDL_WINDOWPOS_UNDEFINED_DISPLAY(displayIndex);
+    }
+    int ret = SDL_Vulkan_LoadLibrary(NULL);
+    printf("SDL_Vulkan_LoadLibrary ret=%d err=%s\n", ret, SDL_GetError());
+    printf("active video driver: %s\n", SDL_GetCurrentVideoDriver());
+    window = SDL_CreateWindow(ENGINE_VERSION,
+                                win_x,
+                                win_y,
+                                parms.width, parms.height, flags);
+
+    if (!window) {
+        common->Warning("Couldn't set Vulkan mode %d/%d/%d with %dx MSAA: %s",
+                        channelcolorbits, tdepthbits, tstencilbits, parms.multiSamples, SDL_GetError());
+
+        // before trying to reduce color channel size or whatever, first try reducing MSAA, if possible
+        if(multisamples > 1) {
+            multisamples = (multisamples <= 2) ? 0 : (multisamples/2);
+
+            // using goto because enhancing that logic which reduces attributes
+            // based on i (so it'd first try reducing MSAA) would be too painful
+            return false;
+        }
+
+        return false;
+    } else {
+        // creating the window succeeded, so adjust r_multiSamples to the value that was actually used
+        parms.multiSamples = multisamples;
+        r_multiSamples.SetInteger(multisamples);
+    }
+
+    /* Check if we're really in the requested display mode. There is
+       (or was) an SDL bug were SDL switched into the wrong mode
+       without giving an error code. See the bug report for details:
+       https://bugzilla.libsdl.org/show_bug.cgi?id=4700 */
+    if ((flags & (SDL_WINDOW_FULLSCREEN | SDL_WINDOW_FULLSCREEN_DESKTOP)) == SDL_WINDOW_FULLSCREEN)
+    {
+        SDL_DisplayMode real_mode;
+        if (SDL_GetWindowDisplayMode(window, &real_mode) != 0)
+        {
+            SDL_DestroyWindow(window);
+            window = NULL;
+            common->Warning("Can't get display mode: %s\n", SDL_GetError());
+            return false; // trying other color depth etc is unlikely to help with this issue
+        }
+        if ((real_mode.w != parms.width) || (real_mode.h != parms.height))
+        {
+            common->Warning("Current display mode isn't requested display mode\n");
+            common->Warning("Likely SDL bug #4700, trying to work around it..\n");
+            int dIdx = SDL_GetWindowDisplayIndex(window);
+            if(dIdx != displayIndex) {
+                common->Warning("Window's display index is %d, but we wanted %d!\n", dIdx, displayIndex);
+            }
+
+            /* Mkay, try to hack around that. */
+            SDL_DisplayMode wanted_mode = {};
+
+            wanted_mode.w = parms.width;
+            wanted_mode.h = parms.height;
+
+            if (SDL_SetWindowDisplayMode(window, &wanted_mode) != 0)
+            {
+                SDL_DestroyWindow(window);
+                window = NULL;
+
+                common->Warning("Can't force resolution to %ix%i: %s\n", parms.width, parms.height, SDL_GetError());
+
+                return false; // trying other color depth etc is unlikely to help with this issue
+            }
+
+            /* The SDL doku says, that SDL_SetWindowSize() shouldn't be
+               used on fullscreen windows. But at least in my test with
+               SDL 2.0.9 the subsequent SDL_GetWindowDisplayMode() fails
+               if I don't call it. */
+            SDL_SetWindowSize(window, wanted_mode.w, wanted_mode.h);
+
+            if (SDL_GetWindowDisplayMode(window, &real_mode) != 0)
+            {
+                SDL_DestroyWindow(window);
+                window = NULL;
+
+                common->Warning("Can't get display mode: %s\n", SDL_GetError());
+
+                return false; // trying other color depth etc is unlikely to help with this issue
+            }
+
+            if ((real_mode.w != parms.width) || (real_mode.h != parms.height))
+            {
+                SDL_DestroyWindow(window);
+                window = NULL;
+
+                common->Warning("Still in wrong display mode: %ix%i instead of %ix%i\n",
+                                real_mode.w, real_mode.h, parms.width, parms.height);
+
+                return false; // trying other color depth etc is unlikely to help with this issue
+            }
+            common->Warning("Now we have the requested resolution (%d x %d)\n", parms.width, parms.height);
+        }
+    }
+
+    if (SDL_GL_SetSwapInterval(r_swapInterval.GetInteger()) < 0)
+        common->Warning("SDL_GL_SWAP_CONTROL not supported");
+
+    SDL_GetWindowSize(window, &glConfig.vidWidth, &glConfig.vidHeight);
+
+    SetSDLIcon(); // for SDL2  this must be done after creating the window
+
+    glConfig.isFullscreen = (SDL_GetWindowFlags(window) & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN;
+#else
+    SDL_WM_SetCaption(ENGINE_VERSION, ENGINE_VERSION);
+
+    SetSDLIcon(); // for SDL1.2  this must be done before creating the window
+
+    if (SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, r_swapInterval.GetInteger()) < 0)
+        common->Warning("SDL_GL_SWAP_CONTROL not supported");
+
+    window = SDL_SetVideoMode(parms.width, parms.height, colorbits, flags);
+    if (!window) {
+        common->DPrintf("Couldn't set Vulkan mode %d/%d/%d: %s",
+                        channelcolorbits, tdepthbits, tstencilbits, SDL_GetError());
+
+        // before trying to reduce color channel size or whatever, first try reducing MSAA, if possible
+        if(multisamples > 1) {
+            multisamples = (multisamples <= 2) ? 0 : (multisamples/2);
+
+            // using goto because enhancing that logic which reduces attributes
+            // based on i (so it'd first try reducing MSAA) would be too painful
+            goto try_again;
+        }
+
+        continue;
+    } else {
+        // creating the window succeeded, so adjust r_multiSamples to the value that was actually used
+        parms.multiSamples = multisamples;
+        r_multiSamples.SetInteger(multisamples);
+    }
+
+    glConfig.vidWidth = window->w;
+    glConfig.vidHeight = window->h;
+
+    glConfig.isFullscreen = (window->flags & SDL_FULLSCREEN) == SDL_FULLSCREEN;
+#endif
+
+#if 0 //k: unused framebuffer blit
+    glConfig.vidWidthReal = glConfig.vidWidth;
+    glConfig.vidHeightReal = glConfig.vidHeight;
+
+    // If vidWidthReal and vidWidth are different then the framebuffer will automatically be used
+    if (r_framebufferWidth.GetInteger() !=0 && r_framebufferHeight.GetInteger() !=0)
+    {
+        glConfig.vidWidth = r_framebufferWidth.GetInteger();
+        glConfig.vidHeight = r_framebufferHeight.GetInteger();
+
+        common->Printf("Rendering in to framebuffer [%d,%d]\n", glConfig.vidWidth, glConfig.vidHeight);
+    }
+#endif
+
+#if defined(_WIN32) && defined(ID_ALLOW_TOOLS)
+
+#if ! SDL_VERSION_ATLEAST(2, 0, 0)
+#error "dhewm3 only supports the tools with SDL2, not SDL1!"
+#endif
+
+    // The tools are Win32 specific.  If building the tools
+    // then we know we are win32 and we have to include this
+    // config to get the editors to work.
+
+    // Get the HWND for later use.
+    SDL_SysWMinfo sdlinfo;
+    SDL_version sdlver;
+    SDL_VERSION(&sdlver);
+    sdlinfo.version = sdlver;
+    if (SDL_GetWindowWMInfo(window, &sdlinfo) && sdlinfo.subsystem == SDL_SYSWM_WINDOWS) {
+        win32.hWnd = sdlinfo.info.win.window;
+        win32.hDC = sdlinfo.info.win.hdc;
+        // NOTE: hInstance is set in main()
+        win32.hGLRC = qwglGetCurrentContext();
+
+        int pfIdx = GetPixelFormat(win32.hDC);
+        PIXELFORMATDESCRIPTOR src = {};
+        if (DescribePixelFormat(win32.hDC, pfIdx, sizeof(PIXELFORMATDESCRIPTOR), &win32.pfd) == 0)
+        {
+            common->Warning("DescribePixelFormat() failed: %d!\n", GetLastError());
+            PIXELFORMATDESCRIPTOR src =
+            {
+                sizeof(PIXELFORMATDESCRIPTOR),	// size of this pfd
+                1,								// version number
+                PFD_DRAW_TO_WINDOW |			// support window
+                PFD_SUPPORT_OPENGL |			// support OpenGL
+                PFD_DOUBLEBUFFER,				// double buffered
+                PFD_TYPE_RGBA,					// RGBA type
+                32,								// 32-bit color depth
+                0, 0, 0, 0, 0, 0,				// color bits ignored
+                8,								// 8 bit destination alpha
+                0,								// shift bit ignored
+                0,								// no accumulation buffer
+                0, 0, 0, 0, 					// accum bits ignored
+                24,								// 24-bit z-buffer
+                8,								// 8-bit stencil buffer
+                0,								// no auxiliary buffer
+                PFD_MAIN_PLANE,					// main layer
+                0,								// reserved
+                0, 0, 0							// layer masks ignored
+            };
+            memcpy(&win32.pfd, &src, sizeof(PIXELFORMATDESCRIPTOR));
+        }
+
+        win32.piAttribIList = NULL;
+
+        win32.wglGetPixelFormatAttribivARB = (BOOL(WINAPI*)(HDC,int,int,UINT,const int*,int*))SDL_GL_GetProcAddress("wglGetPixelFormatAttribivARB");
+        win32.wglChoosePixelFormatARB = (BOOL(WINAPI*)(HDC,const int*,const FLOAT*,UINT,int*piFormats,UINT*))SDL_GL_GetProcAddress("wglChoosePixelFormatARB");
+
+        if(win32.wglGetPixelFormatAttribivARB != NULL && win32.wglChoosePixelFormatARB != NULL) {
+            const int queryAttributes[] = {
+                // equivalents of all the SDL_GL_* attributes we set above (and ones set implicitly)
+                WGL_DRAW_TO_WINDOW_ARB,
+                WGL_RED_BITS_ARB,
+                WGL_GREEN_BITS_ARB,
+                WGL_BLUE_BITS_ARB,
+                WGL_ALPHA_BITS_ARB,
+                WGL_DOUBLE_BUFFER_ARB,
+                WGL_DEPTH_BITS_ARB,
+                WGL_STENCIL_BITS_ARB,
+                // WGL_ACCUM_*_BITS_ARB - not used
+                WGL_STEREO_ARB,
+                WGL_SAMPLE_BUFFERS_ARB,
+                WGL_SAMPLES_ARB,
+                // WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB - not used
+                WGL_ACCELERATION_ARB,
+            };
+            enum { NUM_ATTRIBUTES = sizeof(queryAttributes)/sizeof(queryAttributes[0]) };
+            int queryResults[NUM_ATTRIBUTES] = {};
+
+            win32.wglGetPixelFormatAttribivARB(win32.hDC, pfIdx, PFD_MAIN_PLANE, NUM_ATTRIBUTES, queryAttributes, queryResults);
+
+            static int attribIList[2*NUM_ATTRIBUTES+2] = {}; // +2 for terminating 0, 0 pair
+            for(int i=0; i<NUM_ATTRIBUTES; ++i) {
+                attribIList[i*2] = queryAttributes[i];
+                attribIList[i*2+1] = queryResults[i];
+            }
+            win32.piAttribIList = attribIList;
+        }
+    } else {
+        // TODO: can we just disable them?
+        common->Error("SDL_GetWindowWMInfo(), which is needed for Tools to work, failed!");
+    }
+#endif // defined(_WIN32) && defined(ID_ALLOW_TOOLS)
+
+    common->Printf("Requested %d color bits per chan, %d alpha %d depth, %d stencil\n",
+                    channelcolorbits, talphabits, tdepthbits, tstencilbits);
+
+    {
+        int r = channelcolorbits, g = channelcolorbits, b = channelcolorbits, a = talphabits, d = tdepthbits, s = tstencilbits;
+
+        common->Printf("Got %d stencil bits, %d depth bits, color bits: r%d g%d b%d a%d\n", s, d, r, g, b, a);
+
+        glConfig.colorBits = r+g+b; // a bit imprecise, but seems to be used only in GfxInfo_f()
+#if 0 //k
+        glConfig.alphabits = a;
+#endif
+        glConfig.depthBits = d;
+        glConfig.stencilBits = s;
+    }
+
+    glConfig.displayFrequency = 0;
+
+    // for r_fillWindowAlphaChan -1, see also the big comment above
+#if 0 //k
+    glConfig.shouldFillWindowAlpha = false;
+#endif
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+    const char* videoDriver = SDL_GetCurrentVideoDriver();
+    if (idStr::Icmp(videoDriver, "wayland") == 0) {
+#if 0 //k
+        glConfig.shouldFillWindowAlpha = true;
+#endif
+    }
+#endif
+
+    if (!window) {
+        common->Warning("No usable GL mode found: %s", SDL_GetError());
+        return false;
+    }
+
+    VK_PreInit();
+    VK_SetWindowNativeID(Sys_GetWindowNativeID());
+    VK_Init();
+    R_VK_Init();
+
+    R_LoadOpenGLFunc();
+
+    return true;
+}
+
+static void VKimp_Shutdown()
+{
+    common->Printf("Shutting down Vulkan subsystem\n");
+
+    R_VK_Shutdown();
+
+#if SDL_VERSION_ATLEAST(2, 0, 0)
+    if (window) {
+        SDL_DestroyWindow(window);
+        window = NULL;
+    }
+#endif
+    common->Printf("------------------------------\n");
+}
+#endif
 /*
 ===================
 GLimp_Init
 ===================
 */
 bool GLimp_Init(glimpParms_t parms) {
+#ifdef _VULKAN
+	if( USING_VULKAN )
+		return VKimp_Init(parms);
+#endif
 	common->Printf("Initializing OpenGL subsystem\n");
 
 	assert(SDL_WasInit(SDL_INIT_VIDEO));
 
-	Uint32 flags = SDL_WINDOW_OPENGL;
+    Uint32 flags = SDL_WINDOW_OPENGL;
 
 	if (parms.fullScreen == 1)
 	{
@@ -697,6 +1131,13 @@ GLimp_Shutdown
 ===================
 */
 void GLimp_Shutdown() {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        VKimp_Shutdown();
+        return;
+    }
+#endif
     common->Printf("Shutting down OpenGL subsystem\n");
 
 #if SDL_VERSION_ATLEAST(2, 0, 0)
@@ -719,6 +1160,13 @@ GLimp_SwapBuffers
 ===================
 */
 void GLimp_SwapBuffers() {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        R_VK_EndFrame();
+        return;
+    }
+#endif
     if(r_swapInterval.IsModified())
     {
         r_swapInterval.ClearModified();
@@ -801,6 +1249,10 @@ GLimp_ActivateContext
 =================
 */
 void GLimp_ActivateContext() {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
     SDL_GL_MakeCurrent(window, context);
 }
 
@@ -810,6 +1262,10 @@ GLimp_DeactivateContext
 =================
 */
 void GLimp_DeactivateContext() {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
     SDL_GL_MakeCurrent(window, NULL);
 }
 
@@ -866,6 +1322,32 @@ void GLimp_Startup(void)
     else
         Sys_Printf("Disable multi-threading rendering\n");
 #endif
+#endif
+
+#ifdef _VULKAN
+    const char *renderBackend = cvarSystem->GetCVarString("harm_r_renderBackend");
+    if( renderBackend && renderBackend[0] )
+    {
+        Sys_Printf("Render backend = %s\n", renderBackend);
+        if(!idStr::Icmp(RB_VULKAN, renderBackend))
+        {
+            USING_VULKAN = true;
+            Sys_Printf("Using Vulkan\n");
+        }
+        else // RB_OPENGL
+        {
+            USING_VULKAN = false;
+            Sys_Printf("Using OpenGL\n");
+        }
+    }
+
+    if(USING_VULKAN)
+    {
+        USING_GLES3 = false;
+        USING_GL = false;
+        gl_version = 0;
+        return;
+    }
 #endif
 #ifdef _OPENGLES3
 #if !defined(__ANDROID__) //karin: check OpenGL version from command cvar

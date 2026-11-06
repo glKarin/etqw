@@ -1078,6 +1078,11 @@ void R_SetupProjection(void)
 	tr.viewDef->projectionMatrix[12] = 0;
 
 	tr.viewDef->projectionMatrix[1] = 0;
+#ifdef _VULKANxxx
+	if(USING_VULKAN)
+		tr.viewDef->projectionMatrix[5] = -2 * zNear / height;
+	else
+#endif
 	tr.viewDef->projectionMatrix[5] = 2 * zNear / height;
 	tr.viewDef->projectionMatrix[9] = (ymax + ymin) / height;	// normally 0
 	tr.viewDef->projectionMatrix[13] = 0;
@@ -1093,6 +1098,11 @@ void R_SetupProjection(void)
 	tr.viewDef->projectionMatrix[14] = -2.0f*zFar*zNear/(zFar-zNear);
 #else
 	tr.viewDef->projectionMatrix[10] = -0.999f;
+#ifdef _VULKANxxx
+	if(USING_VULKAN)
+		tr.viewDef->projectionMatrix[14] = -1.0f*zNear;
+	else
+#endif
 	tr.viewDef->projectionMatrix[14] = -2.0f*zNear;
 #endif
 

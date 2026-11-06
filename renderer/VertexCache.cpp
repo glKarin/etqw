@@ -31,35 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
-#define VBO_INVALID_HANDLE 0 // -1, because is unsigned int
-#ifdef _MULTITHREAD
-#define VBO_IS_VALID
-#define VBO_IS_INVALID == VBO_INVALID_HANDLE
-#else
-#define VBO_IS_VALID
-#define VBO_IS_INVALID
-#endif
-
-//static volatile int current_frame = 0;
-//static volatile int render_frame = 0;
-//volatile int renderFrame = 0;
-#ifdef _MULTITHREAD
-#define deferredFreeList deferredFreeLists[usingFrame]
-#define dynamicHeaders dynamicHeaderss[usingFrame]
-#define dynamicAllocThisFrame dynamicAllocThisFrames[usingFrame]
-#endif
-
-#ifdef SEPARATE_INDEX_BUFFER
-// vertex buffer
-#define _freeStaticHeaders freeStaticHeaderss[VBO_VERTEX]
-#define _staticHeaders staticHeaderss[VBO_VERTEX]
-// index buffer
-#define _freeStaticIndexHeaders freeStaticHeaderss[VBO_INDEX]
-#define _staticIndexHeaders staticHeaderss[VBO_INDEX]
-
-#define VBO_INDEX(x) ((x) ? VBO_INDEX : VBO_VERTEX)
-#define VBO_FORI(x) for(int x = 0; x < VBO_TOTAL; x++)
-#endif
 static const int	FRAME_MEMORY_BYTES = 0x200000;
 static const int	EXPAND_HEADERS = 1024;
 
@@ -92,6 +63,13 @@ idVertexCache::ActuallyFree
 */
 void idVertexCache::ActuallyFree(vertCache_t *block)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		ActuallyFree_VK(block);
+		return;
+	}
+#endif
 	if (!block) {
 		common->Error("idVertexCache Free: NULL pointer");
 	}
@@ -196,6 +174,12 @@ The vertex buffer object will be bound
 */
 void *idVertexCache::Position(vertCache_t *buffer)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		return Position_VK(buffer);
+	}
+#endif
 	if (!buffer || buffer->tag == TAG_FREE) {
 		common->FatalError("idVertexCache::Position: bad vertCache_t");
 	}
@@ -243,6 +227,11 @@ void *idVertexCache::Position(vertCache_t *buffer)
 
 void idVertexCache::UnbindIndex()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		BindIndexBuffer_VK(VK_NULL_HANDLE);
+	else
+#endif
 	qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
@@ -291,6 +280,13 @@ void idVertexCache::Init()
 	byte	*junk = (byte *)Mem_Alloc(frameBytes);
 
 	for (int i = 0 ; i < NUM_VERTEX_FRAMES ; i++) {
+#ifdef _VULKAN
+		if (USING_VULKAN)
+		{
+			tempBuffers[i] = CreateTempVbo_VK(frameBytes);
+			continue;
+		}
+#endif
 #ifdef _MULTITHREAD
 		if(multithreadActive)
 		{
@@ -368,6 +364,13 @@ idVertexCache::Alloc
 */
 void idVertexCache::Alloc(void *data, int size, vertCache_t **buffer, bool indexBuffer)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		Alloc_VK(data, size, buffer, indexBuffer);
+		return;
+	}
+#endif
 	vertCache_t	*block;
 
 	if (size <= 0) {
@@ -556,8 +559,18 @@ We can't simply sync with the GPU and overwrite what we have, because
 there may still be future references to dynamically created surfaces.
 ===========
 */
+#ifdef _VULKAN
+vertCache_t	*idVertexCache::AllocFrameTemp(void *data, int size, bool indexBuffer)
+#else
 vertCache_t	*idVertexCache::AllocFrameTemp(void *data, int size)
+#endif
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		return AllocFrameTemp_VK(data, size, indexBuffer);
+	}
+#endif
 	vertCache_t	*block;
 
 	if (size <= 0) {
@@ -674,8 +687,20 @@ void idVertexCache::EndFrame()
 	{
 #endif
 	// unbind vertex buffers
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		BindBuffer_VK(VK_NULL_HANDLE);
+		BindIndexBuffer_VK(VK_NULL_HANDLE);
+	}
+	else
+	{
+#endif
 	qglBindBuffer(GL_ARRAY_BUFFER, 0);
 	qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+#ifdef _VULKAN
+	}
+#endif
 #ifdef _MULTITHREAD
 	}
 	//renderFrame = currentFrame;

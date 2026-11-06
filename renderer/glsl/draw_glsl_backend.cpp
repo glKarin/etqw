@@ -24,6 +24,11 @@ void GL_UseProgram(shaderProgram_t *program)
     RB_LogComment("Last shader program: %s, %p\n", backEnd.glState.currentProgram ? backEnd.glState.currentProgram->name : "NULL", backEnd.glState.currentProgram);
 	RB_LogComment("Current shader program: %s, %p\n", program ? program->name : "NULL", program);
 #endif
+#ifdef _VULKAN
+    if (USING_VULKAN)
+	    R_VK_UseProgram(program ? program->vk_shader : NULL);
+    else
+#endif
     qglUseProgram(program ? program->program : 0);
     backEnd.glState.currentProgram = program;
 
@@ -172,6 +177,10 @@ GL_EnableVertexAttribArray
 */
 void GL_EnableVertexAttribArray(GLuint index)
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
     HARM_CHECK_SHADER("GL_EnableVertexAttribArray");
 
     HARM_CHECK_SHADER_ATTR("GL_EnableVertexAttribArray", index);
@@ -190,6 +199,10 @@ GL_DisableVertexAttribArray
 */
 void GL_DisableVertexAttribArray(GLuint index)
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
     HARM_CHECK_SHADER("GL_DisableVertexAttribArray");
 
     HARM_CHECK_SHADER_ATTR("GL_DisableVertexAttribArray", index);

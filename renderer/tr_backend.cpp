@@ -603,6 +603,12 @@ const void	RB_SwapBuffers(const void *data)
     RB_ImGui_Render();
 #endif
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        return;
+    }
+#endif
 	// force a gl sync if requested
 	if (r_finish.GetBool()
 #ifdef _OPENGLES3
@@ -681,6 +687,12 @@ void RB_ExecuteBackEndCommands(const emptyCommand_t *cmds)
 	}
 
 	backEndStartTime = Sys_Milliseconds();
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		R_VK_BeginFrame();
+	}
+#endif
 
 	// needed for editor rendering
 	RB_SetDefaultGLState();
@@ -731,6 +743,12 @@ void RB_ExecuteBackEndCommands(const emptyCommand_t *cmds)
 	// go back to the default texture so the editor doesn't mess up a bound image
 	qglBindTexture(GL_TEXTURE_2D, 0);
 	backEnd.glState.tmu[0].current2DMap = -1;
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		R_VK_EndFrame();
+	}
+#endif
 
 	// stop rendering on this thread
 	backEndFinishTime = Sys_Milliseconds();

@@ -306,6 +306,10 @@ void idFramebuffer::AttachImage2DSide( const idImage* image, int side )
 
 void idFramebuffer::Check()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 	int prev;
 	qglGetIntegerv( GL_FRAMEBUFFER_BINDING, &prev );
 	

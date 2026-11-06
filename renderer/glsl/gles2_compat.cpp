@@ -30,6 +30,9 @@
 
 //#pragma pack(push, 1)
 // Draw vertex
+#if 1
+typedef class idDrawVert GLvert;
+#else
 struct GLvert
 {
     GLfloat			xyz[3];
@@ -37,6 +40,7 @@ struct GLvert
     //GLfloat			normal[3];
     GLubyte			color[4];
 };
+#endif
 //#pragma pack(pop)
 // strip size of glXxxxxxPointer/glVertexAttribPointer
 #define GLVERT_STRIP sizeof(GLvert) // 0
@@ -588,6 +592,11 @@ GLRB_PRIV void glesImmediateModeRender(void)
 
             glesStartRender();
 
+#ifdef _VULKAN
+            if (USING_VULKAN)
+                vertexCache.BindBuffer_VK(NULL);
+            else
+#endif
             qglBindBuffer(GL_ARRAY_BUFFER, 0);
             GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Color));
             if(usingTexCoord)
@@ -615,6 +624,11 @@ GLRB_PRIV void glesImmediateModeRender(void)
             // commit
             if(gl_IndexList.Num())
             {
+#ifdef _VULKAN
+                if (USING_VULKAN)
+                    vertexCache.BindIndexBuffer_VK(NULL);
+                else
+#endif
                 qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
                 qglDrawElements(gl_RenderType, gl_IndexList.Num(), GL_INDEX_TYPE, &gl_IndexList[0]);
             }
@@ -633,6 +647,11 @@ GLRB_PRIV void glesImmediateModeRender(void)
         const GLboolean usingTexCoord = glesClientStateIsEnabled(GL_TEXTURE_COORD_ARRAY) && gl_UseTexture != 0 && glesIsVertexPointerBinding(GL_TEXTURE_COORD_ARRAY);
         GLboolean usingColor = glesClientStateIsEnabled(GL_COLOR_ARRAY) && glesIsVertexPointerBinding(GL_COLOR_ARRAY);
 
+#ifdef _VULKAN
+        if (USING_VULKAN)
+            vertexCache.BindIndexBuffer_VK(NULL);
+        else
+#endif
         qglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         GL_SelectTexture(0);
         if(!usingTexCoord)
@@ -1578,6 +1597,11 @@ void RB_RenderDepthToColor(bool notPack = false)
             width, height,
     };
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        vertexCache.BindBuffer_VK(NULL);
+    else
+#endif
     qglBindBuffer(GL_ARRAY_BUFFER, 0);
     GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
     GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));
@@ -1645,6 +1669,11 @@ void RB_RenderStencilToColor(int comp = 0)
             width, height,
     };
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        vertexCache.BindBuffer_VK(NULL);
+    else
+#endif
     qglBindBuffer(GL_ARRAY_BUFFER, 0);
     GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_Vertex));
     GL_EnableVertexAttribArray(offsetof(shaderProgram_t, attr_TexCoord));

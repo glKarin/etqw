@@ -1,0 +1,25 @@
+
+// colorProcess
+GLSL_SHADER const char VK_COLORPROCESS_FRAG[] =
+"#version 450\n"
+"#pragma shader_stage( fragment )\n"
+"#extension GL_ARB_separate_shader_objects: enable\n"
+"\n"
+"layout(binding = 2) uniform sampler2D u_fragmentMap0;\n"
+"\n"
+"layout(binding = 1) uniform UniformBufferObject {\n"
+"    vec4 u_nonPowerOfTwo;\n"
+"};\n"
+"\n"
+"layout(location = 0) in vec4 var_TexCoord;\n"
+"layout(location = 1) in vec4 var_Color;\n"
+"\n"
+"layout(location = 0) out vec4 _gl_FragColor;\n"
+"\n"
+"void main(void)\n"
+"{\n"
+"    vec4 src = texture( u_fragmentMap0, var_TexCoord.xy * u_nonPowerOfTwo.xy /* scale by the screen non-power-of-two-adjust */ );\n"
+"    vec4 target = var_Color * dot( vec3( 0.333, 0.333, 0.333 ), src.xyz );\n"
+"    _gl_FragColor = mix( src, target, var_TexCoord.z );\n"
+"}\n"
+;

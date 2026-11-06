@@ -1136,6 +1136,11 @@ void idRenderSystemLocal::CaptureRenderToFile(const char *fileName, bool fixAlph
 		data2[ i * 4 + 3 ] = 0xff;
 	}
 
+#ifdef _VULKAN
+	if(USING_VULKAN)
+		R_WriteTGA(fileName, data2, rc->width, rc->height, false);
+	else
+#endif
 	R_WriteTGA(fileName, data2, rc->width, rc->height, true);
 
 	R_StaticFree(data);

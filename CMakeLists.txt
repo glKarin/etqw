@@ -117,10 +117,10 @@ if(LINUX AND NOT ANDROID)
 endif()
 
 # For dev: Quick build
-option(BUILD_D3								"Build DOOM 3"																OFF)
+option(BUILD_D3								"Build DOOM 3"																ON)
 option(BUILD_Q4								"Build Quake 4"																OFF)
 option(BUILD_PREY							"Build Prey"																OFF)
-option(BUILD_ETQW							"Build Enemy Territory: Quake Wars"											ON)
+option(BUILD_ETQW							"Build Enemy Territory: Quake Wars"											OFF)
 option(BUILD_D3_MOD							"Build all DOOM3 mods"														OFF)
 option(BUILD_Q4_MOD							"Build all Quake4 mods"														OFF)
 
@@ -130,32 +130,33 @@ if(ANDROID)
 endif()
 option(OPENGLES3							"OpenGLES3 support"															ON)
 option(OPENAL								"OpenAL(soft, OpenSL as backend) support"									ON)
-option(MULTITHREAD							"Multi-Thread support"														ON)
+option(MULTITHREAD							"Multi-Thread support"														OFF)
 option(USE_STB_IMAGE						"Using stb_image"															ON)
-option(SUPPORT_OBJ							"Support obj model"															ON)
-option(SUPPORT_DAE							"Support dae model" 														ON)
-option(SHADOW_MAPPING						"Shadow mapping support" 													ON)
+option(SUPPORT_OBJ							"Support obj model"															OFF)
+option(SUPPORT_DAE							"Support dae model" 														OFF)
+option(SHADOW_MAPPING						"Shadow mapping support" 													OFF)
 option(NO_LIGHT								"r_noLight support" 														ON)
-option(STENCIL_SHADOW_IMPROVE				"Improve stencil shadow(translucent, soft(Only OpenGLES3.1+))" 				ON)
-option(EXTRAS_TOOLS							"Add extras commands" 														ON)
+option(STENCIL_SHADOW_IMPROVE				"Improve stencil shadow(translucent, soft(Only OpenGLES3.1+))" 				OFF)
+option(EXTRAS_TOOLS							"Add extras commands" 														OFF)
 option(USE_MINIZ							"use miniz and minizip" 													ON)
 option(USE_STB_OGG							"use stb_vorbis" 															OFF) #! some ogg file can not be load
 option(D3BFG_OCCLUSION_CULLING				"DOOM3-BFG occlusion culling support" 										ON)
-option(WIDE_CHARACTER_LANGUAGE				"Wide-character language font support" 										ON)
-option(D3BFG_NEW_FONT						"DOOM3-BFG new font support"												ON)
+option(WIDE_CHARACTER_LANGUAGE				"Wide-character language font support" 										OFF)
+option(D3BFG_NEW_FONT						"DOOM3-BFG new font support"												OFF)
 option(GLSL_PROGRAM							"GLSL program on new material stage support"								ON)
-option(GLOBAL_ILLUMINATION					"Render global illumination before draw interactions"						ON)
-option(RETRO_POSTPROCESS					"Add retro postprocess rendering support"								   	ON)
-option(IMGUI								"Add imGUI support"								   							ON)
+option(GLOBAL_ILLUMINATION					"Render global illumination before draw interactions"						OFF)
+option(RETRO_POSTPROCESS					"Add retro postprocess rendering support"								   	OFF)
+option(IMGUI								"Add imGUI support"								   							OFF)
 option(GL_INT_INDEX							"Use 4 bytes index on OpenGL"								   				ON)
-option(MP3_SUPPORT							"Add mp3 sound support"								   						ON)
-option(SUPPORT_MD5V6						"Add 2002 E3 demo md5mesh/md5anim v6 version animation model converter"		ON)
-option(SUPPORT_PSK							"Support Unreal engine psk/psa animation/static model"						ON)
-option(SUPPORT_IQM							"Support iqm animation/static model"										ON)
-option(SUPPORT_SMD							"Support Source engine smd animation/static model"							ON)
-option(SUPPORT_GLTF							"Support Khronos gltf/glb animation/static model"							ON)
-option(SUPPORT_FBX							"Support Autodesk fbx animation/static model"								ON)
-option(ETC2_IMAGE							"Support ETC2 compression image"											ON)
+option(MP3_SUPPORT							"Add mp3 sound support"								   						OFF)
+option(SUPPORT_MD5V6						"Add 2002 E3 demo md5mesh/md5anim v6 version animation model converter"		OFF)
+option(SUPPORT_PSK							"Support Unreal engine psk/psa animation/static model"						OFF)
+option(SUPPORT_IQM							"Support iqm animation/static model"										OFF)
+option(SUPPORT_SMD							"Support Source engine smd animation/static model"							OFF)
+option(SUPPORT_GLTF							"Support Khronos gltf/glb animation/static model"							OFF)
+option(SUPPORT_FBX							"Support Autodesk fbx animation/static model"								OFF)
+option(ETC2_IMAGE							"Support ETC2 compression image"											OFF)
+option(VULKAN								"Support Vulkan backend"													ON)
 #option(FLAC_SUPPORT							"Add FLAC sound support(don't support realtime decoding)"				OFF)
 
 # DOOM3 cores
@@ -191,7 +192,7 @@ endif()
 # Quake4
 if(BUILD_Q4)
 option(RAVEN								"Build the raven core" 														ON)
-option(QUAKE4								"Build the quake4 game code" 												ON)
+option(QUAKE4								"Build the quake4 game code" 												OFF)
 option(Q4_MOD_FULL_BODY_AWARENESS			"Build quake4 full body awareness mod support" 								ON)
 option(Q4_MOD_BOTS							"Build quake4 bots mod support" 											ON)
 endif()
@@ -200,8 +201,8 @@ endif()
 if(BUILD_Q4_MOD)
 include_directories("mod/quake4")
 
-option(HARDQORE								"Build the hardqore game code" 												ON)
-option(Q4XBASE								"Build the q4xbase game code" 												ON)
+option(HARDQORE								"Build the hardqore game code" 												OFF)
+option(Q4XBASE								"Build the q4xbase game code" 												OFF)
 option(HAZZZZZY								"Build the chinese subtitle game code" 												ON)
 endif()
 
@@ -219,6 +220,22 @@ option(ETQW									"Build the ETQW game code" 													ON)
 endif()
 
 set(ENABLE_ETC2 ${ETC2_IMAGE})
+
+if(VULKAN)
+	message(STATUS "Build Vulkan backend support")
+	include_directories(externlibs/include)
+	add_subdirectory(renderer/vulkan)
+	set(sys_libs ${sys_libs} "idtech_vkglsl")
+	add_definitions(-D_VULKAN)
+	if(WIN32)
+		add_definitions(-DVK_USE_PLATFORM_WIN32_KHR)
+	elseif (ANDROID)
+		add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
+	elseif (linux)
+		add_definitions(-DVK_USE_PLATFORM_XLIB_KHR)
+		add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR)
+	endif ()
+endif()
 
 # Print env
 if(OPENSLES)
@@ -630,6 +647,7 @@ elseif(MSVC)
 	add_compile_options(/wd4068) # unknown pragma
 	add_compile_options(/wd4458) # declaration of 'variable' hides class member
 	add_compile_options(/wd4091) # ETQW
+	add_compile_options(/wd4819) # 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
 	add_definitions(-D_ALLOW_KEYWORD_MACROS) # because of the "#define private public" and "#define protected public" in TypeInfo.cpp
 	set(CMAKE_C_FLAGS_DEBUG "-D_DEBUG /Od /Zi /MDd")
 	set(CMAKE_C_FLAGS_RELEASE "/Ox /Oy /MD")
@@ -998,6 +1016,26 @@ set(src_renderer
 	renderer/etc/etc.cpp
     renderer/matrix/esTransform.c
 )
+if(VULKAN)
+	set(VK_LIST
+			externlibs/Volk/volk.c
+			externlibs/vma/vma.cpp
+			renderer/vulkan/vk.cpp
+			renderer/vulkan/vk_gl.cpp
+			renderer/vulkan/vk_state.cpp
+			renderer/vulkan/vk_backend.cpp
+			renderer/vulkan/vk_buffer.cpp
+			renderer/vulkan/vk_query.cpp
+			renderer/vulkan/vk_shader.cpp
+			renderer/vulkan/vk_ubo.cpp
+			renderer/vulkan/vk_sampler.cpp
+			renderer/vulkan/RenderSystem_VK.cpp
+			renderer/vulkan/VertexCache_VK.cpp
+			renderer/vulkan/Image_VK.cpp
+			renderer/vulkan/RenderBackend_VK.cpp
+	)
+	set(src_renderer ${src_renderer} ${VK_LIST})
+endif()
 
 add_globbed_headers(src_renderer "renderer")
 

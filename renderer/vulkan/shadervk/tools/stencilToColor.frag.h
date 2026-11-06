@@ -1,0 +1,26 @@
+
+// stencil to color shader
+GLSL_SHADER const char VK_STENCIL_TO_COLOR_FRAG[] =
+"#version 450\n"
+"#pragma shader_stage( fragment )\n"
+"#extension GL_ARB_separate_shader_objects: enable\n"
+"\n"
+"layout(binding = 2) uniform usampler2D u_fragmentMap0; // stencil index\n"
+"\n"
+"layout(binding = 1) uniform UniformBufferObject {\n"
+"    int u_uniformParm0; // 0=RGB, 1=R, 2=G, 4=B\n"
+"};\n"
+"\n"
+"layout(location = 0) in vec2 var_TexDiffuse;\n"
+"\n"
+"layout(location = 0) out vec4 _gl_FragColor;\n"
+"\n"
+"void main(void)\n"
+"{\n"
+"    float index = float(texture(u_fragmentMap0, var_TexDiffuse).r) / 255.0;\n"
+"    float r = bool(u_uniformParm0 & 1) || u_uniformParm0 == 0 ? index : 0.0;\n"
+"    float g = bool(u_uniformParm0 & 2) || u_uniformParm0 == 0 ? index : 0.0;\n"
+"    float b = bool(u_uniformParm0 & 4) || u_uniformParm0 == 0 ? index : 0.0;\n"
+"    _gl_FragColor = vec4(r, g, b, 1.0);\n"
+"}\n"
+;

@@ -69,7 +69,7 @@ static void RB_GLSL_InsertGlobalDefines(idStr &res, const char *text)
     res.Insert(str, index);
 }
 
-static void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *macros, int highp = 0)
+void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *macros, int highp = 0)
 {
     res = source;
 
@@ -125,6 +125,15 @@ static void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *mac
 idStr RB_GLSL_GetExternalShaderSourcePath(void)
 {
     idStr	fullPath;
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        fullPath = harm_r_shaderProgramVKDir.GetString();
+        if(fullPath.IsEmpty())
+            fullPath = _VKPROGSSPIRV;
+        return fullPath;
+    }
+#endif
 #ifdef GL_ES_VERSION_3_0
     if(USING_GLES3)
     {
@@ -142,7 +151,7 @@ idStr RB_GLSL_GetExternalShaderSourcePath(void)
     return fullPath;
 }
 
-static int RB_GLSL_ReadExternalShaderSource(idStr &fullPath, idStr &buffer)
+int RB_GLSL_ReadExternalShaderSource(idStr &fullPath, idStr &buffer)
 {
     idStr nameStr = fullPath;
 

@@ -59,8 +59,15 @@ static idCVar	harm_r_shaderProgramES3Dir("harm_r_shaderProgramES3Dir", _GL3PROGS
 #define _GLPROGSBIN "bin"
 #endif
 
+#ifdef _VULKAN
+#define _VKPROGS "vkprogs"
+static idCVar	harm_r_shaderProgramVKDir("harm_r_shaderProgramVKDir", _VKPROGS, CVAR_RENDERER | CVAR_ARCHIVE, "Setup external Vulkan GLSL shader program directory path(default is empty, means using `" _VKPROGS "`).");
+
+#define _VKPROGSSPIRV "spirv"
+#endif
+
 static bool glslInitialized = false;
-static bool shaderRequired = true;
+bool shaderRequired = true;
 static bool RB_GLSL_SetupLoadError(bool b) {
 	bool last = shaderRequired;
 	shaderRequired = b;
@@ -155,6 +162,13 @@ static bool RB_GLSL_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 	fs = prop->default_fragment_shader_source.c_str();
 	macros = prop->macros.c_str();
 
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		return RB_VK_LoadShaderProgramFromProp(prop);
+	}
+#endif
+
 	if(RB_GLSL_LoadShaderProgram(
 			prop->name.c_str(),
             prop->type,
@@ -176,10 +190,15 @@ static bool RB_GLSL_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
 {
 #include "glsl_shader.h"
+
+#ifdef _VULKAN
+#define GLSL_SHADER_SOURCE(name, type, program, vs, fs, macros, macros3) GLSLShaderProp(name, type, program, USING_VULKAN ? VK_##vs : (USING_GLES3 ? ES3_##vs : vs), USING_VULKAN ? VK_##fs : (USING_GLES3 ? ES3_##fs : fs), USING_VULKAN ? macros3 : (USING_GLES3 ? macros3 : macros) )
+#else
 #ifdef GL_ES_VERSION_3_0
 #define GLSL_SHADER_SOURCE(name, type, program, vs, fs, macros, macros3) GLSLShaderProp(name, type, program, USING_GLES3 ? ES3_##vs : vs, USING_GLES3 ? ES3_##fs : fs, USING_GLES3 ? macros3 : macros)
 #else
 #define GLSL_SHADER_SOURCE(name, type, program, vs, fs, macros, unused) GLSLShaderProp(name, type, program, vs, fs, macros)
+#endif
 #endif
 
 	ret.Clear();
@@ -719,6 +738,9 @@ void R_ReloadGLSLPrograms_f(const idCmdArgs &args)
 
     if(!glslInitialized)
     {
+#ifdef _VULKAN
+    	if (!USING_VULKAN)
+#endif
         RB_CheckGLSLSourceCompiler();
 
         if (!RB_GLSL_InitShaders()) {
@@ -754,6 +776,10 @@ void R_GLSL_Shutdown(void)
 // new
 void RB_GLSL_DeleteShaderProgram(shaderProgram_t *shaderProgram, bool deleteProgram)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
     const bool isProgram = shaderProgram->program && qglIsProgram(shaderProgram->program);
     const bool isVertexShader = shaderProgram->vertexShader && qglIsShader(shaderProgram->vertexShader);
     const bool isFragmentShader = shaderProgram->fragmentShader && qglIsShader(shaderProgram->fragmentShader);

@@ -1208,6 +1208,47 @@ static void R_CreateBlueNoise256Image( idImage* image )
 // RB end
 #endif
 
+#ifdef _VULKAN
+static void R_DefaultCubeMapImage(idImage *image)
+{
+#define DEFAULT_CUBE_SIZE 2
+	int		x, y;
+	byte	data[DEFAULT_CUBE_SIZE][DEFAULT_CUBE_SIZE][4];
+	int		i;
+
+	if (com_developer.GetBool()) {
+		// grey center
+		for (y = 0 ; y < DEFAULT_CUBE_SIZE ; y++) {
+			for (x = 0 ; x < DEFAULT_CUBE_SIZE ; x++) {
+				data[y][x][0] = 32;
+				data[y][x][1] = 32;
+				data[y][x][2] = 32;
+				data[y][x][3] = 255;
+			}
+		}
+	} else {
+		for (y = 0 ; y < DEFAULT_CUBE_SIZE ; y++) {
+			for (x = 0 ; x < DEFAULT_CUBE_SIZE ; x++) {
+				data[y][x][0] = 0;
+				data[y][x][1] = 0;
+				data[y][x][2] = 0;
+				data[y][x][3] = 0;
+			}
+		}
+	}
+
+	const byte	*pics[6];
+
+	for (i = 0 ; i < 6 ; i++) {
+		pics[i] = data[0][0];
+	}
+
+	// this must be a cube map for fragment programs to simply substitute for the normalization cube map
+	image->GenerateCubeImage(pics, DEFAULT_CUBE_SIZE, TF_DEFAULT, true, TD_HIGH_QUALITY);
+#undef DEFAULT_CUBE_SIZE
+}
+#endif
+
 //=====================================================================
 
 
@@ -2521,6 +2562,11 @@ void idImageManager::Init()
 #endif
 #ifdef _POSTPROCESS
     frameImage = ImageFromFunction("_frameRender", R_RGBA8Image);
+#endif
+
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		defaultCubeMapImage = ImageFromFunction("_defaultCubeMap", R_DefaultCubeMapImage);
 #endif
 }
 

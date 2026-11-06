@@ -97,6 +97,9 @@ typedef struct glconfig_s {
 	int                 multiSamples;
 	bool				debugOutput;
     bool				syncAvailable;
+#ifdef _VULKAN
+	bool				isVulkan;
+#endif
 } glconfig_t;
 
 

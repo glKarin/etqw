@@ -284,6 +284,20 @@ void idGuiModel::EmitFullScreen(void)
 	viewDef->floatTime = tr.frameShaderTime;
 
 	// glOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
+#ifdef _VULKANxxx
+	if (USING_VULKAN)
+	{
+		viewDef->projectionMatrix[0] = 2.0f / 640.0f;
+		viewDef->projectionMatrix[5] = 2.0f / 480.0f;
+		viewDef->projectionMatrix[10] = 1.0f;
+		viewDef->projectionMatrix[12] = -1.0f;
+		viewDef->projectionMatrix[13] = -1.0f;
+		viewDef->projectionMatrix[14] = 0.0f;
+		viewDef->projectionMatrix[15] = 1.0f;
+	}
+	else
+	{
+#endif
 	viewDef->projectionMatrix[0] = 2.0f / 640.0f;
 	viewDef->projectionMatrix[5] = -2.0f / 480.0f;
 	viewDef->projectionMatrix[10] = -2.0f / 1.0f;
@@ -291,6 +305,9 @@ void idGuiModel::EmitFullScreen(void)
 	viewDef->projectionMatrix[13] = 1.0f;
 	viewDef->projectionMatrix[14] = -1.0f;
 	viewDef->projectionMatrix[15] = 1.0f;
+#ifdef _VULKANxxx
+	}
+#endif
 
 	viewDef->worldSpace.modelViewMatrix[0] = 1.0f;
 	viewDef->worldSpace.modelViewMatrix[5] = 1.0f;

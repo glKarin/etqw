@@ -52,6 +52,21 @@
 #define ES_SHADER_SOURCE_ALIAS ES2_SHADER_SOURCE_ALIAS
 #endif
 
+
+
+#ifdef _VULKAN
+#define VK_SHADER_SOURCE_PLACEHOLDER(x) \
+GLSL_SHADER const char VK_##x##_VERT[] = ""; \
+GLSL_SHADER const char VK_##x##_FRAG[] = "";
+
+#define VK_SHADER_SOURCE_ALIAS(x, a) \
+GLSL_SHADER const char * VK_##x##_VERT = VK_##a##_VERT; \
+GLSL_SHADER const char * VK_##x##_FRAG = VK_##a##_FRAG;
+
+#include "../vulkan/shadervk/glsl_shader_vk.h"
+
+#endif
+
 // ES_SHADER_SOURCE_PLACEHOLDER(GLASSWARP)
 
 #endif

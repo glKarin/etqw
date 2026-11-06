@@ -339,6 +339,24 @@ class idImage
 		void		ImageProgramStringToCompressedFileName(const char *imageProg, char *fileName) const;
 		int			NumLevelsForImageSize(int width, int height) const;
 
+#ifdef _VULKAN
+		void		GenerateImage_VK(const byte *pic, int width, int height,
+									  textureFilter_t filter, bool allowDownSize,
+									  textureRepeat_t repeat, textureDepth_t depth);
+		void		GenerateCubeImage_VK(const byte *pic[6], int size,
+		                                  textureFilter_t filter, bool allowDownSize,
+		                                  textureDepth_t depth);
+	    void		GenerateDepthStencilImage_VK( int width, int height, bool allowDownSize, textureFilter_t filter, textureRepeat_t repeat, int component = 24, int stencilComponent = 8, bool compare = false);
+		void		UploadScratch_VK(const byte *pic, int width, int height);
+		void		CopyFramebuffer_VK(int x, int y, int width, int height, bool useOversizedBuffer);
+		void		SetDebugInfo_VK(bool purge);
+#ifdef _MULTITHREAD
+		void		PurgeImage_VK(bool pending = false);
+#else
+		void		PurgeImage_VK();
+#endif
+#endif
+
 		// data commonly accessed is grouped here
 		static const int TEXTURE_NOT_LOADED = -1;
 		GLuint				texnum;					// gl texture binding, will be TEXTURE_NOT_LOADED if not loaded
@@ -402,6 +420,10 @@ class idImage
 
 		bool				purgePending;
 #endif
+
+#ifdef _VULKAN
+		struct VKImage_s	*vk_image;
+#endif
 };
 
 ID_INLINE idImage::idImage()
@@ -444,6 +466,9 @@ ID_INLINE idImage::idImage()
 #ifdef _SPLASHDAMAGE
 	sourceWidth = sourceHeight = 0;
 	generatorFunctor = NULL;
+#endif
+#ifdef _VULKAN
+	vk_image = NULL;
 #endif
 }
 
@@ -595,6 +620,9 @@ class idImageManager
 		idImage 			*specularTableImage;			// 1D intensity texture with our specular function
 		idImage 			*specular2DTableImage;		// 2D intensity texture with our specular function with variable specularity
 		idImage 			*borderClampImage;			// white inside, black outside
+#ifdef _VULKAN
+		idImage 			*defaultCubeMapImage;
+#endif
 
 		//--------------------------------------------------------
 

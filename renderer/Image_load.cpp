@@ -500,6 +500,13 @@ void idImage::GenerateImage(const byte *pic, int width, int height,
 							textureRepeat_t repeatParm, textureDepth_t depthParm)
 #endif
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		GenerateImage_VK(pic, width, height, filterParm, allowDownSizeParm, repeatParm, depthParm);
+		return;
+	}
+#endif
 	bool	preserveBorder;
 	byte		*scaledBuffer;
 	int			scaled_width, scaled_height;
@@ -918,6 +925,13 @@ void idImage::GenerateCubeImage(const byte *pic[6], int size,
                                 textureFilter_t filterParm, bool allowDownSizeParm,
                                 textureDepth_t depthParm)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		GenerateCubeImage_VK(pic, size, filterParm, allowDownSizeParm, depthParm);
+		return;
+	}
+#endif
 	int			scaled_width, scaled_height;
 	int			width, height;
 	int			i;
@@ -2114,6 +2128,13 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 	int		width, height;
 	byte	*pic;
 
+#ifdef _VULKAN
+	if(USING_VULKAN && R_VK_DisableUploadImage())
+	{
+		R_VK_AddLoadImageList(this, checkForPrecompressed);
+		return;
+	}
+#endif
 #ifdef _MULTITHREAD
 	if(multithreadActive)
 	{
@@ -2293,6 +2314,17 @@ void idImage::PurgeImage(bool pending)
 void idImage::PurgeImage()
 #endif
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+#ifdef _MULTITHREAD
+		PurgeImage_VK(pending);
+#else
+		PurgeImage_VK();
+#endif
+		return;
+	}
+#endif
 #ifdef _MULTITHREAD
 	if(multithreadActive && pending)
 	{
@@ -2524,6 +2556,13 @@ CopyFramebuffer
 */
 void idImage::CopyFramebuffer(int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		CopyFramebuffer_VK(x, y, imageWidth, imageHeight, useOversizedBuffer);
+		return;
+	}
+#endif
 	Bind();
 
 	if (cvarSystem->GetCVarBool("g_lowresFullscreenFX")) {
@@ -2660,6 +2699,16 @@ if rows = cols * 6, assume it is a cube map animation
 */
 void idImage::UploadScratch(const byte *data, int cols, int rows)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		if(R_VK_DisableUploadImage())
+			R_VK_AddUploadScratchImageList(this, data, cols, rows);
+		else
+			UploadScratch_VK(data, cols, rows);
+		return;
+	}
+#endif
 	int			i;
 
 	// if rows = cols * 6, assume it is a cube map animation
@@ -3419,6 +3468,13 @@ void idImage::GenerateShadowArray( int width, int height, int numSides, textureF
 
 void idImage::GenerateDepthStencilImage( int width, int height, bool allowDownSizeParm, textureFilter_t filterParm, textureRepeat_t repeatParm, int component, int stencilComponent, bool compare )
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		GenerateDepthStencilImage_VK(width, height, allowDownSizeParm, filterParm, repeatParm, component, stencilComponent, compare);
+		return;
+	}
+#endif
 	int			scaled_width, scaled_height;
 
 	PurgeImage();

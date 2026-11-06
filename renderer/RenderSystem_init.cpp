@@ -627,6 +627,13 @@ void R_InitOpenGL(void)
 	// in case we had an error while doing a tiled rendering
 	tr.viewportOffset[0] = 0;
 	tr.viewportOffset[1] = 0;
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		oneModulate[0] = one[0];
+		negOneModulate[0] = negOne[0];
+	}
+#endif
 
 	//
 	// initialize OS specific portions of the renderSystem
@@ -662,6 +669,14 @@ void R_InitOpenGL(void)
 	Sys_InitInput();
 	soundSystem->InitHW();
 
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		glConfig.maxTextureSize = vk_context.physicalDeviceProperties.limits.maxImageDimension2D;
+	}
+	else
+	{
+#endif
 	// get our config strings
 	glConfig.vendor_string = (const char *)qglGetString(GL_VENDOR);
 	glConfig.renderer_string = (const char *)qglGetString(GL_RENDERER);
@@ -672,6 +687,9 @@ void R_InitOpenGL(void)
 	// OpenGL driver constants
 	qglGetIntegerv(GL_MAX_TEXTURE_SIZE, &temp);
 	glConfig.maxTextureSize = temp;
+#ifdef _VULKAN
+	}
+#endif
 
 	// stubbed or broken drivers may have reported 0...
 	if (glConfig.maxTextureSize <= 0) {
@@ -682,6 +700,11 @@ void R_InitOpenGL(void)
 	glConfig.isInitialized = true;
 
 	// recheck all the extensions (FIXME: this might be dangerous)
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		R_VK_CheckPortableExtensions();
+	else
+#endif
 	R_CheckPortableExtensions();
 
 #ifdef _OPENGLES3
@@ -1195,6 +1218,13 @@ void R_ShowglConfig_f(const idCmdArgs &args)
 	}
 
     idStr glVersionName;
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		glVersionName = "Vulkan";
+	}
+	else
+#endif
     switch(gl_version)
     {
         case GL_VERSION_GL_ES2:
@@ -1471,48 +1501,53 @@ void idRenderSystemLocal::TakeScreenshot(int width, int height, const char *file
 		r_jitter.SetBool(false);
 	}
 
+#ifdef _VULKAN
+	const bool flip = !USING_VULKAN;
+#else
+	const bool flip = true;
+#endif
 	switch(r_screenshotFormat.GetInteger())
 	{
 		case SSFE_BMP: {
 			idStr fn(fileName);
 			fn.SetFileExtension("bmp");
 			const char *basePath = strstr(fileName, "viewnote") ? "fs_cdpath" : NULL;
-			R_WriteBMP(fn.c_str(), buffer + 18, width, height, 4, true, basePath);
+			R_WriteBMP(fn.c_str(), buffer + 18, width, height, 4, flip, basePath);
 		}
 			break;
 		case SSFE_PNG: {
 			idStr fn(fileName);
 			fn.SetFileExtension("png");
 			const char *basePath = strstr(fileName, "viewnote") ? "fs_cdpath" : NULL;
-			R_WritePNG(fn.c_str(), buffer + 18, width, height, 4, true, idMath::ClampInt(0, 9, r_screenshotPngCompression.GetInteger()), basePath);
+			R_WritePNG(fn.c_str(), buffer + 18, width, height, 4, flip, idMath::ClampInt(0, 9, r_screenshotPngCompression.GetInteger()), basePath);
 		}
 			break;
 		case SSFE_JPG: {
 			idStr fn(fileName);
 			fn.SetFileExtension("jpg");
 			const char *basePath = strstr(fileName, "viewnote") ? "fs_cdpath" : NULL;
-			R_WriteJPG(fn.c_str(), buffer + 18, width, height, 4, true, idMath::ClampInt(0, 9, idMath::ClampInt(1, 100, r_screenshotJpgQuality.GetInteger())), basePath);
+			R_WriteJPG(fn.c_str(), buffer + 18, width, height, 4, flip, idMath::ClampInt(0, 9, idMath::ClampInt(1, 100, r_screenshotJpgQuality.GetInteger())), basePath);
 		}
 			break;
 		case SSFE_DDS: {
 			idStr fn(fileName);
 			fn.SetFileExtension("dds");
 			const char *basePath = strstr(fileName, "viewnote") ? "fs_cdpath" : NULL;
-			R_WriteDDS(fn.c_str(), buffer + 18, width, height, 4, true, basePath);
+			R_WriteDDS(fn.c_str(), buffer + 18, width, height, 4, flip, basePath);
 		}
 			break;
         case SSFE_EXR: {
             idStr fn(fileName);
             fn.SetFileExtension("exr");
             const char *basePath = strstr(fileName, "viewnote") ? "fs_cdpath" : NULL;
-            R_WriteEXR(fn.c_str(), buffer + 18, width, height, 4, true, basePath);
+            R_WriteEXR(fn.c_str(), buffer + 18, width, height, 4, flip, basePath);
         }
             break;
         case SSFE_HDR: {
             idStr fn(fileName);
             fn.SetFileExtension("hdr");
             const char *basePath = strstr(fileName, "viewnote") ? "fs_cdpath" : NULL;
-            R_WriteHDR(fn.c_str(), buffer + 18, width, height, 4, true, basePath);
+            R_WriteHDR(fn.c_str(), buffer + 18, width, height, 4, flip, basePath);
         }
             break;
 		case SSFE_TGA:
@@ -2122,6 +2157,9 @@ static void GfxInfo_f(const idCmdArgs &args)
 		"fullscreen"
 	};
 
+#ifdef _VULKAN
+	common->Printf("\nRender backend: %s", USING_VULKAN ? "Vulkan" : "OpenGL");
+#endif
 	common->Printf("\nGL_VENDOR: %s\n", glConfig.vendor_string);
 	common->Printf("GL_RENDERER: %s\n", glConfig.renderer_string);
 	common->Printf("GL_VERSION: %s\n", glConfig.version_string);
@@ -2916,6 +2954,21 @@ idCVar harm_r_openglVersion("harm_r_openglVersion",
                             r_openglesArgs[DEFAULT_GL_VERSION_NAME_INDEX]
         , CVAR_SYSTEM | CVAR_INIT,
                             "OpenGL version", r_openglesArgs, idCmdSystem::ArgCompletion_String<r_openglesArgs>);
+#endif
+
+#ifdef _VULKAN
+bool USING_VULKAN = true;
+
+const char	*r_renderBackendArgs[]	= {
+		RB_OPENGL,
+#ifdef _VULKAN
+		RB_VULKAN,
+#endif
+        NULL };
+idCVar harm_r_renderBackend("harm_r_renderBackend",
+                            r_renderBackendArgs[0]
+        , CVAR_SYSTEM | CVAR_INIT,
+                            "Render backend", r_renderBackendArgs, idCmdSystem::ArgCompletion_String<r_renderBackendArgs>);
 #endif
 
 #ifdef __ANDROID__

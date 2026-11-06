@@ -89,6 +89,14 @@ static EGLint format = WINDOW_FORMAT_RGBA_8888; // AHARDWAREBUFFER_FORMAT_R8G8B8
 #include "imgui.cpp"
 #endif
 
+#ifdef _VULKAN
+#include <dlfcn.h>
+static void * Sys_GetWindowNativeID()
+{
+	return (void *)win;
+}
+#endif
+
 static void GLimp_HandleError(const char *func, bool exit = true)
 {
 	static const char *GLimp_StringErrors[] = {
@@ -300,6 +308,15 @@ void GLimp_AndroidInit(volatile ANativeWindow *w)
 	if(!w)
 		return;
 
+#ifdef _VULKAN
+	if( USING_VULKAN )
+	{
+		win = w;
+		ANativeWindow_acquire((ANativeWindow *)win);
+		ANativeWindow_setBuffersGeometry((ANativeWindow *)win, screen_width, screen_height, WINDOW_FORMAT_RGBA_8888);
+		return;
+	}
+#endif
 	if(eglDisplay == EGL_NO_DISPLAY)
 		return;
 
@@ -328,6 +345,10 @@ void GLimp_AndroidQuit(void)
 	//has_gl_context = false;
 	if(!win)
 		return;
+#ifdef _VULKAN
+	if( !USING_VULKAN )
+	{
+#endif
 	if(eglDisplay != EGL_NO_DISPLAY)
 		GLimp_DeactivateContext();
 	if(eglSurface != EGL_NO_SURFACE)
@@ -335,9 +356,12 @@ void GLimp_AndroidQuit(void)
 		eglDestroySurface(eglDisplay, eglSurface);
 		eglSurface = EGL_NO_SURFACE;
 	}
+	Sys_Printf("EGL surface destroyed and no EGL context.\n");
+#ifdef _VULKAN
+	}
+#endif
 	ANativeWindow_release((ANativeWindow *)win);
 	win = NULL;
-	Sys_Printf("EGL surface destroyed and no EGL context.\n");
 }
 
 void GLimp_WakeBackEnd(void *a)
@@ -370,11 +394,19 @@ bool GLimp_SpawnRenderThread(void (*a)())
 
 void GLimp_ActivateContext()
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
 	eglMakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext);
 }
 
 void GLimp_DeactivateContext()
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
 	eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 }
 
@@ -387,8 +419,33 @@ static void *glHandle = NULL;
 #include "../../renderer/qgl_proc.h"
 #undef QGLPROC
 
+#ifdef _VULKAN
+#include "../../renderer/vulkan/vk_gl.h"
+static void R_LoadVulkanOpenGLCompatFunc(void)
+{
+#define QGLPROC(name, rettype, args) q##name = name; 
+#include "../../renderer/qgl_proc.h"
+}
+
+static void VKimp_Shutdown()
+{
+    common->Printf("Shutting down Vulkan subsystem\n");
+
+    R_VK_Shutdown();
+    
+    common->Printf("------------------------------\n");
+}
+#endif
+
 static void R_LoadOpenGLFunc()
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		R_LoadVulkanOpenGLCompatFunc();
+		return;
+	}
+#endif
 #define QGLPROC(name, rettype, args) \
 	q##name = (rettype(GL_APIENTRYP)args)GLimp_ExtensionPointer(#name); \
 	if (!q##name) \
@@ -468,6 +525,13 @@ void GLimp_SetGamma(unsigned short red[256], unsigned short green[256], unsigned
 
 void GLimp_Shutdown()
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        VKimp_Shutdown();
+        return;
+    }
+#endif
 	//has_gl_context = false;
 	GLimp_DeactivateContext();
 	//eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -521,6 +585,10 @@ static void GLimp_UpdateSwapInterval( void )
 
 void GLimp_SwapBuffers()
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return;
+#endif
 	if(r_swapInterval.IsModified())
 	{
 		r_swapInterval.ClearModified();
@@ -935,6 +1003,31 @@ bool GLimp_ExtensionSupported(const char *name)
 	return has;
 }
 
+#ifdef _VULKAN
+bool VKimp_Init(glimpParms_t a)
+{
+	glConfig.colorBits = 24;
+	glConfig.depthBits = 24;
+	glConfig.stencilBits = 8;
+
+	glConfig.isFullscreen = true;
+
+	if (glConfig.isFullscreen) {
+		Sys_GrabMouseCursor(true);
+	}
+
+    VK_PreInit();
+    VK_SetWindowNativeID(Sys_GetWindowNativeID());
+    VK_SetWindowSize(screen_width, screen_height);
+    VK_Init();
+    R_VK_Init();
+
+    R_LoadOpenGLFunc();
+
+	return true;
+}
+
+#endif
 /*
 ===================
 GLimp_Init
@@ -952,6 +1045,10 @@ parameters and try again.
 */
 bool GLimp_Init(glimpParms_t a)
 {
+#ifdef _VULKAN
+	if( USING_VULKAN )
+		return VKimp_Init(a);
+#endif
 
 	if (!GLimp_OpenDisplay()) {
 		return false;
@@ -1029,11 +1126,37 @@ void GLimp_Startup(void)
         Sys_Printf("Disable multi-threading rendering\n");
 #endif
 
+#ifdef _VULKAN
+    const char *renderBackend = cvarSystem->GetCVarString("harm_r_renderBackend");
+	if( renderBackend && renderBackend[0] )
+	{
+        Sys_Printf("Render backend = %s\n", renderBackend);
+        if(!idStr::Icmp(RB_VULKAN, renderBackend))
+        {
+			USING_VULKAN = true;
+            Sys_Printf("Using Vulkan\n");
+        }
+        else // RB_OPENGL
+        {
+			USING_VULKAN = false;
+            Sys_Printf("Using OpenGL\n");
+        }
+	}
+
+	if(USING_VULKAN)
+	{
+		ANativeWindow_setBuffersGeometry((ANativeWindow *)win, screen_width, screen_height, WINDOW_FORMAT_RGBA_8888);
+
+		USING_GLES3 = false;
+		gl_version = 0;
+		return;
+	}
+#endif
 #ifdef _OPENGLES3
     const char *openglVersion = cvarSystem->GetCVarString("harm_r_openglVersion");
     if(openglVersion && openglVersion[0])
     {
-        Sys_Printf("harm_r_openglVersion = %s\n", openglVersion);
+        Sys_Printf("OpenGL version = %s\n", openglVersion);
         if(!idStr::Icmp(GL_VERSION_NAME_GL_ES2, openglVersion))
         {
             gl_version = GL_VERSION_GL_ES2;

@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 // vertex cache calls should only be made by the front end
 
 #define SEPARATE_INDEX_BUFFER 1
+
 enum {
     VBO_VERTEX = 0,
     VBO_INDEX = 1,
@@ -36,6 +37,36 @@ enum {
 };
 
 const int NUM_VERTEX_FRAMES = NUM_FRAME_DATA;
+
+#define VBO_INVALID_HANDLE 0 // -1, because is unsigned int
+#ifdef _MULTITHREAD
+#define VBO_IS_VALID
+#define VBO_IS_INVALID == VBO_INVALID_HANDLE
+#else
+#define VBO_IS_VALID
+#define VBO_IS_INVALID
+#endif
+
+//static volatile int current_frame = 0;
+//static volatile int render_frame = 0;
+//volatile int renderFrame = 0;
+#ifdef _MULTITHREAD
+#define deferredFreeList deferredFreeLists[usingFrame]
+#define dynamicHeaders dynamicHeaderss[usingFrame]
+#define dynamicAllocThisFrame dynamicAllocThisFrames[usingFrame]
+#endif
+
+#ifdef SEPARATE_INDEX_BUFFER
+// vertex buffer
+#define _freeStaticHeaders freeStaticHeaderss[VBO_VERTEX]
+#define _staticHeaders staticHeaderss[VBO_VERTEX]
+// index buffer
+#define _freeStaticIndexHeaders freeStaticHeaderss[VBO_INDEX]
+#define _staticIndexHeaders staticHeaderss[VBO_INDEX]
+
+#define VBO_INDEX(x) ((x) ? VBO_INDEX : VBO_VERTEX)
+#define VBO_FORI(x) for(int x = 0; x < VBO_TOTAL; x++)
+#endif
 
 typedef enum {
 	TAG_FREE,
@@ -58,6 +89,10 @@ typedef struct vertCache_s {
 	int				frameUsed;			// it can't be purged if near the current frame
 #ifdef _MULTITHREAD
 	bool            virtMemDirty; // frontend, virtMem also is frontend
+#endif
+#ifdef _VULKAN
+	VKBuffer_t	*vk_buffer;
+	intptr_t			vk_offset; // aligned offset in GPU memory
 #endif
 } vertCache_t;
 
@@ -92,7 +127,11 @@ class idVertexCache
 		// will change every frame.
 		// will return NULL if the vertex cache is completely full
 		// As with Position(), this may not actually be a pointer you can access.
+#ifdef SEPARATE_INDEX_BUFFER
+		vertCache_t		*AllocFrameTemp(void *data, int bytes, bool indexBuffer = false);
+#else
 		vertCache_t		*AllocFrameTemp(void *data, int bytes);
+#endif
 
 		// notes that a buffer is used this frame, so it can't be purged
 		// out from under the GPU
@@ -110,6 +149,19 @@ class idVertexCache
 
 		// listVertexCache calls this
 		void			List();
+#ifdef _VULKAN
+		vertCache_t		*AllocFrameTemp_VK(void *data, int bytes, bool indexBuffer);
+		void			Alloc_VK(void *data, int bytes, vertCache_t **buffer, bool indexBuffer = false);
+		void 			*Position_VK(vertCache_t *buffer);
+		void			BindBuffer_VK(VkBuffer buffer);
+		void			BindIndexBuffer_VK(VkBuffer buffer);
+		VkBuffer		BufferBinding_VK(void) const {
+			return currentBoundVBO[listNum];
+		}
+		VkBuffer		IndexBufferBinding_VK(void) const {
+			return currentBoundIBO[listNum];
+		}
+#endif
 #ifdef _MULTITHREAD
         int             GetListNum(void) const {
             return listNum;
@@ -177,6 +229,13 @@ class idVertexCache
 
 #if 0
 	    int currentBoundVBO;
+#endif
+#ifdef _VULKAN
+		void			ActuallyFree_VK(vertCache_t *block);
+        vertCache_t*    CreateTempVbo_VK(int bytes, bool indexBuffer = false);
+		
+		VkBuffer		currentBoundVBO[NUM_VERTEX_FRAMES];
+		VkBuffer		currentBoundIBO[NUM_VERTEX_FRAMES];
 #endif
 #ifdef _MULTITHREAD
         volatile int    usingFrame; // current_frame: always 0 if without multi-threading, else same as ::listNum

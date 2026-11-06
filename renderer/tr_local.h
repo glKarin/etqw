@@ -63,8 +63,8 @@ extern const float zero[];
 extern const float one[];
 extern const float negOne[];
 #ifdef COLOR_MODULATE_IS_NORMALIZED
-extern const float oneModulate[];
-extern const float negOneModulate[];
+extern float oneModulate[];
+extern float negOneModulate[];
 #else
 #define oneModulate one
 #define negOneModulate negOne
@@ -1971,6 +1971,9 @@ typedef struct shaderProgram_s {
 
 	char 		name[HARM_SHADER_NAME_LENGTH];
     int         type; // glsl_program_t
+#ifdef _VULKAN
+	struct VKShaderProgram_t *vk_shader;
+#endif
 } shaderProgram_t;
 #define SHADER_PARM_ADDR(prop) offsetof(shaderProgram_t, prop)
 #define SHADER_PARM_LOCATION(location) (*(GLint *)((char *)backEnd.glState.currentProgram + location))
@@ -1980,6 +1983,10 @@ typedef struct shaderProgram_s {
 void R_InitShaderProgram(shaderProgram_t *program);
 
 #include "glsl/ShaderManager.h"
+
+#ifdef _VULKAN
+#include "vulkan/vk_local.h"
+#endif
 
 /* This file was automatically generated.  Do not edit! */
 void R_ReloadGLSLPrograms_f(const idCmdArgs &args);

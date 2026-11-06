@@ -373,6 +373,10 @@ class idMath
 		static float				BitsToFloat(int i, int exponentBits, int mantissaBits);
 
 		static int					FloatHash(const float *array, const int numFloats);
+		template <class T>
+		static T					Min(const T a, const T b);
+		template <class T>
+		static T					Max(const T a, const T b);
 #ifdef _RAVEN
         static idVec3				CreateVector(float x, float y, float z);
         static float				AngleMod(float a);
@@ -1544,6 +1548,18 @@ template< typename T > ID_INLINE float MS2SEC( const T value )
     return static_cast< float >( value * idMath::M_MS2SEC );
 }
 #endif
+
+template <class T>
+ID_INLINE T	idMath::Min(const T a, const T b)
+{
+	return b < a ? b : a;
+}
+
+template <class T>
+ID_INLINE T idMath::Max(const T a, const T b)
+{
+	return a < b ? b : a;
+}
 
 #if defined(_RAVEN) || defined(_SPLASHDAMAGE)
 // RAVEN BEGIN

@@ -214,6 +214,15 @@ void RB_ComputeDrawSurfMVP( const drawSurf_t * const surf )
 	if(bNeedRestoreDepthRange)
 		qglDepthRangef(0, 0.5);
 
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		static float vk_projectionMatrix[16];
+		R_VK_FixupClipSpaceZAndY(vk_projectionMatrix, rb_projectionMatrix);
+		myGlMultMatrix(surf->space->modelViewMatrix, vk_projectionMatrix, rb_MVP);
+	}
+	else
+#endif
 	myGlMultMatrix(surf->space->modelViewMatrix, rb_projectionMatrix, rb_MVP);
 }
 
