@@ -67,8 +67,10 @@ void R_VK_InitGlobalUBO()
 	vec4_identity(globalUBO.texgenS); globalUBO.texgenS[0] = 1.0f;
 	vec4_identity(globalUBO.texgenT); globalUBO.texgenT[1] = 1.0f;
 	vec4_identity(globalUBO.texgenQ); globalUBO.texgenQ[2] = 1.0f;
+#ifdef _SHADOW_MAPPING
 	MAT4S_IDENTITY(globalUBO.shadowMVPMatrix);
 	vec4_identity(globalUBO.globalLightOrigin);
+#endif
 	VEC4S_IDENTITY(globalUBO.uniformParm);
 	VEC4S_IDENTITY(globalUBO.vertexParm);
 	VEC4S_IDENTITY(globalUBO.fragmentParm);

@@ -33,8 +33,10 @@
     UBO_VEC4(texgenT);
     UBO_VEC4(texgenQ);
 
+#ifdef _SHADOW_MAPPING
     UBO_MAT4(shadowMVPMatrix[6]);
     UBO_VEC4(globalLightOrigin);
+#endif
 
     UBO_VEC4(uniformParm[8]);
     UBO_VEC4(vertexParm[8]);

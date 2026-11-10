@@ -52,8 +52,8 @@ int VK_StrSplit(const char *str, char delim, char **tokens)
         return 0;
 
     const char *start = str;
-    const char *index = str;
-    int length = strlen(str);
+    const char *index;
+    int length = (int)strlen(str);
     int counter = 0;
     while((index = strchr(start, delim)))
     {
@@ -120,7 +120,7 @@ static int VK_GLSL_FindNextLinePositionOfVersion(const char *res)
         printf("GLSL shader source '#version' not completed\n.");
         return -1;
     }
-    return index - res + 1; // previous char is '\n'
+    return (int)(index - res + 1); // previous char is '\n'
 }
 
 static char * VK_GLSL_InsertGlobalDefines(const char *res, const char *list[], int n)
@@ -130,8 +130,8 @@ static char * VK_GLSL_InsertGlobalDefines(const char *res, const char *list[], i
     int grow = 200;
     for (int i = 0; i < n; i++)
     {
-        grow += strlen("#define ") + 1;
-        grow += strlen(list[i]);
+        grow += (int)strlen("#define ") + 1;
+        grow += (int)strlen(list[i]);
     }
 
     char *str = (char *)malloc(strlen(res) + grow + 1);
@@ -202,7 +202,7 @@ static void VK_SaveSpvShaderFile(const char *path, const uint32_t *data, int len
 
 int VK_GLSL_LoadShaderData(const char *path, const char *glslData, uint8_t **data, int stage, const char *marcos)
 {
-	int glslLength = strlen(glslData);
+	int glslLength = (int)strlen(glslData);
 	if (glslLength <= 0)
 		return glslLength;
 
@@ -447,7 +447,7 @@ int VK_GLSL_CompileSPIRV( const char* filename, const char* dataGLSL, const int 
 
 	glslang::GlslangToSpv( *program.getIntermediate( shaderType ), spirV, &logger, &spvOptions );
 
-	int32_t spirvLen = spirV.size() * sizeof( unsigned int );
+	int32_t spirvLen = (int32_t)(spirV.size() * sizeof( unsigned int ));
 
 	void* buffer = VK_GLSL_AllocSource( spirvLen );
 	memcpy( buffer, spirV.data(), spirvLen );

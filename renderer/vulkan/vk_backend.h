@@ -120,6 +120,9 @@ void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, in
 #define VKSTATE_STAGE_OFFSET(x) ( IS_SECOND_ST(x) ? offsetof(globalStateSet_t, st2) : offsetof(globalStateSet_t, st1) )
 #define VKSTATE_STAGE(st, x) (*((globalState_t *)(((char *)&(st)) + VKSTATE_STAGE_OFFSET(x))))
 
+#define VKSTATE1_IS_TRUE(x) (vk_backend.state.st1 & (x))
+#define VKSTATE2_IS_TRUE(x) (vk_backend.state.st2 & (x))
+
 void R_VK_ClearColor(float r, float g, float b, float a);
 void R_VK_ClearDepth(float depth);
 void R_VK_ClearStencil(int stencil);

@@ -70,6 +70,13 @@ void glBindTexture( GLenum target, GLuint texture )
 		R_VK_BindType(tut, NULL);
 }
 
+// pointer must in CPU
+void * R_VK_VertexAttribPointer (GLint size, const void *pointer)
+{
+	vertCache_t *vertCache = vertexCache.AllocFrameTemp_VK((void *)pointer, size, false);
+	return (idDrawVert *)vertexCache.Position_VK(vertCache);
+}
+
 float srgb_to_linear_f(float x)
 {
 	if (x < 0.04045f)

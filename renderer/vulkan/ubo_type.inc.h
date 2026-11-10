@@ -257,6 +257,7 @@ UBO_VERTEX_PROC_END(ambientLighting)
 
 
 
+#ifdef _STENCIL_SHADOW_IMPROVE
 UBO_VERTEX_PROC_BEGIN(interactionTranslucent)
 	UBO_VEC4_PROC(lightProjectionS);
 	UBO_VEC4_PROC(lightProjectionT);
@@ -312,9 +313,11 @@ UBO_FRAGMENT_PROC_BEGIN(interactionSoft)
 	UBO_VEC4_N_PROC(uniformParm, 0);
 	UBO_VEC4_N_PROC(uniformParm, 1);
 UBO_FRAGMENT_PROC_END(interactionSoft)
+#endif
 
 
 
+#ifdef _SHADOW_MAPPING
 UBO_VERTEX_PROC_BEGIN(interactionShadowMappingPointLight)
 	UBO_VEC4_PROC(lightProjectionS);
 	UBO_VEC4_PROC(lightProjectionT);
@@ -418,6 +421,7 @@ UBO_FRAGMENT_PROC_BEGIN(interactionShadowMappingSpotLight)
 	UBO_VEC4_N_PROC(uniformParm, 0);
 	UBO_VEC4_N_PROC(uniformParm, 4);
 UBO_FRAGMENT_PROC_END(interactionShadowMappingSpotLight)
+#endif
 
 
 
@@ -435,6 +439,7 @@ UBO_VERTEX_PROC_BEGIN(megaTexture)
 UBO_VERTEX_PROC_END(megaTexture)
 
 
+#ifdef _GLOBAL_ILLUMINATION
 UBO_VERTEX_PROC_BEGIN(globalIllumination)
 	UBO_MAT4_PROC(modelViewProjectionMatrix);
 	UBO_VEC4_PROC(viewOrigin);
@@ -453,8 +458,10 @@ UBO_FRAGMENT_PROC_BEGIN(globalIllumination)
 	UBO_VEC4_PROC(specularColor);
 	UBO_VEC4_PROC(specularExponent);
 UBO_FRAGMENT_PROC_END(globalIllumination)
+#endif
 
 
+#ifdef _POSTPROCESS
 UBO_FRAGMENT_PROC_BEGIN(retro2Bit)
 	UBO_VEC4_PROC(windowCoords);
 	UBO_VEC4_PROC(nonPowerOfTwo);
@@ -487,6 +494,7 @@ UBO_FRAGMENT_PROC_BEGIN(retroPS1)
 	UBO_VEC4_PROC(windowCoords);
 	UBO_VEC4_PROC(nonPowerOfTwo);
 UBO_FRAGMENT_PROC_END(retroPS1)
+#endif
 
 
 #undef UBO_VERTEX_PROC_BEGIN

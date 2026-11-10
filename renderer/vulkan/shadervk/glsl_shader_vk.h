@@ -5,7 +5,7 @@
 
 #include "shader_d3xp_vk.h"
 
-//#include "shader_postprocess_300.h"
+#include "shader_postprocess_vk.h"
 
 #include "shader_debug_vk.h"
 

@@ -365,92 +365,136 @@ GLenum glGetError(void)
     return error;
 }
 
-#define GLGET_WRITE1(params, a) params[0] = a;
-#define GLGET_WRITE2(params, a, b) params[0] = a; params[1] = b;
-#define GLGET_WRITE3(params, a, b, c) params[0] = a; params[1] = b; params[2] = c;
-#define GLGET_WRITE4(params, a, b, c, d) params[0] = a; params[1] = b; params[2] = c; params[3] = d;
-void glGetIntegervx(GLenum pname, GLint *params)
-{
-    switch (pname)
-    {
-        case GL_ACTIVE_TEXTURE:
-            break;
-        case GL_BLEND:
-            break;
-        case GL_BLEND_DST_ALPHA:
-        case GL_BLEND_DST_RGB:
-            break;
-        case GL_BLEND_SRC_ALPHA:
-        case GL_BLEND_SRC_RGB:
-            break;
-        case GL_COLOR_CLEAR_VALUE:
-            break;
-        case GL_COLOR_WRITEMASK:
-            break;
-        case GL_CULL_FACE:
-            break;
-        case GL_CULL_FACE_MODE:
-            break;
-        case GL_DEPTH_CLEAR_VALUE:
-            break;
-        case GL_DEPTH_RANGE:
-            break;
-        case GL_DEPTH_TEST:
-            break;
-        case GL_DEPTH_WRITEMASK:
-            break;
-        case GL_FRONT_FACE:
-            break;
-        case GL_LINE_WIDTH:
-            break;
-        case GL_POLYGON_OFFSET_FACTOR:
-            break;
-        case GL_POLYGON_OFFSET_FILL:
-            break;
-        case GL_POLYGON_OFFSET_UNITS:
-            break;
-        case GL_SCISSOR_BOX:
-            break;
-        case GL_SCISSOR_TEST:
-            break;
-        case GL_STENCIL_BACK_FAIL:
-            break;
-        case GL_STENCIL_BACK_FUNC:
-            break;
-        case GL_STENCIL_BACK_PASS_DEPTH_FAIL:
-            break;
-        case GL_STENCIL_BACK_PASS_DEPTH_PASS:
-            break;
-        case GL_STENCIL_BACK_REF:
-            break;
-        case GL_STENCIL_BACK_VALUE_MASK:
-            break;
-        case GL_STENCIL_BACK_WRITEMASK:
-            break;
-        case GL_STENCIL_CLEAR_VALUE:
-            break;
-        case GL_STENCIL_FAIL:
-            break;
-        case GL_STENCIL_FUNC:
-            break;
-        case GL_STENCIL_PASS_DEPTH_FAIL:
-            break;
-        case GL_STENCIL_PASS_DEPTH_PASS:
-            break;
-        case GL_STENCIL_REF:
-            break;
-        case GL_STENCIL_TEST:
-            break;
-        case GL_STENCIL_VALUE_MASK:
-            break;
-        case GL_STENCIL_WRITEMASK:
-            break;
-        case GL_VIEWPORT:
-            break;
-        default:
-            break;
-    }
+#define GLGET_WRITE1(params, a) params[0] = (GLGET_WRITE_TYPE)a;
+#define GLGET_WRITE2(params, a, b) params[0] = (GLGET_WRITE_TYPE)a; params[1] = (GLGET_WRITE_TYPE)b;
+#define GLGET_WRITE2V(params, a) GLGET_WRITE2(params, a[0], a[1]);
+#define GLGET_WRITE4(params, a, b, c, d) params[0] = (GLGET_WRITE_TYPE)a; params[1] = (GLGET_WRITE_TYPE)b; params[2] = (GLGET_WRITE_TYPE)c; params[3] = (GLGET_WRITE_TYPE)d;
+#define GLGET_WRITE4V(params, a) GLGET_WRITE4(params, a[0], a[1], a[2], a[3]);
+
+#define GLGET_FUNC(Type) void glGet##Type##v(GLenum pname, GLGET_WRITE_TYPE *params) \
+{ \
+    switch (pname) \
+    { \
+        case GL_ACTIVE_TEXTURE: \
+            GLGET_WRITE1(params, vk_backend.currenttmu); \
+            break; \
+        case GL_BLEND: \
+            GLGET_WRITE1(params, R_VK_IsBlendEnabled()); \
+            break; \
+        case GL_BLEND_DST_ALPHA: \
+        case GL_BLEND_DST_RGB: \
+            break; \
+        case GL_BLEND_SRC_ALPHA: \
+        case GL_BLEND_SRC_RGB: \
+            break; \
+        case GL_COLOR_CLEAR_VALUE: \
+            GLGET_WRITE4V(params, vk_backend.dynamicState.clearColor); \
+            break; \
+        case GL_COLOR_WRITEMASK: \
+            GLGET_WRITE4(params, \
+                VKSTATE1_IS_TRUE(ST_COLORMASK_R_BIT) ? GL_FALSE : GL_TRUE, \
+                VKSTATE1_IS_TRUE(ST_COLORMASK_G_BIT) ? GL_FALSE : GL_TRUE, \
+                VKSTATE1_IS_TRUE(ST_COLORMASK_B_BIT) ? GL_FALSE : GL_TRUE, \
+                VKSTATE1_IS_TRUE(ST_COLORMASK_A_BIT) ? GL_FALSE : GL_TRUE \
+                ); \
+            break; \
+        case GL_CULL_FACE: \
+            GLGET_WRITE1(params, R_VK_IsCullFaceEnabled()); \
+            break; \
+        case GL_CULL_FACE_MODE: \
+            break; \
+        case GL_DEPTH_CLEAR_VALUE: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.clearDepth); \
+            break; \
+        case GL_DEPTH_RANGE: \
+            GLGET_WRITE2V(params, vk_backend.dynamicState.depthRanges); \
+            break; \
+        case GL_DEPTH_TEST: \
+            GLGET_WRITE1(params, R_VK_IsDepthTestEnabled()); \
+            break; \
+        case GL_DEPTH_WRITEMASK: \
+            GLGET_WRITE1(params, VKSTATE1_IS_TRUE(ST_DEPTH_MASK_BIT) ? GL_TRUE : GL_FALSE); \
+            break; \
+        case GL_FRONT_FACE: \
+            GLGET_WRITE1(params, VKSTATE1_IS_TRUE(ST_FRONT_CW_BIT) ? GL_CW : GL_CCW); \
+            break; \
+        case GL_LINE_WIDTH: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.lineWidth); \
+            break; \
+        case GL_POLYGON_OFFSET_FACTOR: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.polygonFactor); \
+            break; \
+        case GL_POLYGON_OFFSET_FILL: \
+            GLGET_WRITE1(params, R_VK_IsPolygonOffsetEnabled()); \
+            break; \
+        case GL_POLYGON_OFFSET_UNITS: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.polygonUnits); \
+            break; \
+        case GL_SCISSOR_BOX: \
+            GLGET_WRITE4V(params, vk_backend.dynamicState.scissor); \
+            break; \
+        case GL_SCISSOR_TEST: \
+            GLGET_WRITE1(params, R_VK_IsScissorTestEnabled()); \
+            break; \
+        case GL_STENCIL_BACK_FAIL: \
+            break; \
+        case GL_STENCIL_BACK_FUNC: \
+            break; \
+        case GL_STENCIL_BACK_PASS_DEPTH_FAIL: \
+            break; \
+        case GL_STENCIL_BACK_PASS_DEPTH_PASS: \
+            break; \
+        case GL_STENCIL_BACK_REF: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.stencilReference[1]); \
+            break; \
+        case GL_STENCIL_BACK_VALUE_MASK: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.stencilMask[1]); \
+            break; \
+        case GL_STENCIL_BACK_WRITEMASK: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.stencilWriteMask[1]); \
+            break; \
+        case GL_STENCIL_CLEAR_VALUE: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.clearStencil); \
+            break; \
+        case GL_STENCIL_FAIL: \
+            break; \
+        case GL_STENCIL_FUNC: \
+            break; \
+        case GL_STENCIL_PASS_DEPTH_FAIL: \
+            break; \
+        case GL_STENCIL_PASS_DEPTH_PASS: \
+            break; \
+        case GL_STENCIL_REF: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.stencilReference[0]); \
+            break; \
+        case GL_STENCIL_TEST: \
+            GLGET_WRITE1(params, R_VK_IsStencilTestEnabled()); \
+            break; \
+        case GL_STENCIL_VALUE_MASK: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.stencilMask[0]); \
+            break; \
+        case GL_STENCIL_WRITEMASK: \
+            GLGET_WRITE1(params, vk_backend.dynamicState.stencilWriteMask[0]); \
+            break; \
+        case GL_VIEWPORT: \
+            GLGET_WRITE4V(params, vk_backend.dynamicState.viewport); \
+            break; \
+        default: \
+            break; \
+    } \
 }
+
+#define GLGET_WRITE_TYPE GLint
+GLGET_FUNC(Integer)
+#undef GLGET_WRITE_TYPE
+
+#define GLGET_WRITE_TYPE GLboolean
+GLGET_FUNC(Boolean)
+#undef GLGET_WRITE_TYPE
+
+#define GLGET_WRITE_TYPE GLfloat
+GLGET_FUNC(Float)
+#undef GLGET_WRITE_TYPE
 
 GLboolean glIsEnabled(GLenum cap)
 {

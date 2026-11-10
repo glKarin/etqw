@@ -41,6 +41,7 @@ FRAGMENT_UBO_ALIAS_DEFINE(ambientLighting, interaction)
 
 
 
+#ifdef _STENCIL_SHADOW_IMPROVE
 VERTEX_UBO_ALIAS_DEFINE(interactionBlinnPhongTranslucent, interactionTranslucent)
 FRAGMENT_UBO_ALIAS_DEFINE(interactionBlinnPhongTranslucent, interactionTranslucent)
 
@@ -61,8 +62,10 @@ FRAGMENT_UBO_ALIAS_DEFINE(interactionPBRSoft, interactionSoft)
 
 VERTEX_UBO_ALIAS_DEFINE(ambientLightingSoft, ambientLightingTranslucent)
 FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingSoft, interactionSoft)
+#endif
 
 
+#ifdef _SHADOW_MAPPING
 VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongPointLight, interactionShadowMappingPointLight)
 
 VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingPBRPointLight, interactionShadowMappingPointLight)
@@ -104,5 +107,5 @@ FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongSpotLight, interacti
 FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingPBRSpotLight, interactionShadowMappingSpotLight)
 
 FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingShadowMappingSpotLight, interactionShadowMappingSpotLight)
-
+#endif
 

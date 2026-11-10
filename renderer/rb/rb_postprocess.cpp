@@ -77,8 +77,14 @@ void RB_PP_Render(void)
 
     GLboolean depthMask;
     GLint bufferId;
-    qglGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask);
+#ifdef _VULKAN
+    VkBuffer buffer;
+    if (USING_VULKAN)
+        buffer = vertexCache.BufferBinding_VK();
+    else
+#endif
     qglGetIntegerv(GL_ARRAY_BUFFER_BINDING, &bufferId);
+    qglGetBooleanv(GL_DEPTH_WRITEMASK, &depthMask);
     GLboolean isBlend = qglIsEnabled(GL_BLEND);
     GLboolean isDepthTest = qglIsEnabled(GL_DEPTH_TEST);
 
@@ -91,24 +97,16 @@ void RB_PP_Render(void)
         qglDisable(GL_DEPTH_TEST);
     if(depthMask)
         qglDepthMask(GL_FALSE);
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        if (VK_NULL_HANDLE != buffer)
+            vertexCache.BindBuffer_VK(VK_NULL_HANDLE);
+    }
+    else
+#endif
 	if(bufferId != 0)
 		qglBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	const float hw = (float)w * 0.5f;
-	const float hh = (float)h * 0.5f;
-
-    const float vs[] = {
-            -hw, -hh,
-            hw, -hh,
-            -hw, hh,
-            hw, hh,
-    };
-    static const float ts[] = {
-            0,0,
-            1,0,
-            0,1,
-            1,1,
-    };
 
     globalImages->frameImage->CopyFramebuffer(0, 0, glConfig.vidWidth, glConfig.vidHeight, true);
 	const float sw = glConfig.vidWidth;
@@ -144,8 +142,48 @@ void RB_PP_Render(void)
     GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_Vertex));
     GL_EnableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
 
+    const float hw = (float)w * 0.5f;
+    const float hh = (float)h * 0.5f;
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        idDrawVert vs[4];
+        vs[0].xyz[0] = -hw; vs[0].xyz[1] = hh;
+        vs[1].xyz[0] = hw; vs[1].xyz[1] = hh;
+        vs[2].xyz[0] = -hw; vs[2].xyz[1] = -hh;
+        vs[3].xyz[0] = hw; vs[3].xyz[1] = -hh;
+
+        vs[0].st[0] = 0; vs[0].st[1] = 1;
+        vs[1].st[0] = 1; vs[1].st[1] = 1;
+        vs[2].st[0] = 0; vs[2].st[1] = 0;
+        vs[3].st[0] = 1; vs[3].st[1] = 0;
+
+        idDrawVert *ptr = (idDrawVert *)R_VK_VertexAttribPointer(sizeof(vs), vs);
+
+        GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), &ptr->xyz);
+        GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), &ptr->st);
+    }
+    else
+    {
+#endif
+    const float vs[] = {
+            -hw, -hh,
+            hw, -hh,
+            -hw, hh,
+            hw, hh,
+    };
+    static const float ts[] = {
+            0,0,
+            1,0,
+            0,1,
+            1,1,
+    };
+
     GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 2, GL_FLOAT, false, 0, vs);
     GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, 0, ts);
+#ifdef _VULKAN
+    }
+#endif
 
     qglDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -162,6 +200,14 @@ void RB_PP_Render(void)
         qglEnable(GL_DEPTH_TEST);
     if(depthMask)
         qglDepthMask(GL_TRUE);
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        if (VK_NULL_HANDLE != buffer)
+            vertexCache.BindBuffer_VK(buffer);
+    }
+    else
+#endif
     if(bufferId != 0)
         qglBindBuffer(GL_ARRAY_BUFFER, bufferId);
 }
