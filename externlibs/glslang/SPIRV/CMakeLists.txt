@@ -49,10 +49,10 @@ set(SPVREMAP_HEADERS
     SPVRemapper.h
     doc.h)
 
-add_library(SPIRV STATIC ${LIB_TYPE} ${SOURCES} ${HEADERS})
-set_property(TARGET SPIRV PROPERTY FOLDER glslang)
-set_property(TARGET SPIRV PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_include_directories(SPIRV PUBLIC
+add_library(${GLSLANG_TARGET_PREFIX}SPIRV STATIC ${LIB_TYPE} ${SOURCES} ${HEADERS})
+set_property(TARGET ${GLSLANG_TARGET_PREFIX}SPIRV PROPERTY FOLDER glslang)
+set_property(TARGET ${GLSLANG_TARGET_PREFIX}SPIRV PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_include_directories(${GLSLANG_TARGET_PREFIX}SPIRV PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
@@ -63,23 +63,23 @@ if (ENABLE_SPVREMAPPER)
 endif()
 
 if(WIN32 AND BUILD_SHARED_LIBS)
-    set_target_properties(SPIRV PROPERTIES PREFIX "")
+    set_target_properties(${GLSLANG_TARGET_PREFIX}SPIRV PROPERTIES PREFIX "")
     if (ENABLE_SPVREMAPPER)
         set_target_properties(SPVRemapper PROPERTIES PREFIX "")
     endif()
 endif()
 
 if(ENABLE_OPT)
-    target_include_directories(SPIRV
+    target_include_directories(${GLSLANG_TARGET_PREFIX}SPIRV
         PRIVATE ${spirv-tools_SOURCE_DIR}/include
         PRIVATE ${spirv-tools_SOURCE_DIR}/source
     )
-    target_link_libraries(SPIRV glslang SPIRV-Tools-opt)
-    target_include_directories(SPIRV PUBLIC
+    target_link_libraries(${GLSLANG_TARGET_PREFIX}SPIRV ${GLSLANG_TARGET_PREFIX}glslang SPIRV-Tools-opt)
+    target_include_directories(${GLSLANG_TARGET_PREFIX}SPIRV PUBLIC
 		$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../External>
 		$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/External>)
 else()
-    target_link_libraries(SPIRV glslang)
+    target_link_libraries(${GLSLANG_TARGET_PREFIX}SPIRV ${GLSLANG_TARGET_PREFIX}glslang)
 endif(ENABLE_OPT)
 
 if(WIN32)
@@ -94,7 +94,7 @@ if(ENABLE_GLSLANG_INSTALL)
                     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
                     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
         endif()
-        install(TARGETS SPIRV EXPORT SPIRVTargets
+        install(TARGETS ${GLSLANG_TARGET_PREFIX}SPIRV EXPORT SPIRVTargets
                 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -103,7 +103,7 @@ if(ENABLE_GLSLANG_INSTALL)
             install(TARGETS SPVRemapper EXPORT SPVRemapperTargets
                     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
         endif()
-        install(TARGETS SPIRV EXPORT SPIRVTargets
+        install(TARGETS ${GLSLANG_TARGET_PREFIX}SPIRV EXPORT SPIRVTargets
                 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
 

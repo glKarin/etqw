@@ -120,18 +120,18 @@ endmacro(glslang_pch)
 
 glslang_pch(SOURCES MachineIndependent/pch.cpp)
 
-add_library(glslang STATIC ${LIB_TYPE} ${BISON_GLSLParser_OUTPUT_SOURCE} ${SOURCES} ${HEADERS})
-set_property(TARGET glslang PROPERTY FOLDER glslang)
-set_property(TARGET glslang PROPERTY POSITION_INDEPENDENT_CODE ON)
-target_link_libraries(glslang OGLCompiler OSDependent)
-target_include_directories(glslang PUBLIC ..)
+add_library(${GLSLANG_TARGET_PREFIX}glslang STATIC ${LIB_TYPE} ${BISON_GLSLParser_OUTPUT_SOURCE} ${SOURCES} ${HEADERS})
+set_property(TARGET ${GLSLANG_TARGET_PREFIX}glslang PROPERTY FOLDER glslang)
+set_property(TARGET ${GLSLANG_TARGET_PREFIX}glslang PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(${GLSLANG_TARGET_PREFIX}glslang ${GLSLANG_TARGET_PREFIX}OGLCompiler ${GLSLANG_TARGET_PREFIX}OSDependent)
+target_include_directories(${GLSLANG_TARGET_PREFIX}glslang PUBLIC ..)
 
 if(WIN32 AND BUILD_SHARED_LIBS)
-    set_target_properties(glslang PROPERTIES PREFIX "")
+    set_target_properties(${GLSLANG_TARGET_PREFIX}glslang PROPERTIES PREFIX "")
 endif()
 
 if(ENABLE_HLSL)
-    target_link_libraries(glslang HLSL)
+    target_link_libraries(${GLSLANG_TARGET_PREFIX}glslang HLSL)
 endif()
 
 if(WIN32)
@@ -144,11 +144,11 @@ endif(WIN32)
 
 if(ENABLE_GLSLANG_INSTALL)
     if(BUILD_SHARED_LIBS)
-        install(TARGETS glslang
+        install(TARGETS ${GLSLANG_TARGET_PREFIX}glslang
                 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     else()
-        install(TARGETS glslang
+        install(TARGETS ${GLSLANG_TARGET_PREFIX}glslang
                 ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
 endif(ENABLE_GLSLANG_INSTALL)
