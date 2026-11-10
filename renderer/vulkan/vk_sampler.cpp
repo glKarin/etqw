@@ -16,7 +16,7 @@ static void R_VK_SetSampler(samplerKey_t key, VkSampler sampler)
 	*_vkc_value = sampler;
 }
 
-static samplerKey_t R_VK_GenSamplerKey(bool linear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod)
+static samplerKey_t R_VK_GenSamplerKey(bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod)
 {
 #if 1
     samplerKey_t key;
@@ -24,33 +24,35 @@ static samplerKey_t R_VK_GenSamplerKey(bool linear, int repeatS, int repeatT, in
     key.repeatT = repeatT;
     key.repeatU = repeatU;
     key.depthCmp = depthCmp;
-    key.linear = linear;
+    key.minLinear = minLinear;
+    key.magLinear = magLinear;
+    key.mipmapLinear = mipmapLinear;
     key.lod = lod;
     return key;
 #else
     char text[1024];
-    snprintf(text, sizeof(text), "tf=%d&tr=%d&cmp=%d&lod=%f", linear, repeat, depthCmp, lod);
+    snprintf(text, sizeof(text), "tf=%d_%d_%d&tr=%d_%d_%d&cmp=%d&lod=%f", minLinear, magLinear, mipmapLinear, repeatS, repeatT, repeatU, depthCmp, lod);
     return VK_StrIHash(text);
 #endif
 }
 
-static VkSampler R_VK_CreateSampler(bool linear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod)
+static VkSampler R_VK_CreateSampler(bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod)
 {
     VkSampler *sampler;
     VK_AllocSampler(&sampler);
-    VK_CreateSampler(sampler, linear, repeatS, repeatT, repeatU, depthCmp, 1.0f, lod);
-    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SAMPLER, (uint64_t)*sampler, "linear=%d,repeat=%d/%d/%d,depth-cmp=%d,lod=%f", linear, repeatS, repeatT, repeatU, depthCmp, lod);
+    VK_CreateSampler(sampler, minLinear, magLinear, mipmapLinear, repeatS, repeatT, repeatU, depthCmp, 1.0f, lod);
+    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SAMPLER, (uint64_t)*sampler, "linear=%d/%d/%d,repeat=%d/%d/%d,depth-cmp=%d,lod=%f", minLinear, magLinear, mipmapLinear, repeatS, repeatT, repeatU, depthCmp, lod);
     return *sampler;
 }
 
-VkSampler R_VK_AllocSampler(bool linear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod)
+VkSampler R_VK_AllocSampler(bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod)
 {
-    samplerKey_t key = R_VK_GenSamplerKey(linear, repeatS, repeatT, repeatU, depthCmp, lod);
+    samplerKey_t key = R_VK_GenSamplerKey(minLinear, magLinear, mipmapLinear, repeatS, repeatT, repeatU, depthCmp, lod);
     VkSampler cachedSampler = R_VK_FindSampler(key);
     if (VK_NULL_HANDLE != cachedSampler)
         return cachedSampler;
 
-    VkSampler sampler = R_VK_CreateSampler(linear, repeatS, repeatT, repeatU, depthCmp, lod);
+    VkSampler sampler = R_VK_CreateSampler(minLinear, magLinear, mipmapLinear, repeatS, repeatT, repeatU, depthCmp, lod);
     R_VK_SetSampler(key, sampler);
     return sampler;
 }

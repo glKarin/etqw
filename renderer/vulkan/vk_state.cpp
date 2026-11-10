@@ -3,6 +3,13 @@
 
 #include "../tr_local.h"
 
+// warning: offset of on non-POD type 'idDrawVert' [-Winvalid-offsetof]
+#if __cplusplus >= 201103L
+#define DRAWVERT_OFFSET(T, x) offsetof(T, x)
+#else
+#define DRAWVERT_OFFSET(T, x) (uintptr_t)(&(((T *)0)->x))
+#endif
+
 int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVertexInputAttributeDescription vertexInputAttributeDescriptions[VIA_TOTAL])
 {
     int res = 0;
@@ -14,12 +21,12 @@ int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVerte
     	if (mask & VIA_VERTEX4_BIT)
 		{
 			vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			vertexInputAttributeDescriptions[res].offset = offsetof(shadowCache_t, xyz);
+			vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(shadowCache_t, xyz);
 		}
     	else
 		{
 			vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32B32_SFLOAT;
-			vertexInputAttributeDescriptions[res].offset = offsetof(idDrawVert, xyz);
+			vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, xyz);
 		}
         res++;
     }
@@ -27,8 +34,16 @@ int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVerte
     {
         vertexInputAttributeDescriptions[res].binding = binding;
         vertexInputAttributeDescriptions[res].location = VIA_TEXCOORD;
-        vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32_SFLOAT;
-        vertexInputAttributeDescriptions[res].offset = offsetof(idDrawVert, st);
+    	if (mask & VIA_TEXCOORD3_BIT)
+		{
+			vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32B32_SFLOAT;
+			vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, normal);
+		}
+    	else
+		{
+			vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32_SFLOAT;
+			vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, st);
+		}
         res++;
     }
     if (mask & VIA_NORMAL_BIT)
@@ -36,7 +51,7 @@ int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVerte
         vertexInputAttributeDescriptions[res].binding = binding;
         vertexInputAttributeDescriptions[res].location = VIA_NORMAL;
         vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertexInputAttributeDescriptions[res].offset = offsetof(idDrawVert, normal);
+        vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, normal);
         res++;
     }
     if (mask & VIA_COLOR_BIT)
@@ -44,7 +59,7 @@ int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVerte
         vertexInputAttributeDescriptions[res].binding = binding;
         vertexInputAttributeDescriptions[res].location = VIA_COLOR;
         vertexInputAttributeDescriptions[res].format = VK_FORMAT_R8G8B8A8_UNORM;
-        vertexInputAttributeDescriptions[res].offset = offsetof(idDrawVert, color);
+        vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, color);
         res++;
     }
     if (mask & VIA_TANGENT_BIT)
@@ -52,7 +67,7 @@ int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVerte
         vertexInputAttributeDescriptions[res].binding = binding;
         vertexInputAttributeDescriptions[res].location = VIA_TANGENT;
         vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertexInputAttributeDescriptions[res].offset = offsetof(idDrawVert, tangents);
+        vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, tangents);
         res++;
     }
     if (mask & VIA_BITANGENT_BIT)
@@ -60,7 +75,7 @@ int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVerte
         vertexInputAttributeDescriptions[res].binding = binding;
         vertexInputAttributeDescriptions[res].location = VIA_BITANGENT;
         vertexInputAttributeDescriptions[res].format = VK_FORMAT_R32G32B32_SFLOAT;
-        vertexInputAttributeDescriptions[res].offset = offsetof(idDrawVert, tangents) + sizeof(((idDrawVert *)0)->tangents[0]);
+        vertexInputAttributeDescriptions[res].offset = DRAWVERT_OFFSET(idDrawVert, tangents) + sizeof(((idDrawVert *)0)->tangents[0]);
         res++;
     }
 
@@ -106,7 +121,7 @@ VkBlendFactor R_VK_GetSrcBlendFactor(globalState_t stateBits)
 			srcFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
 			break;
 		default:
-			srcFactor = VK_BLEND_FACTOR_ONE;		// to get warning to shut up
+			srcFactor = VK_BLEND_FACTOR_ONE;
 			break;
 	}
 
@@ -148,7 +163,7 @@ VkBlendFactor R_VK_GetDstBlendFactor(globalState_t stateBits)
 			dstFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
 			break;
 		default:
-			dstFactor = VK_BLEND_FACTOR_ZERO;		// to get warning to shut up
+			dstFactor = VK_BLEND_FACTOR_ZERO;
 			break;
 	}
 	return dstFactor;

@@ -3,6 +3,21 @@
 
 #include "../tr_local.h"
 
+typedef struct VKImageFilter_s
+{
+	bool minLinear;
+	bool magLinear;
+	bool mipmapLinear;
+	bool usingMipmap;
+} VKImageFilter_t;
+
+typedef struct VKImageRepeat_s
+{
+	int repeatS;
+	int repeatT;
+	int repeatU;
+} VKImageRepeat_t;
+
 typedef struct VKActuallyLoadImage_data_s
 {
 	idImage *image;
@@ -224,7 +239,7 @@ static int Image_CalcMapmapLevels(int scaled_width, int scaled_height, int *size
 	return miplevel;
 }
 
-static VkSamplerAddressMode R_VK_RepeatMode(textureRepeat_t repeat)
+static VkSamplerAddressMode R_VK_ImageSamplerRepeatMode(textureRepeat_t repeat)
 {
 	switch (repeat) {
 		case TR_REPEAT:
@@ -252,9 +267,9 @@ static VkSamplerAddressMode R_VK_RepeatMode(textureRepeat_t repeat)
 	}
 }
 
-static void R_VK_RepeatModes(textureRepeat_t repeat, int ret[])
+static void R_VK_ImageSamplerRepeatModes(textureRepeat_t repeat, VKImageRepeat_t *ret)
 {
-	ret[0] = ret[1] = ret[2] = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	ret->repeatS = ret->repeatT = ret->repeatU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	switch (repeat) {
 	case TR_REPEAT:
 	case TR_CLAMP_TO_BORDER:
@@ -264,16 +279,16 @@ static void R_VK_RepeatModes(textureRepeat_t repeat, int ret[])
 #ifdef _SPLASHDAMAGE
 	case TR_MIRROR:
 #endif
-		ret[0] = ret[1] = ret[2] = R_VK_RepeatMode(repeat);
+		ret->repeatS = ret->repeatT = ret->repeatU = R_VK_ImageSamplerRepeatMode(repeat);
 		break;
 #ifdef _SPLASHDAMAGE
 	case TR_CLAMP_X:
 	case TR_MIRROR_X:
-		ret[0] = R_VK_RepeatMode(repeat);
+		ret->repeatS = R_VK_ImageSamplerRepeatMode(repeat);
 		break;
 	case TR_CLAMP_Y:
 	case TR_MIRROR_Y:
-		ret[1] = R_VK_RepeatMode(repeat);
+		ret->repeatT = R_VK_ImageSamplerRepeatMode(repeat);
 		break;
 #endif
 	default:
@@ -282,11 +297,97 @@ static void R_VK_RepeatModes(textureRepeat_t repeat, int ret[])
 	}
 }
 
-static VkSampler R_VK_GetSampler(bool linear, int repeat, bool depthCmp, float lod)
+static void R_VK_ImageSamplerGLFilterMode(int minMode, int magMode, VKImageFilter_t *ret)
 {
-	int repeats[3];
-	R_VK_RepeatModes((textureRepeat_t)repeat, repeats);
-	return R_VK_AllocSampler(linear, repeats[0], repeats[1], repeats[2], depthCmp, lod);
+	switch (minMode) {
+		case GL_LINEAR:
+			ret->minLinear = true;
+			ret->mipmapLinear = false;
+			ret->usingMipmap = false;
+			break;
+		case GL_NEAREST:
+			ret->minLinear = false;
+			ret->mipmapLinear = false;
+			ret->usingMipmap = false;
+			break;
+		case GL_NEAREST_MIPMAP_NEAREST:
+			ret->minLinear = false;
+			ret->mipmapLinear = false;
+			ret->usingMipmap = true;
+			break;
+		case GL_NEAREST_MIPMAP_LINEAR:
+			ret->minLinear = false;
+			ret->mipmapLinear = true;
+			ret->usingMipmap = true;
+			break;
+		case GL_LINEAR_MIPMAP_NEAREST:
+			ret->minLinear = true;
+			ret->mipmapLinear = false;
+			ret->usingMipmap = true;
+			break;
+		case GL_LINEAR_MIPMAP_LINEAR:
+			ret->minLinear = true;
+			ret->mipmapLinear = true;
+			ret->usingMipmap = true;
+			break;
+		default:
+			common->Warning("R_CreateImage: bad texture GL filter %d\n", minMode);
+			ret->minLinear = false;
+			ret->mipmapLinear = true;
+			ret->usingMipmap = true;
+			break;
+	}
+
+	switch (magMode) {
+		case GL_LINEAR:
+			ret->magLinear = true;
+			break;
+		case GL_NEAREST:
+			ret->magLinear = false;
+			break;
+		default:
+			common->Warning("R_CreateImage: bad texture GL filter %d\n", magMode);
+			ret->magLinear = true;
+			break;
+	}
+}
+
+static void R_VK_ImageSamplerFilterMode(textureFilter_t filter, VKImageFilter_t *ret)
+{
+	switch (filter) {
+		case TF_LINEAR:
+			ret->minLinear = true;
+			ret->magLinear = true;
+			ret->mipmapLinear = false;
+			ret->usingMipmap = false;
+			break;
+		case TF_NEAREST:
+			ret->minLinear = false;
+			ret->magLinear = false;
+			ret->mipmapLinear = false;
+			ret->usingMipmap = false;
+			break;
+		case TF_DEFAULT:
+			R_VK_ImageSamplerGLFilterMode(globalImages->textureMinFilter, globalImages->textureMaxFilter, ret);
+			break;
+		default:
+			common->Warning("R_CreateImage: bad texture filter %d\n", filter);
+			ret->minLinear = false;
+			ret->magLinear = true;
+			ret->mipmapLinear = true;
+			ret->usingMipmap = true;
+			break;
+	}
+}
+
+static VkSampler R_VK_GetSampler(textureFilter_t linear, textureRepeat_t repeat, bool depthCmp, float lod)
+{
+	VKImageFilter_t filters;
+	VKImageRepeat_t repeats;
+
+	R_VK_ImageSamplerFilterMode(linear, &filters);
+	R_VK_ImageSamplerRepeatModes(repeat, &repeats);
+	return R_VK_AllocSampler(filters.minLinear, filters.magLinear, filters.mipmapLinear, repeats.repeatS, repeats.repeatT, repeats.repeatU, depthCmp, filters.usingMipmap ? lod : 0.0f);
 }
 
 static int R_VK_AllocImageBuffer(VKImage_t *image, int size, const uint8_t *data, const VKImageMipmap_t *mipmaps, int numLods)
@@ -600,7 +701,7 @@ void idImage::GenerateImage_VK(const byte *pic, int width, int height,
 
 	VK_CreateImage(vk_image, baseWidth, baseHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, miplevel + 1, IU_SAMPLER);
 	SetDebugInfo_VK(false);
-	VkSampler sampler = R_VK_GetSampler(filter != TF_NEAREST, repeat, false, vk_image->mipLevels - 1);
+	VkSampler sampler = R_VK_GetSampler(filter, repeat, false, vk_image->mipLevels - 1);
 	vk_image->sampler = sampler;
 
 	assert(mipmapList.Num() == vk_image->mipLevels);
@@ -727,7 +828,7 @@ void idImage::GenerateCubeImage_VK(const byte *pic[6], int size,
 
 	VK_CreateImage(vk_image, baseWidth, baseHeight, VK_FORMAT_R8G8B8A8_UNORM, true, 1, miplevel, IU_SAMPLER);
 	SetDebugInfo_VK(false);
-	VkSampler sampler = R_VK_GetSampler(filter != TF_NEAREST, TR_REPEAT, false, vk_image->mipLevels - 1);
+	VkSampler sampler = R_VK_GetSampler(filter, TR_REPEAT, false, vk_image->mipLevels - 1);
 	vk_image->sampler = sampler;
 
 	assert(mipmapList.Num() == vk_image->mipLevels);

@@ -352,7 +352,7 @@ void glEnable(GLenum cap)
 
 void glFinish(void)
 {
-    VK_WaitFrameFence();
+    //VK_WaitFrameFence();
 }
 
 void glFrontFace(GLenum mode)

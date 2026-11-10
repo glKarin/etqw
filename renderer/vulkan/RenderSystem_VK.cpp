@@ -36,7 +36,8 @@ idCVar r_vkBackendPipelineLayoutGranularity("r_vkBackendPipelineLayoutGranularit
 idCVar r_vkQueryFrameCount("r_vkQueryFrameCount", "256", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: query count in frame");
 
 // vk_buffer
-idCVar r_vkStagingBufferBlockSize("r_vkStagingBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging buffer block size(Mb)");
+idCVar r_vkStagingWriteBufferBlockSize("r_vkStagingWriteBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging write buffer block size(Mb)");
+idCVar r_vkStagingReadBufferBlockSize("r_vkStagingReadBufferBlockSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging read buffer block size(Mb)");
 idCVar r_vkUniformBufferBlockSize("r_vkUniformBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: uniform buffer block size(Mb)");
 idCVar r_vkVertexBufferBlockSize("r_vkVertexBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: vertex buffer block size(Mb)");
 idCVar r_vkIndexBufferBlockSize("r_vkIndexBufferBlockSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: index buffer block size(Mb)");

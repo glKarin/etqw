@@ -49,7 +49,8 @@ extern idCVar r_vkBackendPipelineLayoutGranularity;
 
 extern idCVar r_vkQueryFrameCount;
 
-extern idCVar r_vkStagingBufferBlockSize;
+extern idCVar r_vkStagingWriteBufferBlockSize;
+extern idCVar r_vkStagingReadBufferBlockSize;
 extern idCVar r_vkUniformBufferBlockSize;
 extern idCVar r_vkVertexBufferBlockSize;
 extern idCVar r_vkIndexBufferBlockSize;

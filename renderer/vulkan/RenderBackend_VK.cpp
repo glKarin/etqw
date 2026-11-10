@@ -33,6 +33,15 @@ void glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indice
 		vertexCache.UnbindIndex();
 }
 
+void glBindBuffer (GLenum target, GLuint buffer)
+{
+	VKBuffer_t *buf = vk_context.buffers.list[buffer];
+	if(target == GL_ELEMENT_ARRAY_BUFFER)
+		vertexCache.BindIndexBuffer_VK(buffer && buf ? buf->buffer : NULL);
+	else
+		vertexCache.BindBuffer_VK(buffer && buf ? buf->buffer : NULL);
+}
+
 static int GL_GetTextureType(GLenum target)
 {
 	switch(target)
@@ -93,7 +102,8 @@ void glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum forma
 
 	R_VK_EndStageReadBuffer();
 
-	VK_ReadBuffer(map.buffer, pixels, map.offset, map.size, map.ptr);
+	//VK_ReadBuffer(map.buffer, pixels, map.offset, map.size, map.ptr);
+	memcpy(pixels, map.ptr, map.size);
 
 #if 0
 
@@ -207,6 +217,32 @@ void R_VK_FixupClipSpaceZAndY( float dst[ 16 ], const float src[ 16 ] )
 	{
 		// Z: [-1,1] -> [0,1]
 		dst[ col * 4 + 2 ] = 0.5f * ( src[ col * 4 + 2 ] + src[ col * 4 + 3 ] );
+		// Y 轴翻转：NDC Y = -Y
+		dst[ col * 4 + 1 ] = -src[ col * 4 + 1 ];
+	}
+}
+
+void R_VK_FixupClipSpaceZ( float dst[ 16 ], const float src[ 16 ] )
+{
+	if ( dst != src )
+	{
+		memcpy( dst, src, 16 * sizeof( float ) );
+	}
+	for ( int col = 0; col < 4; col++ )
+	{
+		// Z: [-1,1] -> [0,1]
+		dst[ col * 4 + 2 ] = 0.5f * ( src[ col * 4 + 2 ] + src[ col * 4 + 3 ] );
+	}
+}
+
+void R_VK_FixupY( float dst[ 16 ], const float src[ 16 ] )
+{
+	if ( dst != src )
+	{
+		memcpy( dst, src, 16 * sizeof( float ) );
+	}
+	for ( int col = 0; col < 4; col++ )
+	{
 		// Y 轴翻转：NDC Y = -Y
 		dst[ col * 4 + 1 ] = -src[ col * 4 + 1 ];
 	}

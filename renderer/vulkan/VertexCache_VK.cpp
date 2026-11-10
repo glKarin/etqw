@@ -7,12 +7,12 @@ static const int	EXPAND_HEADERS = 1024;
 
 void idVertexCache::BindBuffer_VK(VkBuffer buffer)
 {
-	currentBoundVBO[listNum] = buffer;
+	currentBoundVBO[vk_context.frameIndex] = buffer;
 }
 
 void idVertexCache::BindIndexBuffer_VK(VkBuffer buffer)
 {
-	currentBoundIBO[listNum] = buffer;
+	currentBoundIBO[vk_context.frameIndex] = buffer;
 }
 
 /*
@@ -362,6 +362,7 @@ vertCache_t	*idVertexCache::AllocFrameTemp_VK(void *data, int size, bool indexBu
 	{
 		R_VK_AllocVertexBuffer(data, size, &map);
 		BindBuffer_VK(map.buffer->buffer);
+		//printf("vvv %d %d %d %p\n", vk_backend.frameCount, map.offset, map.size, map.buffer);
 	}
 	block->vk_buffer = map.buffer;
 	block->vbo = map.handle;

@@ -10,8 +10,6 @@
 #include <windows.h>
 #endif
 
-#undef assert
-#define assert(cond) if(cond){}else{printf(#cond); memcpy(0, (void*)&memcpy,123);}
 #define VKCONTEXT_ALLOCATOR vk_context.allocator
 
 #define IDVK_DESCRIPTOR_POOL_SIZE_UBO (IDVK_MAX_DESCRIPTOR_POOL_SETS * 2) // vertex shader + fragment shader
@@ -1947,16 +1945,17 @@ void VK_WriteImageBuffer(VKImage_t *image, VKBuffer_t *buffer, int offset, int o
  * @param anisotropy
  * @param lodMax
  */
-void VK_CreateSampler(VkSampler *sampler, bool linear, int repeatU, int repeatV, int repeatW, bool depthCmp, float anisotropy, float lodMax)
+void VK_CreateSampler(VkSampler *sampler, bool minLinear, bool magLinear, bool mipmapLinear, int repeatU, int repeatV, int repeatW, bool depthCmp, float anisotropy, float lodMax)
 {
-    VkFilter filter = linear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
-    VkSamplerMipmapMode mipmapMode = linear && lodMax > 0.0f ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    VkFilter minFilter = minLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    VkFilter magFilter = magLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+    VkSamplerMipmapMode mipmapMode = mipmapLinear && lodMax > 0.0f ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
     VkSamplerCreateInfo samplerCreateInfo;
     VKZERO(samplerCreateInfo);
     samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerCreateInfo.magFilter = filter; // 放大过滤
-    samplerCreateInfo.minFilter = filter; // 缩小过滤
+    samplerCreateInfo.minFilter = minFilter; // 缩小过滤
+    samplerCreateInfo.magFilter = magFilter; // 放大过滤
     samplerCreateInfo.addressModeU = (VkSamplerAddressMode)repeatU; // 超限纹理坐标S采样模式
     samplerCreateInfo.addressModeV = (VkSamplerAddressMode)repeatV; // 超限纹理坐标T采样模式
     samplerCreateInfo.addressModeW = (VkSamplerAddressMode)repeatW; // 超限纹理坐标U采样模式

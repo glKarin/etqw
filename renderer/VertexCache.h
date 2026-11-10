@@ -156,10 +156,10 @@ class idVertexCache
 		void			BindBuffer_VK(VkBuffer buffer);
 		void			BindIndexBuffer_VK(VkBuffer buffer);
 		VkBuffer		BufferBinding_VK(void) const {
-			return currentBoundVBO[listNum];
+			return currentBoundVBO[vk_context.frameIndex];
 		}
 		VkBuffer		IndexBufferBinding_VK(void) const {
-			return currentBoundIBO[listNum];
+			return currentBoundIBO[vk_context.frameIndex];
 		}
 #endif
 #ifdef _MULTITHREAD

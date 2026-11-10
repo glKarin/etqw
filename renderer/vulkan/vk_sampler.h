@@ -8,7 +8,9 @@ typedef struct samplerKey_s
 	int repeatT;
 	int repeatU;
 	float lod;
-	bool linear;
+	bool minLinear;
+	bool magLinear;
+	bool mipmapLinear;
 	bool depthCmp;
 } samplerKey_t;
 
@@ -16,7 +18,9 @@ typedef struct samplerKey_s
 	((a).repeatS == (b).repeatS \
 		&& (a).repeatT == (b).repeatT \
 		&& (a).repeatU == (b).repeatU \
-		&& (a).linear == (b).linear \
+		&& (a).minLinear == (b).minLinear \
+		&& (a).magLinear == (b).magLinear \
+		&& (a).mipmapLinear == (b).mipmapLinear \
 		&& (a).depthCmp == (b).depthCmp \
 		&& (a).lod == (b).lod)
 #else
@@ -24,6 +28,6 @@ typedef int samplerKey_t;
 #define samplerKeyEquals(a, b) ((a) == (b))
 #endif
 
-VkSampler R_VK_AllocSampler(bool linear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod);
+VkSampler R_VK_AllocSampler(bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod);
 
 #endif //_VULKAN_VKSAMPLER_H

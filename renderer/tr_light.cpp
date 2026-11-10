@@ -176,6 +176,21 @@ void R_SkyboxTexGen(drawSurf_t *surf, const idVec3 &viewOrg)
 		texCoords[i][2] = verts[i].xyz[2] - localViewOrigin[2];
 	}
 
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		const int vertSize = sizeof(idDrawVert) * numVerts;
+		idDrawVert *fullVerts = (idDrawVert *)_alloca16(vertSize);
+		memcpy(fullVerts, verts, vertSize);
+		for (i = 0; i < numVerts; i++) {
+			fullVerts[i].normal[0] = texCoords[i][0];
+			fullVerts[i].normal[1] = texCoords[i][1];
+			fullVerts[i].normal[2] = texCoords[i][2];
+		}
+		surf->dynamicTexCoords = vertexCache.AllocFrameTemp_VK(fullVerts, vertSize, false);
+	}
+	else
+#endif
 	surf->dynamicTexCoords = vertexCache.AllocFrameTemp(texCoords, size);
 }
 
@@ -260,6 +275,21 @@ void R_WobbleskyTexGen(drawSurf_t *surf, const idVec3 &viewOrg)
 		R_LocalPointToGlobal(transform, v, texCoords[i]);
 	}
 
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		const int vertSize = sizeof(idDrawVert) * numVerts;
+		idDrawVert *fullVerts = (idDrawVert *)_alloca16(vertSize);
+		memcpy(fullVerts, verts, vertSize);
+		for (i = 0; i < numVerts; i++) {
+			fullVerts[i].normal[0] = texCoords[i][0];
+			fullVerts[i].normal[1] = texCoords[i][1];
+			fullVerts[i].normal[2] = texCoords[i][2];
+		}
+		surf->dynamicTexCoords = vertexCache.AllocFrameTemp_VK(fullVerts, vertSize, false);
+	}
+	else
+#endif
 	surf->dynamicTexCoords = vertexCache.AllocFrameTemp(texCoords, size);
 }
 

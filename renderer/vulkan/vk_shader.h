@@ -46,6 +46,7 @@ typedef struct VKShaderProgram_t
     // 如果数据未脏, 则使用旧的缓冲区
     VKBufferMap_t uniformBuffer_vertex; // 顶点着色器当前引用的Uniform缓冲区映射
     VKBufferMap_t uniformBuffer_fragment; // 片段着色器当前引用的Uniform缓冲区映射
+	VkDescriptorSet descriptorSet; // 上次绑定的描述符
 
     VKMAP(VKPipeline_t, globalStateSet_t) pipelinePool; // 渲染管线布局创建的各个状态的渲染管线池
 } VKShaderProgram_t;

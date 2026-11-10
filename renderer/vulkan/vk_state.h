@@ -9,7 +9,7 @@ typedef struct {
 	globalState2_t st2;
 } globalStateSet_t;
 
-#define GST_EQUALS(a, b) ((a).st1 == (b).st1 && (a).st2 == (b).st2)
+#define GLOBAL_ST_EQUALS(a, b) ((a).st1 == (b).st1 && (a).st2 == (b).st2)
 
 typedef enum VKBackendState_e
 {
@@ -17,6 +17,7 @@ typedef enum VKBackendState_e
 	PC_ATTRIB_INDEX_VERTEX = 0,
 	ST_ATTRIB_VERTEX_4, // 1
 	PC_ATTRIB_INDEX_COLOR = 3,
+	ST_ATTRIB_ST_3 = 7,
 	PC_ATTRIB_INDEX_ST = 8,
 	PC_ATTRIB_INDEX_TANGENT = 9,
 	PC_ATTRIB_INDEX_BITANGENT = 10,
@@ -393,7 +394,8 @@ typedef enum VertexInputAttribute_e
     VIA_TANGENT = PC_ATTRIB_INDEX_TANGENT,
     VIA_BITANGENT = PC_ATTRIB_INDEX_BITANGENT,
 	VIA_VERTEX4 = ST_ATTRIB_VERTEX_4,
-    VIA_TOTAL = 7,
+	VIA_TEXCOORD3 = ST_ATTRIB_ST_3,
+    VIA_TOTAL = 8,
 } VertexInputAttribute_t;
 static const uint64_t VIA_VERTEX_BIT = HIGHI_BIT(VIA_VERTEX);
 static const uint64_t VIA_TEXCOORD_BIT = HIGHI_BIT(VIA_TEXCOORD);
@@ -402,6 +404,7 @@ static const uint64_t VIA_COLOR_BIT = HIGHI_BIT(VIA_COLOR);
 static const uint64_t VIA_TANGENT_BIT = HIGHI_BIT(VIA_TANGENT);
 static const uint64_t VIA_BITANGENT_BIT = HIGHI_BIT(VIA_BITANGENT);
 static const uint64_t VIA_VERTEX4_BIT = HIGHI_BIT(VIA_VERTEX4);
+static const uint64_t VIA_TEXCOORD3_BIT = HIGHI_BIT(VIA_TEXCOORD3);
 static const uint64_t VIA_ALL_BIT = (VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_NORMAL_BIT | VIA_COLOR_BIT | VIA_TANGENT_BIT | VIA_BITANGENT_BIT);
 
 

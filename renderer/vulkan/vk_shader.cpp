@@ -142,58 +142,62 @@ SHADER_PROGRAM_DECLARATION(name) \
 SHADER_PROGRAM_FRAGMENT_INIT(name##VKShader, name, type, texUnits, attrs) \
 END_SHADER_PROGRAM
 
+//#undef VKGLOBAL_PARM_OFFSET
+//#undef VKGLOBAL_PARMS_OFFSET
+//#define VKGLOBAL_PARM_OFFSET(p) (int)offsetof(globalUniformBufferObject_t, p); printf("yyy " #p " %d\n", offsetof(globalUniformBufferObject_t, p));
+//#define VKGLOBAL_PARMS_OFFSET(p,n) (int)(offsetof(globalUniformBufferObject_t, p) + (n) * sizeof(((globalUniformBufferObject_t *)0)->p[0])); printf("yyy " #p "[%d] %d\n",n, (offsetof(globalUniformBufferObject_t, p) + (n) * sizeof(((globalUniformBufferObject_t *)0)->p[0])));
 static void RB_VK_GetOffsets(shaderProgram_t *shader)
 {
-	shader->localLightOrigin = VKSHADER_PARM_ADDR(lightOrigin);
-	shader->localViewOrigin = VKSHADER_PARM_ADDR(viewOrigin);
-	shader->lightProjectionS = VKSHADER_PARM_ADDR(lightProjectionS);
-	shader->lightProjectionT = VKSHADER_PARM_ADDR(lightProjectionT);
-	shader->lightProjectionQ = VKSHADER_PARM_ADDR(lightProjectionQ);
-	shader->lightFalloff = VKSHADER_PARM_ADDR(lightFalloff);
-	shader->bumpMatrixS = VKSHADER_PARM_ADDR(bumpMatrixS);
-	shader->bumpMatrixT = VKSHADER_PARM_ADDR(bumpMatrixT);
-	shader->diffuseMatrixS = VKSHADER_PARM_ADDR(diffuseMatrixS);
-	shader->diffuseMatrixT = VKSHADER_PARM_ADDR(diffuseMatrixT);
-	shader->specularMatrixS = VKSHADER_PARM_ADDR(specularMatrixS);
-	shader->specularMatrixT = VKSHADER_PARM_ADDR(specularMatrixT);
-	shader->colorModulate = VKSHADER_PARM_ADDR(colorModulate);
-	shader->colorAdd = VKSHADER_PARM_ADDR(colorAdd);
-	shader->diffuseColor = VKSHADER_PARM_ADDR(diffuseColor);
-	shader->specularColor = VKSHADER_PARM_ADDR(specularColor);
-	shader->glColor = VKSHADER_PARM_ADDR(glColor);
-	shader->alphaTest = VKSHADER_PARM_ADDR(alphaTest);
-	shader->specularExponent = VKSHADER_PARM_ADDR(specularExponent);
+	shader->localLightOrigin = VKGLOBAL_PARM_OFFSET(lightOrigin);
+	shader->localViewOrigin = VKGLOBAL_PARM_OFFSET(viewOrigin);
+	shader->lightProjectionS = VKGLOBAL_PARM_OFFSET(lightProjectionS);
+	shader->lightProjectionT = VKGLOBAL_PARM_OFFSET(lightProjectionT);
+	shader->lightProjectionQ = VKGLOBAL_PARM_OFFSET(lightProjectionQ);
+	shader->lightFalloff = VKGLOBAL_PARM_OFFSET(lightFalloff);
+	shader->bumpMatrixS = VKGLOBAL_PARM_OFFSET(bumpMatrixS);
+	shader->bumpMatrixT = VKGLOBAL_PARM_OFFSET(bumpMatrixT);
+	shader->diffuseMatrixS = VKGLOBAL_PARM_OFFSET(diffuseMatrixS);
+	shader->diffuseMatrixT = VKGLOBAL_PARM_OFFSET(diffuseMatrixT);
+	shader->specularMatrixS = VKGLOBAL_PARM_OFFSET(specularMatrixS);
+	shader->specularMatrixT = VKGLOBAL_PARM_OFFSET(specularMatrixT);
+	shader->colorModulate = VKGLOBAL_PARM_OFFSET(colorModulate);
+	shader->colorAdd = VKGLOBAL_PARM_OFFSET(colorAdd);
+	shader->diffuseColor = VKGLOBAL_PARM_OFFSET(diffuseColor);
+	shader->specularColor = VKGLOBAL_PARM_OFFSET(specularColor);
+	shader->glColor = VKGLOBAL_PARM_OFFSET(glColor);
+	shader->alphaTest = VKGLOBAL_PARM_OFFSET(alphaTest);
+	shader->specularExponent = VKGLOBAL_PARM_OFFSET(specularExponent);
 
-	shader->eyeOrigin = VKSHADER_PARM_ADDR(viewOrigin); // TODO
-	shader->localEyeOrigin = VKSHADER_PARM_ADDR(viewOrigin); // TODO
-	shader->nonPowerOfTwo = VKSHADER_PARM_ADDR(nonPowerOfTwo);
-	shader->windowCoords = VKSHADER_PARM_ADDR(windowCoords);
+	shader->eyeOrigin = VKGLOBAL_PARM_OFFSET(viewOrigin); // TODO
+	shader->localEyeOrigin = VKGLOBAL_PARM_OFFSET(viewOrigin); // TODO
+	shader->nonPowerOfTwo = VKGLOBAL_PARM_OFFSET(nonPowerOfTwo);
+	shader->windowCoords = VKGLOBAL_PARM_OFFSET(windowCoords);
 
-	shader->modelViewProjectionMatrix = VKSHADER_PARM_ADDR(modelViewProjectionMatrix);
+	shader->modelViewProjectionMatrix = VKGLOBAL_PARM_OFFSET(modelViewProjectionMatrix);
 
-	shader->modelMatrix = VKSHADER_PARM_ADDR(modelMatrix);
-	shader->textureMatrix = VKSHADER_PARM_ADDR(textureMatrix);
+	shader->modelMatrix = VKGLOBAL_PARM_OFFSET(modelMatrix);
+	shader->textureMatrix = VKGLOBAL_PARM_OFFSET(textureMatrix);
 	//k: add modelView matrix uniform
-	shader->modelViewMatrix = VKSHADER_PARM_ADDR(modelViewMatrix);
-	shader->projectionMatrix = VKSHADER_PARM_ADDR(projectionMatrix);
+	shader->modelViewMatrix = VKGLOBAL_PARM_OFFSET(modelViewMatrix);
+	shader->projectionMatrix = VKGLOBAL_PARM_OFFSET(projectionMatrix);
 	//k: add clip plane uniform
-	shader->clipPlane = VKSHADER_PARM_ADDR(clipPlane);
+	shader->clipPlane = VKGLOBAL_PARM_OFFSET(clipPlane);
 	//k: add fog matrix uniform
-	shader->fogMatrix = VKSHADER_PARM_ADDR(fogMatrix);
+	shader->fogMatrix = VKGLOBAL_PARM_OFFSET(fogMatrix);
 	//k: add fog color uniform
-	shader->fogColor = VKSHADER_PARM_ADDR(fogColor);
+	shader->fogColor = VKGLOBAL_PARM_OFFSET(fogColor);
 	//k: add texgen S T Q uniform
-	shader->texgenS = VKSHADER_PARM_ADDR(texgenS);
-	shader->texgenT = VKSHADER_PARM_ADDR(texgenT);
-	shader->texgenQ = VKSHADER_PARM_ADDR(texgenQ);
+	shader->texgenS = VKGLOBAL_PARM_OFFSET(texgenS);
+	shader->texgenT = VKGLOBAL_PARM_OFFSET(texgenT);
+	shader->texgenQ = VKGLOBAL_PARM_OFFSET(texgenQ);
 
 	int i;
 	for (i = 0; i < MAX_VERTEX_PARMS; i++) {
-		shader->u_vertexParm[i] = VKSHADER_PARMS_ADDR(vertexParm, i);
+		shader->u_vertexParm[i] = VKGLOBAL_PARMS_OFFSET(vertexParm, i);
 	}
 #if defined(_GLSL_PROGRAM) || defined(_RAVEN) || defined(_HUMANHEAD) //karin: fragment shader parms //karin: fragment shader parms
     for (i = 0; i < MAX_FRAGMENT_PARMS; i++) {
-		shader->u_fragmentParm[i] = VKSHADER_PARMS_ADDR(fragmentParm, i);
+		shader->u_fragmentParm[i] = VKGLOBAL_PARMS_OFFSET(fragmentParm, i);
     }
 #endif
 
@@ -206,16 +210,16 @@ static void RB_VK_GetOffsets(shaderProgram_t *shader)
 	}
 
 	for (i = 0; i < MAX_UNIFORM_PARMS; i++) {
-		shader->u_uniformParm[i] = VKSHADER_PARMS_ADDR(uniformParm, i);
+		shader->u_uniformParm[i] = VKGLOBAL_PARMS_OFFSET(uniformParm, i);
 	}
 
     for (i = 0; i < MAX_MEGATEXTURE_PARMS; i++) {
-        shader->u_megaTextureLevel[i] = VKSHADER_PARMS_ADDR(megaTextureLevel, i);
+        shader->u_megaTextureLevel[i] = VKGLOBAL_PARMS_OFFSET(megaTextureLevel, i);
     }
 
 #ifdef _SHADOW_MAPPING
-	shader->shadowMVPMatrix = VKSHADER_PARM_ADDR(shadowMVPMatrix);
-    shader->globalLightOrigin = VKSHADER_PARM_ADDR(globalLightOrigin);
+	shader->shadowMVPMatrix = VKGLOBAL_PARM_OFFSET(shadowMVPMatrix);
+    shader->globalLightOrigin = VKGLOBAL_PARM_OFFSET(globalLightOrigin);
 #endif
 
 	// get attribute location
@@ -225,6 +229,13 @@ static void RB_VK_GetOffsets(shaderProgram_t *shader)
 	shader->attr_Normal = PC_ATTRIB_INDEX_NORMAL;
 	shader->attr_Vertex = PC_ATTRIB_INDEX_VERTEX;
 	shader->attr_Color = PC_ATTRIB_INDEX_COLOR;
+
+#if 0
+	for(int i = offsetof(shaderProgram_t, glColor); i < offsetof(shaderProgram_t, name); i += 4)
+	{
+		Sys_Printf("Uniform location: %d -> %d\n", i, *(int*)(((char *)shader) +i));
+	}
+#endif
 }
 
 static int RB_VK_LoadShaderProgram(
@@ -458,7 +469,7 @@ SHADER_PROGRAM_VERTEX_PROP_DECL(shadow, SHADER_SHADOW, 1, VIA_VERTEX_BIT | VIA_V
 SHADER_PROGRAM_PROP_DECL(default, SHADER_DEFAULT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(zfill, SHADER_ZFILL, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(zfillClip, SHADER_ZFILLCLIP, 2, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(cubemap, SHADER_CUBEMAP, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_CUBEMAP)
+SHADER_PROGRAM_PROP_DECL(cubemap, SHADER_CUBEMAP, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_TEXCOORD3_BIT, TUT_CUBEMAP)
 SHADER_PROGRAM_PROP_DECL(environment, SHADER_ENVIRONMENT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_NORMAL_BIT, TUT_CUBEMAP)
 SHADER_PROGRAM_PROP_DECL(bumpyEnvironment, SHADER_BUMPY_ENVIRONMENT, 2, VIA_ALL_BIT, TUT_CUBEMAP, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(fog, SHADER_FOG, 2, VIA_VERTEX_BIT, TUT_2D, TUT_2D)
@@ -469,7 +480,7 @@ SHADER_PROGRAM_PROP_DECL(ambientLighting, SHADER_AMBIENT_LIGHTING, 5, VIA_ALL_BI
 #ifdef _GLOBAL_ILLUMINATION
 SHADER_PROGRAM_PROP_DECL(globalIllumination, SHADER_GLOBAL_ILLUMINATION, 3, VIA_ALL_BIT)
 #endif
-SHADER_PROGRAM_PROP_DECL(diffuseCubemap, SHADER_DIFFUSECUBEMAP, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_CUBEMAP)
+SHADER_PROGRAM_PROP_DECL(diffuseCubemap, SHADER_DIFFUSECUBEMAP, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_TEXCOORD3_BIT, TUT_CUBEMAP)
 SHADER_PROGRAM_PROP_DECL(texgen, SHADER_TEXGEN, 1, VIA_VERTEX_BIT | VIA_COLOR_BIT, TUT_2D)
 #if !defined(_SPLASHDAMAGE)
 SHADER_PROGRAM_PROP_DECL(colorProcess, SHADER_COLORPROCESS, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)

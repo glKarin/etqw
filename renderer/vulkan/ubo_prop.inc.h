@@ -52,6 +52,7 @@
     UBO_FLOAT(colorAdd);
     UBO_FLOAT(alphaTest);
 
+    //UBO_FLOAT(placeholder);
 #undef UBO_MAT4
 #undef UBO_VEC4
 #undef UBO_FLOAT

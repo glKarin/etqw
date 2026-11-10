@@ -54,7 +54,7 @@ typedef struct VKBufferBlock_s {
 } VKBufferBlock_t;
 
 /**
- * 缓冲区队列(每帧偏移重置为0, 只能追加不能删除)
+ * 缓冲区队列(每帧刷新后偏移重置为0, 只能追加不能删除)
  */
 typedef struct VKBufferQueue_s {
     VKBufferBlock_s *list; // 缓冲区块列表
@@ -63,23 +63,17 @@ typedef struct VKBufferQueue_s {
     int granularity; // 扩容时的增量
     int blockSize; // 块大小
     int bufferType; // 缓冲区类型
-    VKBufferMap_t map; // 当前映射的缓冲区块
 
     int usedMemory; // 本次使用量
 } VKBufferQueue_t;
 
-#define ID_VK_NUM_STAGE_BUFFER 2
-
 /**
- * Staging缓冲区队列(缓冲区块大小固定, 无法分配时强制提交到队列)
+ * Staging缓冲区队列
  */
 typedef struct VKStageBufferQueue_s
 {
-    VKBufferBlock_t buffers[ID_VK_NUM_STAGE_BUFFER]; // 缓冲区组
-    bool recording[ID_VK_NUM_STAGE_BUFFER]; // 当前是否命令记录中, 为true则需要结束命令和提交命令
-    bool submitted[ID_VK_NUM_STAGE_BUFFER]; // 当前命令是否提交, 为false则未进行提交
-    void *mapped[ID_VK_NUM_STAGE_BUFFER]; // 当前缓冲区映射的地址, 为NULL则不显式刷新
-    int currentBuffer; // 当前帧使用的缓冲区
+    VKBufferQueue_t blocks; // 缓冲区组
+    bool recording; // 当前是否命令记录中, 为true则需要结束命令和提交命令
 } VKStageBufferQueue_t;
 
 /**
@@ -87,29 +81,37 @@ typedef struct VKStageBufferQueue_s
  */
 typedef struct VKStageBuffer_s
 {
-    VKCommandPool_t *commandPool;
+    VKCommandPool_t *commandPool; // 命令池
     VKStageBufferQueue_t buffers[NUM_INFLIGHT_FRAME];
 } VKStageBuffer_t;
 
+/**
+ * Vulkan全局缓冲区
+ */
 typedef struct VKBufferObject_s
 {
-    VKBufferQueue_t uniformBuffers[NUM_INFLIGHT_FRAME];
-    VKBufferQueue_t vertexBuffers[NUM_INFLIGHT_FRAME];
-    VKBufferQueue_t indexBuffers[NUM_INFLIGHT_FRAME];
+    VKBufferQueue_t uniformBuffers[NUM_INFLIGHT_FRAME]; // Uniform数据上传缓冲区(映射到Host/手动刷新)
+    VKBufferQueue_t vertexBuffers[NUM_INFLIGHT_FRAME]; // 顶点数据上传缓冲区(映射到Host/手动刷新)
+    VKBufferQueue_t indexBuffers[NUM_INFLIGHT_FRAME]; // 索引数据上传缓冲区(映射到Host/手动刷新)
 
-    VKStageBuffer_t stageBuffer;
-    VKStageBuffer_t stageReadBuffer;
+    VKStageBuffer_t stageBuffer; // 上传staging缓冲区(映射到Host/手动刷新)
+    VKStageBuffer_t stageReadBuffer; // 读取staging缓冲区(映射到Host/手动刷新)
 
+    // 计数器
     struct {
         int c_maxVertexAllocation;
         int c_maxIndexAllocation;
         int c_maxUniformAllocation;
+        int c_maxWriteStagingAllocation;
+        int c_maxReadStagingAllocation;
         int c_maxVertexBlock;
         int c_maxIndexBlock;
         int c_maxUniformBlock;
+        int c_maxWriteStagingBlock;
+        int c_maxReadStagingBlock;
     } counter;
 
-    bool initialized;
+    bool initialized; // 是否初始化
 } VKBufferObject_t;
 
 void R_VK_InitBuffer(void);

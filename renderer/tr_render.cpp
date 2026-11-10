@@ -554,6 +554,15 @@ void RB_FinishStageTexture(const textureStage_t *texture, const drawSurf_t *surf
 {
 	if (texture->texgen == TG_DIFFUSE_CUBE || texture->texgen == TG_SKYBOX_CUBE
 	    || texture->texgen == TG_WOBBLESKY_CUBE) {
+#ifdef _VULKAN
+		if(USING_VULKAN && (texture->texgen == TG_SKYBOX_CUBE || texture->texgen == TG_WOBBLESKY_CUBE)) // bind full temp vertex buffer in vulkan in RB_PrepareStageTexturing
+		{
+			// re-binding vertex buffer
+			idDrawVert *tempac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), (void *)&tempac->xyz);
+		}
+		else
+#endif
 		GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert),
 		                       (void *)&(((idDrawVert *)vertexCache.Position(surf->geo->ambientCache))->st));
 	}

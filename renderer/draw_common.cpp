@@ -119,6 +119,13 @@ void RB_PrepareStageTexturing(const shaderStage_t *pStage,  const drawSurf_t *su
 	}
 
 	else if (pStage->texture.texgen == TG_SKYBOX_CUBE || pStage->texture.texgen == TG_WOBBLESKY_CUBE) {
+#ifdef _VULKAN
+		if(USING_VULKAN) // need to bind full temp vertex buffer in vulkan
+		{
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), vertexCache.Position(surf->dynamicTexCoords));
+		}
+		else
+#endif
 		GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 3, GL_FLOAT, false, 0,
 		                       vertexCache.Position(surf->dynamicTexCoords));
 	}
@@ -238,6 +245,15 @@ void RB_FinishStageTexturing(const shaderStage_t *pStage, const drawSurf_t *surf
 	if (pStage->texture.texgen == TG_DIFFUSE_CUBE || pStage->texture.texgen == TG_SKYBOX_CUBE
 			//k: reflection cubemap // || pStage->texture.texgen == TG_REFLECT_CUBE
 	    || pStage->texture.texgen == TG_WOBBLESKY_CUBE) {
+#ifdef _VULKAN
+		if(USING_VULKAN && (pStage->texture.texgen == TG_SKYBOX_CUBE || pStage->texture.texgen == TG_WOBBLESKY_CUBE)) // bind full temp vertex buffer in vulkan in RB_PrepareStageTexturing
+		{
+			// re-binding vertex buffer
+			idDrawVert *tempac = (idDrawVert *)vertexCache.Position(surf->geo->ambientCache);
+			GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), (void *)&tempac->xyz);
+		}
+		else
+#endif
 		 GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), (void *)&ac->st);
 	} else if (pStage->texture.texgen == TG_GLASSWARP) {
 		GL_SelectTexture( 2 );
@@ -1630,8 +1646,8 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
 
 		if (pStage->vertexColor != SVC_IGNORE) {
 			GL_DisableVertexAttribArray(offsetof(shaderProgram_t, attr_Color));
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorModulate), zero);
-			GL_Uniform4fv(offsetof(shaderProgram_t, colorAdd), one);
+			GL_Uniform1fv(offsetof(shaderProgram_t, colorModulate), zero);
+			GL_Uniform1fv(offsetof(shaderProgram_t, colorAdd), one);
 		}
 
 		if(usingTexCoord)

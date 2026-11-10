@@ -11,6 +11,9 @@
 
 #include "vk_container.h"
 
+//#undef assert
+//#define assert(cond) if(cond){}else{printf(#cond); memcpy(0, (void*)&memcpy,123);}
+
 #define NUM_INFLIGHT_FRAME 2 // 3
 
 #define IDVK_MAX_DESCRIPTOR_POOL_SETS 4096
@@ -353,7 +356,7 @@ void VK_CreateUniformBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush
 void VK_CreateTransferSrcBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateTransferDstBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers);
-void VK_CreateSampler(VkSampler *sampler, bool linear, int repeatS, int repeatT, int repeatR, bool depthCmp, float anisotropy, float lodMax);
+void VK_CreateSampler(VkSampler *sampler, bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatR, bool depthCmp, float anisotropy, float lodMax);
 VkShaderModule VK_CreateShaderModule(const uint8_t *data, int length);
 VKHandle_t VK_CreateDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers);
 void VK_CreateQueryPool(VKQueryPool_t *query, int queryType, int num);

@@ -308,6 +308,15 @@ GLRB_PRIV void glesStartRender(void)
     GL_Uniform1fv(SHADER_PARM_ADDR(colorModulate), oneModulate);
 
     GLfloat	gl_MVPMatrix[16];
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		static float vk_ProjectionMatrix[16];
+		R_VK_FixupClipSpaceZAndY(vk_ProjectionMatrix, gl_ProjectionMatrix);
+		myGlMultMatrix(gl_ModelviewMatrix, vk_ProjectionMatrix, gl_MVPMatrix);
+	}
+	else
+#endif
     myGlMultMatrix(gl_ModelviewMatrix, gl_ProjectionMatrix, gl_MVPMatrix);
 
     GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), gl_MVPMatrix);
@@ -612,6 +621,14 @@ GLRB_PRIV void glesImmediateModeRender(void)
             if(usingTexCoord)
                 texcoord = (GLfloat *)&gl_VertexList[0].st[0];
 
+#ifdef _VULKAN
+			if(USING_VULKAN)
+			{
+				vertCache_t *vCache = vertexCache.AllocFrameTemp_VK((void *)vertex, gl_VertexList.Num() * sizeof(idDrawVert), false);
+				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, GLVERT_STRIP, vertexCache.Position(vCache));
+			}
+			else
+#endif
             GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, GLVERT_STRIP, vertex);
             GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Color), 4, GL_UNSIGNED_BYTE, false, GLVERT_STRIP, color);
             if(usingTexCoord)
@@ -639,6 +656,10 @@ GLRB_PRIV void glesImmediateModeRender(void)
             if(usingTexCoord)
                 GL_DisableVertexAttribArray(SHADER_PARM_ADDR(attr_TexCoord));
 
+#ifdef _VULKAN
+            if (USING_VULKAN)
+                vertexCache.BindBuffer_VK(NULL);
+#endif
             glesEndRender();
         }
     }
@@ -1612,6 +1633,14 @@ void RB_RenderDepthToColor(bool notPack = false)
     GLfloat	mvp[16];
     esMatrixLoadIdentity((ESMatrix *)mvp);
     esOrtho((ESMatrix *)mvp, 0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		static float vk_ProjectionMatrix[16];
+		R_VK_FixupClipSpaceZAndY(vk_ProjectionMatrix, mvp);
+	}
+	else
+#endif
     esMatrixTranspose((ESMatrix *)mvp);
     GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), mvp);
 
@@ -1685,6 +1714,14 @@ void RB_RenderStencilToColor(int comp = 0)
     esMatrixLoadIdentity((ESMatrix *)mvp);
     esOrtho((ESMatrix *)mvp, 0.0f, 1.0f, 0.0f, 1.0f, -1.0f, 1.0f);
     esMatrixTranspose((ESMatrix *)mvp);
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		static float vk_ProjectionMatrix[16];
+		R_VK_FixupClipSpaceZAndY(vk_ProjectionMatrix, mvp);
+	}
+	else
+#endif
     GL_UniformMatrix4fv(SHADER_PARM_ADDR(modelViewProjectionMatrix), mvp);
 
     GL_Uniform1i(SHADER_PARMS_ADDR(u_uniformParm, 0), comp);

@@ -13,13 +13,19 @@
 #define VKDEBUG_SET_NAME(type, obj, ...)
 #endif
 
-typedef enum uboTypeMask_e
+/**
+ * Uniform描述符类型
+ */
+typedef enum VKUboTypeMask_e
 {
 	UTM_VERTEX = BIT(0),
 	UTM_FRAGMENT = BIT(1),
 	UTM_IMAGE = BIT(2),
-} uboTypeMask_t;
+} VKUboTypeMask_t;
 
+/**
+ * 图像单元类型
+ */
 typedef enum VKTextureUnitType_e
 {
 	TUT_2D = 0,
@@ -28,17 +34,11 @@ typedef enum VKTextureUnitType_e
 	TUT_TOTAL,
 } VKTextureUnitType_t;
 
-typedef struct VKBackEnd_s
+/**
+ * 动态属性
+ */
+typedef struct VKDynamicState_s
 {
-	const VKImage_t *tmu[TUT_TOTAL][VKBINDING_MAX_TRXTURE_UNITS];
-	int currenttmu;
-	int			faceCulling;
-	int			glStateBits;
-	bool		forceGlState;
-	VKShaderProgram_t *currentProgram;
-	VKPipeline_t *currentPipeline;
-
-	globalStateSet_t			state;
 	int viewport[4];
 	int scissor[4];
 	float lineWidth;
@@ -52,23 +52,38 @@ typedef struct VKBackEnd_s
 	int stencilReference[2];
 	unsigned int stencilWriteMask[2];
 	float depthRanges[2];
+} VKDynamicState_t;
+
+/**
+ * Vulkan全局后端
+ */
+typedef struct VKBackEnd_s
+{
+	const VKImage_t *tmu[TUT_TOTAL][VKBINDING_MAX_TRXTURE_UNITS]; // 当前绑定的每种类型的图像
+	int currenttmu; // 当前tmu索引
+	VKShaderProgram_t *currentProgram; // 当前绑定的着色器
+	VKPipeline_t *currentPipeline; // 当前绑定的渲染管线
+
+	globalStateSet_t state; // 当前渲染状态
+
+	VKDynamicState_t dynamicState; // 当前Vulkan动态属性
+
+	VKMAP(VkSampler, samplerKey_t) samplerPool; // 采样器池
+	VKQuery_t query; // 查询对象
+
+	globalUniformBufferObject_t ubo; // 当前Uniform变量
+	int frameCount; // 帧计数
+	globalUniformBufferObjectState_t uboState; // 当前Uniform缓存状态计数
+	VkDescriptorSet currentDescriptorSet; // 当前绑定的描述符集
+
+	VKLIST(VKHandle_t) purgeBuffers[NUM_INFLIGHT_FRAME]; // 延时删除缓冲区列表(实际删除时清空)
+	VKLIST(VKHandle_t) purgeImages[NUM_INFLIGHT_FRAME]; // 延时删除图像列表(实际删除时清空)
+	VKLIST(VKShaderProgram_t *) programs; // 全部渲染管线
 
 	bool isMirror;
-
-	int frameCount;
-
-	VKMAP(VkSampler, samplerKey_t) samplerPool;
-	globalUniformBufferObject_t ubo;
-	globalUniformBufferObjectState_t uboState;
-
-	VKQuery_t query;
-
-	VKLIST(VKHandle_t) purgeBuffers[NUM_INFLIGHT_FRAME];
-	VKLIST(VKHandle_t) purgeImages[NUM_INFLIGHT_FRAME];
-	VKLIST(VKShaderProgram_t *) programs;
-
-	bool initialized;
+	bool initialized; // 是否初始化
 } VKBackEnd_t;
+//static_assert(offsetof(VKBackEnd_t, ubo) + offsetof(globalUniformBufferObject_t, alphaTest) + 4 + 4 == offsetof(VKBackEnd_t, uboState));
 
 extern VKBackEnd_t vk_backend;
 
@@ -79,12 +94,6 @@ void R_VK_CreatePipelineLayout(VKShaderProgram_t *program);
 
 void R_VK_UseProgram(VKShaderProgram_t *program);
 
-void R_VK_Uniform4f(int location, int st_location, float x, float y, float z, float w);
-void R_VK_Uniform4fv(int location, int st_location, const vec4 arr);
-void R_VK_Uniform1f(int location, int st_location, float x);
-void R_VK_UniformMatrix4fv(int location, int st_location, const mat4 mat);
-void R_VK_UniformMatrix4fv(int location, int st_location, const float mat[4][4]);
-
 void R_VK_Uniform4f(int location, float x, float y, float z, float w);
 void R_VK_Uniform4fv(int location, const vec4 arr);
 void R_VK_Uniform1f(int location, float x);
@@ -94,12 +103,6 @@ void R_VK_Uniform1i(int location, int x);
 void R_VK_Uniform2fv(int location, const vec2 arr);
 void R_VK_Uniform3fv(int location, const vec3 arr);
 void R_VK_UniformMatrix4fv(int location, const mat4 mat, int n);
-
-void R_VK_TransformUniform(int dst, int src, int st_location, void *to, int size);
-void R_VK_TransformUniform1i(int dst, int src, int st_location, void *to);
-void R_VK_TransformUniform1f(int dst, int src, int st_location, void *to);
-void R_VK_TransformUniform4f(int dst, int src, int st_location, void *to);
-void R_VK_TransformUniformMatrix4f(int dst, int src, int st_location, void *to);
 
 void R_VK_TransformUniform(int dst, int src, void *to, int size);
 void R_VK_TransformUniform1i(int dst, int src, void *to);

@@ -6,7 +6,6 @@
 // OpenGL ES 2.0 / WebGL 1.0 API
 QGLPROC_PLACEHOLDER(glAttachShader, void, (GLuint program, GLuint shader))
 QGLPROC_PLACEHOLDER(glBindAttribLocation, void, (GLuint program, GLuint index, const GLchar *name))
-QGLPROC_PLACEHOLDER(glBindBuffer, void, (GLenum target, GLuint buffer))
 QGLPROC_PLACEHOLDER(glBindFramebuffer, void, (GLenum target, GLuint framebuffer))
 QGLPROC_PLACEHOLDER(glBindRenderbuffer, void, (GLenum target, GLuint renderbuffer))
 QGLPROC_PLACEHOLDER(glBlendColor, void, (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha))
