@@ -1,6 +1,6 @@
 
 #if 0
-#define ES3_SAMPLE_POISSON_DISK \
+#define VK_SAMPLE_POISSON_DISK \
         "#define SAMPLES 9\n" \
         "vec2 sampleOffsetTable[SAMPLES] = vec2[SAMPLES](\n" \
         "    vec2(0.0, 0.0),\n" \
@@ -9,7 +9,7 @@
         ");\n"
 #endif
 
-#define ES3_SHADOW_MAPPING_SAMPLE_POISSON_DISK \
+#define VK_SHADOW_MAPPING_SAMPLE_POISSON_DISK \
         "#define SAMPLES 12\n" \
         "#define SAMPLE_MULTIPLICATOR (1.0 / 12.0)\n" \
         "const vec2 sampleOffsetTable[SAMPLES] = vec2[SAMPLES](\n"\

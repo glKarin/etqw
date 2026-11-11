@@ -1,5 +1,5 @@
 
-#define ES3_STENCIL_SHADOW_SAMPLE_POISSON_DISK \
+#define VK_STENCIL_SHADOW_SAMPLE_POISSON_DISK \
         "#define SAMPLES 16\n" \
         "#define SAMPLE_MULTIPLICATOR (1.0 / 16.0)\n" \
         "const vec2 sampleOffsetTable[SAMPLES] = vec2[SAMPLES](\n" \
