@@ -29,6 +29,20 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __FRAMEBUFFER_H__
 #define __FRAMEBUFFER_H__
 
+#ifdef _VULKAN
+#include "../vulkan/vk.h"
+
+typedef struct VKOfflineRenderBuffer_s
+{
+	VKFramebuffer_t *framebuffer;
+	VkRenderPass renderPass;
+	VKImage_t *image;
+	VkImageView imageView;
+	bool isDepth;
+	bool renderPassBegin;
+} VKOfflineRenderBuffer_t;
+#endif
+
 class Framebuffer;
 
 class idFramebuffer
@@ -78,9 +92,31 @@ public:
 	int						Height(void) const {
 		return height;
 	}
+#ifdef _VULKAN
+	void					Bind_VK();
+	void					Unbind_VK();
+	void					BindDirectly_VK();
+	void					UnbindDirectly_VK();
+
+	void					AttachImage2D_VK( int target, const idImage* image, int index = 0 );
+	void					AttachImageDepth_VK( const idImage* image );
+	void					AttachImageDepthStencil_VK( const idImage* image );
+	void					AttachImageDepthLayer_VK( const idImage* image, int layer );
+	void					AttachImage2DLayer_VK( const idImage* image, int layer );
+	void					AttachImage2D_VK( const idImage* image );
+	void					AttachImageDepthSide_VK( const idImage* image, int side );
+	void					AttachImage2DSide_VK( const idImage* image, int side );
+#endif
 
 private:
 	void					PrintFramebuffer(void);
+#ifdef _VULKAN
+	void					Create_VK( const idImage* image, int layer );
+	void					CreateFramebuffer_VK( const idImage* image, int layer );
+	void					CreateRenderPass_VK( const idImage* image, int layer );
+	void					BeginRenderPass_VK();
+	void					EndRenderPass_VK();
+#endif
 	
 public:
 	idStr					fboName;
@@ -99,6 +135,10 @@ public:
 	
 	int						width;
 	int						height;
+#ifdef _VULKAN
+	VKOfflineRenderBuffer_t	vk_framebuffer[6];
+	int						renderIndex;
+#endif
 	
 	friend class Framebuffer;
 };

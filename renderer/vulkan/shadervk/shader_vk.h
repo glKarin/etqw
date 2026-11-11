@@ -54,7 +54,6 @@
 #ifdef _SHADOW_MAPPING
 
 #include "doom3/shadowMapping.inc.h"
-#include "doom3/stencilShadow.inc.h"
 
 #include "doom3/depthShadowMapping.vert.h"
 #include "doom3/depthShadowMapping.frag.h"
@@ -68,6 +67,7 @@
 #endif
 
 #ifdef _STENCIL_SHADOW_IMPROVE
+#include "doom3/stencilShadow.inc.h"
 
 #include "doom3/interactionStencilShadow.vert.h"
 #include "doom3/interactionStencilShadow.frag.h"

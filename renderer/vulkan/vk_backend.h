@@ -116,6 +116,7 @@ void R_VK_SelectTexture(int unit);
 void R_VK_BindTexture(int unit, const VKImage_t *image);
 void R_VK_BindTextureType(int unit, int tut, const VKImage_t *image);
 void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight);
+void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask);
 
 #define VKSTATE_STAGE_OFFSET(x) ( IS_SECOND_ST(x) ? offsetof(globalStateSet_t, st2) : offsetof(globalStateSet_t, st1) )
 #define VKSTATE_STAGE(st, x) (*((globalState_t *)(((char *)&(st)) + VKSTATE_STAGE_OFFSET(x))))

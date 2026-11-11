@@ -96,24 +96,7 @@ bool R_VK_DisableUploadImage(void)
 	return vk_context.inRenderPass && !imageHandled[vk_context.frameIndex];
 }
 
-static byte	mipBlendColors[16][4] = {
-	{0,0,0,0},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-	{255,0,0,128},
-	{0,255,0,128},
-	{0,0,255,128},
-};
+extern byte	mipBlendColors[16][4];
 
 typedef struct VKImageMipmap_s
 {
@@ -135,6 +118,7 @@ static void ByteListAppend(idList<byte> &list, const void *data, int length)
 	list.Swap(tmp);
 }
 
+#if 0
 static int Image_CalcMipmapLevels(int scaled_width, int scaled_height, int *sizes)
 {
 	int miplevel = 1;
@@ -238,6 +222,7 @@ static int Image_CalcMapmapLevels(int scaled_width, int scaled_height, int *size
 
 	return miplevel;
 }
+#endif
 
 static VkSamplerAddressMode R_VK_ImageSamplerRepeatMode(textureRepeat_t repeat)
 {
@@ -902,21 +887,23 @@ void idImage::GenerateDepthStencilImage_VK( int width, int height, bool allowDow
 	// upload the base level
 
 	//GL_CheckErrors("GenerateDepthStencilImage::start");
-	VK_CreateImage(vk_image, scaled_width, scaled_height, dataType, false, 1, 1, IU_SAMPLER); // TODO:VK
+	VK_CreateImage(vk_image, scaled_width, scaled_height, dataType, false, 1, 1, IU_SAMPLER | IU_ATTACHMENT);
 	SetDebugInfo_VK(false);
 	//GL_CheckErrors("GenerateDepthStencilImage::end");
 
 	VkSampler sampler = R_VK_GetSampler(TF_NEAREST, repeat, compare, vk_image->mipLevels - 1);
 	vk_image->sampler = sampler;
+
+	// see if we messed anything up
 	if(compare)
 	{
-		// depth TODO:VK
+		qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+		qglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
 	}
 	else
 	{
-		// stencil TODO:VK
+        VK_ChooseImageView(vk_image, IA_STENCIL);
 	}
-	// see if we messed anything up
 }
 
 /*
@@ -984,16 +971,12 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 			uploadHeight = rows;
 
 			// upload the base level
-			int sizes[] = { cols, rows };
-			int offsets[] = { 0 };
-			VKImage_t *newImage;
-			VKHandle_t newHandle = VK_AllocImage(&newImage);
-			VK_SwapImageHandle(texnum, newHandle);
-			VK_CreateImage(newImage, uploadWidth, uploadHeight, vk_image->format, true, vk_image->layers, 1, IU_SAMPLER);
+			const int oldLayers = vk_image->layers;
+			const int oldFormat = vk_image->format;
+			RecreateImage_VK();
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, true, oldLayers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
-			R_VK_AllocImageBuffer(newImage, cols * rows * 4 * 6, data, NULL, NULL);
-			R_VK_DestroyImage(newHandle);
-			vk_image = newImage;
+			R_VK_AllocImageBuffer(vk_image, cols * rows * 4 * 6, data, NULL, NULL);
 		}
 
 		// no other clamp mode makes sense
@@ -1082,9 +1065,10 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 		uploadHeight = potHeight;
 
 		if (potWidth == imageWidth && potHeight == imageHeight) {
-			R_VK_RecreateImage(texnum, &vk_image);
+			RecreateImage_VK();
 			VK_CreateImage(vk_image, imageWidth, imageHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
+
 			R_VK_CopyColorAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight);
 		} else {
 			//byte	*junk;
@@ -1093,7 +1077,7 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 			// this might be a 16+ meg allocation, which could fail on _alloca
 			//junk = (byte *)Mem_Alloc(potWidth * potHeight * 4);
 			//memset(junk, 0, potWidth * potHeight * 4);		//!@#
-			R_VK_RecreateImage(texnum, &vk_image);
+			RecreateImage_VK();
 			VK_CreateImage(vk_image, potWidth, potHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 
@@ -1102,6 +1086,9 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 			R_VK_CopyColorAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, potWidth, potHeight);
 		}
 		R_VK_Bind(vk_image);
+
+		VkSampler sampler = R_VK_GetSampler(TF_LINEAR, TR_CLAMP_TO_ZERO, false, 0);
+		vk_image->sampler = sampler;
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
@@ -1117,10 +1104,143 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 		VK_CopyColorAttachmentImage(vk_image, x, y+imageHeight-1, imageWidth, 1, 0, imageHeight);
 	}
 
-	VkSampler sampler = R_VK_GetSampler(TF_LINEAR, TR_CLAMP_TO_ZERO, false, 0);
-	vk_image->sampler = sampler;
-
 	backEnd.c_copyFrameBuffer++;
+}
+
+/*
+====================
+CopyDepthbuffer_VK
+
+This should just be part of copyFramebuffer once we have a proper image type field
+====================
+*/
+void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
+{
+	Bind();
+
+	// if the size isn't a power of 2, the image must be increased in size
+	int	potWidth, potHeight;
+
+	GLenum depthComponent = vk_context.swapchain.framebuffers[vk_context.swapchain.imageIndex].depthStencilImage.format;
+
+	potWidth = MakePowerOfTwo(imageWidth);
+	potHeight = MakePowerOfTwo(imageHeight);
+
+	if (uploadWidth != potWidth || uploadHeight != potHeight) {
+#ifdef _SPLASHDAMAGE
+		sourceWidth = potWidth;
+		sourceHeight = potHeight;
+#endif
+		uploadWidth = potWidth;
+		uploadHeight = potHeight;
+
+		if (potWidth == imageWidth && potHeight == imageHeight) {
+			RecreateImage_VK();
+			VK_CreateImage(vk_image, imageWidth, imageHeight, depthComponent, false, 1, 1, IU_SAMPLER);
+			SetDebugInfo_VK(false);
+
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+			VK_ChooseImageView(vk_image, IA_DEPTH);
+		} else {
+			// we need to create a dummy image with power of two dimensions,
+			// then do a glCopyTexSubImage2D of the data we want
+			RecreateImage_VK();
+			VK_CreateImage(vk_image, imageWidth, imageHeight, depthComponent, false, 1, 1, IU_SAMPLER);
+			SetDebugInfo_VK(false);
+
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageHeight, imageHeight, IA_DEPTH_STENCIL);
+			VK_ChooseImageView(vk_image, IA_DEPTH);
+		}
+
+		VkSampler sampler = R_VK_GetSampler(TF_NEAREST, TR_CLAMP_TO_ZERO, false, 0);
+		vk_image->sampler = sampler;
+	} else {
+		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
+		// it and don't try and do a texture compression or some other silliness
+		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+	}
+}
+
+/*
+====================
+CopyStencilbuffer_VK
+
+This should just be part of copyFramebuffer once we have a proper image type field
+====================
+*/
+void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight)
+{
+	Bind();
+
+	// if the size isn't a power of 2, the image must be increased in size
+	int	potWidth, potHeight;
+
+	int stencilComponent = vk_context.swapchain.framebuffers[vk_context.swapchain.imageIndex].depthStencilImage.format;
+
+	potWidth = MakePowerOfTwo(imageWidth);
+	potHeight = MakePowerOfTwo(imageHeight);
+
+	if (uploadWidth != potWidth || uploadHeight != potHeight) {
+#ifdef _SPLASHDAMAGE
+		sourceWidth = potWidth;
+		sourceHeight = potHeight;
+#endif
+		uploadWidth = potWidth;
+		uploadHeight = potHeight;
+
+		if (potWidth == imageWidth && potHeight == imageHeight) {
+			RecreateImage_VK();
+			VK_CreateImage(vk_image, imageWidth, imageHeight, stencilComponent, false, 1, 1, IU_SAMPLER);
+			SetDebugInfo_VK(false);
+
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+			VK_ChooseImageView(vk_image, IA_STENCIL);
+		} else {
+			// we need to create a dummy image with power of two dimensions,
+			// then do a glCopyTexSubImage2D of the data we want
+			RecreateImage_VK();
+			VK_CreateImage(vk_image, imageWidth, imageHeight, stencilComponent, false, 1, 1, IU_SAMPLER);
+			SetDebugInfo_VK(false);
+
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageHeight, imageHeight, IA_DEPTH_STENCIL);
+			VK_ChooseImageView(vk_image, IA_STENCIL);
+		}
+
+		VkSampler sampler = R_VK_GetSampler(TF_NEAREST, TR_CLAMP_TO_ZERO, false, 0);
+		vk_image->sampler = sampler;
+	} else {
+		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
+		// it and don't try and do a texture compression or some other silliness
+		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+	}
+
+}
+
+void idImage::RecreateImage_VK()
+{
+	R_VK_RecreateImage(texnum, &vk_image);
+
+	// re-bind the texture if is current
+	tmu_t			*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
+	if (type == TT_2D) {
+		if (tmu->current2DMap == texnum)
+			R_VK_BindType(TUT_2D, vk_image);
+	} else if (type == TT_CUBIC) {
+		if (tmu->currentCubeMap != texnum)
+			R_VK_BindType(TUT_CUBEMAP, vk_image);
+	}
+#if !defined(GL_ES_VERSION_2_0)
+	else if (type == TT_3D) {
+		if (tmu->current3DMap != texnum)
+			R_VK_BindTexture(GL_TEXTURE_3D, vk_image);
+	}
+#endif
+#ifdef GL_ES_VERSION_3_0
+	else if (type == TT_2D_ARRAY) {
+		if (tmu->current2DArrayMap != texnum)
+			R_VK_BindType(TUT_2D_ARRAY, vk_image);
+	}
+#endif
 }
 
 void idImage::SetDebugInfo_VK(bool purge)
@@ -1132,5 +1252,5 @@ void idImage::SetDebugInfo_VK(bool purge)
 
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE, (uint64_t)vk_image->image, "%s%s_%d::%d::%s", purge ? "free_image" : "image", typeName, vk_context.frameIndex, texnum, imgName.c_str());
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_image->imageView, "%s%s_%d::%d::%s", purge ? "free_imageView" : "imageView", typeName, vk_context.frameIndex, texnum, imgName.c_str());
-	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_image->imageViewSecondary, "%s%s_%d::%d::%s", purge ? "free_imageView2" : "imageView2", typeName, vk_context.frameIndex, texnum, imgName.c_str());
+	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_image->imageView2, "%s%s_%d::%d::%s", purge ? "free_imageView2" : "imageView2", typeName, vk_context.frameIndex, texnum, imgName.c_str());
 }

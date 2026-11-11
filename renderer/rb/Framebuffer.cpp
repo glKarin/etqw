@@ -65,6 +65,11 @@ idFramebuffer::idFramebuffer( const char* name, int w, int h )
 	width = w;
 	height = h;
 
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		VK_AllocFramebuffer(&vk_framebuffer[0].framebuffer);
+	else
+#endif
 	qglGenFramebuffers( 1, &frameBuffer );
 
     printf("idFramebuffer create: %s -> %d\n", fboName.c_str(), frameBuffer);
@@ -72,6 +77,10 @@ idFramebuffer::idFramebuffer( const char* name, int w, int h )
 
 void idFramebuffer::Bind()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 #if 1
 	if( r_logFile.GetBool() )
 	{
@@ -88,6 +97,10 @@ void idFramebuffer::Bind()
 
 void idFramebuffer::Unbind()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 #if 1
 	if( r_logFile.GetBool() )
 {
@@ -104,6 +117,10 @@ void idFramebuffer::Unbind()
 
 void idFramebuffer::BindDirectly()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 #if 1
 	if( r_logFile.GetBool() )
 	{
@@ -117,6 +134,10 @@ void idFramebuffer::BindDirectly()
 
 void idFramebuffer::UnbindDirectly()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 #if 1
 	if( r_logFile.GetBool() )
 	{
@@ -137,6 +158,10 @@ void idFramebuffer::AddColorBuffer( int format, int index )
 	}
 	
 	colorFormat = format;
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 	
 	bool notCreatedYet = colorBuffers[index] == 0;
 	if( notCreatedYet )
@@ -158,6 +183,10 @@ void idFramebuffer::AddColorBuffer( int format, int index )
 void idFramebuffer::AddDepthBuffer( int format )
 {
 	depthFormat = format;
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 	
 	bool notCreatedYet = depthBuffer == 0;
 	if( notCreatedYet )
@@ -179,6 +208,10 @@ void idFramebuffer::AddDepthBuffer( int format )
 void idFramebuffer::AddDepthStencilBuffer( int format )
 {
 	depthFormat = format;
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 	
 	bool notCreatedYet = depthBuffer == 0;
 	if( notCreatedYet )
@@ -200,6 +233,10 @@ void idFramebuffer::AddDepthStencilBuffer( int format )
 void idFramebuffer::AddStencilBuffer( int format )
 {
 	stencilFormat = format;
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 	
 	bool notCreatedYet = stencilBuffer == 0;
 	if( notCreatedYet )
@@ -220,21 +257,33 @@ void idFramebuffer::AddStencilBuffer( int format )
 
 void idFramebuffer::AttachColorBuffer( void )
 {
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+#endif
 	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorBuffers[0] );
 }
 
 void idFramebuffer::AttachDepthBuffer( void )
 {
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+#endif
 	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer );
 }
 
 void idFramebuffer::AttachDepthStencilBuffer( void )
 {
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+#endif
 	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBuffer );
 }
 
 void idFramebuffer::AttachStencilBuffer( void )
 {
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+#endif
 	qglFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencilBuffer );
 }
 
@@ -262,6 +311,11 @@ void idFramebuffer::AttachImageDepth( const idImage* image )
 
 void idFramebuffer::AttachImageDepthStencil( const idImage* image )
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		AttachImageDepthStencil_VK(image);
+	else
+#endif
 	qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, image->texnum, 0 );
 }
 
@@ -366,6 +420,14 @@ void idFramebuffer::Check()
 
 void idFramebuffer::Purge()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		VKZERO(vk_framebuffer);
+	}
+	else
+	{
+#endif
     if(frameBuffer > 0 && qglIsFramebuffer(frameBuffer))
     {
         qglBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
@@ -418,6 +480,9 @@ void idFramebuffer::Purge()
 
         qglBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
+#ifdef _VULKAN
+	}
+#endif
 
     printf("idFramebuffer purge: %s -> %d\n", fboName.c_str(), frameBuffer);
 
@@ -435,6 +500,10 @@ void idFramebuffer::Purge()
 
 void idFramebuffer::PrintFramebuffer(void)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		return;
+#endif
 	printf("Get framebuffer: %s\n", fboName.c_str());
 	GLint value[4] = {0};
 	for(int i = 0; i < 6; i++)

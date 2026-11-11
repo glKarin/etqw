@@ -1870,3 +1870,14 @@ void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, in
 	//VK_BlitColorAttachmentImage(image, x, y + height, width, y, dstX, dstY, dstWidth, dstHeight, false);
 	VK_BlitColorAttachmentImage(image, x, y, width, height, dstX, dstY, dstWidth, dstHeight, false);
 }
+
+void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask)
+{
+#if 0
+	if(width == dstWidth && height == dstHeight)
+		VK_CopyDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, mask);
+	else
+		VK_BlitDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, dstWidth, dstHeight, mask, false);
+#endif
+	VK_CopyDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, mask);
+}

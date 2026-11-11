@@ -70,6 +70,15 @@ void glBindTexture( GLenum target, GLuint texture )
 		R_VK_BindType(tut, NULL);
 }
 
+void R_VK_BindTexture( GLenum target, VKImage_t *image )
+{
+	int tut = GL_GetTextureType(target);
+	if (tut == -1)
+		return;
+
+	R_VK_BindType(tut, image);
+}
+
 // pointer must in CPU
 void * R_VK_VertexAttribPointer (GLint size, const void *pointer)
 {

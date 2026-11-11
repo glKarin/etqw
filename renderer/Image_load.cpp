@@ -218,7 +218,10 @@ void idImage::UploadCompressedNormalMap(int width, int height, const byte *rgba,
 //=======================================================================
 
 
-static byte	mipBlendColors[16][4] = {
+#if !defined(_VULKAN)
+static
+#endif
+byte	mipBlendColors[16][4] = {
 	{0,0,0,0},
 	{255,0,0,128},
 	{0,255,0,128},
@@ -2651,6 +2654,13 @@ This should just be part of copyFramebuffer once we have a proper image type fie
 */
 void idImage::CopyDepthbuffer(int x, int y, int imageWidth, int imageHeight)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		CopyDepthbuffer_VK(x, y, imageWidth, imageHeight);
+		return;
+	}
+#endif
 	Bind();
 
 	// if the size isn't a power of 2, the image must be increased in size

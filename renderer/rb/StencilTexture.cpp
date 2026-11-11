@@ -45,6 +45,10 @@ bool idStencilTexture::Init(int w, int h)
 	R_CreateStencilTextureDepthStencilTexture(depthStencilTexture);
 	//depthStencilTexture->Reload(false, false);
 	fb->Bind();
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+	{
+#endif
 #ifdef GL_ES_VERSION_3_0
     GLenum drawbuf = GL_NONE;
     qglDrawBuffers(1, &drawbuf);
@@ -52,6 +56,9 @@ bool idStencilTexture::Init(int w, int h)
 	fb->AttachImageDepthStencil(depthStencilTexture);
 	fb->Check();
 	fb->Unbind();
+#ifdef _VULKAN
+	}
+#endif
 
 	return true;
 }
@@ -86,6 +93,15 @@ void idStencilTexture::End(void)
 
 void idStencilTexture::Bind(void) // Stencil
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		assert(depthStencilTexture);
+		depthStencilTexture->Bind();
+		VK_ChooseImageView(depthStencilTexture->vk_image, IA_STENCIL);
+		return;
+	}
+#endif
 #ifdef GL_ES_VERSION_3_0
 	assert(depthStencilTexture);
 	depthStencilTexture->Bind();
@@ -97,6 +113,15 @@ void idStencilTexture::Bind(void) // Stencil
 
 void idStencilTexture::BindDepth(void)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		assert(depthStencilTexture);
+		depthStencilTexture->Bind();
+		VK_ChooseImageView(depthStencilTexture->vk_image, IA_DEPTH);
+		return;
+	}
+#endif
 	assert(depthStencilTexture);
 	depthStencilTexture->Bind();
 #ifdef GL_ES_VERSION_3_0
@@ -120,6 +145,13 @@ int idStencilTexture::UploadHeight(void) const
 
 void idStencilTexture::BlitStencil(void)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		depthStencilTexture->CopyStencilbuffer_VK(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+		return;
+	}
+#endif
 #ifdef GL_ES_VERSION_3_0
 	// if(!USING_GLES31) return;
 
@@ -147,12 +179,23 @@ void idStencilTexture::BlitStencil(void)
 
 bool idStencilTexture::IsAvailable(void)
 {
-	return USING_GLES3;
+	return USING_GLES3
+#ifdef _VULKAN
+		|| USING_VULKAN
+#endif
+		;
 	// return GL_BLIT_FRAMEBUFFER_AVAILABLE();
 }
 
 void idStencilTexture::BlitDepth(void)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		depthStencilTexture->CopyDepthbuffer_VK(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+		return;
+	}
+#endif
 #ifdef GL_ES_VERSION_3_0
 	// if(!USING_GLES31) return;
 

@@ -61,6 +61,7 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop);
 void R_SetupProjection_VK(void);
 void R_VK_FixupClipSpaceZAndY( float dst[ 16 ], const float src[ 16 ] );
 void * R_VK_VertexAttribPointer (GLint size, const void *pointer);
+void R_VK_BindTexture( GLenum target, VKImage_t *image );
 
 void R_VK_AddLoadImageList( idImage * image, bool checkForPrecompressed );
 void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows );
