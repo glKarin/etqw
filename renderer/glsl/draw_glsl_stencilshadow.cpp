@@ -175,7 +175,7 @@ ID_INLINE static float RB_StencilShadowSoft_calcBIAS(void)
 #endif
     }
 	common->Printf("Soft stencil shadow sampler BIAS: %f\n", f);
-        return f;
+    return f;
 #undef STENCIL_SHADOW_SOFT_MIN_BIAS
 }
 
@@ -378,5 +378,12 @@ ID_INLINE static void RB_StencilShadowSoft_unbindFramebuffer(void)
 {
 	stencilTexture.Bind();
 }
+
+#ifdef _VULKAN
+ID_INLINE static void RB_StencilShadowSoft_copyStencilBuffer_VK(void)
+{
+	stencilTexture.BlitStencil(); // copy stencil buffer
+}
+#endif
 
 #endif

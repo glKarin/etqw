@@ -411,8 +411,48 @@ static /*ID_INLINE */void RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil
 		RB_GLSL_CreateDrawInteractions(vLight->globalInteractions);
 	}
 }
-#endif
-#endif
+
+#ifdef _VULKAN
+static /*ID_INLINE */void RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil_VK(viewLight_t *vLight)
+{
+	if (vLight->globalShadows || vLight->localShadows)
+	{
+        RB_StencilShadowPass(vLight->globalShadows);
+        RB_StencilShadowSoft_copyStencilBuffer_VK(); // copy stencil buffer
+        RB_GLSL_CreateDrawInteractions_softStencilShadow(vLight->localInteractions, 0xFF);
+
+        RB_StencilShadowPass(vLight->localShadows);
+        RB_StencilShadowSoft_copyStencilBuffer_VK(); // copy stencil buffer
+        RB_GLSL_CreateDrawInteractions_softStencilShadow(vLight->globalInteractions, 0xFF);
+    }
+	else
+	{
+		RB_GLSL_CreateDrawInteractions(vLight->localInteractions);
+		RB_GLSL_CreateDrawInteractions(vLight->globalInteractions);
+	}
+}
+
+static /*ID_INLINE */void RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil_combine_VK(viewLight_t *vLight)
+{
+	if (vLight->globalShadows || vLight->localShadows)
+	{
+        RB_StencilShadowPass(vLight->globalShadows);
+        RB_StencilShadowPass(vLight->localShadows);
+        RB_StencilShadowSoft_copyStencilBuffer_VK(); // copy stencil buffer
+
+        RB_GLSL_CreateDrawInteractions_softStencilShadow(vLight->localInteractions, 1);
+        RB_GLSL_CreateDrawInteractions_softStencilShadow(vLight->globalInteractions, 2);
+	}
+	else
+	{
+		RB_GLSL_CreateDrawInteractions(vLight->localInteractions);
+		RB_GLSL_CreateDrawInteractions(vLight->globalInteractions);
+	}
+}
+
+#endif // end _VULKAN
+#endif // end _SOFT_STENCIL_SHADOW
+#endif // end _STENCIL_SHADOW_IMPROVE
 
 #ifdef _SHADOW_MAPPING
 // combine
@@ -649,6 +689,11 @@ void RB_GLSL_DrawInteractions(void)
 		{
 			if(harm_r_stencilShadowSoftBias.GetFloat() != 0.0f || r_stencilShadowAlpha < 1.0)
 			{
+#ifdef _VULKAN
+				if(USING_VULKAN)
+					func = r_stencilShadowCombine ? RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil_combine_VK : RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil_VK;
+				else
+#endif
 				if(r_stencilShadowSoftCopyStencilBuffer)
 					func = r_stencilShadowCombine ? RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil_combine : RB_GLSL_DrawInteraction_stencilShadow_soft_copyStencil;
 				else
