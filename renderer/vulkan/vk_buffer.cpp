@@ -55,7 +55,7 @@ static void R_VK_InitBufferBlock(VKBufferBlock_t *block, int type, int size) {
 			Sys_Error("Unexpected buffer type: %d\n", type);
 			return;
 	}
-	int bufSize = MEM_ALIGN(size, block->alignment);
+	int bufSize = VKMEM_ALIGN(size, block->alignment);
 	Sys_Printf("Create buffer block size: %d -> %d(alignment: %d) %d - %d\n", size, bufSize, block->alignment, vk_context.frameIndex, type);
 	VKHandle_t handle = VK_AllocBuffer(&block->buffer);
 	switch(type)
@@ -105,9 +105,9 @@ static bool R_VK_AllocBufferBlock(VKBufferBlock_t *block, int size, VKBufferMap_
 		common->FatalError("[Vulkan]: Allocate %d bytes memory must be less than %d bytes of block in one allocation\n", size, block->buffer->size);
 		return false;
 	}
-	int offset = MEM_ALIGN(block->offset, block->alignment);
+	int offset = VKMEM_ALIGN(block->offset, block->alignment);
 	int diff = offset - block->offset;
-	//size = MEM_ALIGN(size, block->alignment);
+	//size = VKMEM_ALIGN(size, block->alignment);
 	if (block->remain - diff < size)
 		return false;
 	block->offset = offset;

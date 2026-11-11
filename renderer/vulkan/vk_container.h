@@ -1,7 +1,7 @@
 ﻿#ifndef _VULKAN_VKCONTAINER_H
 #define _VULKAN_VKCONTAINER_H
 
-#define MEM_ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
+#define VKMEM_ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
 
 #define VKZERO(x) memset(&(x), 0, sizeof(x))
 #define VKPTRZERO(x) memset(x, 0, sizeof(*(x)))
@@ -116,15 +116,18 @@
 	int size; \
 	int num; \
 	int granularity; \
+	int base; \
 }
 
-#define VKPOOL_INIT(T, pool, sizeVal, granularityVal) \
+#define VKPOOL_INIT(T, pool, sizeVal, granularityVal, baseVal) \
+	assert((sizeVal) > (baseVal)); \
 	(pool).list = NULL; \
 	(pool).num = 0; \
 	(pool).size = sizeVal; \
-	(pool).granularity = granularityVal;
+	(pool).granularity = granularityVal; \
+	(pool).base = baseVal;
 
-#define VKPOOL_FOREACH(T, pool) for(int i = 0; i < (pool).size; i++)
+#define VKPOOL_FOREACH(T, pool) for(int i = (pool).base; i < (pool).size; i++)
 
 #define VKPOOL_RESIZE2(T, data, size, num, granularity) \
 	if(data) { \
@@ -143,9 +146,9 @@
 
 #define VKPOOL_RESIZE(T, pool) VKPOOL_RESIZE2(T, (pool).list, (pool).size, (pool).num, (pool).granularity)
 
-#define VKPOOL_FREE2(T, data, size, num) \
+#define VKPOOL_FREE2(T, data, size, num, base) \
 	if(data) { \
-		for(int _vkc_index = 0; _vkc_index < size; _vkc_index++) { \
+		for(int _vkc_index = base; _vkc_index < size; _vkc_index++) { \
 			if(data[_vkc_index]) { \
 				free(data[_vkc_index]); \
 			} \
@@ -155,19 +158,19 @@
 	} \
 	num = size = 0;
 
-#define VKPOOL_FREE(T, pool) VKPOOL_FREE2(T, (pool).list, (pool).size, (pool).num)
+#define VKPOOL_FREE(T, pool) VKPOOL_FREE2(T, (pool).list, (pool).size, (pool).num, (pool).base)
 
-#define VKPOOL_ALLOC2(T, data, size, num, granularity) \
+#define VKPOOL_ALLOC2(T, data, size, num, granularity, base) \
 	int _vkc_index; \
 	if(data) { \
-		for(_vkc_index = 0; _vkc_index < size; _vkc_index++) { \
+		for(_vkc_index = base; _vkc_index < size; _vkc_index++) { \
 			if(!data[_vkc_index]) { \
 				break; \
 			} \
 		} \
 	} else { \
 		VKPOOL_RESIZE2(T, data, size, num, granularity) \
-		_vkc_index = 0; \
+		_vkc_index = base; \
 	} \
 	if(_vkc_index == size) { \
 		VKPOOL_RESIZE2(T, data, size, num, granularity) \
@@ -177,18 +180,18 @@
 	memset(data[_vkc_index], 0, sizeof(*data[_vkc_index])); \
 	T *_vkc_value = data[_vkc_index];
 
-#define VKPOOL_ALLOC(T, pool) VKPOOL_ALLOC2(T, (pool).list, (pool).size, (pool).num, (pool).granularity)
+#define VKPOOL_ALLOC(T, pool) VKPOOL_ALLOC2(T, (pool).list, (pool).size, (pool).num, (pool).granularity, (pool).base)
 
-#define VKPOOL_FREESLOT2(T, data, num, size, index) \
+#define VKPOOL_FREESLOT2(T, data, num, size, base, index) \
 	if(data) { \
-		if(index >= 0 && index < size && data[index]) { \
+		if(index >= base && index < size && data[index]) { \
 			free(data[index]); \
 			data[index] = NULL; \
 			num--; \
 		} \
 	}
 
-#define VKPOOL_FREESLOT(T, pool, index) VKPOOL_FREESLOT2(T, (pool).list, (pool).num, (pool).size, index)
+#define VKPOOL_FREESLOT(T, pool, index) VKPOOL_FREESLOT2(T, (pool).list, (pool).num, (pool).size, (pool).base, index)
 
 
 

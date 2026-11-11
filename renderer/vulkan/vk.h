@@ -91,6 +91,16 @@ typedef enum VKCommandPoolUsage_e
 } VKCommandPoolUsage_t;
 
 /**
+ * 深度模版图像
+ */
+typedef enum VKImageAspect_e
+{
+	IA_DEPTH = 1, // 深度附件
+	IA_STENCIL = 1 << 1, // 模版附件
+	IA_DEPTH_STENCIL = 1 | 2,
+} VKImageAspect_t;
+
+/**
  * Vulkan队列
  */
 typedef struct VKQueue_s
@@ -128,15 +138,16 @@ typedef struct VKImage_s
     VkDeviceMemory memory; // 图像内存
 #endif
     VkImageView imageView; // 图像视图
-    VkImageView imageViewSecondary; // 图像视图2(用于D24S8格式的模版采样)
+    VkImageView imageView2; // 图像视图2(用于D24S8格式的模版采样)
     VkSampler sampler; // 采样器(引用的共享)
     VkFormat format; // 图像格式
-	VkImageLayout layout; // 
+	VkImageLayout layout; // 图像布局
     int width, height; // 图像大小
 	int mipLevels; // 多重细节层数量
     int layers; // 层数
     int usage; // 用法
     bool cubeMap; // 类型
+	int currentImageView; // 当前图像视图
 } VKImage_t;
 
 /**
@@ -324,6 +335,7 @@ VKHandle_t VK_AllocSampler(VkSampler **sampler);
 VKHandle_t VK_AllocBuffer(VKBuffer_t **buffer);
 VKHandle_t VK_AllocImage(VKImage_t **image);
 VKHandle_t VK_AllocRenderPass(VkRenderPass **renderPass);
+VKHandle_t VK_AllocFramebuffer(VKFramebuffer_t **framebuffer);
 VKHandle_t VK_AllocQueryPool(VKQueryPool_t **queryPool);
 VKHandle_t VK_AllocShader(VkShaderModule **shaderModule);
 VKHandle_t VK_AllocPipelineLayout(VKPipelineLayout_t **pipelineLayout);
@@ -365,9 +377,12 @@ void VK_CreateQueryPool(VKQueryPool_t *query, int queryType, int num);
 int VK_AllocImageBuffer(VKImage_t *image, VKBuffer_t *buffer, int size, const uint8_t *data, int offset, void *ptr);
 void VK_WriteImageBuffer(VKImage_t *image, VKBuffer_t *buffer, int offset, int offsets[], int sizes[], VkCommandBuffer cmd);
 void VK_CopyBufferToImage(VKImage_t *image, const VKBuffer_t *buffer, int offset, int mipLevels, int sizes[], int offsets[], VkCommandBuffer cmd);
+void VK_ChooseImageView(VKImage_t *image, int mode);
 void VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY);
 void VK_CopyColorAttachmentImageToBuffer(VKBuffer_t *buffer, int x, int y, int width, int height, int offset, int cols, int rows, VkCommandBuffer cmd);
+void VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int mask);
 void VK_BlitColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, bool flipY);
+void VK_BlitDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask, bool flipY);
 
 // Buffer
 void * VK_MapBuffer(VKBuffer_t *buffer, int offset, int size);
