@@ -467,8 +467,8 @@ static /*ID_INLINE */void RB_GLSL_DrawInteraction_shadowMapping(viewLight_t *vLi
             if( vLight->parallel )
             {
                 side = 0;
-#ifdef GL_ES_VERSION_3_0
-                if(USING_GLES3 && r_shadowMapParallelSplitFrustums > 0)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+            	if(SHADOW_MAPPING_NEW && r_shadowMapParallelSplitFrustums > 0)
                     sideStop = r_shadowMapParallelSplitFrustums + 1;
                 else
 #endif
@@ -529,8 +529,8 @@ static /*ID_INLINE */void RB_GLSL_DrawInteraction_shadowMapping_separate(viewLig
             if( vLight->parallel )
             {
                 side = 0;
-#ifdef GL_ES_VERSION_3_0
-                if(USING_GLES3 && r_shadowMapParallelSplitFrustums > 0)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+            	if(SHADOW_MAPPING_NEW && r_shadowMapParallelSplitFrustums > 0)
                     sideStop = r_shadowMapParallelSplitFrustums + 1;
                 else
 #endif
@@ -726,11 +726,13 @@ void RB_GLSL_DrawInteractions(void)
 	if(ShadowMapping)
 	{
 		RB_GetClearColor(clearColor);
+#ifdef SHADOW_MAPPING_DEBUG
 		if(r_dumpShadowMapFrontEnd)
 		{
 			r_dumpShadowMap = true;
 			r_dumpShadowMapFrontEnd = false;
 		}
+#endif
 
 		func = r_shadowMapCombine ? RB_GLSL_DrawInteraction_shadowMapping : RB_GLSL_DrawInteraction_shadowMapping_separate;
 	}
@@ -743,7 +745,9 @@ void RB_GLSL_DrawInteractions(void)
 	{
 		qglClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 	}
+#ifdef SHADOW_MAPPING_DEBUG
     r_dumpShadowMap = false;
+#endif
 #endif
 }
 

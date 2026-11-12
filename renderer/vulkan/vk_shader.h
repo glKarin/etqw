@@ -9,6 +9,7 @@
 typedef struct VKShaderProgram_t
 {
     char name[64]; // 着色器名称
+    int type; // 着色器类型
     VKPipeline_t *pipeline; // 当前的渲染管线
     globalStateSet_t currentState; // 当前的状态码
 

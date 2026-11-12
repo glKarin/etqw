@@ -67,7 +67,7 @@ idFramebuffer::idFramebuffer( const char* name, int w, int h )
 
 #ifdef _VULKAN
 	if (USING_VULKAN)
-		VK_AllocFramebuffer(&vk_framebuffer[0].framebuffer);
+		Reset_VK();
 	else
 #endif
 	qglGenFramebuffers( 1, &frameBuffer );
@@ -77,10 +77,6 @@ idFramebuffer::idFramebuffer( const char* name, int w, int h )
 
 void idFramebuffer::Bind()
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
-		return;
-#endif
 #if 1
 	if( r_logFile.GetBool() )
 	{
@@ -90,6 +86,9 @@ void idFramebuffer::Bind()
 	
 	if( backEnd.glState.currentFramebuffer != this )
 	{
+#ifdef _VULKAN
+		if (!USING_VULKAN)
+#endif
 		qglBindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
 		backEnd.glState.currentFramebuffer = this;
 	}
@@ -97,10 +96,6 @@ void idFramebuffer::Bind()
 
 void idFramebuffer::Unbind()
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
-		return;
-#endif
 #if 1
 	if( r_logFile.GetBool() )
 {
@@ -110,6 +105,9 @@ void idFramebuffer::Unbind()
 	
 	if( backEnd.glState.currentFramebuffer == this )
 	{
+#ifdef _VULKAN
+		if (!USING_VULKAN)
+#endif
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		backEnd.glState.currentFramebuffer = NULL;
 	}
@@ -117,10 +115,6 @@ void idFramebuffer::Unbind()
 
 void idFramebuffer::BindDirectly()
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
-		return;
-#endif
 #if 1
 	if( r_logFile.GetBool() )
 	{
@@ -128,16 +122,17 @@ void idFramebuffer::BindDirectly()
 	}
 #endif
 
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		UnbindDirectly_VK();
+	else
+#endif
 	qglBindFramebuffer( GL_FRAMEBUFFER, frameBuffer );
 	backEnd.glState.currentFramebuffer = this;
 }
 
 void idFramebuffer::UnbindDirectly()
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
-		return;
-#endif
 #if 1
 	if( r_logFile.GetBool() )
 	{
@@ -145,6 +140,11 @@ void idFramebuffer::UnbindDirectly()
 	}
 #endif
 
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		Unbind_VK();
+	else
+#endif
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	backEnd.glState.currentFramebuffer = NULL;
 }
@@ -321,6 +321,11 @@ void idFramebuffer::AttachImageDepthStencil( const idImage* image )
 
 void idFramebuffer::AttachImageDepthLayer( const idImage* image, int layer )
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+		AttachImageDepthLayer_VK(image, layer);
+	else
+#endif
 #ifdef GL_ES_VERSION_3_0
 	if(USING_GLES3)
 	{
@@ -559,6 +564,10 @@ void Framebuffer::Init()
 
 		framebuffers.Append( globalFramebuffers.shadowFBO[i] );
 
+#ifdef _VULKAN
+		if (!USING_VULKAN)
+		{
+#endif
 		globalFramebuffers.shadowFBO[i]->Bind();
 #ifdef GL_ES_VERSION_3_0
 		if(USING_GLES3)
@@ -575,6 +584,9 @@ void Framebuffer::Init()
 			globalFramebuffers.shadowFBO[i]->AddColorBuffer(GL_RGBA8, 0); // GL_RGBA4 TODO: check OpenGLES2.0 support GL_RGBA8
 			globalFramebuffers.shadowFBO[i]->AddDepthBuffer(glConfig.depth24Available ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16);
 		}
+#ifdef _VULKAN
+		}
+#endif
 		common->Printf( "--- Framebuffer::Bind( name = '%s', handle = %d, size = %d x %d ) ---\n", globalFramebuffers.shadowFBO[i]->fboName.c_str(), globalFramebuffers.shadowFBO[i]->frameBuffer, globalFramebuffers.shadowFBO[i]->width, globalFramebuffers.shadowFBO[i]->height );
 	}
 //	globalFramebuffers.shadowFBO->AddColorBuffer( GL_RGBA8, 0 );
@@ -642,6 +654,23 @@ void Framebuffer::Shutdown()
 
 void Framebuffer::BindNull()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		if (backEnd.glState.currentFramebuffer)
+		{
+			backEnd.glState.currentFramebuffer->Unbind_VK();
+		}
+		if (vk_context.inCommandRecording)
+		{
+			if (!vk_context.inRenderPass)
+			{
+				VK_BeginRenderPass();
+			}
+		}
+		return;
+	}
+#endif
 	{
 		qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 		qglBindRenderbuffer( GL_RENDERBUFFER, 0 );
@@ -651,6 +680,22 @@ void Framebuffer::BindNull()
 
 void Framebuffer::Default()
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		if (vk_context.inRenderFrame)
+		{
+			if (vk_context.inCommandRecording)
+			{
+				if (!vk_context.inRenderPass)
+				{
+					VK_BeginRenderPass();
+				}
+			}
+		}
+		return;
+	}
+#endif
 	qglBindFramebuffer( GL_FRAMEBUFFER, 0 );
 	backEnd.glState.currentFramebuffer = NULL;
 }

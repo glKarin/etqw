@@ -126,30 +126,6 @@ void R_VK_Uniform4fv(int location, const vec4 arr)
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
-static bool fltcmp(float a, float b)
-{
-	return fabs(a - b) <= 1e-6;
-}
-
-static bool mat4cmp(mat4 a, mat4 b)
-{
-	for (int i = 0; i < 16; ++i)
-	{
-		if (!fltcmp(a[i], b[i]))
-			return false;
-	}
-	return true;
-}
-
-static void mat4print(mat4 a)
-{
-	for (int i = 0; i < 16; ++i)
-	{
-		Sys_Printf("%.6f ", a[i]);
-	}
-	Sys_Printf("\n");
-}
-
 void R_VK_UniformMatrix4fv(int location, const mat4 mat)
 {
 	assert(sizeof(globalUniformBufferObject_t) >= location + 64 );
@@ -371,16 +347,6 @@ void R_VK_TransformUniformMatrix4f(int dst, int src, void *to)
 		MAT4CPY(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src));
 		SHADER_UBO_STATE_CLEAR_DIRTY(src);
 	}
-	else
-	{
-		if (!mat4cmp((float *)SHADER_UBO_PTR(to, dst), (float *)GLOBAL_UBO_PTR(src)))
-		{
-			Sys_Printf("XXX %s %p|%p, %d|%d, %d=%d, %d=%d\n", vk_backend.currentProgram->name, GLOBAL_UBO_PTR(src), SHADER_UBO_PTR(to, dst), vk_backend.currentProgram->frameCount, vk_backend.frameCount, src, dst, GLOBAL_UBO_STATE_VALUE(src), SHADER_UBO_STATE_VALUE(src));
-			mat4print((float *)GLOBAL_UBO_PTR(src));
-			mat4print((float *)SHADER_UBO_PTR(to, dst));
-		}
-		//if (src == offsetof(globalUniformBufferObject_t, modelViewProjectionMatrix))
-	}
 	SHADER_UBO_STATE_NOT_UPDATE
 }
 
@@ -567,6 +533,10 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
     dynamicStateCreateInfo.dynamicStateCount = COUNT_OF(dynamicStates);
     dynamicStateCreateInfo.pDynamicStates = dynamicStates;
 
+	//VkRenderPass pipelineRenderPass = program->type == SHADER_DEPTH || program->type == SHADER_DEPTH_PERFORATED ? vk_backend.shadowMappingRenderPass : vk_context.renderPass;
+	// assert(VK_NULL_HANDLE != vk_backend.currentRenderPass)
+	const VkRenderPass pipelineRenderPass = VK_NULL_HANDLE != vk_backend.currentRenderPass ? vk_backend.currentRenderPass : vk_context.renderPass;
+
 	// 创建渲染管线
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
 	VKZERO(graphicsPipelineCreateInfo);
@@ -581,7 +551,7 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
     graphicsPipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
     graphicsPipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
     graphicsPipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
-    graphicsPipelineCreateInfo.renderPass = vk_context.renderPass;
+    graphicsPipelineCreateInfo.renderPass = pipelineRenderPass;
     graphicsPipelineCreateInfo.layout = program->pipelineLayout->pipelineLayout;
     graphicsPipelineCreateInfo.subpass = 0;
     graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -631,7 +601,7 @@ static void R_VK_ExecuteVariableCmd()
 	if(VKSTATE1_BIT(vk_backend.state, ST_SCISSOR_TEST_BIT))
 		VK_Scissor(vk_backend.dynamicState.scissor[0], vk_backend.dynamicState.scissor[1], vk_backend.dynamicState.scissor[2], vk_backend.dynamicState.scissor[3]);
 	else
-		VK_Scissor(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+		VK_Scissor(0, 0, vk_backend.dynamicState.renderWidth, vk_backend.dynamicState.renderHeight);
 	VK_LineWidth(vk_backend.dynamicState.lineWidth);
 	VK_PolygonOffset(vk_backend.dynamicState.polygonFactor, vk_backend.dynamicState.polygonUnits);
 	VK_StencilFuncSeparate(VK_STENCIL_FACE_FRONT_BIT, vk_backend.dynamicState.stencilReference[0], vk_backend.dynamicState.stencilMask[0]);
@@ -805,6 +775,8 @@ static void R_VK_InitBackend()
 		VKLIST_INIT(idImage, vk_backend.purgeImages[i], IDVK_PURGE_IMAGE_INIT_SIZE, IDVK_PURGE_IMAGE_GRANULARITY);
 	}
 
+	vk_backend.dynamicState.renderWidth = vk_context.swapchain.width;
+	vk_backend.dynamicState.renderHeight = vk_context.swapchain.height;
 	vk_backend.dynamicState.viewport[0] = 0;
 	vk_backend.dynamicState.viewport[1] = 0;
 	vk_backend.dynamicState.viewport[2] = vk_context.swapchain.width;
@@ -1202,6 +1174,7 @@ void R_VK_ResetGlobalState()
 	{
 		vk_backend.programs.list[i]->descriptorSet = VK_NULL_HANDLE;
 	}
+	R_VK_SetRenderPass(vk_context.renderPass, 0, 0);
 }
 
 /**
@@ -1240,6 +1213,7 @@ void R_VK_EndFrame()
 {
     // 发送结束主渲染通道命令
     VK_EndRenderPass();
+	R_VK_SetRenderPass(VK_NULL_HANDLE, 0, 0);
 
 	// 上传图像缓冲区
 	R_VK_HandleLoadImageList();
@@ -1337,7 +1311,7 @@ void R_VK_UpdateUniformBufferObject()
 				if (!image) // always binding one
 				 	image = vk_backend.currentProgram->textureTypes[i] == TUT_CUBEMAP ? globalImages->defaultCubeMapImage->vk_image : globalImages->defaultImage->vk_image;
 
-				descriptorImageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				descriptorImageInfos[i].imageLayout = (image->format == VK_FORMAT_D24_UNORM_S8_UINT || image->format == VK_FORMAT_D32_SFLOAT || image->format == VK_FORMAT_D16_UNORM) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 				descriptorImageInfos[i].imageView = image->imageView;
 				descriptorImageInfos[i].sampler = image->sampler;
 
@@ -1463,7 +1437,7 @@ void R_VK_EnableScissorTest(bool enabled)
 		if(enabled)
 			VK_Scissor(vk_backend.dynamicState.scissor[0], vk_backend.dynamicState.scissor[1], vk_backend.dynamicState.scissor[2], vk_backend.dynamicState.scissor[3]);
 		else
-			VK_Scissor(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+			VK_Scissor(0, 0, vk_backend.dynamicState.renderWidth, vk_backend.dynamicState.renderHeight);
 	}
 }
 
@@ -1681,7 +1655,7 @@ void R_VK_Clear(bool color, bool depth, bool stencil)
     if(mask == 0)
         return;
 
-    VK_Clear(mask, vk_backend.dynamicState.clearColor[0], vk_backend.dynamicState.clearColor[1], vk_backend.dynamicState.clearColor[2], vk_backend.dynamicState.clearColor[3], vk_backend.dynamicState.clearDepth, vk_backend.dynamicState.clearStencil);
+    VK_ClearEXT(mask, vk_backend.dynamicState.clearColor[0], vk_backend.dynamicState.clearColor[1], vk_backend.dynamicState.clearColor[2], vk_backend.dynamicState.clearColor[3], vk_backend.dynamicState.clearDepth, vk_backend.dynamicState.clearStencil, 0, 0, vk_backend.dynamicState.renderWidth, vk_backend.dynamicState.renderHeight);
 }
 
 void R_VK_StencilFunc(int func, int ref, unsigned int mask)
@@ -1755,6 +1729,8 @@ void R_VK_DepthRange(float minZ, float maxZ)
 
 void R_VK_Scissor(int x, int y, int w, int h)
 {
+	if (x < 0) x = 0;
+	if (y < 0) y = 0;
 	vk_backend.dynamicState.scissor[0] = x;
 	vk_backend.dynamicState.scissor[1] = y;
 	vk_backend.dynamicState.scissor[2] = w;
@@ -1765,7 +1741,7 @@ void R_VK_Scissor(int x, int y, int w, int h)
 		if(VKSTATE1_BIT(vk_backend.state, ST_SCISSOR_TEST_BIT))
 			VK_Scissor(x, y, w, h);
 		else
-			VK_Scissor(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+			VK_Scissor(0, 0, vk_backend.dynamicState.renderWidth, vk_backend.dynamicState.renderHeight);
 	}
 }
 
@@ -1812,6 +1788,18 @@ void R_VK_Color4f(float r, float g, float b, float a)
 void R_VK_Color4fv(float color[4])
 {
 	R_VK_Uniform4fv(VKGLOBAL_PARM_OFFSET(glColor), color);
+}
+
+void R_VK_SetRenderSize(int w, int h)
+{
+	vk_backend.dynamicState.renderWidth = w > 0 ? w : vk_context.swapchain.width;
+	vk_backend.dynamicState.renderHeight = h > 0 ? h : vk_context.swapchain.height;
+}
+
+void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h)
+{
+	vk_backend.currentRenderPass = renderPass;
+	R_VK_SetRenderSize(w, h);
 }
 
 static const float ColorModulate = 1.0f;
@@ -1881,3 +1869,70 @@ void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int wi
 #endif
 	VK_CopyDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, mask);
 }
+
+#ifdef _SHADOW_MAPPING
+VkRenderPass R_VK_CreateShadowMappingRenderPass( void )
+{
+	if (VK_NULL_HANDLE != vk_backend.shadowMappingRenderPass)
+		return vk_backend.shadowMappingRenderPass;
+
+	VkRenderPass *renderPass;
+	VK_AllocRenderPass(&renderPass);
+
+    VkAttachmentDescription attachment;
+    VKZERO(attachment);
+    //附件
+    attachment.format = VK_FORMAT_D24_UNORM_S8_UINT; // 颜色图像格式
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 采样数
+	attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 图像附件初始布局
+
+	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // 颜色附件加载时执行操作
+	attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // 颜色附件存储时的操作
+	attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // 模版附件加载时执行操作
+	attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE; // 模版附件存储时执行操作
+	attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 图像附件最终布局
+
+    // 附件
+    VkAttachmentReference attachmentRef;
+    VKZERO(attachmentRef);
+    attachmentRef.attachment = 0; // 附件索引
+    attachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // 子通道
+    VkSubpassDescription subpassDescription;
+    VKZERO(subpassDescription);
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 0; // 颜色附件数
+	subpassDescription.pColorAttachments = NULL; // 颜色附件
+	subpassDescription.pDepthStencilAttachment = &attachmentRef; // 深度模版附件
+
+    // 子通道阶段依赖
+    VkSubpassDependency subpassDependency;
+    VKZERO(subpassDependency);
+    // 颜色通道
+    subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
+    subpassDependency.dstSubpass = 0; // 进入子通道0
+    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	subpassDependency.srcAccessMask = 0;
+	subpassDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	subpassDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkRenderPassCreateInfo createInfo;
+    VKZERO(createInfo);
+    createInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    createInfo.attachmentCount = 1; // 渲染通道附件数
+    createInfo.pAttachments = &attachment; // 渲染通道附件
+    createInfo.dependencyCount = 1; // 渲染子通道依赖数
+    createInfo.pDependencies = &subpassDependency; // 渲染子通道依赖
+    createInfo.subpassCount = 1; // 渲染子通道数量
+    createInfo.pSubpasses = &subpassDescription; // 渲染子通道
+
+    VkResult result = vkCreateRenderPass(vk_context.device, &createInfo, VK_GetAllocator(), renderPass);
+    HANDLE_VK_ERROR_EXIT(result, "vkCreateRenderPass");
+    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)*renderPass, "shadowMappingRenderPass");
+
+	vk_backend.shadowMappingRenderPass = *renderPass;
+
+	return vk_backend.shadowMappingRenderPass;
+}
+#endif

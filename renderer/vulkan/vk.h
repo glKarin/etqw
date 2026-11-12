@@ -262,7 +262,7 @@ typedef struct VKContext_s
     VKQueue_t presentQueue; // 回显队列
 
     VkRenderPass renderPass; // 主渲染通道, 目标是交换链的帧缓冲区
-    VkRenderPass loadRenderPass; // 主渲染通道, 目标是交换链的帧缓冲区
+    VkRenderPass loadRenderPass; // 主渲染通道, 目标是交换链的帧缓冲区(与renderPass兼容, 渲染管线可互用)
     VKSwapchain_t swapchain; // 交换链
     uint32_t frameIndex; // 当前帧索引
 
@@ -288,6 +288,7 @@ typedef struct VKContext_s
 	VKPOOL(VKQueryPool_t) querys; // 查询池列表(可插入, 可删除, 由上下文在销毁时清理)
 
 	VKLIST(VkSampler) samplers; // 图像采样器列表(只能追加, 不能删除, 由上下文在销毁时清理)
+	VKLIST(VkImageView) imageViews; // 图像采样器列表(只能追加, 不能删除, 由上下文在销毁时清理)
 	VKLIST(VkFence) fences; // 同步栅栏列表(只能追加, 不能删除, 由上下文在销毁时清理)
 	VKPTRLIST(VKCommandPool_t) commandPools; // 命令池列表(只能追加, 不能删除, 由上下文在销毁时清理)
 	VKLIST(VkRenderPass) renderPasses; // 渲染通道列表(只能追加, 不能删除, 由上下文在销毁时清理)
@@ -330,8 +331,10 @@ void VK_SetObjectName(int objType, uint64_t handle, const char* name);
 void VK_DebugObjects();
 
 // Allocate handler
-VKHandle_t VK_AllocPipeline(VKPipeline_t **pipeline);VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers);
+VKHandle_t VK_AllocPipeline(VKPipeline_t **pipeline);
+VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers);
 VKHandle_t VK_AllocSampler(VkSampler **sampler);
+VKHandle_t VK_AllocImageView(VkImageView **imageView);
 VKHandle_t VK_AllocBuffer(VKBuffer_t **buffer);
 VKHandle_t VK_AllocImage(VKImage_t **image);
 VKHandle_t VK_AllocRenderPass(VkRenderPass **renderPass);
@@ -367,7 +370,7 @@ void VK_CreateIndexBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateUniformBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateTransferSrcBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateTransferDstBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
-VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers);
+VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers, int baseArrayLayer);
 void VK_CreateSampler(VkSampler *sampler, bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatR, bool depthCmp, float anisotropy, float lodMax);
 VkShaderModule VK_CreateShaderModule(const uint8_t *data, int length);
 VKHandle_t VK_CreateDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers);
@@ -417,5 +420,10 @@ void VK_ClearColor(float r, float g, float b, float a);
 void VK_ClearDepth(float depth);
 void VK_ClearStencil(int stencil);
 void VK_ClearDepthStencil(float depth, int stencil);
+void VK_ClearEXT(int mask, float r, float g, float b, float a, float depth, int stencil, int x, int y, int width, int height);
+void VK_ClearColorEXT(float r, float g, float b, float a, int x, int y, int width, int height);
+void VK_ClearDepthEXT(float depth, int x, int y, int width, int height);
+void VK_ClearStencilEXT(int stencil, int x, int y, int width, int height);
+void VK_ClearDepthStencilEXT(float depth, int stencil, int x, int y, int width, int height);
 
 #endif //_VULKAN_VKCONTEXT_H

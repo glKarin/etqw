@@ -17,6 +17,8 @@ idCVar r_vkContextShaderSize("r_vkContextShaderSize", "128", CVAR_INTEGER | CVAR
 idCVar r_vkContextShaderGranularity("r_vkContextShaderGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global shader list allocation granularity");
 idCVar r_vkContextSamplerSize("r_vkContextSamplerSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global sampler list initialize size");
 idCVar r_vkContextSamplerGranularity("r_vkContextSamplerGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global sampler list allocation granularity");
+idCVar r_vkContextImageViewSize("r_vkContextImageViewSize", "6", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image view list initialize size");
+idCVar r_vkContextImageViewGranularity("r_vkContexImageViewGranularity", "6", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image view list allocation granularity");
 idCVar r_vkContextImageSize("r_vkContextImageSize", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image list initialize size");
 idCVar r_vkContextImageGranularity("r_vkContextImageGranularity", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image list allocation granularity");
 idCVar r_vkContextBufferSize("r_vkContextBufferSize", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global buffer list initialize size");

@@ -25,6 +25,8 @@
 #define IDVK_SHADER_GRANULARITY ( r_vkContextShaderGranularity.GetInteger() )
 #define IDVK_SAMPLER_INIT_SIZE ( r_vkContextSamplerSize.GetInteger() )
 #define IDVK_SAMPLER_GRANULARITY ( r_vkContextSamplerGranularity.GetInteger() )
+#define IDVK_IMAGEVIEW_INIT_SIZE ( r_vkContextImageViewSize.GetInteger() )
+#define IDVK_IMAGEVIEW_GRANULARITY ( r_vkContextImageViewGranularity.GetInteger() )
 #define IDVK_IMAGE_INIT_SIZE ( r_vkContextImageSize.GetInteger() )
 #define IDVK_IMAGE_GRANULARITY ( r_vkContextImageGranularity.GetInteger() )
 #define IDVK_BUFFER_INIT_SIZE ( r_vkContextBufferSize.GetInteger() )
@@ -54,6 +56,8 @@
 #define IDVK_SHADER_GRANULARITY 128
 #define IDVK_SAMPLER_INIT_SIZE 128
 #define IDVK_SAMPLER_GRANULARITY 128
+#define IDVK_IMAGEVIEW_INIT_SIZE 6
+#define IDVK_IMAGEVIEW_GRANULARITY 6
 #define IDVK_IMAGE_INIT_SIZE 2048
 #define IDVK_IMAGE_GRANULARITY 2048
 #define IDVK_BUFFER_INIT_SIZE 2048
@@ -733,7 +737,7 @@ bool VK_ChoosePresentMode(VkPresentModeKHR *ret)
  * @param numLayers 图像层数
  * @return
  */
-VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers)
+VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers, int baseArrayLayer)
 {
 	VkResult result;
 
@@ -753,7 +757,7 @@ VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int
     createInfo.subresourceRange.aspectMask = (VkImageAspectFlags)viewAspectFlags;
     createInfo.subresourceRange.baseMipLevel = 0; // 最基础的mipmap层
     createInfo.subresourceRange.levelCount = mipLevels; // mipmap层数
-    createInfo.subresourceRange.baseArrayLayer = 0; // 图像起始层
+    createInfo.subresourceRange.baseArrayLayer = baseArrayLayer; // 图像起始层
     createInfo.subresourceRange.layerCount = numLayers; // 图像层数
 
     VkImageView imageView;
@@ -769,7 +773,7 @@ VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int
 void VK_CreateSwapchainImageViews()
 {
     for (int i = 0; i < vk_context.swapchain.numImages; ++i) {
-        vk_context.swapchain.framebuffers[i].image.imageView = VK_CreateImageView(vk_context.swapchain.framebuffers[i].image.image, vk_context.swapchain.format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1);
+        vk_context.swapchain.framebuffers[i].image.imageView = VK_CreateImageView(vk_context.swapchain.framebuffers[i].image.image, vk_context.swapchain.format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0);
         vk_context.swapchain.loadFramebuffers[i].image.imageView = vk_context.swapchain.framebuffers[i].image.imageView;
     }
 }
@@ -1067,7 +1071,7 @@ static void VK_CreateLoadRenderPass()
     // 颜色通道
     subpassDependencys[0].srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
     subpassDependencys[0].dstSubpass = 0; // 进入子通道0
-    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     subpassDependencys[0].srcAccessMask = 0;
     subpassDependencys[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     subpassDependencys[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -1147,7 +1151,7 @@ void VK_CreateRenderPass()
     // 颜色通道
     subpassDependencys[0].srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
     subpassDependencys[0].dstSubpass = 0; // 进入子通道0
-    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
     subpassDependencys[0].srcAccessMask = 0;
     subpassDependencys[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     subpassDependencys[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -1828,13 +1832,15 @@ void VK_CreateImage(VKImage_t *res, uint32_t width, uint32_t height, int format,
         default:
             break;
     }
-    VkImageCreateFlags flags = cubeMap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : (layers > 1 ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0);
+    VkImageCreateFlags flags = cubeMap ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0/*(layers > 1 ? VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT : 0)*/;
     int arrayLayers = cubeMap ? 6 : layers;
+    bool samplerUsage = usageType & IU_SAMPLER;
+    bool attachmentUsage = usageType & IU_ATTACHMENT;
 
     VkImageUsageFlags usage = 0;
-    if (usageType & IU_SAMPLER)
+    if (samplerUsage)
         usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT; // 采样
-    if (usageType & IU_ATTACHMENT)
+    if (attachmentUsage)
     {
         if (depth > 1)
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // 深度模版附加
@@ -1910,14 +1916,14 @@ void VK_CreateImage(VKImage_t *res, uint32_t width, uint32_t height, int format,
 
     // 创建图像视图
     VkImageViewType imageViewType = cubeMap ? VK_IMAGE_VIEW_TYPE_CUBE : (layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D);
-	VkImageAspectFlags viewAspectFlags = depth > 0 ? (VK_IMAGE_ASPECT_DEPTH_BIT | (stencil > 0 && (usageType & IU_ATTACHMENT) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0)) : VK_IMAGE_ASPECT_COLOR_BIT;
+    VkImageAspectFlags viewAspectFlags = depth > 0 ? (VK_IMAGE_ASPECT_DEPTH_BIT | (stencil > 0 && (attachmentUsage && !samplerUsage) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0)) : VK_IMAGE_ASPECT_COLOR_BIT;
 
-    res->imageView = VK_CreateImageView(image, format, imageViewType, viewAspectFlags, mipLevels, arrayLayers);
+    res->imageView = VK_CreateImageView(image, format, imageViewType, viewAspectFlags, mipLevels, arrayLayers, 0);
 
     // 如果是深度+模版图像, 且需要采样, 则生成第二个模版图像视图
-	if(depth > 0 && stencil > 0 && (usageType & IU_SAMPLER))
+	if(depth > 0 && stencil > 0 && (samplerUsage))
 	{
-		res->imageView2 = VK_CreateImageView(image, format, imageViewType, VK_IMAGE_ASPECT_STENCIL_BIT, mipLevels, arrayLayers);
+		res->imageView2 = VK_CreateImageView(image, format, imageViewType, VK_IMAGE_ASPECT_STENCIL_BIT, mipLevels, arrayLayers, 0);
 	}
 }
 
@@ -2376,7 +2382,7 @@ void VK_ImageToCopyDst(VKImage_t *image)
 void VK_DepthStencilImageToCopyDst(VKImage_t *image, int mask)
 {
     IDVK_CHECK_RENDERPASS_IDLE();
-    assert(image->layout == VK_IMAGE_LAYOUT_UNDEFINED || image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    assert(image->layout == VK_IMAGE_LAYOUT_UNDEFINED || image->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
     if(image->layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         return;
 
@@ -2403,13 +2409,13 @@ void VK_DepthStencilImageToCopyDst(VKImage_t *image, int mask)
     imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     imageMemoryBarrier.image = image->image;
     imageMemoryBarrier.subresourceRange = subresourceRange;
-    imageMemoryBarrier.srcAccessMask = image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ? VK_ACCESS_SHADER_READ_BIT : 0;
+    imageMemoryBarrier.srcAccessMask = image->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ? VK_ACCESS_SHADER_READ_BIT : 0;
     imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    imageMemoryBarrier.oldLayout = image->layout; // VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageMemoryBarrier.oldLayout = image->layout;
     imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
     vkCmdPipelineBarrier(cmd,
-        image->layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        image->layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                          VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0,
                          NULL, 1, &imageMemoryBarrier);
     image->layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -2483,12 +2489,12 @@ void VK_DepthStencilImageTransferDstToSampler(VKImage_t *image, int mask)
     imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
                          VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0,
                          NULL, 1, &imageMemoryBarrier);
-    image->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 }
 
 /**
@@ -3087,6 +3093,17 @@ VKHandle_t VK_AllocSampler(VkSampler **sampler)
 }
 
 /**
+ * 分配一个图像视图
+ */
+VKHandle_t VK_AllocImageView(VkImageView **imageView)
+{
+    VKLIST_ALLOC(VkImageView, vk_context.imageViews);
+    if(imageView)
+        *imageView = _vkc_value;
+    return _vkc_index;
+}
+
+/**
  * 分配一个图像对象
  */
 VKHandle_t VK_AllocImage(VKImage_t **image)
@@ -3497,6 +3514,30 @@ void VK_ClearColor(float r, float g, float b, float a)
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+void VK_ClearColorEXT(float r, float g, float b, float a, int x, int y, int width, int height)
+{
+    VkClearAttachment clearAttachment;
+    VKZERO(clearAttachment);
+
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clearAttachment.colorAttachment = 0;
+    clearAttachment.clearValue.color.float32[0] = r;
+    clearAttachment.clearValue.color.float32[1] = g;
+    clearAttachment.clearValue.color.float32[2] = b;
+    clearAttachment.clearValue.color.float32[3] = a;
+
+    VkClearRect clearRect;
+    VKZERO(clearRect);
+    clearRect.rect.offset.x = x;
+    clearRect.rect.offset.y = y;
+    clearRect.rect.extent.width = width;
+    clearRect.rect.extent.height = height;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
+}
+
 /**
  * 清空当前渲染通道的帧缓冲区的深度附件
  */
@@ -3514,6 +3555,26 @@ void VK_ClearDepth(float depth)
     clearRect.rect.offset.y = 0;
     clearRect.rect.extent.width = vk_context.swapchain.width;
     clearRect.rect.extent.height = vk_context.swapchain.height;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
+}
+
+void VK_ClearDepthEXT(float depth, int x, int y, int width, int height)
+{
+    VkClearAttachment clearAttachment;
+    VKZERO(clearAttachment);
+
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    clearAttachment.clearValue.depthStencil.depth = depth;
+
+    VkClearRect clearRect;
+    VKZERO(clearRect);
+    clearRect.rect.offset.x = x;
+    clearRect.rect.offset.y = y;
+    clearRect.rect.extent.width = width;
+    clearRect.rect.extent.height = height;
     clearRect.baseArrayLayer = 0;
     clearRect.layerCount = 1;
 
@@ -3543,6 +3604,26 @@ void VK_ClearStencil(int stencil)
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+void VK_ClearStencilEXT(int stencil, int x, int y, int width, int height)
+{
+    VkClearAttachment clearAttachment;
+    VKZERO(clearAttachment);
+
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    clearAttachment.clearValue.depthStencil.depth = stencil;
+
+    VkClearRect clearRect;
+    VKZERO(clearRect);
+    clearRect.rect.offset.x = x;
+    clearRect.rect.offset.y = y;
+    clearRect.rect.extent.width = width;
+    clearRect.rect.extent.height = height;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
+}
+
 /**
  * 清空当前渲染通道的帧缓冲区的深度和模版附件
  */
@@ -3561,6 +3642,27 @@ void VK_ClearDepthStencil(float depth, int stencil)
     clearRect.rect.offset.y = 0;
     clearRect.rect.extent.width = vk_context.swapchain.width;
     clearRect.rect.extent.height = vk_context.swapchain.height;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
+}
+
+void VK_ClearDepthStencilEXT(float depth, int stencil, int x, int y, int width, int height)
+{
+    VkClearAttachment clearAttachment;
+    VKZERO(clearAttachment);
+
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    clearAttachment.clearValue.depthStencil.depth = depth;
+    clearAttachment.clearValue.depthStencil.stencil = stencil;
+
+    VkClearRect clearRect;
+    VKZERO(clearRect);
+    clearRect.rect.offset.x = x;
+    clearRect.rect.offset.y = y;
+    clearRect.rect.extent.width = width;
+    clearRect.rect.extent.height = height;
     clearRect.baseArrayLayer = 0;
     clearRect.layerCount = 1;
 
@@ -3612,6 +3714,54 @@ void VK_Clear(int mask, float r, float g, float b, float a, float depth, int ste
     clearRect.rect.offset.y = 0;
     clearRect.rect.extent.width = vk_context.swapchain.width;
     clearRect.rect.extent.height = vk_context.swapchain.height;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, numClearAttachments, clearAttachments, 1, &clearRect);
+}
+
+void VK_ClearEXT(int mask, float r, float g, float b, float a, float depth, int stencil, int x, int y, int width, int height)
+{
+    VkClearAttachment clearAttachments[2];
+    VKZERO(clearAttachments);
+    int numClearAttachments = 0;
+
+    if (mask & VK_IMAGE_ASPECT_COLOR_BIT)
+    {
+        clearAttachments[numClearAttachments].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        clearAttachments[numClearAttachments].colorAttachment = 0;
+        clearAttachments[numClearAttachments].clearValue.color.float32[0] = r;
+        clearAttachments[numClearAttachments].clearValue.color.float32[1] = g;
+        clearAttachments[numClearAttachments].clearValue.color.float32[2] = b;
+        clearAttachments[numClearAttachments].clearValue.color.float32[3] = a;
+        numClearAttachments++;
+    }
+
+    int depthStencilMask = mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+    if (depthStencilMask)
+    {
+        if (depthStencilMask & VK_IMAGE_ASPECT_DEPTH_BIT)
+        {
+            clearAttachments[numClearAttachments].aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+            clearAttachments[numClearAttachments].clearValue.depthStencil.depth = depth;
+        }
+        if (depthStencilMask & VK_IMAGE_ASPECT_STENCIL_BIT)
+        {
+            clearAttachments[numClearAttachments].aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            clearAttachments[numClearAttachments].clearValue.depthStencil.stencil = stencil;
+        }
+        numClearAttachments++;
+    }
+
+    if (numClearAttachments == 0)
+        return;
+
+    VkClearRect clearRect;
+    VKZERO(clearRect);
+    clearRect.rect.offset.x = x;
+    clearRect.rect.offset.y = y;
+    clearRect.rect.extent.width = width;
+    clearRect.rect.extent.height = height;
     clearRect.baseArrayLayer = 0;
     clearRect.layerCount = 1;
 
@@ -3688,6 +3838,23 @@ static void VK_DestroySamplers()
     VKLIST_FREE(VkSampler, vk_context.samplers);
 }
 
+/**
+ * 销毁全局全部图像视图
+ */
+static void VK_DestroyImageViews()
+{
+    Sys_Printf("Destroy image views: %d/%d\n", vk_context.imageViews.num, vk_context.imageViews.size);
+    VKLIST_FOREACH(VkImageView, vk_context.imageViews)
+    {
+        vkDestroyImageView(vk_context.device, vk_context.imageViews.list[i], VKCONTEXT_ALLOCATOR);
+    }
+
+    VKLIST_FREE(VkSampler, vk_context.imageViews);
+}
+
+/**
+ * 销毁管线缓存
+ */
 static void VK_DestroyPipelineCache()
 {
 	if(VK_NULL_HANDLE != vk_context.pipelineCache)
@@ -4263,6 +4430,7 @@ void VK_Init()
     VKPTRLIST_INIT(VKPipeline_t, vk_context.pipelineLayouts, IDVK_PIPELINE_LAYOUT_INIT_SIZE, IDVK_PIPELINE_LAYOUT_GRANULARITY);
     VKPTRLIST_INIT(VKPipeline_t, vk_context.pipelines, IDVK_PILELINE_INIT_SIZE, IDVK_PIPELINE_GRANULARITY);
     VKLIST_INIT(VkSampler, vk_context.samplers, IDVK_SAMPLER_INIT_SIZE, IDVK_SAMPLER_GRANULARITY);
+    VKLIST_INIT(VkImageView, vk_context.imageViews, IDVK_IMAGEVIEW_INIT_SIZE, IDVK_IMAGEVIEW_GRANULARITY);
     VKLIST_INIT(VkShaderModule, vk_context.shaders, IDVK_SHADER_INIT_SIZE, IDVK_SHADER_GRANULARITY);
     VKLIST_INIT(VkFence, vk_context.fences, IDVK_FENCE_INIT_SIZE, IDVK_FENCE_GRANULARITY);
     VKPTRLIST_INIT(VKCommandPool_t, vk_context.commandPools, IDVK_COMMANDPOOL_INIT_SIZE, IDVK_COMMANDPOOL_GRANULARITY);
@@ -4323,6 +4491,8 @@ void VK_Destroy()
     VK_WaitIdle();
     // 销毁采样器
     VK_DestroySamplers();
+    // 销毁图像视图
+    VK_DestroyImageViews();
     // 销毁图像
     VK_DestroyImages();
     // 销毁缓冲区

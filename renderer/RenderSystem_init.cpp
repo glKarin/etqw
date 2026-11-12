@@ -2441,8 +2441,10 @@ void R_InitCommands(void)
 	cmdSystem->AddCommand("reloadSurface", R_ReloadSurface_f, CMD_FL_RENDERER, "reloads the decl and images for selected surface");
 	cmdSystem->AddCommand("glConfig", R_ShowglConfig_f, CMD_FL_RENDERER, "print OpenGL config");
 #ifdef _SHADOW_MAPPING
+#ifdef SHADOW_MAPPING_DEBUG
 	extern void R_DumpShadowMap_f(const idCmdArgs &args);
 	cmdSystem->AddCommand("harm_dumpShadowMap", R_DumpShadowMap_f, CMD_FL_RENDERER, "dump shadow map to file in next frame");
+#endif
 #endif
 
 	R_Image_AddCommand();

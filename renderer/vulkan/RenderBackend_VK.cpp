@@ -137,93 +137,13 @@ void glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum forma
 #endif
 }
 
-/*
-===============
-R_SetupProjection_VK
-
-This uses the "infinite far z" trick
-===============
-*/
-void R_SetupProjection_VK(void)
-{
-	float	xmin, xmax, ymin, ymax;
-	float	width, height;
-	float	zNear;
-	// float   zFar;
-	float	jitterx, jittery;
-	static	idRandom random;
-
-	// random jittering is usefull when multiple
-	// frames are going to be blended together
-	// for motion blurred anti-aliasing
-	if (r_jitter.GetBool()) {
-		jitterx = random.RandomFloat();
-		jittery = random.RandomFloat();
-	} else {
-		jitterx = jittery = 0;
-	}
-
-	//
-	// set up projection matrix
-	//
-	zNear = r_znear.GetFloat();
-
-#ifdef _SPLASHDAMAGE
-	if (tr.viewDef->renderView.flags.cramZNear)
-#else
-	if (tr.viewDef->renderView.cramZNear)
-#endif
-	{
-		zNear *= 0.25;
-	}
-
-	ymax = zNear * tan(tr.viewDef->renderView.fov_y * idMath::PI / 360.0f);
-	ymin = -ymax;
-
-	xmax = zNear * tan(tr.viewDef->renderView.fov_x * idMath::PI / 360.0f);
-	xmin = -xmax;
-
-	width = xmax - xmin;
-	height = ymax - ymin;
-
-	jitterx = jitterx * width / (tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 + 1);
-	xmin += jitterx;
-	xmax += jitterx;
-	jittery = jittery * height / (tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 + 1);
-	ymin += jittery;
-	ymax += jittery;
-
-	tr.viewDef->projectionMatrix_VK[0] = 2 * zNear / width;
-	tr.viewDef->projectionMatrix_VK[4] = 0;
-	tr.viewDef->projectionMatrix_VK[8] = (xmax + xmin) / width;	// normally 0
-	tr.viewDef->projectionMatrix_VK[12] = 0;
-
-	tr.viewDef->projectionMatrix_VK[1] = 0;
-	tr.viewDef->projectionMatrix_VK[5] = -2 * zNear / height; // Vulkan
-	tr.viewDef->projectionMatrix_VK[9] = (ymax + ymin) / height;	// normally 0
-	tr.viewDef->projectionMatrix_VK[13] = 0;
-
-	// this is the far-plane-at-infinity formulation, and
-	// crunches the Z range slightly so w=0 vertexes do not
-	// rasterize right at the wraparound point
-	tr.viewDef->projectionMatrix_VK[2] = 0;
-	tr.viewDef->projectionMatrix_VK[6] = 0;
-	// #ifndef ANDROID_NOZHACK
-#if 0 //k: fix shadow be cliped
-	tr.viewDef->projectionMatrix_VK[10] = (-zFar-zNear)/(zFar-zNear);//-0.999f;
-	tr.viewDef->projectionMatrix_VK[14] = -2.0f*zFar*zNear/(zFar-zNear);
-#else
-	tr.viewDef->projectionMatrix_VK[10] = -0.999f;
-	tr.viewDef->projectionMatrix_VK[14] = -1.0f*zNear; // Vulkan
-#endif
-
-	tr.viewDef->projectionMatrix_VK[3] = 0;
-	tr.viewDef->projectionMatrix_VK[7] = 0;
-	tr.viewDef->projectionMatrix_VK[11] = -1;
-	tr.viewDef->projectionMatrix_VK[15] = 0;
-}
-
-void R_VK_FixupClipSpaceZAndY( float dst[ 16 ], const float src[ 16 ] )
+/**
+1    0    0    0
+0   -1    0    0
+0    0  0.5  0.5
+0    0    0    1
+ */
+void R_VK_ClipSpaceZAndFlipY( float dst[ 16 ], const float src[ 16 ] )
 {
 	if ( dst != src )
 	{
@@ -238,7 +158,27 @@ void R_VK_FixupClipSpaceZAndY( float dst[ 16 ], const float src[ 16 ] )
 	}
 }
 
-void R_VK_FixupClipSpaceZ( float dst[ 16 ], const float src[ 16 ] )
+/**
+1    0    0    0
+0   -1    0    0
+0    0  0.5  0.5
+0    0    0    1
+ */
+void R_VK_ClipSpaceZAndFlipY_RowMajor( float dst[ 16 ], const float src[ 16 ] )
+{
+	if (dst != src) memcpy(dst, src, 16 * sizeof(float));
+
+	// 行主序：m[row*4+col]
+	for (int col = 0; col < 4; col++)
+	{
+		// 第2行 = 0.5 * 第2行 + 0.5 * 第3行（Z修正）
+		dst[2 * 4 + col] = 0.5f * (src[2 * 4 + col] + src[3 * 4 + col]);
+		// 翻转第1行（Y）
+		dst[1 * 4 + col] = -src[1 * 4 + col];
+	}
+}
+
+void R_VK_ClipSpaceZ( float dst[ 16 ], const float src[ 16 ] )
 {
 	if ( dst != src )
 	{
@@ -251,7 +191,7 @@ void R_VK_FixupClipSpaceZ( float dst[ 16 ], const float src[ 16 ] )
 	}
 }
 
-void R_VK_FixupY( float dst[ 16 ], const float src[ 16 ] )
+void R_VK_FlipY( float dst[ 16 ], const float src[ 16 ] )
 {
 	if ( dst != src )
 	{

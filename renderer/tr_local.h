@@ -2357,9 +2357,6 @@ typedef struct viewEffect_s/* : viewEntity_s*/ // 164 bytes in 32bits
     float modelDepthHack;
     float modelMatrix[16];
     float modelViewMatrix[16];
-//#ifdef _SHADOW_MAPPING
-//	RenderMatrix		mvp;
-//#endif
 	// extras
 #endif
     int weaponDepthHackInViewID;
@@ -2422,9 +2419,21 @@ void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, c
 #endif
 
 #ifdef _SHADOW_MAPPING
-void R_SetupFrontEndFrustums(void);
+#ifdef _VULKAN
+#ifdef GL_ES_VERSION_3_0
+#define SHADOW_MAPPING_NEW (USING_VULKAN || USING_GLES3)
+#else
+#define SHADOW_MAPPING_NEW (USING_VULKAN)
+#endif
+#elif defined(GL_ES_VERSION_3_0)
+#define SHADOW_MAPPING_NEW (USING_GLES3)
+#else
+#define SHADOW_MAPPING_NEW false
+#endif
 
 #define ALLOW_SHADOW_MAPPING_ON_ALPHATEST_MTR(x) ( ( (shader->GetContentFlags() & CONTENTS_SOLID) != 0 || ( (shader->GetCullType() == CT_TWO_SIDED) || shader->ShouldCreateBackSides() ) ) && (shader->GetSort() != SS_DECAL) )
+
+void R_SetupFrontEndFrustums(void);
 
 #include "matrix/GLMatrix.h"
 

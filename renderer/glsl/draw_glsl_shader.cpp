@@ -222,6 +222,11 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
 #endif
 	ret.Append(GLSL_SHADER_SOURCE("diffuseCubemap", SHADER_DIFFUSECUBEMAP, &diffuseCubemapShader, DIFFUSE_CUBEMAP_VERT, CUBEMAP_FRAG, "", ""));
 	// ret.Append(GLSL_SHADER_SOURCE("glasswarp", SHADER_GLASSWARP, &glasswarpShader, GLASSWARP_VERT, GLASSWARP_FRAG, "", ""));
+
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+	{
+#endif
 #ifdef GL_ES_VERSION_3_0
     if(USING_GLES3 || glConfig.depthTextureAvailable)
 #else
@@ -232,6 +237,10 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
     if(USING_GLES3)
     ret.Append(GLSL_SHADER_SOURCE("stencilToColor", SHADER_STENCIL_TO_COLOR, &stencilToColorShader, SIMPLE_VERTEX_TEXCOORD_VERT, STENCIL_TO_COLOR_FRAG, "", ""));
 #endif
+#ifdef _VULKAN
+	}
+#endif
+
 	ret.Append(GLSL_SHADER_SOURCE("texgen", SHADER_TEXGEN, &texgenShader, TEXGEN_VERT, TEXGEN_FRAG, "", ""));
 #ifdef _SPLASHDAMAGE //karin: Occlusion testing
 	ret.Append(GLSL_SHADER_SOURCE("occlusionTest", SHADER_OCCLUSIONTEST, &occlusionTestShader, OCCLUSIONTEST_VERT, OCCLUSIONTEST_FRAG, "", ""));
@@ -265,6 +274,10 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
 	ret.Append(GLSL_SHADER_SOURCE("depth", SHADER_DEPTH, &depthShader, DEPTH_VERT, DEPTH_FRAG, "_USING_DEPTH_TEXTURE", ""));
 	// perforated surface
 	ret.Append(GLSL_SHADER_SOURCE("depthPerforated", SHADER_DEPTH_PERFORATED, &depthPerforatedShader, DEPTH_PERFORATED_VERT, DEPTH_PERFORATED_FRAG, "_USING_DEPTH_TEXTURE", ""));
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+	{
+#endif
 #ifdef GL_ES_VERSION_3_0
 	if(!USING_GLES3 && (!r_useDepthTexture || !r_useCubeDepthTexture))
 #else
@@ -274,6 +287,9 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
 		ret.Append(GLSL_SHADER_SOURCE("depthColor", SHADER_DEPTH_COLOR, &depthShader_color, DEPTH_VERT, DEPTH_FRAG, GLSL2_SHADOW_MAPPING_COLOR_MACROS(""), ""));
 		ret.Append(GLSL_SHADER_SOURCE("depthPerforatedColor", SHADER_DEPTH_PERFORATED_COLOR, &depthPerforatedShader_color, DEPTH_PERFORATED_VERT, DEPTH_PERFORATED_FRAG, GLSL2_SHADOW_MAPPING_COLOR_MACROS(""), ""));
 	}
+#ifdef _VULKAN
+	}
+#endif
 	// point light
 	ret.Append(GLSL_SHADER_SOURCE("interactionPointLightShadowMapping", SHADER_INTERACTION_POINT_LIGHT, &interactionShadowMappingShader_pointLight, INTERACTION_SHADOW_MAPPING_VERT, INTERACTION_SHADOW_MAPPING_FRAG, GLSL2_SHADOW_MAPPING_CUBE_MACROS("_POINT_LIGHT,PHONG"), "_POINT_LIGHT,PHONG"));
 	ret.Append(GLSL_SHADER_SOURCE("interactionPBRPointLightShadowMapping", SHADER_INTERACTION_PBR_POINT_LIGHT, &interactionShadowMappingPBRShader_pointLight, INTERACTION_SHADOW_MAPPING_VERT, INTERACTION_SHADOW_MAPPING_FRAG, GLSL2_SHADOW_MAPPING_CUBE_MACROS("_POINT_LIGHT,_PBR"), "_POINT_LIGHT,_PBR"));
@@ -561,7 +577,11 @@ static const GLSLShaderProp * RB_GLSL_FindShaderProp(const idList<GLSLShaderProp
 		if(prop.type == type)
 			return &prop;
 	}
-	
+
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+	{
+#endif
     if(type == SHADER_DEPTH_TO_COLOR)
     {
 #ifdef GL_ES_VERSION_3_0
@@ -590,7 +610,10 @@ static const GLSLShaderProp * RB_GLSL_FindShaderProp(const idList<GLSLShaderProp
     }
 #endif
     else
-    common->Error("Shader prop '%d' not found!\n", type);
+		common->Error("Shader prop '%d' not found!\n", type);
+#ifdef _VULKAN
+	}
+#endif
 	return NULL;
 }
 

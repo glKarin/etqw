@@ -19,6 +19,7 @@
         b = _vkc_tmp; \
     }
 
+#define VKBLOCK_NUM(initSizeVal, sizeVal, granularityVal) (sizeVal > 0 ? ( sizeVal > initSizeVal ? (1 + ((sizeVal - initSizeVal) / granularityVal) + ((sizeVal - initSizeVal) % granularityVal) > 0 ? 1 : 0) : 1 ) : 0)
 
 // array
 #define VKARRAY(T) struct { \
@@ -107,6 +108,8 @@
 #define VKLIST_ALLOC(T, lst) VKLIST_ALLOC2(T, (lst).list, (lst).size, (lst).num, (lst).granularity)
 
 #define VKLIST_FOREACH(T, lst) for(int i = 0; i < (lst).num; i++)
+
+//#define VKLIST_BLOCK_NUM(T, lst, initSizeVal) VKBLOCK_NUM(initSizeVal, (lst).size, (lst).granularity)
 
 
 

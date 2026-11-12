@@ -218,7 +218,7 @@ void RB_ComputeDrawSurfMVP( const drawSurf_t * const surf )
 	if (USING_VULKAN)
 	{
 		static float vk_projectionMatrix[16];
-		R_VK_FixupClipSpaceZAndY(vk_projectionMatrix, rb_projectionMatrix);
+		R_VK_ClipSpaceZAndFlipY(vk_projectionMatrix, rb_projectionMatrix);
 		myGlMultMatrix(surf->space->modelViewMatrix, vk_projectionMatrix, rb_MVP);
 	}
 	else

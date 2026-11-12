@@ -73,6 +73,9 @@ void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *macros, in
 {
     res = source;
 
+#ifdef _VULKAN
+    if (!USING_VULKAN)
+#endif
     if(highp > 0)
     {
         res.Replace("precision mediump float;", "precision highp float;");

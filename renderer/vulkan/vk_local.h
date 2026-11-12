@@ -33,6 +33,8 @@ extern idCVar r_vkContextShaderSize;
 extern idCVar r_vkContextShaderGranularity;
 extern idCVar r_vkContextSamplerSize;
 extern idCVar r_vkContextSamplerGranularity;
+extern idCVar r_vkContextImageViewSize;
+extern idCVar r_vkContextImageViewGranularity;
 extern idCVar r_vkContextImageSize;
 extern idCVar r_vkContextImageGranularity;
 extern idCVar r_vkContextBufferSize;
@@ -58,8 +60,8 @@ extern idCVar r_vkIndexBufferBlockSize;
 
 void R_VK_CheckPortableExtensions(void);
 bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop);
-void R_SetupProjection_VK(void);
-void R_VK_FixupClipSpaceZAndY( float dst[ 16 ], const float src[ 16 ] );
+void R_VK_ClipSpaceZAndFlipY( float dst[ 16 ], const float src[ 16 ] );
+void R_VK_ClipSpaceZAndFlipY_RowMajor( float dst[ 16 ], const float src[ 16 ] );
 void * R_VK_VertexAttribPointer (GLint size, const void *pointer);
 void R_VK_BindTexture( GLenum target, VKImage_t *image );
 

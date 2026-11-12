@@ -3025,6 +3025,13 @@ void idImage::Print() const
 
 void		idImage::GenerateShadow2DDepthImage(int width, int height, textureFilter_t filterParm, bool allowDownSizeParm, textureRepeat_t repeatParm, int component, bool compare)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		texnum = 0;
+		return;
+	}
+#endif
     byte		*scaledBuffer;
     int			scaled_width, scaled_height;
 
@@ -3110,6 +3117,13 @@ void		idImage::GenerateShadow2DDepthImage(int width, int height, textureFilter_t
 
 void		idImage::GenerateShadow2DRGBAImage(int width, int height, textureFilter_t filterParm, bool allowDownSizeParm, textureRepeat_t repeatParm)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		texnum = 0;
+		return;
+	}
+#endif
 	byte		*scaledBuffer;
 	int			scaled_width, scaled_height;
 
@@ -3173,6 +3187,13 @@ void		idImage::GenerateShadow2DRGBAImage(int width, int height, textureFilter_t 
 
 void idImage::GenerateShadowCubeRGBAImage(int size, textureFilter_t filterParm, bool allowDownSizeParm, textureRepeat_t repeatParm)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		texnum = 0;
+		return;
+	}
+#endif
 	int			scaled_width, scaled_height;
 	int			width, height;
 	int			i;
@@ -3264,6 +3285,13 @@ void idImage::GenerateShadowCubeRGBAImage(int size, textureFilter_t filterParm, 
 
 void idImage::GenerateShadowCubeDepthImage(int size, textureFilter_t filterParm, bool allowDownSizeParm, textureRepeat_t repeatParm, int component, bool compare)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		texnum = 0;
+		return;
+	}
+#endif
 	int			scaled_width, scaled_height;
 	int			width, height;
 	int			i;
@@ -3377,6 +3405,13 @@ void idImage::GenerateShadowCubeDepthImage(int size, textureFilter_t filterParm,
 #ifdef GL_ES_VERSION_3_0
 void idImage::GenerateShadowArray( int width, int height, int numSides, textureFilter_t filterParm, textureRepeat_t repeatParm, int component, bool compare )
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		GenerateShadowArray_VK(width, height, numSides, filterParm, repeatParm, component, compare);
+		return;
+	}
+#endif
 	int			scaled_width, scaled_height;
 
 	PurgeImage();

@@ -255,8 +255,8 @@ void R_SetupSplitFrustums( viewDef_t* viewDef )
 void R_SetupFrontEndFrustums(void)
 {
     if(r_useShadowMapping.GetBool())
-#ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3 && r_shadowMapSplits.GetInteger() > 0)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+    if(SHADOW_MAPPING_NEW && r_shadowMapSplits.GetInteger() > 0)
 #endif
     {
         // the planes of the view frustum are needed for portal visibility culling

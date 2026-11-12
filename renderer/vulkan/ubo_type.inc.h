@@ -347,7 +347,6 @@ UBO_FRAGMENT_PROC_BEGIN(interactionShadowMappingPointLight)
 	UBO_MAT4_N_PROC(shadowMVPMatrix, 6);
 	UBO_VEC4_PROC(specularExponent);
 	UBO_VEC4_N_PROC(uniformParm, 0);
-	UBO_VEC4_N_PROC(uniformParm, 4);
 UBO_FRAGMENT_PROC_END(interactionShadowMappingPointLight)
 
 
@@ -384,7 +383,6 @@ UBO_FRAGMENT_PROC_BEGIN(interactionShadowMappingParallelLight)
 	UBO_MAT4_N_PROC(shadowMVPMatrix, 6);
 	UBO_VEC4_PROC(specularExponent);
 	UBO_VEC4_N_PROC(uniformParm, 0);
-	UBO_VEC4_N_PROC(uniformParm, 4);
 UBO_FRAGMENT_PROC_END(interactionShadowMappingParallelLight)
 
 
@@ -419,7 +417,6 @@ UBO_FRAGMENT_PROC_BEGIN(interactionShadowMappingSpotLight)
 	UBO_VEC4_N_PROC(uniformParm, 2);
 	UBO_VEC4_PROC(specularExponent);
 	UBO_VEC4_N_PROC(uniformParm, 0);
-	UBO_VEC4_N_PROC(uniformParm, 4);
 UBO_FRAGMENT_PROC_END(interactionShadowMappingSpotLight)
 #endif
 

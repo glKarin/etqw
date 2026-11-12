@@ -101,6 +101,23 @@ ALIGNTYPE16 const idRenderMatrix renderMatrix_clipSpaceToWindowSpace(
 	0.0f, 0.0f, 0.5f, 0.5f,
 	0.0f, 0.0f, 0.0f, 1.0f
 );
+
+#ifdef _VULKAN
+ALIGNTYPE16 const idRenderMatrix renderMatrix_clipSpaceToWindowSpace_VK(
+	0.5f, 0.0f, 0.0f, 0.5f, // X = [0 - 1]
+	0.0f, -0.5f, 0.0f, 0.5f, // Y = [1 - 0]
+	0.0f, 0.0f, 0.5f, 0.5f, // Z = [0 - 1]
+	0.0f, 0.0f, 0.0f, 1.0f
+);
+/*
+ALIGNTYPE16 const idRenderMatrix renderMatrix_OpenGLToVulkan(
+	1.0f, 0.0f, 0.0f, 0.0f, // X = [-1 - 1]
+	0.0f, -1.0f, 0.0f, 0.0f, // Y = [-1 - 1]
+	0.0f, 0.0f, 0.5f, 0.5f, // Z = [0 - 1]
+	0.0f, 0.0f, 0.0f, 1.0f
+);
+*/
+#endif
 // RB end
 
 /*

@@ -39,6 +39,8 @@ typedef enum VKTextureUnitType_e
  */
 typedef struct VKDynamicState_s
 {
+	int renderWidth;
+	int renderHeight;
 	int viewport[4];
 	int scissor[4];
 	float lineWidth;
@@ -70,6 +72,7 @@ typedef struct VKBackEnd_s
 
 	VKMAP(VkSampler, samplerKey_t) samplerPool; // 采样器池
 	VKQuery_t query; // 查询对象
+	VkRenderPass currentRenderPass;
 
 	globalUniformBufferObject_t ubo; // 当前Uniform变量
 	int frameCount; // 帧计数
@@ -79,6 +82,10 @@ typedef struct VKBackEnd_s
 	VKLIST(VKHandle_t) purgeBuffers[NUM_INFLIGHT_FRAME]; // 延时删除缓冲区列表(实际删除时清空)
 	VKLIST(VKHandle_t) purgeImages[NUM_INFLIGHT_FRAME]; // 延时删除图像列表(实际删除时清空)
 	VKLIST(VKShaderProgram_t *) programs; // 全部渲染管线
+
+#ifdef _SHADOW_MAPPING
+	VkRenderPass shadowMappingRenderPass;
+#endif
 
 	bool isMirror;
 	bool initialized; // 是否初始化
@@ -163,6 +170,8 @@ void R_VK_Viewport(int x, int y, int w, int h);
 void R_VK_Scissor(int x, int y, int w, int h);
 void R_VK_LineWidth(float width);
 void R_VK_DepthRange(float minZ, float maxZ);
+void R_VK_SetRenderSize(int w, int h);
+void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h);
 
 void R_VK_UpdateUniformBufferObject();
 void R_VK_BeginFrame();
@@ -183,5 +192,9 @@ void R_VK_CmdDrawIndexedInstance(int indexCount, int instanceCount, int firstInd
 void R_VK_CmdBindIndexBuffer(VkBuffer buffer, int offset);
 void R_VK_CmdBindVertexBuffer(VkBuffer pBuffer, VkDeviceSize offset);
 void R_VK_CmdBindVertexBuffers(int bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets);
+
+#ifdef _SHADOW_MAPPING
+VkRenderPass R_VK_CreateShadowMappingRenderPass( void );
+#endif
 
 #endif //_VULKAN_VKBACKEND_H

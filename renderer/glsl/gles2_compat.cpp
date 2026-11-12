@@ -312,7 +312,7 @@ GLRB_PRIV void glesStartRender(void)
 	if (USING_VULKAN)
 	{
 		static float vk_ProjectionMatrix[16];
-		R_VK_FixupClipSpaceZAndY(vk_ProjectionMatrix, gl_ProjectionMatrix);
+		R_VK_ClipSpaceZAndFlipY(vk_ProjectionMatrix, gl_ProjectionMatrix);
 		myGlMultMatrix(gl_ModelviewMatrix, vk_ProjectionMatrix, gl_MVPMatrix);
 	}
 	else
@@ -1637,7 +1637,7 @@ void RB_RenderDepthToColor(bool notPack = false)
 	if (USING_VULKAN)
 	{
 		static float vk_ProjectionMatrix[16];
-		R_VK_FixupClipSpaceZAndY(vk_ProjectionMatrix, mvp);
+		R_VK_ClipSpaceZAndFlipY(vk_ProjectionMatrix, mvp);
 	}
 	else
 #endif
@@ -1718,7 +1718,7 @@ void RB_RenderStencilToColor(int comp = 0)
 	if (USING_VULKAN)
 	{
 		static float vk_ProjectionMatrix[16];
-		R_VK_FixupClipSpaceZAndY(vk_ProjectionMatrix, mvp);
+		R_VK_ClipSpaceZAndFlipY(vk_ProjectionMatrix, mvp);
 	}
 	else
 #endif

@@ -347,6 +347,7 @@ class idImage
 		                                  textureFilter_t filter, bool allowDownSize,
 		                                  textureDepth_t depth);
 	    void		GenerateDepthStencilImage_VK( int width, int height, bool allowDownSize, textureFilter_t filter, textureRepeat_t repeat, int component = 24, int stencilComponent = 8, bool compare = false);
+	    void		GenerateShadowArray_VK( int width, int height, int numSides, textureFilter_t filter, textureRepeat_t repeat, int component = 24, bool compare = true );
 		void		UploadScratch_VK(const byte *pic, int width, int height);
 		void		CopyFramebuffer_VK(int x, int y, int width, int height, bool useOversizedBuffer);
 		void		CopyDepthbuffer_VK(int x, int y, int width, int height);

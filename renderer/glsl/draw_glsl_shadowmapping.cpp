@@ -58,18 +58,20 @@
 #define POINT_LIGHT_RENDER_METHOD_USING_FRUSTUM_FAR 1
 #endif
 
-#define SHADOW_MAPPING_VOLUME 1 // render shadow volume
-#define SHADOW_MAPPING_SURFACE 2 // render model surface
+// shadow geometry
+enum
+{
+    SHADOW_MAPPING_VOLUME = 1, // render shadow volume
+    SHADOW_MAPPING_SURFACE = 2, // render model surface
+};
 
-bool r_shadowMapping = false; // using shadow mapping(include prelight shadow)
-bool r_useDepthTexture = true;
-bool r_useCubeDepthTexture = true;
-bool r_usePackColorAsDepth = false; // Only OpenGLES2.0 and depth texture not supported
-static bool r_dumpShadowMap = false; // backend
-static bool r_dumpShadowMapFrontEnd = false; // frontend
-bool r_shadowMapPerforated = true;
-bool r_shadowMapCombine = true;
-int r_shadowMapParallelSplitFrustums = 0;
+bool r_shadowMapping = false; // Using soft shadow mapping instead of stencil shadow
+bool r_useDepthTexture = true; // Using depth texture for parallel/spot lighting(OpenGLES3/Vulkan always true, OpenGLES2.0 need check extension)
+bool r_useCubeDepthTexture = true; // Using depth cube texture for point lighting(OpenGLES3/Vulkan always true, OpenGLES2.0 need check extension)
+bool r_usePackColorAsDepth = false; // Pack depth to RGBA8(32bits) instead of R8(8bits) if OpenGLES2.0 and depth texture not supported
+bool r_shadowMapPerforated = true; // render shadow mapping of perforated surface(no shadow volume)
+bool r_shadowMapCombine = true; // Combine global and local shadow
+int r_shadowMapParallelSplitFrustums = 0; // For parallel lighting by 2d array texture in GLES3/Vulkan
 
 static shaderProgram_t *depthShader_2d = &depthShader;
 static shaderProgram_t *depthShader_cube = &depthShader;
@@ -80,6 +82,11 @@ static shaderProgram_t *depthPerforatedShader_cube = &depthPerforatedShader;
 const float SampleFactors[MAX_SHADOWMAP_RESOLUTIONS] = { 1.0f / 2048.0, 1.0f / 1024.0, 1.0f / 512.0, 1.0f / 512.0, 1.0f / 256.0 };
 
 static idCVar harm_r_shadowMapLightType("harm_r_shadowMapLightType", "0", CVAR_INTEGER|CVAR_RENDERER, "debug light type mask in shadow mapping. 1 = parallel; 2 = point; 4 = spot");
+
+#ifdef SHADOW_MAPPING_DEBUG
+static bool r_dumpShadowMap = false; // backend
+static bool r_dumpShadowMapFrontEnd = false; // frontend
+
 static idCVar harm_r_shadowMapDebug("harm_r_shadowMapDebug", "0", CVAR_INTEGER|CVAR_RENDERER, "debug shadow map frame buffer.");
 
 char RB_ShadowMapPass_T = 'G'; // G - global shadow, L - local shadow
@@ -88,6 +95,7 @@ void R_DumpShadowMap_f(const idCmdArgs &args)
 {
     r_dumpShadowMapFrontEnd = true;
 }
+#endif
 
 static ID_INLINE bool RB_ShadowMapping_isPrelightShadow(const drawSurf_t *surf)
 {
@@ -102,8 +110,8 @@ ID_INLINE void RB_SetMVP( const idRenderMatrix& mvp )
 // Attach framebuffer render texture or buffer in shadow map pass
 ID_INLINE static void RB_ShadowMapping_attachTexture(idFramebuffer *fb, const viewLight_t *vLight, int side)
 {
-#ifdef GL_ES_VERSION_3_0
-	if(USING_GLES3)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+	if(SHADOW_MAPPING_NEW)
 	{
 #ifdef SHADOW_MAPPING_DEBUG
 		fb->AttachImage2D( globalImages->shadowImage_2DRGBA[vLight->shadowLOD]); // for debug, not need render color buffer with OpenGLES3.0
@@ -180,8 +188,8 @@ ID_INLINE static void RB_ShadowMapping_attachTexture(idFramebuffer *fb, const vi
 ID_INLINE static void RB_ShadowMapping_clearBuffer(void)
 {
     qglDepthMask(GL_TRUE); // depth buffer lock update yet
-#ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+    if(SHADOW_MAPPING_NEW)
     {
 #ifdef SHADOW_MAPPING_DEBUG
         qglClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -299,8 +307,8 @@ ID_INLINE static float RB_GetPointLightFrustumFar(const viewLight_t* vLight)
 // Choose shader by light in shadow map pass
 ID_INLINE static shaderProgram_t * RB_SelectShadowMapShader(const viewLight_t* vLight, int side)
 {
-#ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+    if(SHADOW_MAPPING_NEW)
         return &depthShader;
 #endif
 #if 1
@@ -323,8 +331,8 @@ ID_INLINE static shaderProgram_t * RB_SelectShadowMapShader(const viewLight_t* v
 // Choose shader by light in shadow map pass
 ID_INLINE static shaderProgram_t * RB_SelectPerforatedShadowMapShader(const viewLight_t* vLight, int side)
 {
-#ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+    if(SHADOW_MAPPING_NEW)
         return &depthPerforatedShader;
 #endif
 #if 1
@@ -440,7 +448,7 @@ void R_SaveColorBuffer(const char *name)
 	//free(ddata);
 }
 
-#if 1
+#ifdef SHADOW_MAPPING_DEBUG
 // Test framebuffer color buffer to file for debug
 ID_INLINE static void RB_TestColorBuffer(const viewLight_t* vLight, int side)
 {
@@ -484,9 +492,6 @@ ID_INLINE static void RB_TestColorBuffer(const viewLight_t* vLight, int side)
         R_SaveColorBuffer(fn);
     }
 }
-#else
-#define RB_TestColorBuffer(vLight, side)
-#endif
 
 static void R_PrintMatrix(int w, const float* arr)
 {
@@ -499,6 +504,9 @@ static void R_PrintMatrix(int w, const float* arr)
     }
     printf("\n");
 }
+#else
+#define RB_TestColorBuffer(vLight, side)
+#endif
 
 /*
 ================
@@ -648,7 +656,7 @@ static void RB_ResetViewportAndScissorToDefaultCamera( const viewDef_t* viewDef 
 ID_INLINE static void RB_CalcParallelLightMatrix(const viewLight_t* vLight, int side, idRenderMatrix &lightViewRenderMatrix, idRenderMatrix &lightProjectionRenderMatrix)
 {
     assert( side >= 0 && side < 6 );
-    assert( side == 0 ); // not cascade
+    //assert( side == 0 ); // not cascade
 
     // original light direction is from surface to light origin
     idVec3 lightDir = -vLight->lightCenter;
@@ -698,7 +706,11 @@ ID_INLINE static void RB_CalcParallelLightMatrix(const viewLight_t* vLight, int 
     MatrixOrthogonalProjectionRH( lightProjectionMatrix, lightBounds[0][0], lightBounds[1][0], lightBounds[0][1], lightBounds[1][1], -lightBounds[1][2], -lightBounds[0][2] );
     idRenderMatrix::Transpose( ID_TO_RENDER_MATRIX lightProjectionMatrix, lightProjectionRenderMatrix );
 
-	if(USING_GLES3 && r_shadowMapParallelSplitFrustums > 0)
+    if(
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+        SHADOW_MAPPING_NEW &&
+#endif
+        r_shadowMapParallelSplitFrustums > 0)
 	{
 		// 	'frustumMVP' goes from global space -> camera local space -> camera projective space
 		// invert the MVP projection so we can deform zero-to-one cubes into the frustum pyramid shape and calculate global bounds
@@ -943,6 +955,15 @@ static ID_INLINE void RB_ShadowMapping_DrawSurfs(const drawSurf_t* drawSurfs, in
             idRenderMatrix::Multiply( lightViewRenderMatrix, modelRenderMatrix, modelToLightRenderMatrix );
 
             idRenderMatrix clipMVP;
+#ifdef _VULKAN
+            if (USING_VULKAN)
+            {
+                static idRenderMatrix vk_lightProjectionRenderMatrix;
+                R_VK_ClipSpaceZAndFlipY_RowMajor(vk_lightProjectionRenderMatrix.m, lightProjectionRenderMatrix.m);
+                idRenderMatrix::Multiply( vk_lightProjectionRenderMatrix, modelToLightRenderMatrix, clipMVP );
+            }
+            else
+#endif
             idRenderMatrix::Multiply( lightProjectionRenderMatrix, modelToLightRenderMatrix, clipMVP );
 
 #if 1
@@ -1054,7 +1075,6 @@ static ID_INLINE void RB_ShadowMapping_DrawSurfs(const drawSurf_t* drawSurfs, in
                     // renderProgManager.BindShader_TextureVertexColor();
                     GL_UseProgram(shadowMapPerforatedShader);
 
-                    idDrawVert *ac = (idDrawVert *)vertexCache.Position(drawSurf->geo->ambientCache);
                     GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_Vertex), 3, GL_FLOAT, false, sizeof(idDrawVert), ac->xyz.ToFloatPtr());
                     GL_VertexAttribPointer(offsetof(shaderProgram_t, attr_TexCoord), 2, GL_FLOAT, false, sizeof(idDrawVert), reinterpret_cast<void *>(&ac->st));
 
@@ -1105,11 +1125,13 @@ void RB_ShadowMapPass( const drawSurf_t* drawSurfs, int side, int type, bool cle
 
     const viewLight_t* vLight = backEnd.vLight;
 
-    RB_ShadowMapPass_T = clear ? 'G' : 'L';
-
     RB_LogComment( "---------- RB_ShadowMapPass( side = %i ) ----------\n", side );
 
+#ifdef SHADOW_MAPPING_DEBUG
+    RB_ShadowMapPass_T = clear ? 'G' : 'L';
+
 	if(!harm_r_shadowMapDebug.GetInteger())
+#endif
 	{
 		idFramebuffer *fb = globalFramebuffers.shadowFBO[vLight->shadowLOD];
         fb->Bind();
@@ -1217,7 +1239,9 @@ void RB_ShadowMapPasses( const drawSurf_t *globalShadowDrawSurf, const drawSurf_
 
     RB_LogComment( "---------- RB_ShadowMapPasses( side = %i ) ----------\n", side );
 
+#ifdef SHADOW_MAPPING_DEBUG
     if(!harm_r_shadowMapDebug.GetInteger())
+#endif
     {
         idFramebuffer *fb = globalFramebuffers.shadowFBO[vLight->shadowLOD];
         fb->Bind();
@@ -1361,8 +1385,8 @@ void RB_GLSL_CreateDrawInteractions_shadowMapping(const drawSurf_t *surf)
     // GL_Unifor4fv(offsetof(shaderProgram_t, u_uniformParm[4]), Frustum);
 
 
-#ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+    if(SHADOW_MAPPING_NEW)
 #endif
     if( backEnd.vLight->parallel )
     {
@@ -1489,8 +1513,8 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 	 */
 	if( backEnd.vLight->parallel )
 	{
-#ifdef GL_ES_VERSION_3_0
-        if(USING_GLES3 && r_shadowMapParallelSplitFrustums > 0)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+	    if(SHADOW_MAPPING_NEW && r_shadowMapParallelSplitFrustums > 0)
         {
             float ms[6 * 16];
             for( int i = 0; i < ( r_shadowMapParallelSplitFrustums + 1 ); i++ )
@@ -1508,6 +1532,11 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
                 idRenderMatrix::Multiply( lightProjectionRenderMatrix, modelToLightRenderMatrix, clipMVP );
 
                 idRenderMatrix MVP;
+#ifdef _VULKAN
+                if (USING_VULKAN)
+                    idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace_VK, clipMVP, MVP);
+                else
+#endif
                 idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace, clipMVP, MVP);
 
                 MVP >> &ms[i * 16];
@@ -1530,7 +1559,12 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 			idRenderMatrix clipMVP;
 			idRenderMatrix::Multiply( lightProjectionRenderMatrix, modelToLightRenderMatrix, clipMVP );
 
-			idRenderMatrix MVP;
+            idRenderMatrix MVP;
+#ifdef _VULKAN
+            if (USING_VULKAN)
+			    idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace_VK, clipMVP, MVP);
+            else
+#endif
 			idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace, clipMVP, MVP);
 
 			GL_UniformMatrix4fv(offsetof(shaderProgram_t, shadowMVPMatrix), MVP.m);
@@ -1553,7 +1587,12 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 			idRenderMatrix clipMVP;
 			idRenderMatrix::Multiply( lightProjectionRenderMatrix, modelToLightRenderMatrix, clipMVP );
 
-			idRenderMatrix MVP;
+		    idRenderMatrix MVP;
+#ifdef _VULKAN
+		    if (USING_VULKAN)
+			    idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace_VK, clipMVP, MVP);
+		    else
+#endif
 			idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace, clipMVP, MVP);
 
 			MVP >> &ms[i * 16];
@@ -1576,7 +1615,12 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 		idRenderMatrix clipMVP;
 		idRenderMatrix::Multiply( lightProjectionRenderMatrix, modelToLightRenderMatrix, clipMVP );
 
-		idRenderMatrix MVP;
+	    idRenderMatrix MVP;
+#ifdef _VULKAN
+	    if (USING_VULKAN)
+		    idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace_VK, clipMVP, MVP);
+	    else
+#endif
 		idRenderMatrix::Multiply(renderMatrix_clipSpaceToWindowSpace, clipMVP, MVP);
 		GL_UniformMatrix4fv(offsetof(shaderProgram_t, shadowMVPMatrix), MVP.m);
 	}
@@ -1585,8 +1629,8 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 // Bind shadow map texture in interaction pass
 /*ID_INLINE static */idImage * RB_ShadowMappingInteraction_GetTexture(void)
 {
-#ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3)
+#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
+    if(SHADOW_MAPPING_NEW)
     {
         return globalImages->shadowImage[backEnd.vLight->shadowLOD];
         /*		if( backEnd.vLight->parallel )

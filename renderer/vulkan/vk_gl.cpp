@@ -530,7 +530,7 @@ void glPolygonOffset(GLfloat factor, GLfloat units)
 
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-    R_VK_Scissor(x, vk_context.swapchain.height - y - height, width, height);
+    R_VK_Scissor(x, vk_backend.dynamicState.renderHeight - y - height, width, height);
 }
 
 void glStencilFunc(GLenum func, GLint ref, GLuint mask)
@@ -653,7 +653,7 @@ void glUniformMatrix4fv (GLint location, GLsizei count, GLboolean, const GLfloat
 
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
-    R_VK_Viewport(x, vk_context.swapchain.height - y - height, width, height);
+    R_VK_Viewport(x, vk_backend.dynamicState.renderHeight - y - height, width, height);
 }
 
 #include "gles2proc_placeholder.inc.h"

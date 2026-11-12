@@ -1,7 +1,7 @@
 
 #include "../../idlib/precompiled.h"
 
-#include "font/TTFontManager.h"
+#include "TTFontManager.h"
 
 #include "ui/DeviceContext.h"
 

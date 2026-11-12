@@ -906,6 +906,79 @@ void idImage::GenerateDepthStencilImage_VK( int width, int height, bool allowDow
 	}
 }
 
+void idImage::GenerateShadowArray_VK( int width, int height, int numSides, textureFilter_t filterParm, textureRepeat_t repeatParm, int component, bool compare )
+{
+	int			scaled_width, scaled_height;
+
+	PurgeImage();
+
+	filter = filterParm;
+	repeat = repeatParm;
+	depth = TD_SHADOW_ARRAY;
+	cubeFiles = CF_2D_ARRAY;
+
+	type = TT_2D_ARRAY;
+
+	// if we don't have a rendering context, just return after we
+	// have filled in the parms.  We must have the values set, or
+	// an image match from a shader before the render starts would miss
+	// the generated texture
+	if (!glConfig.isInitialized) {
+		return;
+	}
+
+	// make sure it is a power of 2
+	scaled_width = MakePowerOfTwo(width);
+	scaled_height = MakePowerOfTwo(height);
+
+	if (scaled_width != width || scaled_height != height) {
+		common->Error("GenerateShadowArray: not a power of 2 image");
+	}
+
+#ifdef _SPLASHDAMAGE
+	sourceWidth = scaled_width;
+	sourceHeight = scaled_height;
+#endif
+	// Optionally modify our width/height based on options/hardware
+	//GetDownsize(scaled_width, scaled_height);
+
+	scaled_width = width;
+	scaled_height = height;
+	uploadHeight = scaled_height;
+	uploadWidth = scaled_width;
+
+	int dataType;
+	switch (component) {
+		case 16:
+			internalFormat = GL_DEPTH_COMPONENT16;
+			dataType = VK_FORMAT_D16_UNORM;
+			break;
+		case 32:
+			internalFormat = GL_DEPTH_COMPONENT32F;
+			dataType = VK_FORMAT_D32_SFLOAT;
+			break;
+		case 24:
+		default:
+			internalFormat = GL_DEPTH_COMPONENT24;
+			dataType = VK_FORMAT_D24_UNORM_S8_UINT;
+			break;
+	}
+
+	texnum = VK_AllocImage(&vk_image);
+
+	Bind();
+
+	VK_CreateImage(vk_image, scaled_width, scaled_height, dataType, false, numSides, 1, IU_SAMPLER | IU_ATTACHMENT);
+	SetDebugInfo_VK(false);
+
+	// no other clamp mode makes sense
+	// set the minimize / maximize filtering
+	VkSampler sampler = R_VK_GetSampler(filter, TR_CLAMP_TO_ZERO, compare, vk_image->mipLevels - 1);
+	vk_image->sampler = sampler;
+
+	// see if we messed anything up
+}
+
 /*
 ===============
 PurgeImage_VK
@@ -1248,7 +1321,7 @@ void idImage::SetDebugInfo_VK(bool purge)
 	if (!vk_image)
 		return;
 
-	const char *typeName = type == TT_CUBIC ? "cube" : "2d";
+	const char *typeName = type == TT_CUBIC ? "cube" : (type == TT_CUBIC ? "2darray" : "2d");
 
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE, (uint64_t)vk_image->image, "%s%s_%d::%d::%s", purge ? "free_image" : "image", typeName, vk_context.frameIndex, texnum, imgName.c_str());
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_image->imageView, "%s%s_%d::%d::%s", purge ? "free_imageView" : "imageView", typeName, vk_context.frameIndex, texnum, imgName.c_str());

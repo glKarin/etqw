@@ -1136,6 +1136,10 @@ int main(int argc, char *argv[]) {
     freopen("stderr.txt","w",stderr);
     setvbuf(stderr, NULL, _IONBF, 0);
 #endif
+#ifdef _REDIRECT_OUTPUT //debug
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
+#endif
 	// SDL_win32_main.c creates the <game>_log.txt and redirects stdout into it
 	// so here we can log its (approx.) creation time before anything else is logged:
 	{

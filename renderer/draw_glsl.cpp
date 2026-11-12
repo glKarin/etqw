@@ -86,6 +86,11 @@ static void R_InitGLSLCvars(void)
 	r_shadowMapPerforated = r_forceShadowMapsOnAlphaTestedSurfaces.GetBool();
     r_shadowMapCombine = harm_r_shadowMapCombine.GetBool();
     r_shadowMapParallelSplitFrustums = r_shadowMapSplits.GetInteger();
+
+#ifdef _VULKAN
+    if (!USING_VULKAN)
+    {
+#endif
 #ifdef GL_ES_VERSION_3_0
 	if(!USING_GLES3) {
 #endif
@@ -145,8 +150,11 @@ static void R_InitGLSLCvars(void)
 		else
 			common->Printf("Store depth value with RED component if not using depth texture.\n");
 	}
+#endif // end GL_ES_VERSION_3_0
+#ifdef _VULKAN
+    }
 #endif
-#endif
+#endif // end _SHADOW_MAPPING
 
 #ifdef _STENCIL_SHADOW_IMPROVE
 	r_stencilShadowTranslucent = harm_r_stencilShadowTranslucent.GetBool();

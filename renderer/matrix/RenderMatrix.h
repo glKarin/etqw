@@ -228,6 +228,9 @@ extern const idRenderMatrix renderMatrix_flipToOpenGL;
 extern const idRenderMatrix renderMatrix_windowSpaceToClipSpace;
 // RB begin
 extern const idRenderMatrix renderMatrix_clipSpaceToWindowSpace;
+#ifdef _VULKAN
+extern const idRenderMatrix renderMatrix_clipSpaceToWindowSpace_VK;
+#endif
 // RB end
 
 /*
