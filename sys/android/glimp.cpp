@@ -421,11 +421,6 @@ static void *glHandle = NULL;
 
 #ifdef _VULKAN
 #include "../../renderer/vulkan/vk_gl.h"
-static void R_LoadVulkanOpenGLCompatFunc(void)
-{
-#define QGLPROC(name, rettype, args) q##name = name; 
-#include "../../renderer/qgl_proc.h"
-}
 
 static void VKimp_Shutdown()
 {
@@ -442,7 +437,7 @@ static void R_LoadOpenGLFunc()
 #ifdef _VULKAN
 	if(USING_VULKAN)
 	{
-		R_LoadVulkanOpenGLCompatFunc();
+		R_VK_LoadOpenGLCompatFunc();
 		return;
 	}
 #endif

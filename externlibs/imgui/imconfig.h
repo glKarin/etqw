@@ -152,3 +152,7 @@ namespace ImGui
 #include "renderer/qgl.h"
 #define IMGUI_IMPL_OPENGL_ES2
 
+#ifdef _VULKAN
+#define IMGUI_IMPL_VULKAN_USE_VOLK
+#include "../Volk/volk.h"
+#endif

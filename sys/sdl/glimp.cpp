@@ -187,12 +187,6 @@ static void SetSDLIcon()
 
 #ifdef _VULKAN
 #include "../../renderer/vulkan/vk_gl.h"
-static void R_LoadVulkanOpenGLCompatFunc(void)
-{
-#define QGLPROC(name, rettype, args) q##name = name;
-
-#include "../../renderer/qgl_proc.h"
-}
 #endif
 
 static void R_LoadOpenGLFunc(void)
@@ -200,7 +194,7 @@ static void R_LoadOpenGLFunc(void)
 #ifdef _VULKAN
 	if(USING_VULKAN)
 	{
-		R_LoadVulkanOpenGLCompatFunc();
+		R_VK_LoadOpenGLCompatFunc();
 		return;
 	}
 #endif

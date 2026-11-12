@@ -17,6 +17,10 @@ set(src_imgui
 		imgui_demo.cpp
 )
 
+if(VULKAN)
+set(src_imgui ${src_imgui} backends/imgui_impl_vulkan.cpp)
+endif()
+
 if(ANDROID)
 	set(src_imgui ${src_imgui} backends/imgui_impl_android.cpp)
 else()
@@ -25,3 +29,4 @@ endif()
 
 ADD_LIBRARY(idtech4_imgui STATIC ${src_imgui})
 target_include_directories(idtech4_imgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../)
+target_include_directories(idtech4_imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Volk)

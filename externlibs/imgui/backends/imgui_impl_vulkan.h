@@ -58,7 +58,9 @@
 #include <vulkan/vulkan.h>
 #endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_dynamic_rendering)
+#if !defined(_VULKAN) //karin: comment it
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
+#endif
 #endif
 
 // Current version of the backend use 1 descriptor for the font atlas + as many as additional calls done to ImGui_ImplVulkan_AddTexture().

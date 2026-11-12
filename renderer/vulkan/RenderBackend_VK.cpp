@@ -3,15 +3,17 @@
 
 #include "../tr_local.h"
 
+#include "vk_gl.h"
+
 extern int GL_GetDrawMode(GLenum mode);
 
-void glVertexAttribPointer (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
+void VKGL_FUNC(glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
 {
 	if (index == PC_ATTRIB_INDEX_VERTEX) // only binding if vertex position(xyz is starting in idDrawVert)
 	R_VK_CmdBindVertexBuffer(vertexCache.BufferBinding_VK(), (uintptr_t)pointer);
 }
 
-void glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indices)
+void VKGL_FUNC(glDrawElements) (GLenum mode, GLsizei count, GLenum type, const void *indices)
 {
 	const int size = type == GL_UNSIGNED_SHORT ? sizeof(unsigned short) : sizeof(unsigned int);
 	const bool indexCacheBinding = VK_NULL_HANDLE != vertexCache.IndexBufferBinding_VK(); // indices are in GPU memory
@@ -33,7 +35,7 @@ void glDrawElements (GLenum mode, GLsizei count, GLenum type, const void *indice
 		vertexCache.UnbindIndex();
 }
 
-void glBindBuffer (GLenum target, GLuint buffer)
+void VKGL_FUNC(glBindBuffer) (GLenum target, GLuint buffer)
 {
 	VKBuffer_t *buf = vk_context.buffers.list[buffer];
 	if(target == GL_ELEMENT_ARRAY_BUFFER)
@@ -58,7 +60,7 @@ static int GL_GetTextureType(GLenum target)
 	}
 }
 
-void glBindTexture( GLenum target, GLuint texture )
+void VKGL_FUNC(glBindTexture)( GLenum target, GLuint texture )
 {
 	int tut = GL_GetTextureType(target);
 	if (tut == -1)
@@ -104,7 +106,7 @@ uint8_t srgb_byte_to_linear_rgba8(uint8_t src)
 	return (uint8_t)(lin * 255.0f + 0.5f);
 }
 
-void glReadPixels (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels)
+void VKGL_FUNC(glReadPixels) (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels)
 {
 	int size = width * height * 4;
 	VKBufferMap_t map;

@@ -5,6 +5,20 @@
 
 #include "../tr_local.h"
 
+#if 1
+#define QGLPROC_PLACEHOLDER(name, ret, args) ret vk##name args { \
+    Sys_Printf("VKGL: call " #name " not implement\n"); \
+    return (ret)0; \
+}
+#define QGLPROC(name, rettype, args) q##name = vk##name;
+#else
+#define QGLPROC_PLACEHOLDER(name, ret, args) ret name args { \
+    Sys_Printf("VKGL: call " #name " not implement\n"); \
+    return (ret)0; \
+}
+#define QGLPROC(name, rettype, args) q##name = name;
+#endif
+
 #define GLERROR_OUTPUT 0
 
 static GLenum error = GL_NO_ERROR;
@@ -32,11 +46,6 @@ static void GL_RaiseError(GLenum err)
 
 #define GLRAISE_ERROR(err, ...) GL_RaiseError(err)
 #endif
-
-#define QGLPROC_PLACEHOLDER(name, ret, args) ret name args { \
-    Sys_Printf("VKGL: call " #name " not implement\n"); \
-    return (ret)0; \
-}
 
 static int GL_GetCullFace(GLenum mode)
 {
@@ -210,12 +219,12 @@ int GL_GetDrawMode(GLenum mode)
     }
 }
 
-void glActiveTexture(GLenum texture)
+void VKGL_FUNC(glActiveTexture)(GLenum texture)
 {
     R_VK_SelectTexture(texture - GL_TEXTURE0);
 }
 
-void glBlendFunc(GLenum sfactor, GLenum dfactor)
+void VKGL_FUNC(glBlendFunc)(GLenum sfactor, GLenum dfactor)
 {
     int src = GL_GetBlendSrcFactor(sfactor);
     if (src < 0)
@@ -232,37 +241,37 @@ void glBlendFunc(GLenum sfactor, GLenum dfactor)
     R_VK_BlendFunc(src, dst);
 }
 
-void glClear(GLbitfield mask)
+void VKGL_FUNC(glClear)(GLbitfield mask)
 {
     R_VK_Clear(mask & GL_COLOR_BUFFER_BIT, mask & GL_DEPTH_BUFFER_BIT, mask & GL_STENCIL_BUFFER_BIT);
 }
 
-void glClearColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
+void VKGL_FUNC(glClearColor)(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha)
 {
     R_VK_ClearColor(red, green, blue, alpha);
 }
 
-void glClearDepthf(GLclampf depth)
+void VKGL_FUNC(glClearDepthf)(GLclampf depth)
 {
     R_VK_ClearDepth(depth);
 }
 
-void glClearStencil(GLint s)
+void VKGL_FUNC(glClearStencil)(GLint s)
 {
     R_VK_ClearStencil(s);
 }
 
-void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+void VKGL_FUNC(glColorMask)(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
 {
     R_VK_ColorMask(red, green, blue, alpha);
 }
 
-void glCullFace(GLenum mode)
+void VKGL_FUNC(glCullFace)(GLenum mode)
 {
     R_VK_CullFace(GL_GetCullFace(mode));
 }
 
-void glDepthFunc(GLenum func)
+void VKGL_FUNC(glDepthFunc)(GLenum func)
 {
     int depthFunc = GL_GetDepthCompareOp(func);
     if (depthFunc < 0)
@@ -273,17 +282,17 @@ void glDepthFunc(GLenum func)
     R_VK_DepthFunc(depthFunc);
 }
 
-void glDepthMask(GLboolean flag)
+void VKGL_FUNC(glDepthMask)(GLboolean flag)
 {
     R_VK_DepthMask(flag);
 }
 
-void glDepthRangef(GLfloat n, GLfloat f)
+void VKGL_FUNC(glDepthRangef)(GLfloat n, GLfloat f)
 {
     R_VK_DepthRange(n, f);
 }
 
-void glDisable(GLenum cap)
+void VKGL_FUNC(glDisable)(GLenum cap)
 {
     switch(cap)
     {
@@ -311,7 +320,7 @@ void glDisable(GLenum cap)
     }
 }
 
-void glDrawArrays(GLenum mode, GLint first, GLsizei count)
+void VKGL_FUNC(glDrawArrays)(GLenum mode, GLint first, GLsizei count)
 {
     int poly = GL_GetDrawMode(mode);
     if (poly < 0)
@@ -322,7 +331,7 @@ void glDrawArrays(GLenum mode, GLint first, GLsizei count)
     R_VK_DrawArrays(poly, first, count);
 }
 
-void glEnable(GLenum cap)
+void VKGL_FUNC(glEnable)(GLenum cap)
 {
     switch(cap)
     {
@@ -350,17 +359,17 @@ void glEnable(GLenum cap)
     }
 }
 
-void glFinish(void)
+void VKGL_FUNC(glFinish)(void)
 {
     //VK_WaitFrameFence();
 }
 
-void glFrontFace(GLenum mode)
+void VKGL_FUNC(glFrontFace)(GLenum mode)
 {
     R_VK_FrontFace(mode == GL_CW ? ST_FRONT_CW : ST_FRONT_CCW);
 }
 
-GLenum glGetError(void)
+GLenum VKGL_FUNC(glGetError)(void)
 {
     return error;
 }
@@ -371,7 +380,7 @@ GLenum glGetError(void)
 #define GLGET_WRITE4(params, a, b, c, d) params[0] = (GLGET_WRITE_TYPE)a; params[1] = (GLGET_WRITE_TYPE)b; params[2] = (GLGET_WRITE_TYPE)c; params[3] = (GLGET_WRITE_TYPE)d;
 #define GLGET_WRITE4V(params, a) GLGET_WRITE4(params, a[0], a[1], a[2], a[3]);
 
-#define GLGET_FUNC(Type) void glGet##Type##v(GLenum pname, GLGET_WRITE_TYPE *params) \
+#define GLGET_FUNC(Type) void VKGL_FUNC(glGet##Type##v)(GLenum pname, GLGET_WRITE_TYPE *params) \
 { \
     switch (pname) \
     { \
@@ -496,7 +505,7 @@ GLGET_FUNC(Boolean)
 GLGET_FUNC(Float)
 #undef GLGET_WRITE_TYPE
 
-GLboolean glIsEnabled(GLenum cap)
+GLboolean VKGL_FUNC(glIsEnabled)(GLenum cap)
 {
     switch(cap)
     {
@@ -518,22 +527,22 @@ GLboolean glIsEnabled(GLenum cap)
     }
 }
 
-void glLineWidth(GLfloat width)
+void VKGL_FUNC(glLineWidth)(GLfloat width)
 {
     R_VK_LineWidth(width);
 }
 
-void glPolygonOffset(GLfloat factor, GLfloat units)
+void VKGL_FUNC(glPolygonOffset)(GLfloat factor, GLfloat units)
 {
     R_VK_PolygonOffset(factor, units);
 }
 
-void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
+void VKGL_FUNC(glScissor)(GLint x, GLint y, GLsizei width, GLsizei height)
 {
     R_VK_Scissor(x, vk_backend.dynamicState.renderHeight - y - height, width, height);
 }
 
-void glStencilFunc(GLenum func, GLint ref, GLuint mask)
+void VKGL_FUNC(glStencilFunc)(GLenum func, GLint ref, GLuint mask)
 {
     int stencilFunc = GL_GetStencilCompareOp(func);
     if (stencilFunc < 0)
@@ -544,7 +553,7 @@ void glStencilFunc(GLenum func, GLint ref, GLuint mask)
     R_VK_StencilFunc(stencilFunc, ref, mask);
 }
 
-void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
+void VKGL_FUNC(glStencilFuncSeparate)(GLenum face, GLenum func, GLint ref, GLuint mask)
 {
     int stencilFunc = GL_GetStencilCompareOp(func);
     if (stencilFunc < 0)
@@ -555,17 +564,17 @@ void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask)
     R_VK_StencilFuncSeparate(GL_GetCullFace(face), stencilFunc, ref, mask);
 }
 
-void glStencilMask(GLuint mask)
+void VKGL_FUNC(glStencilMask)(GLuint mask)
 {
     R_VK_StencilMask(mask);
 }
 
-void glStencilMaskSeparate(GLenum face, GLuint mask)
+void VKGL_FUNC(glStencilMaskSeparate)(GLenum face, GLuint mask)
 {
     R_VK_StencilMaskSeparate(GL_GetCullFace(face), mask);
 }
 
-void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+void VKGL_FUNC(glStencilOp)(GLenum sfail, GLenum dpfail, GLenum dppass)
 {
     int sfailOp = GL_GetStencilOp(sfail);
     if (sfailOp < 0)
@@ -588,7 +597,7 @@ void glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
     R_VK_StencilOp(sfailOp, dpfailOp, dppassOp);
 }
 
-void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
+void VKGL_FUNC(glStencilOpSeparate)(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass)
 {
     int sfailOp = GL_GetStencilOp(sfail);
     if (sfailOp < 0)
@@ -611,49 +620,54 @@ void glStencilOpSeparate(GLenum face, GLenum sfail, GLenum dpfail, GLenum dppass
     R_VK_StencilOpSeparate(GL_GetCullFace(face), sfailOp, dpfailOp, dppassOp);
 }
 
-void glUniform1f(GLint location, GLfloat x)
+void VKGL_FUNC(glUniform1f)(GLint location, GLfloat x)
 {
     R_VK_Uniform1f(location, x);
 }
 
-void glUniform1fv(GLint location, GLsizei, const GLfloat *value)
+void VKGL_FUNC(glUniform1fv)(GLint location, GLsizei, const GLfloat *value)
 {
     R_VK_Uniform1f(location, *value);
 }
 
-void glUniform2fv(GLint location, GLsizei, const GLfloat *value)
+void VKGL_FUNC(glUniform2fv)(GLint location, GLsizei, const GLfloat *value)
 {
     R_VK_Uniform2fv(location, value);
 }
 
-void glUniform3fv(GLint location, GLsizei, const GLfloat *value)
+void VKGL_FUNC(glUniform3fv)(GLint location, GLsizei, const GLfloat *value)
 {
     R_VK_Uniform3fv(location, value);
 }
 
-void glUniform4f(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+void VKGL_FUNC(glUniform4f)(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
     R_VK_Uniform4f(location, x, y, z, w);
 }
 
-void glUniform4fv(GLint location, GLsizei, const GLfloat *value)
+void VKGL_FUNC(glUniform4fv)(GLint location, GLsizei, const GLfloat *value)
 {
     R_VK_Uniform4fv(location, value);
 }
 
-void glUniform1i(GLint location, GLint value)
+void VKGL_FUNC(glUniform1i)(GLint location, GLint value)
 {
     R_VK_Uniform1i(location, value);
 }
 
-void glUniformMatrix4fv (GLint location, GLsizei count, GLboolean, const GLfloat *value)
+void VKGL_FUNC(glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean, const GLfloat *value)
 {
     R_VK_UniformMatrix4fv(location, value, count);
 }
 
-void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
+void VKGL_FUNC(glViewport)(GLint x, GLint y, GLsizei width, GLsizei height)
 {
     R_VK_Viewport(x, vk_backend.dynamicState.renderHeight - y - height, width, height);
 }
 
 #include "gles2proc_placeholder.inc.h"
+
+void R_VK_LoadOpenGLCompatFunc(void)
+{
+#include "../../renderer/qgl_proc.h"
+}
