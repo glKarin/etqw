@@ -404,7 +404,7 @@ UBO_VERTEX_PROC_BEGIN(interactionShadowMappingSpotLight)
 	UBO_MAT4_PROC(modelViewProjectionMatrix);
 	UBO_MAT4_PROC(modelMatrix);
 	UBO_VEC4_PROC(globalLightOrigin);
-	UBO_MAT4_N_PROC(shadowMVPMatrix, 6);
+	UBO_MAT4_PROC(shadowMVPMatrix);
 	UBO_FLOAT_PROC(colorModulate);
     UBO_FLOAT_PROC(colorAdd);
 UBO_VERTEX_PROC_END(interactionShadowMappingSpotLight)

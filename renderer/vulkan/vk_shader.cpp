@@ -33,13 +33,6 @@ extern bool shaderRequired;
 extern int RB_GLSL_ReadExternalShaderSource(idStr &fullPath, idStr &buffer);
 extern void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *macros, int highp = 0);
 
-typedef struct shaderSource_e
-{
-	const char *path;
-	const char *macros;
-	int ref;
-} shaderSource_t;
-
 void R_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module)
 {
     createInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -263,9 +256,14 @@ static int RB_VK_LoadShaderProgram(
     		vertexHandle = VK_AllocShader(&vertexShaderModule);
     		*vertexShaderModule = VK_CreateShaderModule(vertexSpirv, vertexSpirvLength);
 
-    		// TODO:VK
+    		if (!*vertexShaderModule)
+    			break;
+
     		fragmentHandle = VK_AllocShader(&fragmentShaderModule);
     		*fragmentShaderModule = VK_CreateShaderModule(fragmentSpirv, fragmentSpirvLength);
+
+    		if (!*fragmentShaderModule)
+    			break;
 
     		common->Printf("    Load external shader program success!\n");
 
@@ -334,10 +332,13 @@ static int RB_VK_LoadShaderProgram(
 
 		vertexHandle = VK_AllocShader(&vertexShaderModule);
 		*vertexShaderModule = VK_CreateShaderModule(vertexSpirv, vertexSpirvLength);
+		if (!*vertexShaderModule)
+			break;
 
-		// TODO:VK
 		fragmentHandle = VK_AllocShader(&fragmentShaderModule);
 		*fragmentShaderModule = VK_CreateShaderModule(fragmentSpirv, fragmentSpirvLength);
+		if (!*fragmentShaderModule)
+			break;
 
 #if 0
 		// Cache external GLSL shader binary
@@ -524,137 +525,6 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 	fs = prop->default_fragment_shader_source.c_str();
 	macros = prop->macros.c_str();
 
-#if 0
-	const shaderSource_t shaderNames_vertex[] = {
-		{ "interaction", "PHONG", 0 },
-		{ "shadow", "", 0 },
-		{ "default", "", 0 },
-		{ "zfill", "", 0 },
-		{ "zfillClip", "", 0 },
-		{ "cubemap", "", 0 },
-		{ "environment", "", 0 },
-		{ "bumpyEnvironment", "", 0 },
-		{ "fog", "", 0 },
-		{ "blendLight", "", 0 },
-		{ "interaction", "_PBR", 0 },
-		{ "interaction", "BLINN_PHONG", 0 },
-		{ "interaction", "_AMBIENT", 0 },
-		{ "globalIllumination", "_BFG", 0 },
-		{ "diffuseCubemap", "", 0 },
-		{ "texgen", "", 0 },
-		{ "colorProcess", "", 0 },
-		{ "heatHaze", "", 0 },
-		{ "heatHazeWithMask", "", 0 },
-		{ "heatHazeWithMaskAndVertex", "", 0 },
-		{ "megaTexture", "", 0 },
-#ifdef _SHADOW_MAPPING
-		{ "depthShadowMapping", "", 0 },
-		{ "depthPerforated", "", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,PHONG", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,_PBR", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,BLINN_PHONG", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,_AMBIENT", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,PHONG", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,_PBR", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,BLINN_PHONG", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,_AMBIENT", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,PHONG", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,_PBR", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,BLINN_PHONG", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,_AMBIENT", 0 },
-#endif
-#ifdef _STENCIL_SHADOW_IMPROVE
-		{ "interactionStencilShadow", "_TRANSLUCENT,PHONG", 0 },
-		{ "interactionStencilShadow", "_TRANSLUCENT,_PBR", 0 },
-		{ "interactionStencilShadow", "_TRANSLUCENT,BLINN_PHONG", 0 },
-		{ "interactionStencilShadow", "_TRANSLUCENT,_AMBIENT", 0 },
-		{ "interactionStencilShadow", "_SOFT,PHONG", 0 },
-		{ "interactionStencilShadow", "_SOFT,_PBR", 0 },
-		{ "interactionStencilShadow", "_SOFT,BLINN_PHONG", 0 },
-		{ "interactionStencilShadow", "_SOFT,_AMBIENT", 0 },
-#endif
-#ifdef _POSTPROCESS
-		{ "retro_postprocess_2d", "", 0 },
-		{ "", "", SHADER_RETRO_2BIT },
-		{ "", "", SHADER_RETRO_2BIT },
-		{ "", "", SHADER_RETRO_2BIT },
-		{ "", "", SHADER_RETRO_2BIT },
-#endif
-		{ "simpleVertexTexcoord", "", SHADER_DEPTH_TO_COLOR },
-		{ "", "", SHADER_DEPTH_TO_COLOR },
-	};
-	static_assert(COUNT_OF(shaderNames_vertex) == SHADER_CUSTOM);
-
-	const shaderSource_t shaderNames_fragment[] = {
-		{ "interaction", "PHONG", 0 },
-		{ "shadow", "", 0 },
-		{ "default", "", 0 },
-		{ "zfill", "", 0 },
-		{ "zfillClip", "", 0 },
-		{ "cubemap", "", 0 },
-		{ "environment", "", 0 },
-		{ "bumpyEnvironment", "", 0 },
-		{ "fog", "", 0 },
-		{ "", "", SHADER_FOG },
-		{ "interaction", "_PBR", 0 },
-		{ "interaction", "BLINN_PHONG", 0 },
-		{ "interaction", "_AMBIENT", 0 },
-		{ "globalIllumination", "_BFG", 0 },
-		{ "", "", SHADER_CUBEMAP },
-		{ "texgen", "", 0 },
-		{ "colorProcess", "", 0 },
-		{ "heatHaze", "", 0 },
-		{ "heatHazeWithMask", "", 0 },
-		{ "heatHazeWithMaskAndVertex", "", 0 },
-		{ "megaTexture", "", 0 },
-#ifdef _SHADOW_MAPPING
-		{ "depthShadowMapping", "", 0 },
-		{ "depthPerforated", "", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,PHONG", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,_PBR", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,BLINN_PHONG", 0 },
-		{ "interactionShadowMapping", "_POINT_LIGHT,_AMBIENT", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,PHONG", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,_PBR", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,BLINN_PHONG", 0 },
-		{ "interactionShadowMapping", "_PARALLEL_LIGHT,PARALLEL_LIGHT_CASCADE_FRUSTUM,_AMBIENT", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,PHONG", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,_PBR", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,BLINN_PHONG", 0 },
-		{ "interactionShadowMapping", "_SPOT_LIGHT,_AMBIENT", 0 },
-#endif
-#ifdef _STENCIL_SHADOW_IMPROVE
-		{ "interactionStencilShadow", "_TRANSLUCENT,PHONG", 0 },
-		{ "interactionStencilShadow", "_TRANSLUCENT,_PBR", 0 },
-		{ "interactionStencilShadow", "_TRANSLUCENT,BLINN_PHONG", 0 },
-		{ "interactionStencilShadow", "_TRANSLUCENT,_AMBIENT", 0 },
-		{ "interactionStencilShadow", "_SOFT,PHONG", 0 },
-		{ "interactionStencilShadow", "_SOFT,_PBR", 0 },
-		{ "interactionStencilShadow", "_SOFT,BLINN_PHONG", 0 },
-		{ "interactionStencilShadow", "_SOFT,_AMBIENT", 0 },
-#endif
-#ifdef _POSTPROCESS
-		{ "retro_2bit", "", 0 },
-		{ "retro_c64", "", 0 },
-		{ "retro_cpc", "", 0 },
-		{ "retro_genesis", "", 0 },
-		{ "retro_ps1", "", 0 },
-#endif
-		{ "depthToColor", "", 0 },
-		{ "stencilToColor", "", 0 },
-	};
-	static_assert(COUNT_OF(shaderNames_fragment) == SHADER_CUSTOM);
-
-	idStr vertex_shader_source_file = shaderNames_vertex[prop->type].path;
-	if (vertex_shader_source_file == "")
-		vertex_shader_source_file = shaderNames_vertex[shaderNames_vertex[prop->type].ref].path;
-	vertex_shader_source_file += ".vert";
-	idStr fragment_shader_source_file = shaderNames_fragment[prop->type].path;
-	if (fragment_shader_source_file == "")
-		fragment_shader_source_file = shaderNames_fragment[shaderNames_fragment[prop->type].ref].path;
-	fragment_shader_source_file += ".frag";
-#endif
-
 	if(RB_VK_LoadShaderProgram(
 			prop->name.c_str(),
 			prop->type,
@@ -674,7 +544,7 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 
 	idStr::Copynz(shaderProgram->name, name, sizeof(shaderProgram->name));
 	shaderProgram->type = type;
-	shaderProgram->program = type;
+	shaderProgram->program = vk_backend.programs.num;
 
 	RB_VK_InitShaderProgram(shaderProgram, vertexHandle, fragmentHandle, vertexShaderModule, fragmentShaderModule);
 
