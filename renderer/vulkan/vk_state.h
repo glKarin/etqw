@@ -4,12 +4,22 @@
 typedef uint64_t globalState_t;
 typedef globalState_t globalState1_t;
 typedef globalState_t globalState2_t;
+
+//#define VKRENDERPASS_AS_STATE 1
+
 typedef struct {
 	globalState1_t st1;
 	globalState2_t st2;
+#ifdef VKRENDERPASS_AS_STATE
+	VkRenderPass renderPass;
+#endif
 } globalStateSet_t;
 
+#ifdef VKRENDERPASS_AS_STATE
+#define GLOBAL_ST_EQUALS(a, b) ((a).st1 == (b).st1 && (a).st2 == (b).st2 && (a).renderPass == (b).renderPass)
+#else
 #define GLOBAL_ST_EQUALS(a, b) ((a).st1 == (b).st1 && (a).st2 == (b).st2)
+#endif
 
 typedef enum VKBackendState_e
 {

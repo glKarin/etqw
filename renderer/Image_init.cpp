@@ -1352,6 +1352,12 @@ void idImageManager::ChangeTextureFilter(void)
 
 		glt->Bind();
 
+#ifdef _VULKAN
+		if (USING_VULKAN)
+			glt->UpdateImageFilter_VK();
+		else
+		{
+#endif
 		if (glt->filter == TF_DEFAULT) {
 			qglTexParameterf(texEnum, GL_TEXTURE_MIN_FILTER, globalImages->textureMinFilter);
 			qglTexParameterf(texEnum, GL_TEXTURE_MAG_FILTER, globalImages->textureMaxFilter);
@@ -1366,6 +1372,9 @@ void idImageManager::ChangeTextureFilter(void)
 #if !defined(GL_ES_VERSION_2_0)
 		if (glConfig.textureLODBiasAvailable) {
 			qglTexParameterf(texEnum, GL_TEXTURE_LOD_BIAS_EXT, globalImages->textureLODBias);
+		}
+#endif
+#ifdef _VULKAN
 		}
 #endif
 	}

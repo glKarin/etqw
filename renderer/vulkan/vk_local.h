@@ -4,6 +4,7 @@
 #define IDVK_CONTAINER_SIZE_CONFIG 1
 
 #include "vk.h"
+#include "vk_enum.h"
 #include "vk_sampler.h"
 #include "vk_query.h"
 #include "vk_buffer.h"
@@ -69,5 +70,7 @@ void R_VK_AddLoadImageList( idImage * image, bool checkForPrecompressed );
 void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows );
 void R_VK_HandleLoadImageList( void );
 bool R_VK_DisableUploadImage( void );
+
+void R_VK_AddCommands();
 
 #endif //_VULKAN_LOCAL_H

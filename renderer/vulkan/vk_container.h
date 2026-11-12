@@ -346,7 +346,7 @@
 
 #define VKMAP_ALLOC(T, I, map) VKMAP_ALLOC2(T, I, (map).list, (map).keys, (map).size, (map).num, (map).granularity)
 
-#define VKMAP_FOREACH(T, I, arr) for(int i = 0; i < (pool).num; i++)
+#define VKMAP_FOREACH(T, I, arr) for(int i = 0; i < (arr).num; i++)
 
 
 // map(key-value double list)

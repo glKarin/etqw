@@ -70,7 +70,7 @@ typedef struct VKBackEnd_s
 
 	VKDynamicState_t dynamicState; // 当前Vulkan动态属性
 
-	VKMAP(VkSampler, samplerKey_t) samplerPool; // 采样器池
+	VKMAP(VkSampler, VKSamplerKey_t) samplerPool; // 采样器池
 	VKQuery_t query; // 查询对象
 	VkRenderPass currentRenderPass;
 

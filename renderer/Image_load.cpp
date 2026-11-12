@@ -260,6 +260,13 @@ SetImageFilterAndRepeat
 */
 void idImage::SetImageFilterAndRepeat() const
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		SetImageFilterAndRepeat_VK();
+		return;
+	}
+#endif
 	// set the minimize / maximize filtering
 	switch (filter) {
 		case TF_DEFAULT:

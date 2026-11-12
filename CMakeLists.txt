@@ -1022,6 +1022,7 @@ if(VULKAN)
 			externlibs/vma/vma.cpp
 			renderer/vulkan/vk.cpp
 			renderer/vulkan/vk_gl.cpp
+			renderer/vulkan/vk_enum.cpp
 			renderer/vulkan/vk_state.cpp
 			renderer/vulkan/vk_backend.cpp
 			renderer/vulkan/vk_buffer.cpp

@@ -54,5 +54,6 @@ typedef struct VKShaderProgram_t
 
 void R_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
 void R_CreateFragmentShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
+void R_VK_ListPipeline(const idCmdArgs &);
 
 #endif //_VULKAN_VKSHADER_H

@@ -550,3 +550,45 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 
 	return true;
 }
+
+void R_VK_ListPipeline(const idCmdArgs &)
+{
+	common->Printf("Pipeline pool usage: %d/%d\n", vk_backend.programs.num, vk_backend.programs.size);
+
+	VKShaderProgram_t *program;
+	idStr str;
+	VKLIST_FOREACH(VKShaderProgram_t, vk_backend.programs)
+	{
+		program = vk_backend.programs.list[i];
+		str.Clear();
+		for (int n = 0; n < program->numTextureUnits; n++)
+		{
+			switch (program->textureTypes[n])
+			{
+				case TUT_CUBEMAP:
+					str.Append("CubeMap");
+					break;
+				case TUT_2D_ARRAY:
+					str.Append("2DArray");
+					break;
+				case TUT_2D:
+					str.Append("2D");
+					break;
+			}
+			str.Append(" ");
+		}
+		common->Printf("%3d: %s %p -> pipelines=%d/%d; UBO(%d) size: vertex=%d, fragment=%d; textures(%d): %s\n", i + 1, program->name, program->pipelineLayout->pipelineLayout,
+			program->pipelinePool.num, program->pipelinePool.size,
+			program->numUBO, program->uboSize_vertex, program->uboSize_fragment,
+			program->numTextureUnits, str.c_str()
+			);
+
+		globalStateSet_t *st;
+		VKMAP_FOREACH(VKPipeline_t, globalStateSet_t, program->pipelinePool)
+		{
+			st = &program->pipelinePool.keys[i];
+			str = R_VK_StateStr(*st);
+			common->Printf("    %3d: %p -> %s\n", i + 1, program->pipelinePool.list[i], str.c_str());
+		}
+	}
+}

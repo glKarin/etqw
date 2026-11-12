@@ -3,8 +3,6 @@
 
 #include "../tr_local.h"
 
-#include "vk_enum.h"
-
 #ifdef __ANDROID__
 #else
 #include <windows.h>
@@ -240,7 +238,7 @@ int VK_QueryPhysicalDevices()
         VKARRAY_ALLOC2(VkPhysicalDevice, vk_context.physicalDevices, vk_context.numPhysicalDevices);
         vkEnumeratePhysicalDevices(vk_context.instance, &num, vk_context.physicalDevices);
         for (int i = 0; i < num; ++i) {
-            Sys_Printf("%3d: %p\n", i + 1, vk_context.physicalDevices[i]);
+            Sys_Printf("%2d: %p\n", i + 1, vk_context.physicalDevices[i]);
             VK_GetPhysicalDeviceInfo(vk_context.physicalDevices[i]);
         }
     }
@@ -498,7 +496,7 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
     int res = 0;
     for (int i = 0; i < num; ++i) {
         VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
-        Sys_Printf("%3d: queue count=%d, flags=%s\n", i + 1, queueFamily->queueCount, VK_VkQueueFlagsBitToName(queueFamily->queueFlags));
+        Sys_Printf("%2d: queue count=%d, flags=%s\n", i + 1, queueFamily->queueCount, VK_VkQueueFlagsBitToName(queueFamily->queueFlags));
         if(queueFamily->queueCount > 0 && queueFamily->queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             res++;

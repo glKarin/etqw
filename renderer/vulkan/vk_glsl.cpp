@@ -123,16 +123,26 @@ static int VK_GLSL_FindNextLinePositionOfVersion(const char *res)
     return (int)(index - res + 1); // previous char is '\n'
 }
 
+/**
+#version XXX\n
+\n
+#define list[n]\n
+\n
+void main() {...}
+ */
 static char * VK_GLSL_InsertGlobalDefines(const char *res, const char *list[], int n)
 {
     int index = VK_GLSL_FindNextLinePositionOfVersion(res);
 
-    int grow = 200;
+    int grow = 1; // \n
     for (int i = 0; i < n; i++)
     {
-        grow += (int)strlen("#define ") + 1;
+    	// #define list[i]\n
+        grow += (int)strlen("#define ");
         grow += (int)strlen(list[i]);
+		grow += 1; // \n
     }
+	grow += 1; // \n
 
     char *str = (char *)malloc(strlen(res) + grow + 1);
     *str = '\0';

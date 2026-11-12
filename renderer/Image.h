@@ -354,6 +354,8 @@ class idImage
 		void		CopyStencilbuffer_VK(int x, int y, int width, int height);
 		void		RecreateImage_VK();
 		void		SetDebugInfo_VK(bool purge);
+		void		SetImageFilterAndRepeat_VK() const;
+		void		UpdateImageFilter_VK();
 #ifdef _MULTITHREAD
 		void		PurgeImage_VK(bool pending = false);
 #else

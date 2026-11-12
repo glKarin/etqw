@@ -606,7 +606,7 @@ const char * R_VK_StateStr(const globalStateSet_t stateSet)
 {
 	globalState_t stateBits = stateSet.st1;
 	globalState_t stateBits2 = stateSet.st2;
-	static char str[1024*1024];
+	static char str[1024 * 1024];
 	str[0] = '\0';
 
 	strcat(str, "[Depth]:");
@@ -1051,6 +1051,11 @@ const char * R_VK_StateStr(const globalStateSet_t stateSet)
 			strcat(str, "???");
 			break;
 	}
+#ifdef VKRENDERPASS_AS_STATE
+	strcat(str, "|[RenderPass]: ");
+	int len = strlen(str);
+	idStr::snPrintf(str + len, sizeof(str) - len, "%p", stateSet.renderPass);
+#endif
 
 	return str;
 }

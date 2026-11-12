@@ -533,9 +533,14 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
     dynamicStateCreateInfo.dynamicStateCount = COUNT_OF(dynamicStates);
     dynamicStateCreateInfo.pDynamicStates = dynamicStates;
 
+#ifdef VKRENDERPASS_AS_STATE
+	assert(VK_NULL_HANDLE != program->currentState.renderPass);
+	VkRenderPass pipelineRenderPass = program->currentState.renderPass;
+#else
 	//VkRenderPass pipelineRenderPass = program->type == SHADER_DEPTH || program->type == SHADER_DEPTH_PERFORATED ? vk_backend.shadowMappingRenderPass : vk_context.renderPass;
-	// assert(VK_NULL_HANDLE != vk_backend.currentRenderPass)
-	const VkRenderPass pipelineRenderPass = VK_NULL_HANDLE != vk_backend.currentRenderPass ? vk_backend.currentRenderPass : vk_context.renderPass;
+	assert(VK_NULL_HANDLE != vk_backend.currentRenderPass);
+	VkRenderPass pipelineRenderPass = VK_NULL_HANDLE != vk_backend.currentRenderPass ? vk_backend.currentRenderPass : vk_context.renderPass;
+#endif
 
 	// 创建渲染管线
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
@@ -578,13 +583,13 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
 static void R_VK_FindProgram(VKShaderProgram_t *program)
 {
 	VKMAP_FINDINDEX(VKPipeline_t, globalStateSet_t, program->pipelinePool, vk_backend.state, GLOBAL_ST_EQUALS);
-	program->currentState = vk_backend.state;
 	if (_vkc_index >= 0 && _vkc_index < program->pipelinePool.num)
 	{
 		program->pipeline = &program->pipelinePool.list[_vkc_index];
 	}
 	else
 	{
+		program->currentState = vk_backend.state;
 		R_VK_CreatePipeline(program);
 		VKMAP_ALLOC(VKPipeline_t, globalStateSet_t, program->pipelinePool);
 		*_vkc_value = *program->pipeline;
@@ -824,6 +829,7 @@ void R_VK_Init()
 	R_VK_LoadPipelineCache();
 	R_VK_InitQuery();
 	R_VK_DebugObjects();
+	R_VK_AddCommands();
 
 	vk_backend.initialized = true;
 }
@@ -1799,6 +1805,9 @@ void R_VK_SetRenderSize(int w, int h)
 void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h)
 {
 	vk_backend.currentRenderPass = renderPass;
+#ifdef VKRENDERPASS_AS_STATE
+	vk_backend.state.renderPass = vk_backend.currentRenderPass;
+#endif
 	R_VK_SetRenderSize(w, h);
 }
 

@@ -365,6 +365,16 @@ static void R_VK_ImageSamplerFilterMode(textureFilter_t filter, VKImageFilter_t 
 	}
 }
 
+static void R_VK_GenImageSamplerKey(VKSamplerKey_t *key, textureFilter_t linear, textureRepeat_t repeat, bool depthCmp, float lod)
+{
+	VKImageFilter_t filters;
+	VKImageRepeat_t repeats;
+
+	R_VK_ImageSamplerFilterMode(linear, &filters);
+	R_VK_ImageSamplerRepeatModes(repeat, &repeats);
+	*key = R_VK_GenSamplerKey(filters.minLinear, filters.magLinear, filters.mipmapLinear, repeats.repeatS, repeats.repeatT, repeats.repeatU, depthCmp, filters.usingMipmap ? lod : 0.0f);
+}
+
 static VkSampler R_VK_GetSampler(textureFilter_t linear, textureRepeat_t repeat, bool depthCmp, float lod)
 {
 	VKImageFilter_t filters;
@@ -1326,4 +1336,49 @@ void idImage::SetDebugInfo_VK(bool purge)
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE, (uint64_t)vk_image->image, "%s%s_%d::%d::%s", purge ? "free_image" : "image", typeName, vk_context.frameIndex, texnum, imgName.c_str());
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_image->imageView, "%s%s_%d::%d::%s", purge ? "free_imageView" : "imageView", typeName, vk_context.frameIndex, texnum, imgName.c_str());
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_image->imageView2, "%s%s_%d::%d::%s", purge ? "free_imageView2" : "imageView2", typeName, vk_context.frameIndex, texnum, imgName.c_str());
+}
+
+void idImage::SetImageFilterAndRepeat_VK() const
+{
+	if (!vk_image)
+		return;
+
+	VKSamplerKey_t key;
+	VkSampler sampler;
+	if (VK_NULL_HANDLE != vk_image->sampler && R_VK_FindSamplerKey(vk_image->sampler, &key))
+		sampler = R_VK_GetSampler(filter, repeat, key.depthCmp, key.lod);
+	else
+		sampler = R_VK_GetSampler(filter, repeat, type == TT_2D_ARRAY, vk_image->mipLevels - 1);
+
+	//if (sampler == vk_image->sampler) common->DPrintf("Image %s sampler not change\n", imgName.c_str());
+
+	vk_image->sampler = sampler;
+}
+
+void idImage::UpdateImageFilter_VK()
+{
+	if (!vk_image)
+		return;
+
+	VKSamplerKey_t key;
+	if (VK_NULL_HANDLE != vk_image->sampler)
+	{
+		VKSamplerKey_t oldKey;
+		if (R_VK_FindSamplerKey(vk_image->sampler, &oldKey))
+		{
+			key = oldKey;
+			R_VK_GenImageSamplerKey(&oldKey, filter, repeat, oldKey.depthCmp, oldKey.lod);
+			key.minLinear = oldKey.minLinear;
+			key.magLinear = oldKey.magLinear;
+			key.mipmapLinear = oldKey.mipmapLinear;
+		}
+	}
+	else
+		R_VK_GenImageSamplerKey(&key, filter, repeat, type == TT_2D_ARRAY, vk_image->mipLevels - 1);
+
+	VkSampler sampler = R_VK_AllocSampler(key.minLinear, key.magLinear, key.mipmapLinear, key.repeatS, key.repeatT, key.repeatU, key.depthCmp, key.lod);
+
+	//if (sampler == vk_image->sampler) common->DPrintf("Image %s sampler not change\n", imgName.c_str());
+
+	vk_image->sampler = sampler;
 }

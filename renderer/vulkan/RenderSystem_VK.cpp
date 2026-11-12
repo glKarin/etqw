@@ -123,3 +123,9 @@ void R_VK_CheckPortableExtensions(void)
 
 	glConfig.isVulkan = true;
 }
+
+void R_VK_AddCommands()
+{
+	cmdSystem->AddCommand("vk_listSamplers", R_VK_ListSampler, CMD_FL_RENDERER, "List sampler pool");
+	cmdSystem->AddCommand("vk_listPipelines", R_VK_ListPipeline, CMD_FL_RENDERER, "List pipeline pool");
+}

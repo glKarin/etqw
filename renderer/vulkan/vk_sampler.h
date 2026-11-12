@@ -2,7 +2,7 @@
 #define _VULKAN_VKSAMPLER_H
 
 #if 1
-typedef struct samplerKey_s
+typedef struct VKSamplerKey_s
 {
 	int repeatS;
 	int repeatT;
@@ -12,7 +12,7 @@ typedef struct samplerKey_s
 	bool magLinear;
 	bool mipmapLinear;
 	bool depthCmp;
-} samplerKey_t;
+} VKSamplerKey_t;
 
 #define samplerKeyEquals(a, b) \
 	((a).repeatS == (b).repeatS \
@@ -24,10 +24,13 @@ typedef struct samplerKey_s
 		&& (a).depthCmp == (b).depthCmp \
 		&& (a).lod == (b).lod)
 #else
-typedef int samplerKey_t;
+typedef int VKSamplerKey_t;
 #define samplerKeyEquals(a, b) ((a) == (b))
 #endif
 
+VKSamplerKey_t R_VK_GenSamplerKey(bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod);
 VkSampler R_VK_AllocSampler(bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatU, bool depthCmp, float lod);
+bool R_VK_FindSamplerKey(VkSampler sampler, VKSamplerKey_t *key);
+void R_VK_ListSampler(const idCmdArgs &);
 
 #endif //_VULKAN_VKSAMPLER_H
