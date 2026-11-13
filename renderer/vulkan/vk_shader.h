@@ -11,7 +11,7 @@ typedef struct VKShaderProgram_t
     char name[64]; // 着色器名称
     int type; // 着色器类型
     VKPipeline_t *pipeline; // 当前的渲染管线
-    globalStateSet_t currentState; // 当前的状态码
+    VKPipelineStateSet_t currentState; // 当前的状态码
 
     // 只在创建渲染管线布局时使用(3)
     VKHandle_t vertexShaderHandle; // 顶点着色器
@@ -49,7 +49,7 @@ typedef struct VKShaderProgram_t
     VKBufferMap_t uniformBuffer_fragment; // 片段着色器当前引用的Uniform缓冲区映射
 	VkDescriptorSet descriptorSet; // 上次绑定的描述符
 
-    VKMAP(VKPipeline_t, globalStateSet_t) pipelinePool; // 渲染管线布局创建的各个状态的渲染管线池
+    VKMAP(VKPipeline_t, VKPipelineStateSet_t) pipelinePool; // 渲染管线布局创建的各个状态的渲染管线池
 } VKShaderProgram_t;
 
 void R_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);

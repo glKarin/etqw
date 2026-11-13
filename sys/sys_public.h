@@ -977,6 +977,7 @@ void Sys_Analog(int &side, int &forward, const int &KEY_MOVESPEED);
 #ifdef _MULTITHREAD
 bool Sys_InThread(const xthreadInfo *thread);
 bool Sys_ThreadIsRunning(const xthreadInfo *thread);
+xthreadId_t Sys_CurrentThread();
 #ifdef _NO_PTHREAD_CANCEL
 #define THREAD_CANCELED(x) (x).threadCancel
 #else

@@ -7,11 +7,13 @@ static const int	EXPAND_HEADERS = 1024;
 
 void idVertexCache::BindBuffer_VK(VkBuffer buffer)
 {
+	VKASSERT_THREAD;
 	currentBoundVBO[vk_context.frameIndex] = buffer;
 }
 
 void idVertexCache::BindIndexBuffer_VK(VkBuffer buffer)
 {
+	VKASSERT_THREAD;
 	currentBoundIBO[vk_context.frameIndex] = buffer;
 }
 
@@ -155,23 +157,12 @@ void idVertexCache::Alloc_VK(void *data, int size, vertCache_t **buffer, bool in
 #ifdef _MULTITHREAD
 	if(multithreadActive)
 	{
-/*		if(allocatingTempBuffer)
-		{
-			block->virtMem = Mem_Alloc(size);
-			block->virtMemDirty = false;
-			qglGenBuffers(1, &block->vbo);
-			qglBindBuffer(GL_ARRAY_BUFFER, block->vbo);
-			qglBufferData(GL_ARRAY_BUFFER, (GLsizei)size, 0, GL_STREAM_DRAW);
-		}
-		else
-		{*/
-			if( block->virtMem )
-				Mem_Free(block->virtMem);
-			block->virtMem = Mem_Alloc(size);
-			SIMDProcessor->Memcpy(block->virtMem, data, size);
-			block->virtMemDirty = true;
-/*		}*/
-		}
+		if( block->virtMem )
+			Mem_Free(block->virtMem);
+		block->virtMem = Mem_Alloc(size);
+		SIMDProcessor->Memcpy(block->virtMem, data, size);
+		block->virtMemDirty = true;
+	}
     else
     {
 #endif
@@ -232,7 +223,7 @@ void *idVertexCache::Position_VK(vertCache_t *buffer)
 	// Create VBO if does not exist
 	if(multithreadActive && VK_NULL_HANDLE == buffer->vk_buffer)
 	{
-		block->vbo = VK_AllocBuffer(&buffer->vk_buffer);
+		buffer->vbo = VK_AllocBuffer(&buffer->vk_buffer);
 	}
 #endif
 	// the vertex object just uses an offset
@@ -245,23 +236,41 @@ void *idVertexCache::Position_VK(vertCache_t *buffer)
 			}
 		}
 
+#ifdef _MULTITHREAD
+		// Update any new data
+		if (multithreadActive && buffer->virtMemDirty){
+			VKBufferMap_t map;
+			if (buffer->tag == TAG_FIXED || buffer->tag == TAG_TEMP)
+			{
+				if (buffer->indexBuffer) {
+					R_VK_AllocIndexBuffer(buffer->virtMem, buffer->size, &map);
+				} else {
+					R_VK_AllocVertexBuffer(buffer->virtMem, buffer->size, &map);
+				}
+			}
+			else
+			{
+				if (buffer->indexBuffer) {
+    				VK_CreateIndexBuffer(buffer->vk_buffer, buffer->size, false, false); // GPU only
+				} else {
+    				VK_CreateVertexBuffer(buffer->vk_buffer, buffer->size, false, false); // GPU only
+				}
+				VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer->vk_buffer->buffer, "buffer_position::%d::%s_%s", buffer->vbo, "static", buffer->indexBuffer ? "index" : "vertex");
+    			R_VK_UploadBufferData(buffer->vk_buffer, buffer->size, buffer->vk_buffer, 0);
+			}
+			buffer->vk_buffer = map.buffer;
+			buffer->vbo = map.handle;
+			buffer->vk_offset = map.offset;
+			buffer->virtMemDirty = false;
+		}
+#endif
+
 		if (buffer->indexBuffer) {
 			BindIndexBuffer_VK(buffer->vk_buffer->buffer);
 		} else {
 			BindBuffer_VK(buffer->vk_buffer->buffer);
 		}
 
-#ifdef _MULTITHREAD
-		// Update any new data
-		if (multithreadActive && buffer->virtMemDirty){
-			if (buffer->indexBuffer) {
-				qglBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer->size, buffer->virtMem, GL_STATIC_DRAW);
-			} else {
-				qglBufferData(GL_ARRAY_BUFFER, buffer->size, buffer->virtMem, GL_STATIC_DRAW);
-			}
-			buffer->virtMemDirty = false;
-		}
-#endif
 		return (void *)buffer->vk_offset;
 	}
 
@@ -289,6 +298,9 @@ vertCache_t* idVertexCache::CreateTempVbo_VK(int bytes, bool indexBuffer)
 
 	block->virtMem = Mem_Alloc(bytes);
 
+	block->vk_buffer = NULL;
+	block->vk_offset = 0;
+
 	return block;
 }
 
@@ -300,11 +312,33 @@ vertCache_t	*idVertexCache::AllocFrameTemp_VK(void *data, int size, bool indexBu
 		common->Error("idVertexCache::AllocFrameTemp_VK: size = %i\n", size);
 	}
 
+	vertCache_t *tempBlock;
 	if (dynamicAllocThisFrame + size > frameBytes) {
 		// if we don't have enough room in the temp block, allocate a static block,
 		// but immediately free it so it will get freed at the next frame
 		tempOverflow = true;
+
+		tempBlock = NULL;
+		vertCache_t *ptr = tempBuffers[listNum];
+		while (ptr->next)
+		{
+			if ( frameBytes - ptr->next->offset >= size)
+			{
+				tempBlock = ptr->next;
+				break;
+			}
+			ptr = ptr->next;
+		}
+		// alloc new temp block
+		if (!tempBlock)
+		{
+			tempBlock = CreateTempVbo_VK(frameBytes);
+			ptr->next = tempBlock;
+			tempBlock->prev = ptr;
+		}
 	}
+	else
+		tempBlock = tempBuffers[listNum];
 
 	// this data is just going on the shared dynamic list
 
@@ -336,19 +370,31 @@ vertCache_t	*idVertexCache::AllocFrameTemp_VK(void *data, int size, bool indexBu
 	block->size = size;
 	block->tag = TAG_TEMP;
 	block->indexBuffer = indexBuffer;
-	block->offset = dynamicAllocThisFrame;
+	if (tempBlock == tempBuffers[listNum])
+	{
+		block->offset = dynamicAllocThisFrame;
+	}
+	else
+	{
+		block->offset = tempBlock->offset;
+		tempBlock->offset += block->size;
+	}
 	dynamicAllocThisFrame += block->size;
 	dynamicCountThisFrame++;
 	block->user = NULL;
 	block->frameUsed = 0;
 
 	// copy the data
-	block->virtMem = tempBuffers[listNum]->virtMem;
-	block->vbo = tempBuffers[listNum]->vbo;
+	block->virtMem = tempBlock->virtMem;
+	block->vbo = tempBlock->vbo;
 #ifdef _MULTITHREAD
 	if(multithreadActive)
 	{
 		SIMDProcessor->Memcpy((byte *)block->virtMem + block->offset, data, size);
+		block->vk_buffer = NULL;
+		block->vbo = VBO_INVALID_HANDLE;
+		block->vk_offset = 0;
+		block->virtMemDirty = true;
 		return block;
 	}
 #endif

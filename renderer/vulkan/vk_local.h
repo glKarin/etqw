@@ -3,6 +3,16 @@
 
 #define IDVK_CONTAINER_SIZE_CONFIG 1
 
+#ifdef _MULTITHREAD
+#if 1
+#define VKASSERT_THREAD assert(multithreadActive && !renderThread->IsActive() || Sys_InRenderThread());
+#else
+#define VKASSERT_THREAD
+#endif
+#else
+#define VKASSERT_THREAD
+#endif
+
 #include "vk.h"
 #include "vk_enum.h"
 #include "vk_sampler.h"

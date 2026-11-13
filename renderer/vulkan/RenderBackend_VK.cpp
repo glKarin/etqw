@@ -23,7 +23,8 @@ void VKGL_FUNC(glDrawElements) (GLenum mode, GLsizei count, GLenum type, const v
 	else // indices are in CPU memory, transfer to GPU temp memory
 	{
 		vertCache_t *indexCache = vertexCache.AllocFrameTemp_VK((void *)indices, count * size, true);
-		R_VK_CmdBindIndexBuffer(vertexCache.IndexBufferBinding_VK(), (uintptr_t)vertexCache.Position(indexCache));
+		void *mustFirstCallThisAndCannotInline = vertexCache.Position(indexCache);
+		R_VK_CmdBindIndexBuffer(vertexCache.IndexBufferBinding_VK(), (uintptr_t)mustFirstCallThisAndCannotInline);
 	}
 
 	globalState_t lastSt1 = vk_backend.state.st1;
@@ -119,6 +120,8 @@ void VKGL_FUNC(glReadPixels) (GLint x, GLint y, GLsizei width, GLsizei height, G
 	VK_CopyColorAttachmentImageToBuffer(map.buffer, x, vk_context.swapchain.height - y - height, width, height, map.offset, width, height, vk_buffer.stageReadBuffer.currentStageCommandBuffer);
 
 	R_VK_EndStageReadBuffer();
+
+	//VK_WaitIdle();
 
 	//VK_ReadBuffer(map.buffer, pixels, map.offset, map.size, map.ptr);
 	memcpy(pixels, map.ptr, map.size);

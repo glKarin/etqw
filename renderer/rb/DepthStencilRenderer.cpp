@@ -43,11 +43,18 @@ bool idDepthStencilRenderer::Init(int w, int h)
     depthStencilTexture->imgName = "idStencilTexture_depthStencil";
     R_CreateOfflineScreenDepthStencilTexture(depthStencilTexture);
 	fb->Bind();
+#ifdef _VULKAN
+	if (!USING_VULKAN)
+	{
+#endif
     fb->AddColorBuffer(GL_RGBA8, 0);
     fb->AddDepthStencilBuffer(GL_DEPTH24_STENCIL8);
 	fb->AttachImageDepthStencil(depthStencilTexture);
 	fb->Check();
 	fb->Unbind();
+#ifdef _VULKAN
+	}
+#endif
 
 	return true;
 }
@@ -102,6 +109,15 @@ bool idDepthStencilRenderer::IsAvailable(void)
 
 void idDepthStencilRenderer::BindStencil(void)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		assert(depthStencilTexture);
+		depthStencilTexture->Bind();
+		VK_ChooseImageView(depthStencilTexture->vk_image, IA_STENCIL);
+		return;
+	}
+#endif
 #ifdef GL_ES_VERSION_3_0
     assert(depthStencilTexture);
     depthStencilTexture->Bind();
@@ -113,6 +129,15 @@ void idDepthStencilRenderer::BindStencil(void)
 
 void idDepthStencilRenderer::BindDepth(void)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		assert(depthStencilTexture);
+		depthStencilTexture->Bind();
+		VK_ChooseImageView(depthStencilTexture->vk_image, IA_DEPTH);
+		return;
+	}
+#endif
     assert(depthStencilTexture);
     depthStencilTexture->Bind();
 #ifdef GL_ES_VERSION_3_0
@@ -136,6 +161,16 @@ int idDepthStencilRenderer::UploadHeight(void) const
 
 void idDepthStencilRenderer::Blit(GLint mask)
 {
+#ifdef _VULKAN
+	if(USING_VULKAN)
+	{
+		if (mask & GL_DEPTH_BUFFER_BIT)
+			depthStencilTexture->CopyDepthbuffer_VK(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+		else
+			depthStencilTexture->CopyStencilbuffer_VK(0, 0, vk_context.swapchain.width, vk_context.swapchain.height);
+		return;
+	}
+#endif
 #ifdef GL_ES_VERSION_3_0
     // if(!USING_GLES31) return;
 

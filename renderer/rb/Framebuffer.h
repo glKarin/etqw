@@ -32,14 +32,19 @@ If you have questions concerning this license or the applicable additional terms
 #ifdef _VULKAN
 #include "../vulkan/vk.h"
 
-typedef struct VKRenderFramebuffer_s
+typedef struct VKRenderFramebufferStage_s
 {
 	VKFramebuffer_t *framebuffer[6];
 	VkRenderPass renderPass;
+} VKRenderFramebufferStage_t;
+
+typedef struct VKRenderFramebuffer_s
+{
+	VKRenderFramebufferStage_t framebuffers[2];
 	VKImage_t *image;
 	VkImageView imageView[6];
-	bool isDepth;
 	bool renderPassBegin;
+	int stage;
 	int layer;
 } VKRenderFramebuffer_t;
 #endif
@@ -94,6 +99,7 @@ public:
 		return height;
 	}
 #ifdef _VULKAN
+	void					SetClear(bool clear);
 	void					Bind_VK();
 	void					Unbind_VK();
 	void					BindDirectly_VK();
@@ -113,7 +119,6 @@ private:
 	void					PrintFramebuffer(void);
 #ifdef _VULKAN
 	void					Reset_VK( void );
-	void					Create_VK( const idImage* image, int layer );
 	void					CreateFramebuffer_VK( const idImage* image, int layer );
 	void					BeginRenderPass_VK();
 	void					EndRenderPass_VK();
@@ -138,6 +143,7 @@ public:
 	int						height;
 #ifdef _VULKAN
 	VKRenderFramebuffer_t	vk_framebuffer;
+	bool					clear;
 #endif
 	
 	friend class Framebuffer;

@@ -677,7 +677,7 @@ bool VK_ChooseSurfaceFormat(VkSurfaceFormatKHR *ret)
 
 	for (int i = 0; i < numFormats; i++) {
 		VkSurfaceFormatKHR *format = surfaceFormats + i;
-		Sys_Printf("%d: format=%s, color space=%s\n", i + 1, VK_VkFormatToName(format->format), VK_VkColorSpaceKHRToName(format->colorSpace));
+		Sys_Printf("%2d: format=%s, color space=%s\n", i + 1, VK_VkFormatToName(format->format), VK_VkColorSpaceKHRToName(format->colorSpace));
 	}
 
 	VkSurfaceFormatKHR targetFormat;
@@ -717,10 +717,37 @@ bool VK_ChoosePresentMode(VkPresentModeKHR *ret)
 {
     VkPresentModeKHR *presentModes = NULL;
     int numModes = VK_QueryPhysicalDevicePresentModes(&presentModes);
+    Sys_Printf("Support present mode: %d\n", numModes);
     if(numModes == 0)
         return false;
 
-    *ret = presentModes[0/*numModes - 1*/];
+    int found = 0;
+
+    for (int i = 0; i < numModes; i++)
+    {
+        Sys_Printf("%2d: %s\n", i + 1, VK_VkPresentModeKHRToName(presentModes[i]));
+    }
+
+    for (int i = 0; i < numModes; i++)
+    {
+        if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            found = i;
+            break;
+        }
+        if (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)
+        {
+            found = i;
+            break;
+        }
+        if (presentModes[i] == VK_PRESENT_MODE_FIFO_KHR)
+        {
+            found = i;
+            break;
+        }
+    }
+
+    *ret = presentModes[found];
     free(presentModes);
     return true;
 }
@@ -815,6 +842,8 @@ void VK_GetSwapchainImages()
 		image->layers = 1;
 		image->cubeMap = false;
 		image->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		image->currentImageView = 0;
+		image->type = IA_COLOR;
     }
 
     VKARRAY_FREE2(VkImage, images, numImages);
@@ -921,11 +950,12 @@ void VK_CreateSwapchain()
     VkSwapchainKHR old = vk_context.swapchain.swapchain;
     createInfo.oldSwapchain = old; // 旧的交换链
 
-    result = vkCreateSwapchainKHR(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.swapchain.swapchain);
-    HANDLE_VK_ERROR_EXIT(result, "vkCreateSwapchainKHR");
-
+    Sys_Printf("Swapchain present mode: %s\n", VK_VkPresentModeKHRToName(createInfo.presentMode));
     Sys_Printf("Swapchain format: %s\n", VK_VkFormatToName(vk_context.swapchain.format));
     Sys_Printf("Swapchain color space: %s\n", VK_VkColorSpaceKHRToName(vk_context.swapchain.colorSpace));
+
+    result = vkCreateSwapchainKHR(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.swapchain.swapchain);
+    HANDLE_VK_ERROR_EXIT(result, "vkCreateSwapchainKHR");
 
     // 获取交换链图像
     VK_GetSwapchainImages();
@@ -1910,7 +1940,8 @@ void VK_CreateImage(VKImage_t *res, uint32_t width, uint32_t height, int format,
     res->layers = layers;
     res->cubeMap = cubeMap;
 	res->layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    res->currentImageView = depth > 0 ? IA_DEPTH : 0;
+    res->currentImageView = depth > 0 ? IA_DEPTH :IA_COLOR;
+	res->type = depth > 0 ? (stencil > 0 ? IA_DEPTH_STENCIL : IA_DEPTH) : IA_COLOR;
 
     // 创建图像视图
     VkImageViewType imageViewType = cubeMap ? VK_IMAGE_VIEW_TYPE_CUBE : (layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D);
@@ -2598,7 +2629,7 @@ static void VK_SwapchainImageToAttachment2(VkCommandBuffer cmd)
     imageMemoryBarrier.subresourceRange = subresourceRange;
     imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     imageMemoryBarrier.dstAccessMask = 0;
-    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL; // VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -3118,6 +3149,7 @@ VKHandle_t VK_AllocImage(VKImage_t **image)
  */
 VKHandle_t VK_AllocBuffer(VKBuffer_t **buffer)
 {
+	VKASSERT_THREAD;
     VKPOOL_ALLOC(VKBuffer_t, vk_context.buffers);
 
 	if(buffer)

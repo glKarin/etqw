@@ -66,7 +66,7 @@ typedef struct VKBackEnd_s
 	VKShaderProgram_t *currentProgram; // 当前绑定的着色器
 	VKPipeline_t *currentPipeline; // 当前绑定的渲染管线
 
-	globalStateSet_t state; // 当前渲染状态
+	VKPipelineStateSet_t state; // 当前渲染状态
 
 	VKDynamicState_t dynamicState; // 当前Vulkan动态属性
 
@@ -84,7 +84,7 @@ typedef struct VKBackEnd_s
 	VKLIST(VKShaderProgram_t *) programs; // 全部渲染管线
 
 #ifdef _SHADOW_MAPPING
-	VkRenderPass shadowMappingRenderPass;
+	VkRenderPass shadowMappingRenderPass[2];
 #endif
 
 	bool isMirror;
@@ -125,7 +125,7 @@ void R_VK_BindTextureType(int unit, int tut, const VKImage_t *image);
 void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight);
 void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask);
 
-#define VKSTATE_STAGE_OFFSET(x) ( IS_SECOND_ST(x) ? offsetof(globalStateSet_t, st2) : offsetof(globalStateSet_t, st1) )
+#define VKSTATE_STAGE_OFFSET(x) ( IS_SECOND_ST(x) ? offsetof(VKPipelineStateSet_t, st2) : offsetof(VKPipelineStateSet_t, st1) )
 #define VKSTATE_STAGE(st, x) (*((globalState_t *)(((char *)&(st)) + VKSTATE_STAGE_OFFSET(x))))
 
 #define VKSTATE1_IS_TRUE(x) (vk_backend.state.st1 & (x))
@@ -194,7 +194,7 @@ void R_VK_CmdBindVertexBuffer(VkBuffer pBuffer, VkDeviceSize offset);
 void R_VK_CmdBindVertexBuffers(int bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets);
 
 #ifdef _SHADOW_MAPPING
-VkRenderPass R_VK_CreateShadowMappingRenderPass( void );
+VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load );
 #endif
 
 #endif //_VULKAN_VKBACKEND_H

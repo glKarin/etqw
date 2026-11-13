@@ -582,7 +582,7 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
  */
 static void R_VK_FindProgram(VKShaderProgram_t *program)
 {
-	VKMAP_FINDINDEX(VKPipeline_t, globalStateSet_t, program->pipelinePool, vk_backend.state, GLOBAL_ST_EQUALS);
+	VKMAP_FINDINDEX(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool, vk_backend.state, GLOBAL_ST_EQUALS);
 	if (_vkc_index >= 0 && _vkc_index < program->pipelinePool.num)
 	{
 		program->pipeline = &program->pipelinePool.list[_vkc_index];
@@ -591,7 +591,7 @@ static void R_VK_FindProgram(VKShaderProgram_t *program)
 	{
 		program->currentState = vk_backend.state;
 		R_VK_CreatePipeline(program);
-		VKMAP_ALLOC(VKPipeline_t, globalStateSet_t, program->pipelinePool);
+		VKMAP_ALLOC(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool);
 		*_vkc_value = *program->pipeline;
 		*_vkc_key = vk_backend.state;
 	}
@@ -1120,6 +1120,7 @@ static void R_VK_WriteUniformBufferObject(const void *data, int size, VKBufferMa
 
 void R_VK_AllocVertexBuffer(const void *data, int size, VKBufferMap_t *map)
 {
+	VKASSERT_THREAD;
 	VKBufferQueue_t *cache = &vk_buffer.currentVertexBuffer;
 	R_VK_AllocBufferQueue(cache, size, map);
 	//void *ptr = R_VK_MapBufferQueue(cache, map);
@@ -1129,6 +1130,7 @@ void R_VK_AllocVertexBuffer(const void *data, int size, VKBufferMap_t *map)
 
 void R_VK_AllocIndexBuffer(const void *data, int size, VKBufferMap_t *map)
 {
+	VKASSERT_THREAD;
 	VKBufferQueue_t *cache = &vk_buffer.currentIndexBuffer;
 	R_VK_AllocBufferQueue(cache, size, map);
 	//void *ptr = R_VK_MapBufferQueue(cache, map);
@@ -1153,6 +1155,7 @@ static void R_VK_DestroyPurgeBuffers()
  */
 void R_VK_DestroyBuffer(VKHandle_t handle)
 {
+	VKASSERT_THREAD;
 	if (!vk_backend.initialized)
 		return;
 
@@ -1317,7 +1320,7 @@ void R_VK_UpdateUniformBufferObject()
 				if (!image) // always binding one
 				 	image = vk_backend.currentProgram->textureTypes[i] == TUT_CUBEMAP ? globalImages->defaultCubeMapImage->vk_image : globalImages->defaultImage->vk_image;
 
-				descriptorImageInfos[i].imageLayout = (image->format == VK_FORMAT_D24_UNORM_S8_UINT || image->format == VK_FORMAT_D32_SFLOAT || image->format == VK_FORMAT_D16_UNORM) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				descriptorImageInfos[i].imageLayout = image->type == IA_COLOR ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 				descriptorImageInfos[i].imageView = image->imageView;
 				descriptorImageInfos[i].sampler = image->sampler;
 
@@ -1880,10 +1883,11 @@ void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int wi
 }
 
 #ifdef _SHADOW_MAPPING
-VkRenderPass R_VK_CreateShadowMappingRenderPass( void )
+VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load )
 {
-	if (VK_NULL_HANDLE != vk_backend.shadowMappingRenderPass)
-		return vk_backend.shadowMappingRenderPass;
+	const int index = load ? RS_LOAD : RS_DONT_CARE;
+	if (VK_NULL_HANDLE != vk_backend.shadowMappingRenderPass[index])
+		return vk_backend.shadowMappingRenderPass[index];
 
 	VkRenderPass *renderPass;
 	VK_AllocRenderPass(&renderPass);
@@ -1895,9 +1899,9 @@ VkRenderPass R_VK_CreateShadowMappingRenderPass( void )
     attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 采样数
 	attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 图像附件初始布局
 
-	attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // 颜色附件加载时执行操作
-	attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // 颜色附件存储时的操作
-	attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // 模版附件加载时执行操作
+	attachment.loadOp = load ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR; // 深度附件加载时执行操作
+	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // 深度附件存储时的操作
+	attachment.stencilLoadOp = load ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR; // 模版附件加载时执行操作
 	attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE; // 模版附件存储时执行操作
 	attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 图像附件最终布局
 
@@ -1938,10 +1942,10 @@ VkRenderPass R_VK_CreateShadowMappingRenderPass( void )
 
     VkResult result = vkCreateRenderPass(vk_context.device, &createInfo, VK_GetAllocator(), renderPass);
     HANDLE_VK_ERROR_EXIT(result, "vkCreateRenderPass");
-    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)*renderPass, "shadowMappingRenderPass");
+    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)*renderPass, "shadowMappingRenderPass_%d", index);
 
-	vk_backend.shadowMappingRenderPass = *renderPass;
+	vk_backend.shadowMappingRenderPass[index] = *renderPass;
 
-	return vk_backend.shadowMappingRenderPass;
+	return vk_backend.shadowMappingRenderPass[index];
 }
 #endif

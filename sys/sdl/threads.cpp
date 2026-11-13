@@ -367,3 +367,8 @@ xthreadId_t Sys_GetMainThread(void)
     // any threads yet so it should be the main thread
     return 0;
 }
+
+xthreadId_t Sys_CurrentThread()
+{
+	return SDL_GetThreadID(NULL);
+}

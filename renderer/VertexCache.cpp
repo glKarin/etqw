@@ -284,6 +284,10 @@ void idVertexCache::Init()
 		if (USING_VULKAN)
 		{
 			tempBuffers[i] = CreateTempVbo_VK(frameBytes);
+#ifdef _MULTITHREAD
+			dynamicHeaderss[i].next = dynamicHeaderss[i].prev = &dynamicHeaderss[i];
+			deferredFreeLists[i].next = deferredFreeLists[i].prev = &deferredFreeLists[i];
+#endif
 			continue;
 		}
 #endif
@@ -715,6 +719,14 @@ void idVertexCache::EndFrame()
 	staticAllocThisFrame = 0;
 	staticCountThisFrame = 0;
 	dynamicAllocThisFrame = 0;
+#ifdef _VULKAN
+	vertCache_t *ptr = tempBuffers[usingFrame];
+	while (ptr->next)
+	{
+		ptr->next->offset = 0;
+		ptr = ptr->next;
+	}
+#endif
 	dynamicCountThisFrame = 0;
 	tempOverflow = false;
 
@@ -793,6 +805,31 @@ void idVertexCache::List(void)
 #ifdef _MULTITHREAD
 void  idVertexCache::BeginBackEnd(int which)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		if (multithreadActive)
+		{
+			for (vertCache_t *block = dynamicHeaderss[which].next ; block != &dynamicHeaderss[which] ; block = block->next) {
+				VKBufferMap_t map;
+				if (block->indexBuffer)
+				{
+					R_VK_AllocIndexBuffer((byte *)block->virtMem + block->offset, block->size, &map);
+					BindIndexBuffer_VK(map.buffer->buffer);
+				}
+				else
+				{
+					R_VK_AllocVertexBuffer((byte *)block->virtMem + block->offset, block->size, &map);
+					BindBuffer_VK(map.buffer->buffer);
+				}
+				block->vk_buffer = map.buffer;
+				block->vbo = map.handle;
+				block->vk_offset = map.offset;
+			}
+		}
+		return;
+	}
+#endif
 	// Transfer current frame temp data to GPU
 	if(multithreadActive)
 	{
@@ -804,6 +841,25 @@ void  idVertexCache::BeginBackEnd(int which)
 
 void idVertexCache::EndBackEnd(int which)
 {
+#ifdef _VULKAN
+	if (USING_VULKAN)
+	{
+		if (multithreadActive)
+		{
+			for (vertCache_t *block = deferredFreeLists[which].next; block && block != &deferredFreeLists[which]; block = block->next) {
+				// temp blocks are in a shared space that won't be freed
+				if (block->tag != TAG_TEMP) {
+					if (block->vk_buffer) {
+						R_VK_DestroyBuffer(block->vbo);
+						block->vbo = VBO_INVALID_HANDLE;
+						block->vk_buffer = NULL;
+					}
+				}
+			}
+		}
+		return;
+	}
+#endif
 	// Clear deferred free data's GPU memory
 	const int clearVBO = harm_r_clearVertexBuffer.GetInteger();
 	if(multithreadActive && clearVBO != VBO_CLEAR_NONE)

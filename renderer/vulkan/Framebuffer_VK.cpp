@@ -137,27 +137,26 @@ void idFramebuffer::UnbindDirectly_VK()
 
 void idFramebuffer::AttachImage2D_VK( int target, const idImage* image, int index )
 {
-    Create_VK(image, index);
 }
 
 void idFramebuffer::AttachImageDepth_VK( const idImage* image )
 {
-    Create_VK(image, 0);
 }
 
 void idFramebuffer::AttachImageDepthStencil_VK( const idImage* image )
 {
-    Create_VK(image, 0);
 }
 
 void idFramebuffer::AttachImageDepthLayer_VK( const idImage* image, int layer )
 {
-    Create_VK(image, layer);
+    CreateFramebuffer_VK(image, layer);
 
     if (vk_context.inCommandRecording)
     {
         Bind_VK();
 
+		EndRenderPass_VK();
+        vk_framebuffer.stage = clear ? RS_DONT_CARE : RS_LOAD;
         vk_framebuffer.layer = layer;
         BeginRenderPass_VK();
     }
@@ -165,47 +164,51 @@ void idFramebuffer::AttachImageDepthLayer_VK( const idImage* image, int layer )
 
 void idFramebuffer::AttachImage2DLayer_VK( const idImage* image, int layer )
 {
-    Create_VK(image, layer);
 }
 
 void idFramebuffer::AttachImage2D_VK( const idImage* image )
 {
-    Create_VK(image, 0);
 }
 
 void idFramebuffer::AttachImageDepthSide_VK( const idImage* image, int side )
 {
-    Create_VK(image, side);
 }
 
 void idFramebuffer::AttachImage2DSide_VK( const idImage* image, int side )
 {
-    Create_VK(image, side);
 }
 
 void idFramebuffer::Reset_VK( void )
 {
 	VKZERO(vk_framebuffer);
     vk_framebuffer.layer = -1;
+    clear = false;
+}
+
+void idFramebuffer::SetClear(bool on)
+{
+    clear = on;
 }
 
 void idFramebuffer::BeginRenderPass_VK()
 {
-    if (vk_framebuffer.layer < 0 || !vk_framebuffer.framebuffer[vk_framebuffer.layer])
+    if (vk_framebuffer.layer < 0 || !vk_framebuffer.framebuffers[vk_framebuffer.stage].framebuffer[vk_framebuffer.layer])
         return;
 
     if (vk_context.inCommandRecording)
     {
         if (!vk_framebuffer.renderPassBegin)
         {
+
+            VKRenderFramebufferStage_t *stage = &vk_framebuffer.framebuffers[vk_framebuffer.stage];
+
             VkClearValue clearValue;
 
             VkRenderPassBeginInfo renderPassBeginInfo;
             VKZERO(renderPassBeginInfo);
             renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            // first using don't care on beginning
             VKZERO(clearValue);
-            if (vk_framebuffer.isDepth)
+            if (vk_framebuffer.image->type > IA_COLOR)
             {
                 clearValue.depthStencil.depth = 1.0f;
                 clearValue.depthStencil.stencil = 128;
@@ -218,8 +221,8 @@ void idFramebuffer::BeginRenderPass_VK()
                 clearValue.color.float32[3] = 1.0f;
             }
 
-            renderPassBeginInfo.renderPass = vk_framebuffer.renderPass;
-            renderPassBeginInfo.framebuffer = vk_framebuffer.framebuffer[vk_framebuffer.layer]->framebuffer;
+            renderPassBeginInfo.renderPass = stage->renderPass;
+            renderPassBeginInfo.framebuffer = stage->framebuffer[vk_framebuffer.layer]->framebuffer;
 
             renderPassBeginInfo.clearValueCount = 1;
             renderPassBeginInfo.pClearValues = &clearValue;
@@ -230,7 +233,7 @@ void idFramebuffer::BeginRenderPass_VK()
 
             vkCmdBeginRenderPass(vk_context.currentFrameCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-			R_VK_SetRenderPass(vk_framebuffer.renderPass, width, height);
+			R_VK_SetRenderPass(stage->renderPass, width, height);
             vk_framebuffer.renderPassBegin = true;
         }
     }
@@ -238,7 +241,7 @@ void idFramebuffer::BeginRenderPass_VK()
 
 void idFramebuffer::EndRenderPass_VK()
 {
-    if (vk_framebuffer.layer < 0 || !vk_framebuffer.framebuffer[vk_framebuffer.layer])
+    if (vk_framebuffer.layer < 0 || !vk_framebuffer.framebuffers[vk_framebuffer.stage].framebuffer[vk_framebuffer.layer])
         return;
 
     if (vk_context.inCommandRecording)
@@ -256,21 +259,28 @@ void idFramebuffer::CreateFramebuffer_VK( const idImage* image, int layer )
 {
     VkResult result;
 
-    VK_AllocFramebuffer(&vk_framebuffer.framebuffer[layer]);
+    assert(layer >= 0 && layer < COUNT_OF(vk_framebuffer.imageView));
+
+    VKRenderFramebufferStage_t *stage = &vk_framebuffer.framebuffers[clear ? 0 : 1];
+
+    if (stage->framebuffer[layer])
+        return;
+
+    VK_AllocFramebuffer(&stage->framebuffer[layer]);
 
     VKImage_t *vkImg = (VKImage_t *)image->vk_image;
-    vk_framebuffer.isDepth = vkImg->format == VK_FORMAT_D32_SFLOAT || vkImg->format == VK_FORMAT_D24_UNORM_S8_UINT;
+    const bool isDepth = vkImg->type > IA_COLOR;
 
-    if (VK_NULL_HANDLE == vk_framebuffer.renderPass)
+    if (VK_NULL_HANDLE == stage->renderPass)
     {
-        vk_framebuffer.renderPass = R_VK_CreateShadowMappingRenderPass();
+        stage->renderPass = R_VK_CreateShadowMappingRenderPass(!clear);
     }
 
     if (VK_NULL_HANDLE == vk_framebuffer.imageView[layer])
     {
         VkImageView *imageView = &vk_framebuffer.imageView[layer];
         VK_AllocImageView(&imageView);
-        *imageView = VK_CreateImageView(vkImg->image, vkImg->format, VK_IMAGE_VIEW_TYPE_2D, vk_framebuffer.isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, layer);
+        *imageView = VK_CreateImageView(vkImg->image, vkImg->format, VK_IMAGE_VIEW_TYPE_2D, isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, layer);
         vk_framebuffer.imageView[layer] = *imageView;
         VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_framebuffer.imageView[layer], "framebuffer_%s::image_view_%d", fboName.c_str(), layer);
     }
@@ -280,31 +290,21 @@ void idFramebuffer::CreateFramebuffer_VK( const idImage* image, int layer )
     VkFramebufferCreateInfo createInfo;
     VKZERO(createInfo);
     createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    createInfo.renderPass = vk_framebuffer.renderPass; // 渲染通道
+    createInfo.renderPass = stage->renderPass; // 渲染通道
     createInfo.attachmentCount = 1; // 帧缓冲区附件数量
     createInfo.pAttachments = &attachment; // 帧缓冲区附件
     createInfo.width = width; // 宽度
     createInfo.height = height; // 高度
     createInfo.layers = 1;
 
-    result = vkCreateFramebuffer(vk_context.device, &createInfo, VK_GetAllocator(), &vk_framebuffer.framebuffer[layer]->framebuffer);
+    result = vkCreateFramebuffer(vk_context.device, &createInfo, VK_GetAllocator(), &stage->framebuffer[layer]->framebuffer);
     HANDLE_VK_ERROR_EXIT(result, "vkCreateFramebuffer");
-    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)vk_framebuffer.framebuffer[layer]->framebuffer, "framebuffer_%s::framebuffer_%d", fboName.c_str(), layer);
+    VKDEBUG_SET_NAME(VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)stage->framebuffer[layer]->framebuffer, "framebuffer_%s_%s::framebuffer_%d", fboName.c_str(), clear ? "clear" : "load", layer);
 
-    if (vk_framebuffer.isDepth)
-        vk_framebuffer.framebuffer[layer]->depthStencilImage = *vkImg;
+    if (isDepth)
+        stage->framebuffer[layer]->depthStencilImage = *vkImg;
     else
-        vk_framebuffer.framebuffer[layer]->image = *vkImg;
+        stage->framebuffer[layer]->image = *vkImg;
 
     vk_framebuffer.image = vkImg;
-}
-
-void idFramebuffer::Create_VK( const idImage* image, int layer )
-{
-    assert(layer >= 0 && layer < COUNT_OF(vk_framebuffer.imageView));
-
-    if (vk_framebuffer.framebuffer[layer])
-        return;
-
-    CreateFramebuffer_VK(image, layer);
 }

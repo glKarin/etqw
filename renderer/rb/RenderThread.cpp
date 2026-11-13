@@ -24,6 +24,9 @@ static idCVar r_multithread("r_multithread",
 
 static void * BackendThread(void *data)
 {
+#ifdef _SDL // must save SDL thread ID in thread start
+	renderThreadInstance.render_thread.threadId = Sys_CurrentThread();
+#endif
     renderThreadInstance.render_thread_finished = false;
     Sys_Printf("[RenderThread]: Enter " GAME_NAME " render thread -> %s\n", Sys_GetThreadName());
     GLimp_ActivateContext();

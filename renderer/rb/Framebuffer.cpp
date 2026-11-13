@@ -311,21 +311,11 @@ void idFramebuffer::AttachImageDepth( const idImage* image )
 
 void idFramebuffer::AttachImageDepthStencil( const idImage* image )
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
-		AttachImageDepthStencil_VK(image);
-	else
-#endif
 	qglFramebufferTexture2D( GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, image->texnum, 0 );
 }
 
 void idFramebuffer::AttachImageDepthLayer( const idImage* image, int layer )
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
-		AttachImageDepthLayer_VK(image, layer);
-	else
-#endif
 #ifdef GL_ES_VERSION_3_0
 	if(USING_GLES3)
 	{

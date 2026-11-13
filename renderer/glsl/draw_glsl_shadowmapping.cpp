@@ -110,8 +110,26 @@ ID_INLINE void RB_SetMVP( const idRenderMatrix& mvp )
 // Attach framebuffer render texture or buffer in shadow map pass
 ID_INLINE static void RB_ShadowMapping_attachTexture(idFramebuffer *fb, const viewLight_t *vLight, int side)
 {
-#if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-	if(SHADOW_MAPPING_NEW)
+#ifdef _VULKAN
+    if(USING_VULKAN)
+    {
+        if( vLight->parallel && side >= 0 )
+        {
+            fb->AttachImageDepthLayer_VK( globalImages->shadowImage[vLight->shadowLOD], side );
+        }
+        else if( vLight->pointLight && side >= 0 )
+        {
+            fb->AttachImageDepthLayer_VK( globalImages->shadowImage[vLight->shadowLOD], side );
+        }
+        else
+        {
+            fb->AttachImageDepthLayer_VK( globalImages->shadowImage[vLight->shadowLOD], 0 );
+        }
+    }
+    else
+#endif
+#if defined(GL_ES_VERSION_3_0)
+	if(USING_GLES3)
 	{
 #ifdef SHADOW_MAPPING_DEBUG
 		fb->AttachImage2D( globalImages->shadowImage_2DRGBA[vLight->shadowLOD]); // for debug, not need render color buffer with OpenGLES3.0
@@ -1134,7 +1152,10 @@ void RB_ShadowMapPass( const drawSurf_t* drawSurfs, int side, int type, bool cle
 #endif
 	{
 		idFramebuffer *fb = globalFramebuffers.shadowFBO[vLight->shadowLOD];
-        fb->Bind();
+	    fb->Bind();
+#ifdef _VULKAN
+	    fb->SetClear(clear);
+#endif
 		RB_ShadowMapping_attachTexture(fb, vLight, side);
 	}
 
@@ -1245,6 +1266,9 @@ void RB_ShadowMapPasses( const drawSurf_t *globalShadowDrawSurf, const drawSurf_
     {
         idFramebuffer *fb = globalFramebuffers.shadowFBO[vLight->shadowLOD];
         fb->Bind();
+#ifdef _VULKAN
+	    fb->SetClear(true);
+#endif
         RB_ShadowMapping_attachTexture(fb, vLight, side);
     }
 

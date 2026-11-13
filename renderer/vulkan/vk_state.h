@@ -7,13 +7,13 @@ typedef globalState_t globalState2_t;
 
 //#define VKRENDERPASS_AS_STATE 1
 
-typedef struct {
+typedef struct VKPipelineStateSet_s {
 	globalState1_t st1;
 	globalState2_t st2;
 #ifdef VKRENDERPASS_AS_STATE
 	VkRenderPass renderPass;
 #endif
-} globalStateSet_t;
+} VKPipelineStateSet_t;
 
 #ifdef VKRENDERPASS_AS_STATE
 #define GLOBAL_ST_EQUALS(a, b) ((a).st1 == (b).st1 && (a).st2 == (b).st2 && (a).renderPass == (b).renderPass)
@@ -391,7 +391,7 @@ static const uint64_t ST_STENCILFUNC_BACK_BITS = (ST_STENCILFUNC_BACK_NEVER_BIT 
 static const uint64_t ST_STENCILOP_BITS = (ST_STENCIL_FRONT_OP_BITS | ST_STENCIL_BACK_OP_BITS);
 static const uint64_t ST_STENCILFUNC_BITS = (ST_STENCILFUNC_FRONT_BITS | ST_STENCILFUNC_BACK_BITS);
 
-static globalStateSet_t ST_DEFAULT_BITS = { ST_DEFAULT_BIT, ST_DEFAULT_BIT };
+static VKPipelineStateSet_t ST_DEFAULT_BITS = { ST_DEFAULT_BIT, ST_DEFAULT_BIT };
 
 // shader type -> st -> glStateBits -> pipeline
 
@@ -430,7 +430,7 @@ static const uint64_t VIA_ALL_BIT = (VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_NOR
 #define VKBACKEND_STATE2_BIT(x) VKSTATE2_BIT(vk_backend.state, (x))
 #define VKBACKEND_STATE2_BOOL(x) VKSTATE2_BOOL(vk_backend.state, (x))
 
-const char * R_VK_StateStr(const globalStateSet_t stateSet);
+const char * R_VK_StateStr(const VKPipelineStateSet_t stateSet);
 
 int R_VK_MakeVertexInputAttributes(globalState_t mask, uint32_t binding, VkVertexInputAttributeDescription vertexInputAttributeDescriptions[VIA_TOTAL]);
 VkBlendFactor R_VK_GetSrcBlendFactor(globalState_t stateBits);

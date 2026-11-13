@@ -602,7 +602,7 @@ VkStencilOp R_VK_GetStencilBackDepthFailOp(globalState2_t stateBits)
 	return stencilOp;
 }
 
-const char * R_VK_StateStr(const globalStateSet_t stateSet)
+const char * R_VK_StateStr(const VKPipelineStateSet_t stateSet)
 {
 	globalState_t stateBits = stateSet.st1;
 	globalState_t stateBits2 = stateSet.st2;

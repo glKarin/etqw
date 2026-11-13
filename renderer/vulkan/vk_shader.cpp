@@ -488,7 +488,7 @@ static void RB_VK_CreatePipelineLayoutFromShaderProp(VKShaderProgram_t *program,
 	idStr::Copynz(program->name, name, sizeof(program->name));
 	program->type = type;
 	R_VK_CreatePipelineLayout(program);
-	VKMAP_INIT(VKPipeline_t, globalStateSet_t, program->pipelinePool, PIPELINE_POOL_INIT_SIZE, PIPELINE_POOL_GRANULARITY);
+	VKMAP_INIT(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool, PIPELINE_POOL_INIT_SIZE, PIPELINE_POOL_GRANULARITY);
 	Sys_Printf("Create shader: %d %s\n", prop->type, program->name);
 }
 
@@ -583,8 +583,8 @@ void R_VK_ListPipeline(const idCmdArgs &)
 			program->numTextureUnits, str.c_str()
 			);
 
-		globalStateSet_t *st;
-		VKMAP_FOREACH(VKPipeline_t, globalStateSet_t, program->pipelinePool)
+		VKPipelineStateSet_t *st;
+		VKMAP_FOREACH(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool)
 		{
 			st = &program->pipelinePool.keys[i];
 			str = R_VK_StateStr(*st);

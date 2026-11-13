@@ -69,7 +69,8 @@ typedef int VKHandle_t;
 typedef enum VKRenderPassStage_e
 {
 	RS_DONT_CARE = 0, // 忽略之前的缓冲区数据
-	RS_LOAD = 1 << 1, // 读取之前的缓冲区数据
+	RS_LOAD = 1, // 读取之前的缓冲区数据
+	RS_CLEAR = 2, // 清空之前的缓冲区数据
 } VKRenderPassStage_t;
 
 /**
@@ -95,9 +96,10 @@ typedef enum VKCommandPoolUsage_e
  */
 typedef enum VKImageAspect_e
 {
+	IA_COLOR = 0, // 颜色附件
 	IA_DEPTH = 1, // 深度附件
 	IA_STENCIL = 1 << 1, // 模版附件
-	IA_DEPTH_STENCIL = 1 | 2,
+	IA_DEPTH_STENCIL = 1 | 2, // 深度模版附件
 } VKImageAspect_t;
 
 /**
@@ -148,6 +150,7 @@ typedef struct VKImage_s
     int usage; // 用法
     bool cubeMap; // 类型
 	int currentImageView; // 当前图像视图
+	VKImageAspect_t type; // 图像类型
 } VKImage_t;
 
 /**
