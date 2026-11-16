@@ -2138,13 +2138,6 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 	int		width, height;
 	byte	*pic;
 
-#ifdef _VULKAN
-	if(USING_VULKAN && R_VK_DisableUploadImage())
-	{
-		R_VK_AddLoadImageList(this, checkForPrecompressed);
-		return;
-	}
-#endif
 #ifdef _MULTITHREAD
 	if(multithreadActive)
 	{
@@ -2167,6 +2160,11 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 			cin = cinematic->ImageForTime( cinmaticNextTime );
 
 			if( texnum == TEXTURE_NOT_LOADED )
+#ifdef _VULKAN
+				if(USING_VULKAN)
+					texnum = VK_AllocImage(&vk_image);
+				else
+#endif
 				qglGenTextures( 1, &texnum );
 
 			if ( cin.image ) {
@@ -2177,6 +2175,13 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 
 			return;
 		}
+	}
+#endif
+#ifdef _VULKAN
+	if(USING_VULKAN && R_VK_DisableUploadImage())
+	{
+		R_VK_AddLoadImageList(this, checkForPrecompressed);
+		return;
 	}
 #endif
 

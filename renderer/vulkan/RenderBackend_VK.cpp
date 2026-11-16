@@ -22,7 +22,7 @@ void VKGL_FUNC(glDrawElements) (GLenum mode, GLsizei count, GLenum type, const v
 		R_VK_CmdBindIndexBuffer(vertexCache.IndexBufferBinding_VK(), (uintptr_t)indices);
 	else // indices are in CPU memory, transfer to GPU temp memory
 	{
-		vertCache_t *indexCache = vertexCache.AllocFrameTemp_VK((void *)indices, count * size, true);
+		vertCache_t *indexCache = vertexCache.AllocFrameTempInRendering_VK((void *)indices, count * size, true);
 		void *mustFirstCallThisAndCannotInline = vertexCache.Position(indexCache);
 		R_VK_CmdBindIndexBuffer(vertexCache.IndexBufferBinding_VK(), (uintptr_t)mustFirstCallThisAndCannotInline);
 	}
@@ -85,7 +85,7 @@ void R_VK_BindTexture( GLenum target, VKImage_t *image )
 // pointer must in CPU
 void * R_VK_VertexAttribPointer (GLint size, const void *pointer)
 {
-	vertCache_t *vertCache = vertexCache.AllocFrameTemp_VK((void *)pointer, size, false);
+	vertCache_t *vertCache = vertexCache.AllocFrameTempInRendering_VK((void *)pointer, size, false);
 	return (idDrawVert *)vertexCache.Position_VK(vertCache);
 }
 

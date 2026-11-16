@@ -37,6 +37,9 @@ enum {
 };
 
 const int NUM_VERTEX_FRAMES = NUM_FRAME_DATA;
+#ifdef _VULKAN
+extern const int EXPAND_HEADERS;
+#endif
 
 #define VBO_INVALID_HANDLE 0 // -1, because is unsigned int
 #ifdef _MULTITHREAD
@@ -161,11 +164,13 @@ class idVertexCache
 		VkBuffer		IndexBufferBinding_VK(void) const {
 			return currentBoundIBO[vk_context.frameIndex];
 		}
+		vertCache_t		*AllocFrameTempInRendering_VK(void *data, int bytes, bool indexBuffer); // call in rendering
+		void			TransferData_VK(vertCache_t *block);
 #endif
-#ifdef _MULTITHREAD
         int             GetListNum(void) const {
             return listNum;
         }
+#ifdef _MULTITHREAD
         int             GetNextListNum(void) const {
             return (listNum + 1) % NUM_VERTEX_FRAMES;
         }

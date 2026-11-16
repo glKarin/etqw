@@ -13,6 +13,10 @@
 extern bool Sys_ShutdownRenderThread(void);
 #endif
 
+#ifdef _VULKAN
+extern bool USING_VULKAN;
+#endif
+
 extern void GLimp_ActivateContext();
 extern void GLimp_DeactivateContext();
 extern void GLimp_AndroidOpenWindow(volatile ANativeWindow *win);
@@ -180,7 +184,12 @@ static bool Q3E_WindowChanged(ANativeWindow *w, int fromNative)
             if(window)
             {
                 GLimp_AndroidInit(window);
-                Sys_Printf("[Native]: Notify GL context created.\n");
+#ifdef _VULKAN
+				if(USING_VULKAN)
+					Sys_Printf("[Native]: Notify Vulkan swapchain created.\n");
+				else
+#endif
+                Sys_Printf("[Native]: Notify OpenGL context created.\n");
                 window_changed = false;
                 Sys_TriggerEvent(TRIGGER_EVENT_CONTEXT_CREATED);
             }
@@ -189,14 +198,24 @@ static bool Q3E_WindowChanged(ANativeWindow *w, int fromNative)
                 if(q3e_running)
                 {
                     GLimp_AndroidQuit();
-                    Sys_Printf("[Native]: Notify GL context destroyed.\n");
+#ifdef _VULKAN
+					if(USING_VULKAN)
+						Sys_Printf("[Native]: Notify Vulkan swapchain destroyed.\n");
+					else
+#endif
+                    Sys_Printf("[Native]: Notify OpenGL context destroyed.\n");
                     window_changed = false;
                     Sys_TriggerEvent(TRIGGER_EVENT_CONTEXT_DESTROYED);
                     res = true;
                 }
                 else
                 {
-                    Sys_Printf("[Native]: GL context has shutdown.\n");
+#ifdef _VULKAN
+					if(USING_VULKAN)
+						Sys_Printf("[Native]: Vulkan swapchain has shutdown.\n");
+					else
+#endif
+                    Sys_Printf("[Native]: OpenGL context has shutdown.\n");
                     window_changed = false;
                 }
             }
@@ -264,12 +283,22 @@ void Q3E_SetGLContext(ANativeWindow *w)
         if(w) // set new window, notify doom3 main thread active OpenGL render context
         {
             Q3E_WindowChanged(w, WINDOW_CHANGE_THREAD_SURFACE_VIEW);
-            Sys_Printf("[Java/JNI]: Waiting GL context create......\n");
+#ifdef _VULKAN
+			if(USING_VULKAN)
+				Sys_Printf("[Java/JNI]: Waiting Vulkan swapchain create......\n");
+			else
+#endif
+            Sys_Printf("[Java/JNI]: Waiting OpenGL context create......\n");
             while(window_changed)
             {
                 Sys_WaitForEvent(TRIGGER_EVENT_CONTEXT_CREATED);
             }
-            Sys_Printf("[Java/JNI]: GL context created.\n");
+#ifdef _VULKAN
+			if(USING_VULKAN)
+				Sys_Printf("[Java/JNI]: Vulkan swapchain created.\n");
+			else
+#endif
+            Sys_Printf("[Java/JNI]: OpenGL context created.\n");
         }
         else // set window is null, and wait doom3 main thread deactive OpenGL render context.
         {
@@ -279,12 +308,22 @@ void Q3E_SetGLContext(ANativeWindow *w)
 				return;
 			}
             Q3E_WindowChanged(NULL, WINDOW_CHANGE_THREAD_SURFACE_VIEW);
-            Sys_Printf("[Java/JNI]: Waiting GL context destroy......\n");
+#ifdef _VULKAN
+			if(USING_VULKAN)
+				Sys_Printf("[Java/JNI]: Waiting Vulkan swapchain destroy......\n");
+			else
+#endif
+            Sys_Printf("[Java/JNI]: Waiting OpenGL context destroy......\n");
             while(window_changed)
             {
                 Sys_WaitForEvent(TRIGGER_EVENT_CONTEXT_DESTROYED);
             }
-            Sys_Printf("[Java/JNI]: GL context destroyed.\n");
+#ifdef _VULKAN
+			if(USING_VULKAN)
+				Sys_Printf("[Java/JNI]: Vulkan swapchain destroyed.\n");
+			else
+#endif
+            Sys_Printf("[Java/JNI]: OpenGL context destroyed.\n");
         }
     }
     else

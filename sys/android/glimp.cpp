@@ -311,9 +311,14 @@ void GLimp_AndroidInit(volatile ANativeWindow *w)
 #ifdef _VULKAN
 	if( USING_VULKAN )
 	{
+		if(!vk_context.initialized)
+			return;
 		win = w;
 		ANativeWindow_acquire((ANativeWindow *)win);
 		ANativeWindow_setBuffersGeometry((ANativeWindow *)win, screen_width, screen_height, WINDOW_FORMAT_RGBA_8888);
+		VK_SetWindowNativeID(Sys_GetWindowNativeID());
+		VK_RecreateNewSwapchain();
+		Sys_Printf("Re-create new Vulkan swapchain.\n");
 		return;
 	}
 #endif
@@ -346,7 +351,14 @@ void GLimp_AndroidQuit(void)
 	if(!win)
 		return;
 #ifdef _VULKAN
-	if( !USING_VULKAN )
+	if( USING_VULKAN )
+	{
+		VK_WaitFrameIdle();
+		VK_SetWindowNativeID(NULL);
+		Sys_Printf("Waiting Vulkan device idle.\n");
+		VK_DestroySwapchainAndSurface();
+	}
+	else
 	{
 #endif
 	if(eglDisplay != EGL_NO_DISPLAY)

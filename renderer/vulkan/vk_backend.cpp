@@ -875,6 +875,7 @@ void R_VK_Shutdown()
  */
 void R_VK_UploadBufferData(VKBuffer_t *dstBuffer, int size, const void *data, int dstOffset)
 {
+	VKASSERT_THREAD;
 	if(!data)
 		return;
 
@@ -1068,6 +1069,7 @@ void R_VK_Unbind(VKImage_t *image)
  */
 void R_VK_DestroyImage(VKHandle_t handle)
 {
+	VKASSERT_THREAD;
 	if (!vk_backend.initialized)
 		return;
 
@@ -1203,6 +1205,9 @@ void R_VK_BeginFrame()
 	R_VK_GetQueryResult();
 	// 重置上一次该帧的进行的查询(必须在渲染通道未开始前执行)
 	R_VK_ResetQuery();
+
+	// 上传图像缓冲区
+	R_VK_HandleLoadBufferList();
 
     // 发送开始主渲染通道的命令
     VK_BeginRenderPass();

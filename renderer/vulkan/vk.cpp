@@ -1367,6 +1367,7 @@ void VK_CreateTransferDstBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool f
  */
 void VK_CreateBuffer(VKBuffer_t *ret, int usage, uint32_t size, bool map, bool flush)
 {
+	VKASSERT_THREAD;
 	VkMemoryPropertyFlags bits = 0;
 	if(map)
 	{
@@ -1725,7 +1726,7 @@ void VK_CopyBufferToBuffer(const VKBuffer_t *dstBuffer, const VKBuffer_t *buffer
     bufferMemoryBarrier.offset = offset;
     bufferMemoryBarrier.size = size;
     bufferMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    bufferMemoryBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
+    bufferMemoryBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
 
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &bufferMemoryBarrier, 0, NULL);
 }
@@ -3028,6 +3029,7 @@ int VK_SwapBuffers()
  */
 VKHandle_t VK_AllocPipelineLayout(VKPipelineLayout_t **pipelineLayout)
 {
+	VKASSERT_THREAD;
     VKPTRLIST_ALLOC(VKPipelineLayout_t, vk_context.pipelineLayouts);
 
 	if(pipelineLayout)
@@ -3040,6 +3042,7 @@ VKHandle_t VK_AllocPipelineLayout(VKPipelineLayout_t **pipelineLayout)
  */
 VKHandle_t VK_AllocPipeline(VKPipeline_t **pipeline)
 {
+	VKASSERT_THREAD;
     VKPTRLIST_ALLOC(VKPipeline_t, vk_context.pipelines);
 
 	if(pipeline)
@@ -3068,6 +3071,7 @@ static bool IsDescriptorPoolFull(VKDescriptorPool_t *descriptorPool, int numUnif
  */
 VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers)
 {
+	VKASSERT_THREAD;
     VKDescriptorPool_t *descriptorPool = &VKQUEUE_CURRENT(VKDescriptorPool_t, vk_context.currentDescriptorPool);
     if (IsDescriptorPoolFull(descriptorPool, numUniforms, numSamplers))
     {
@@ -3104,6 +3108,7 @@ VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, 
  */
 VKHandle_t VK_AllocShader(VkShaderModule **shaderModule)
 {
+	VKASSERT_THREAD;
     VKLIST_ALLOC(VkShaderModule, vk_context.shaders);
 	if(shaderModule)
 		*shaderModule = _vkc_value;
@@ -3115,6 +3120,7 @@ VKHandle_t VK_AllocShader(VkShaderModule **shaderModule)
  */
 VKHandle_t VK_AllocSampler(VkSampler **sampler)
 {
+	VKASSERT_THREAD;
     VKLIST_ALLOC(VkSampler, vk_context.samplers);
 	if(sampler)
 		*sampler = _vkc_value;
@@ -3126,6 +3132,7 @@ VKHandle_t VK_AllocSampler(VkSampler **sampler)
  */
 VKHandle_t VK_AllocImageView(VkImageView **imageView)
 {
+	VKASSERT_THREAD;
     VKLIST_ALLOC(VkImageView, vk_context.imageViews);
     if(imageView)
         *imageView = _vkc_value;
@@ -3137,6 +3144,7 @@ VKHandle_t VK_AllocImageView(VkImageView **imageView)
  */
 VKHandle_t VK_AllocImage(VKImage_t **image)
 {
+	VKASSERT_THREAD;
     VKPOOL_ALLOC(VKImage_t, vk_context.images);
 
 	if(image)
@@ -3162,6 +3170,7 @@ VKHandle_t VK_AllocBuffer(VKBuffer_t **buffer)
  */
 VKHandle_t VK_AllocFence(VkFence **fence)
 {
+	VKASSERT_THREAD;
     VKLIST_ALLOC(VkFence, vk_context.fences);
 
 	if(fence)
@@ -3174,6 +3183,7 @@ VKHandle_t VK_AllocFence(VkFence **fence)
  */
 VKHandle_t VK_AllocCommandPool(VKCommandPool_t **commandPool)
 {
+	VKASSERT_THREAD;
     VKPTRLIST_ALLOC(VKCommandPool_t, vk_context.commandPools);
 
 	if(commandPool)
@@ -3186,6 +3196,7 @@ VKHandle_t VK_AllocCommandPool(VKCommandPool_t **commandPool)
  */
 VKHandle_t VK_AllocRenderPass(VkRenderPass **renderPass)
 {
+	VKASSERT_THREAD;
     VKLIST_ALLOC(VkRenderPass, vk_context.renderPasses);
 
 	if(renderPass)
@@ -3198,6 +3209,7 @@ VKHandle_t VK_AllocRenderPass(VkRenderPass **renderPass)
  */
 VKHandle_t VK_AllocFramebuffer(VKFramebuffer_t **framebuffer)
 {
+	VKASSERT_THREAD;
     VKPTRLIST_ALLOC(VKFramebuffer_t, vk_context.framebuffers);
 
     if(framebuffer)
@@ -3210,6 +3222,7 @@ VKHandle_t VK_AllocFramebuffer(VKFramebuffer_t **framebuffer)
  */
 VKHandle_t VK_AllocQueryPool(VKQueryPool_t **queryPool)
 {
+	VKASSERT_THREAD;
     VKPOOL_ALLOC(VKQueryPool_t, vk_context.querys);
 
 	if(queryPool)
@@ -4382,6 +4395,9 @@ static void VK_DestroyPipelines()
  */
 static void VK_DestroySwapchain(bool keep)
 {
+	if(!vk_context.swapchain.swapchain)
+		return;
+
     VKFramebuffer_t *fb;
 
     for (int i = 0; i < vk_context.swapchain.numImages; i++)
@@ -4427,6 +4443,13 @@ void VK_WaitIdle()
         vkDeviceWaitIdle(vk_context.device);
 }
 
+void VK_WaitFrameIdle()
+{
+	while(vk_context.inRenderFrame)
+		Sys_Sleep(1);
+	VK_WaitIdle();
+}
+
 /**
  * 重新创建交换链
  */
@@ -4436,6 +4459,40 @@ void VK_RecreateSwapchain()
     VK_WaitIdle();
     // 销毁旧的交换链
     VK_DestroySwapchain(true);
+    // 创建新的交换链
+    VK_CreateSwapchain();
+    // 创建交换链帧缓冲区
+    VK_CreateSwapchainFramebuffers();
+}
+
+void VK_DestroySwapchainAndSurface()
+{
+    // 等待设备空闲
+    VK_WaitIdle();
+    // 销毁旧的交换链
+	VK_DestroySwapchain(false);
+	//
+	VK_DestroySurface();
+}
+
+/**
+ * 重新创建交换链
+ */
+void VK_RecreateNewSwapchain()
+{
+	if(!nativeWindow)
+	{
+		Sys_SetFatalError("Native window is null\n");
+		return;
+	}
+    // 等待设备空闲
+    VK_WaitIdle();
+    // 销毁旧的交换链
+    VK_DestroySwapchain(false);
+	//
+	VK_DestroySurface();
+	//
+    VK_CreateSurface(nativeWindow);
     // 创建新的交换链
     VK_CreateSwapchain();
     // 创建交换链帧缓冲区

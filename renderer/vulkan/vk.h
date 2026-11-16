@@ -316,6 +316,8 @@ int VK_BeginFrame();
 void VK_EndFrame();
 int VK_SwapBuffers();
 void VK_RecreateSwapchain();
+void VK_RecreateNewSwapchain();
+void VK_DestroySwapchainAndSurface();
 
 // Misc
 void VK_WaitIdle();
@@ -328,6 +330,7 @@ int VK_GetPipelineCacheData(void **data);
 void VK_WaitFence(VkFence fence);
 void VK_WaitFrameFence();
 bool VK_IsExtensionSupported(const char *name);
+void VK_WaitFrameIdle();
 
 // debug
 void VK_SetObjectName(int objType, uint64_t handle, const char* name);

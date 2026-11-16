@@ -3,8 +3,51 @@
 
 #include "../tr_local.h"
 
-static const int	EXPAND_HEADERS = 1024;
+#if 1
+typedef vertCache_t * VKActuallyLoadBuffer_t;
+#else
+typedef struct VKActuallyLoadBuffer_s
+{
+	vertCache_t *block;
 
+	VKActuallyLoadBuffer_s( vertCache_t *block )
+			: block( block )
+	{}
+	VKActuallyLoadBuffer_s()
+			: block( NULL )
+	{}
+} VKActuallyLoadBuffer_t;
+#endif
+
+static idList<VKActuallyLoadBuffer_t> loadBuffers[NUM_INFLIGHT_FRAME];
+
+// only call in frontend in multi-threading
+void R_VK_AddLoadBufferList( vertCache_t *block )
+{
+    loadBuffers[vertexCache.GetListNum()].Append( VKActuallyLoadBuffer_t( block ) );
+}
+
+// only call in backend after vulkan context command recording in multi-threading
+void R_VK_HandleLoadBufferList( void )
+{
+	idList<VKActuallyLoadBuffer_t> &loadList = loadBuffers[
+#ifdef _MULTITHREAD // using listNum when multi-threading is active, else using current frame of vertexCache
+		multithreadActive ? renderThread->vertListToRender : vertexCache.GetListNum()
+#else
+			vertexCache.GetListNum()
+#endif
+	];
+	if (loadList.Num() > 0)
+	{
+		for(int i = 0; i < loadList.Num(); i++)
+		{
+			vertexCache.TransferData_VK(loadList[i]);
+		}
+		loadList.SetNum(0);
+	}
+}
+
+// current buffer binding using vk_context's frameIndex, so not support access in multi-threading
 void idVertexCache::BindBuffer_VK(VkBuffer buffer)
 {
 	VKASSERT_THREAD;
@@ -117,6 +160,7 @@ void idVertexCache::Alloc_VK(void *data, int size, vertCache_t **buffer, bool in
 				block->virtMem = NULL;
 				block->virtMemDirty = false;
 				block->vbo = VKHANDLE_INVALID;
+				block->vk_buffer = NULL;
 			}
 			else
 #endif
@@ -162,6 +206,8 @@ void idVertexCache::Alloc_VK(void *data, int size, vertCache_t **buffer, bool in
 		block->virtMem = Mem_Alloc(size);
 		SIMDProcessor->Memcpy(block->virtMem, data, size);
 		block->virtMemDirty = true;
+
+		R_VK_AddLoadBufferList(block); // will transfer data before render pass beginning, not in Position() called
 	}
     else
     {
@@ -171,6 +217,7 @@ void idVertexCache::Alloc_VK(void *data, int size, vertCache_t **buffer, bool in
     	{
     		if (block->vk_buffer->size < block->size)
     		{
+				VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)block->vk_buffer->buffer, "free_buffer_%d::%d::%s_%s", vk_context.frameIndex, block->vbo, "static", block->indexBuffer ? "index" : "vertex");
     			R_VK_DestroyBuffer(block->vbo);
     			block->vk_buffer = NULL;
     			block->vbo = VKHANDLE_INVALID;
@@ -219,13 +266,6 @@ void *idVertexCache::Position_VK(vertCache_t *buffer)
 		common->FatalError("idVertexCache::Position: bad vertCache_t");
 	}
 
-#ifdef _MULTITHREAD
-	// Create VBO if does not exist
-	if(multithreadActive && VK_NULL_HANDLE == buffer->vk_buffer)
-	{
-		buffer->vbo = VK_AllocBuffer(&buffer->vk_buffer);
-	}
-#endif
 	// the vertex object just uses an offset
 	if (buffer->vk_buffer) {
 		if (r_showVertexCache.GetInteger() == 2) {
@@ -236,35 +276,6 @@ void *idVertexCache::Position_VK(vertCache_t *buffer)
 			}
 		}
 
-#ifdef _MULTITHREAD
-		// Update any new data
-		if (multithreadActive && buffer->virtMemDirty){
-			VKBufferMap_t map;
-			if (buffer->tag == TAG_FIXED || buffer->tag == TAG_TEMP)
-			{
-				if (buffer->indexBuffer) {
-					R_VK_AllocIndexBuffer(buffer->virtMem, buffer->size, &map);
-				} else {
-					R_VK_AllocVertexBuffer(buffer->virtMem, buffer->size, &map);
-				}
-			}
-			else
-			{
-				if (buffer->indexBuffer) {
-    				VK_CreateIndexBuffer(buffer->vk_buffer, buffer->size, false, false); // GPU only
-				} else {
-    				VK_CreateVertexBuffer(buffer->vk_buffer, buffer->size, false, false); // GPU only
-				}
-				VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer->vk_buffer->buffer, "buffer_position::%d::%s_%s", buffer->vbo, "static", buffer->indexBuffer ? "index" : "vertex");
-    			R_VK_UploadBufferData(buffer->vk_buffer, buffer->size, buffer->vk_buffer, 0);
-			}
-			buffer->vk_buffer = map.buffer;
-			buffer->vbo = map.handle;
-			buffer->vk_offset = map.offset;
-			buffer->virtMemDirty = false;
-		}
-#endif
-
 		if (buffer->indexBuffer) {
 			BindIndexBuffer_VK(buffer->vk_buffer->buffer);
 		} else {
@@ -273,6 +284,7 @@ void *idVertexCache::Position_VK(vertCache_t *buffer)
 
 		return (void *)buffer->vk_offset;
 	}
+	// Vulkan only in multi-threading: upload static data not in Position() called in render thread, because buffer data must uploaded before render pass beginning
 
 	common->Error("Vulkan must using %s buffer\n", buffer->indexBuffer ? "index" : "vertex");
 	// virtual memory is a real pointer
@@ -332,6 +344,7 @@ vertCache_t	*idVertexCache::AllocFrameTemp_VK(void *data, int size, bool indexBu
 		// alloc new temp block
 		if (!tempBlock)
 		{
+			common->Printf("Alloc new temp buffer: %d\n", dynamicAllocThisFrame);
 			tempBlock = CreateTempVbo_VK(frameBytes);
 			ptr->next = tempBlock;
 			tempBlock->prev = ptr;
@@ -388,7 +401,7 @@ vertCache_t	*idVertexCache::AllocFrameTemp_VK(void *data, int size, bool indexBu
 	block->virtMem = tempBlock->virtMem;
 	block->vbo = tempBlock->vbo;
 #ifdef _MULTITHREAD
-	if(multithreadActive)
+	if(multithreadActive) // temp buffer will upload on ::BeginBackEnd() when start rendering this frame in render thread
 	{
 		SIMDProcessor->Memcpy((byte *)block->virtMem + block->offset, data, size);
 		block->vk_buffer = NULL;
@@ -415,4 +428,84 @@ vertCache_t	*idVertexCache::AllocFrameTemp_VK(void *data, int size, bool indexBu
 	block->vk_offset = map.offset;
 
 	return block;
+}
+
+// always write to host mapped buffer
+vertCache_t	*idVertexCache::AllocFrameTempInRendering_VK(void *data, int size, bool indexBuffer)
+{
+	static vertCache_t vertCache[2];
+
+	vertCache_t	*block = &vertCache[indexBuffer ? 1 : 0];
+
+	if (size <= 0) {
+		common->Error("idVertexCache::AllocFrameTempInRendering_VK: size = %i\n", size);
+	}
+
+	block->next = NULL;
+	block->prev = NULL;
+
+#ifdef _MULTITHREAD
+	block->virtMemDirty = false;
+#endif
+	block->size = size;
+	block->tag = TAG_TEMP;
+	block->indexBuffer = indexBuffer;
+	block->offset = 0;
+	block->user = NULL;
+	block->frameUsed = 0;
+
+	// copy the data
+	block->virtMem = NULL;
+	VKBufferMap_t map;
+	if (block->indexBuffer)
+	{
+		R_VK_AllocIndexBuffer(data, size, &map);
+		BindIndexBuffer_VK(map.buffer->buffer);
+	}
+	else
+	{
+		R_VK_AllocVertexBuffer(data, size, &map);
+		BindBuffer_VK(map.buffer->buffer);
+	}
+	block->vk_buffer = map.buffer;
+	block->vbo = map.handle;
+	block->vk_offset = map.offset;
+
+	return block;
+}
+
+void idVertexCache::TransferData_VK(vertCache_t *block)
+{
+	// copy the data
+	if (block->vk_buffer && block->vk_buffer->buffer)
+	{
+		if (block->vk_buffer->size < block->size)
+		{
+			VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)block->vk_buffer->buffer, "free_buffer_%d::%d::%s_%s", vk_context.frameIndex, block->vbo, "static", block->indexBuffer ? "index" : "vertex");
+			R_VK_DestroyBuffer(block->vbo);
+			block->vk_buffer = NULL;
+			block->vbo = VKHANDLE_INVALID;
+		}
+	}
+	if (!block->vk_buffer)
+	{
+		block->vbo = VK_AllocBuffer(&block->vk_buffer);
+	}
+	if (VK_NULL_HANDLE == block->vk_buffer->buffer)
+	{
+		if (block->indexBuffer) {
+			VK_CreateIndexBuffer(block->vk_buffer, block->size, false, false); // GPU only
+		} else {
+			VK_CreateVertexBuffer(block->vk_buffer, block->size, false, false); // GPU only
+		}
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)block->vk_buffer->buffer, "buffer::%d::%s_%s", block->vbo, "static", block->indexBuffer ? "index" : "vertex");
+	}
+	R_VK_UploadBufferData(block->vk_buffer, block->size, block->virtMem, 0);
+	if (block->indexBuffer) {
+		BindIndexBuffer_VK(block->vk_buffer->buffer);
+	} else {
+		BindBuffer_VK(block->vk_buffer->buffer);
+	}
+	block->vk_offset = 0;
+	block->virtMemDirty = false;
 }

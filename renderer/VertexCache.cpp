@@ -32,7 +32,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "tr_local.h"
 
 static const int	FRAME_MEMORY_BYTES = 0x200000;
-static const int	EXPAND_HEADERS = 1024;
+#if !defined(_VULKAN)
+static 
+#endif
+const int	EXPAND_HEADERS = 1024;
 
 idCVar idVertexCache::r_showVertexCache("r_showVertexCache", "0", CVAR_INTEGER|CVAR_RENDERER, "");
 idCVar idVertexCache::r_vertexBufferMegs("r_vertexBufferMegs", "32", CVAR_INTEGER|CVAR_RENDERER, "");
@@ -207,7 +210,7 @@ void *idVertexCache::Position(vertCache_t *buffer)
 			qglBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 		}
 
-#ifdef _MULTITHREAD
+#ifdef _MULTITHREAD // OpenGL only: upload static data when call Position() in render thread
 		// Update any new data
 		if (multithreadActive && buffer->virtMemDirty){
 			if (buffer->indexBuffer) {
@@ -630,7 +633,7 @@ vertCache_t	*idVertexCache::AllocFrameTemp(void *data, int size)
 	block->virtMem = tempBuffers[listNum]->virtMem;
 	block->vbo = tempBuffers[listNum]->vbo;
 #ifdef _MULTITHREAD
-	if(multithreadActive)
+	if(multithreadActive) // temp buffer will upload on ::BeginBackEnd() when start rendering this frame in render thread
 	{
 		SIMDProcessor->Memcpy((byte *)block->virtMem + block->offset, data, size);
 		return block;
@@ -805,10 +808,11 @@ void idVertexCache::List(void)
 #ifdef _MULTITHREAD
 void  idVertexCache::BeginBackEnd(int which)
 {
-#ifdef _VULKAN
-	if (USING_VULKAN)
+	// Transfer current frame temp data to GPU
+	if(multithreadActive)
 	{
-		if (multithreadActive)
+#ifdef _VULKAN
+		if (USING_VULKAN) // upload all used temp host memory: don't upload full memory once, because tempBuffers is linked by `->next` in vulkan, blocks of `TAG_TEMP` always not in `static Alloc()` through `tempOverflow == true`
 		{
 			for (vertCache_t *block = dynamicHeaderss[which].next ; block != &dynamicHeaderss[which] ; block = block->next) {
 				VKBufferMap_t map;
@@ -826,13 +830,9 @@ void  idVertexCache::BeginBackEnd(int which)
 				block->vbo = map.handle;
 				block->vk_offset = map.offset;
 			}
+			return;
 		}
-		return;
-	}
 #endif
-	// Transfer current frame temp data to GPU
-	if(multithreadActive)
-	{
 		qglBindBuffer(GL_ARRAY_BUFFER, tempBuffers[which]->vbo);
 		qglBufferData(GL_ARRAY_BUFFER, dynamicAllocThisFrames[which], tempBuffers[which]->virtMem, GL_STREAM_DRAW);
 		//render_frame = which;
@@ -850,6 +850,7 @@ void idVertexCache::EndBackEnd(int which)
 				// temp blocks are in a shared space that won't be freed
 				if (block->tag != TAG_TEMP) {
 					if (block->vk_buffer) {
+						VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)block->vk_buffer->buffer, "free_buffer_%d::%d::%s_%s", vk_context.frameIndex, block->vbo, "static", block->indexBuffer ? "index" : "vertex");
 						R_VK_DestroyBuffer(block->vbo);
 						block->vbo = VBO_INVALID_HANDLE;
 						block->vk_buffer = NULL;

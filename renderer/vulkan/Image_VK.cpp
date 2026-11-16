@@ -18,7 +18,7 @@ typedef struct VKImageRepeat_s
 	int repeatU;
 } VKImageRepeat_t;
 
-typedef struct VKActuallyLoadImage_data_s
+typedef struct VKActuallyLoadImage_s
 {
 	idImage *image;
 	bool checkForPrecompressed;
@@ -26,14 +26,14 @@ typedef struct VKActuallyLoadImage_data_s
 	int cols;
 	int rows;
 
-	VKActuallyLoadImage_data_s( idImage *image, bool checkForPrecompressed )
+	VKActuallyLoadImage_s( idImage *image, bool checkForPrecompressed )
 			: image( image ),
 			  checkForPrecompressed( checkForPrecompressed ),
 			  cinData(NULL),
 			  cols(NULL),
 			  rows(NULL)
 	{}
-	VKActuallyLoadImage_data_s( idImage *image, const byte *data, int cols, int rows )
+	VKActuallyLoadImage_s( idImage *image, const byte *data, int cols, int rows )
 			: image( image ),
 			  checkForPrecompressed( false ),
 			  cinData(data),
@@ -44,7 +44,7 @@ typedef struct VKActuallyLoadImage_data_s
 		//memcpy(cinData, data, cols * rows * 4);
 	}
 
-	VKActuallyLoadImage_data_s()
+	VKActuallyLoadImage_s()
 			: image( NULL ),
 			  checkForPrecompressed( false ),
 			  cinData(NULL),
@@ -53,24 +53,24 @@ typedef struct VKActuallyLoadImage_data_s
 	{}
 
 #if 0
-	~VKActuallyLoadImage_data_s() {
+	~VKActuallyLoadImage_s() {
 		if(cinData)
 			free(cinData);
 	}
 #endif
-} VKActuallyLoadImage_data_t;
+} VKActuallyLoadImage_t;
 
-static idList<VKActuallyLoadImage_data_t> loadImages[NUM_INFLIGHT_FRAME];
+static idList<VKActuallyLoadImage_t> loadImages[NUM_INFLIGHT_FRAME];
 static bool imageHandled[NUM_INFLIGHT_FRAME];
 
-void R_VK_AddLoadImageList( idImage * image, bool checkForPrecompressed )
+void R_VK_AddLoadImageList( idImage *image, bool checkForPrecompressed )
 {
-    loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_data_t( image, checkForPrecompressed ) );
+    loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, checkForPrecompressed ) );
 }
 
 void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows )
 {
-    loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_data_t( image, data, cols, rows ) );
+    loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, data, cols, rows ) );
 }
 
 void R_VK_HandleLoadImageList( void )
@@ -78,13 +78,19 @@ void R_VK_HandleLoadImageList( void )
 	if (loadImages[vk_context.frameIndex].Num() > 0)
 	{
 		imageHandled[vk_context.frameIndex] = true;
-		VKActuallyLoadImage_data_t *loadImg = loadImages[vk_context.frameIndex].Ptr();
+		VKActuallyLoadImage_t *loadImg = loadImages[vk_context.frameIndex].Ptr();
 		for(int i = 0; i < loadImages[vk_context.frameIndex].Num(); i++, loadImg++)
 		{
 			if(loadImg->cinData)
 				loadImg->image->UploadScratch_VK(loadImg->cinData, loadImg->cols, loadImg->rows);
 			else
+			{
+#ifdef _MULTITHREAD
+				loadImg->image->ActuallyLoadImage(loadImg->checkForPrecompressed, false, false);
+#else
 				loadImg->image->ActuallyLoadImage(loadImg->checkForPrecompressed, false);
+#endif
+			}
 		}
 		loadImages[vk_context.frameIndex].SetNum(0);
 		imageHandled[vk_context.frameIndex] = false;

@@ -5,7 +5,8 @@
 
 #ifdef _MULTITHREAD
 #if 1
-#define VKASSERT_THREAD assert(multithreadActive && !renderThread->IsActive() || Sys_InRenderThread());
+#define VKASSERT_THREAD assert(!multithreadActive || !renderThread->IsActive() || Sys_InRenderThread());
+//#define VKASSERT_THREAD if(!multithreadActive || !renderThread->IsActive() || Sys_InRenderThread()){}else{printf("ttt\n"); memset((void *)12, 0, 100);};
 #else
 #define VKASSERT_THREAD
 #endif
@@ -80,6 +81,10 @@ void R_VK_AddLoadImageList( idImage * image, bool checkForPrecompressed );
 void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows );
 void R_VK_HandleLoadImageList( void );
 bool R_VK_DisableUploadImage( void );
+
+void R_VK_AddLoadBufferList( struct vertCache_s *block );
+void R_VK_HandleLoadBufferList( void );
+bool R_VK_DisableUploadBuffer(void);
 
 void R_VK_AddCommands();
 

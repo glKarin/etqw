@@ -624,7 +624,7 @@ GLRB_PRIV void glesImmediateModeRender(void)
 #ifdef _VULKAN
 			if(USING_VULKAN)
 			{
-				vertCache_t *vCache = vertexCache.AllocFrameTemp_VK((void *)vertex, gl_VertexList.Num() * sizeof(idDrawVert), false);
+				vertCache_t *vCache = vertexCache.AllocFrameTempInRendering_VK((void *)vertex, gl_VertexList.Num() * sizeof(idDrawVert), false);
 				GL_VertexAttribPointer(SHADER_PARM_ADDR(attr_Vertex), 3, GL_FLOAT, false, GLVERT_STRIP, vertexCache.Position(vCache));
 			}
 			else

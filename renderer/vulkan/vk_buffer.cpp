@@ -310,16 +310,21 @@ void R_VK_InitBuffer(void)
 	vk_buffer.initialized = true;
 }
 
+static void R_VK_PrintBuffer(void)
+{
+	common->Printf("[Vulkan]: Vertex buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxVertexAllocation, vk_buffer.counter.c_maxVertexBlock);
+	common->Printf("[Vulkan]: Index buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxIndexAllocation, vk_buffer.counter.c_maxIndexBlock);
+	common->Printf("[Vulkan]: Uniform buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxUniformAllocation, vk_buffer.counter.c_maxUniformBlock);
+	common->Printf("[Vulkan]: Write staging buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxWriteStagingAllocation, vk_buffer.counter.c_maxWriteStagingBlock);
+	common->Printf("[Vulkan]: Read staging buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxReadStagingAllocation, vk_buffer.counter.c_maxReadStagingBlock);
+}
+
 void R_VK_ShutdownBuffer(void)
 {
 	if (!vk_buffer.initialized)
 		return;
 
-	Sys_Printf("[Vulkan]: Vertex buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxVertexAllocation, vk_buffer.counter.c_maxVertexBlock);
-	Sys_Printf("[Vulkan]: Index buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxIndexAllocation, vk_buffer.counter.c_maxIndexBlock);
-	Sys_Printf("[Vulkan]: Uniform buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxUniformAllocation, vk_buffer.counter.c_maxUniformBlock);
-	Sys_Printf("[Vulkan]: Write staging buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxWriteStagingAllocation, vk_buffer.counter.c_maxWriteStagingBlock);
-	Sys_Printf("[Vulkan]: Read staging buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxReadStagingAllocation, vk_buffer.counter.c_maxReadStagingBlock);
+	R_VK_PrintBuffer();
 
 	for(int i = 0; i < NUM_INFLIGHT_FRAME; i++)
 	{
@@ -502,4 +507,9 @@ static void R_VK_UnmapBufferQueue(VKBufferQueue_t *cache, const VKBufferMap_t *m
 		vkUnmapMemory(vk_context.device, map->buffer->memory);
 #endif
 	}
+}
+
+void R_VK_ListBuffer(const idCmdArgs &args)
+{
+	R_VK_PrintBuffer();
 }

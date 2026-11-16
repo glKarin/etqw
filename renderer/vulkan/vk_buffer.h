@@ -123,6 +123,7 @@ bool R_VK_AllocStageWriteBuffer(int size, VKBufferMap_t *map);
 bool R_VK_AllocStageReadBuffer(int size, VKBufferMap_t *map);
 void R_VK_BeginStageReadBuffer();
 void R_VK_EndStageReadBuffer();
+void R_VK_ListBuffer(const idCmdArgs &args);
 
 extern VKBufferObject_t vk_buffer;
 
