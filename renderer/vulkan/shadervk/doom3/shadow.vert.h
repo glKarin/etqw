@@ -7,7 +7,7 @@ GLSL_SHADER const char VK_SHADOW_VERT[] =
 "\n"
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    vec4 u_glColor;\n"
 "    vec4 u_lightOrigin;\n"

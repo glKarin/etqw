@@ -65,11 +65,13 @@ static bool imageHandled[NUM_INFLIGHT_FRAME];
 
 void R_VK_AddLoadImageList( idImage *image, bool checkForPrecompressed )
 {
+	//printf("aaa %d %d %d %p %s\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image, image->imgName.c_str());
     loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, checkForPrecompressed ) );
 }
 
 void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows )
 {
+	//printf("uuu %d %d %d %p\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image);
     loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, data, cols, rows ) );
 }
 
@@ -81,6 +83,7 @@ void R_VK_HandleLoadImageList( void )
 		VKActuallyLoadImage_t *loadImg = loadImages[vk_context.frameIndex].Ptr();
 		for(int i = 0; i < loadImages[vk_context.frameIndex].Num(); i++, loadImg++)
 		{
+			//printf("ttt %d %d %d %p %s\n", i, vk_backend.frameCount, vk_context.frameIndex, loadImg->image, loadImg->image->imgName.c_str());
 			if(loadImg->cinData)
 				loadImg->image->UploadScratch_VK(loadImg->cinData, loadImg->cols, loadImg->rows);
 			else

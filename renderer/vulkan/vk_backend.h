@@ -1,8 +1,6 @@
 #ifndef _VULKAN_VKBACKEND_H
 #define _VULKAN_VKBACKEND_H
 
-#define VKBINDING_MAX_TRXTURE_UNITS 8 // 最大使用纹理数
-
 #define ASSERT_PROGRAM assert(vk_backend.currentProgram);
 
 #define globalUBO (vk_backend.ubo)
@@ -77,7 +75,7 @@ typedef struct VKBackEnd_s
 	globalUniformBufferObject_t ubo; // 当前Uniform变量
 	int frameCount; // 帧计数
 	globalUniformBufferObjectState_t uboState; // 当前Uniform缓存状态计数
-	VkDescriptorSet currentDescriptorSet; // 当前绑定的描述符集
+	VkDescriptorSet currentDescriptorSet[2]; // 当前绑定的描述符集
 
 	VKLIST(VKHandle_t) purgeBuffers[NUM_INFLIGHT_FRAME]; // 延时删除缓冲区列表(实际删除时清空)
 	VKLIST(VKHandle_t) purgeImages[NUM_INFLIGHT_FRAME]; // 延时删除图像列表(实际删除时清空)

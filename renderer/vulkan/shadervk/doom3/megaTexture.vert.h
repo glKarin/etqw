@@ -9,7 +9,7 @@ GLSL_SHADER const char VK_MEGATEXTURE_VERT[] =
 "layout(location = 8) in vec4 attr_TexCoord;\n"
 "layout(location = 3) in vec4 attr_Color;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    vec4 u_megaTextureLevel0;\n"
 "    vec4 u_megaTextureLevel1;\n"

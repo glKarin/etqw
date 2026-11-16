@@ -8,7 +8,7 @@ GLSL_SHADER const char VK_COLORPROCESS_VERT[] =
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "layout(location = 8) in vec4 attr_TexCoord;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    vec4 u_vertexParm0; // fraction\n"
 "    vec4 u_vertexParm1; // target hue\n"

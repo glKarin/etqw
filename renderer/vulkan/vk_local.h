@@ -5,7 +5,7 @@
 
 #ifdef _MULTITHREAD
 #if 1
-#define VKASSERT_THREAD assert(!multithreadActive || !renderThread->IsActive() || Sys_InRenderThread());
+#define VKASSERT_THREAD assert(!multithreadActive || !renderThread->IsRunning() || Sys_InRenderThread());
 //#define VKASSERT_THREAD if(!multithreadActive || !renderThread->IsActive() || Sys_InRenderThread()){}else{printf("ttt\n"); memset((void *)12, 0, 100);};
 #else
 #define VKASSERT_THREAD

@@ -24,6 +24,7 @@ static idCVar r_multithread("r_multithread",
 
 static void * BackendThread(void *data)
 {
+    renderThreadInstance.running = true;
 #ifdef _SDL // must save SDL thread ID in thread start
 	renderThreadInstance.render_thread.threadId = Sys_CurrentThread();
 #endif
@@ -40,6 +41,7 @@ static void * BackendThread(void *data)
     Sys_Printf("[RenderThread]: Leave " GAME_NAME " render thread -> %s\n", RENDER_THREAD_NAME);
     renderThreadInstance.render_thread_finished = true;
     Sys_TriggerEvent(TRIGGER_EVENT_RENDER_THREAD_FINISHED);
+    renderThreadInstance.running = false;
     return NULL;
 }
 
@@ -51,6 +53,7 @@ idRenderThread::idRenderThread()
   vertListToRender(0),
   pixelsCrop(NULL),
   pixels(NULL),
+  running(false),
   requestState(REQ_NONE)
 {
     memset(&render_thread, 0, sizeof(render_thread));
@@ -70,6 +73,7 @@ void idRenderThread::BackendThreadExecute( void )
         return;
     GLimp_DeactivateContext();
     backendThreadShutdown = false;
+    running = false;
     Sys_CreateThread(BackendThread, common, THREAD_HIGHEST, render_thread, RENDER_THREAD_NAME, g_threads, &g_thread_count);
     common->Printf("[MainThread]: Render thread start -> %zu(%s)\n", XTHREAD_ID(render_thread), RENDER_THREAD_NAME);
 }
@@ -88,6 +92,7 @@ void idRenderThread::BackendThreadShutdown( void )
 	render_thread.name = "";
     while(!render_thread_finished)
         Sys_WaitForEvent(TRIGGER_EVENT_RENDER_THREAD_FINISHED);
+    running = false;
     GLimp_ActivateContext();
     common->Printf("[MainThread]: Render thread shutdown -> %zu(%s)\n", threadId, RENDER_THREAD_NAME);
 }
@@ -185,6 +190,11 @@ void idRenderThread::BackendThreadWait( void )
 }
 
 bool idRenderThread::IsActive( void ) const
+{
+    return multithreadActive && Sys_ThreadIsRunning(&render_thread);
+}
+
+bool idRenderThread::IsRunning( void ) const
 {
     return multithreadActive && Sys_ThreadIsRunning(&render_thread);
 }

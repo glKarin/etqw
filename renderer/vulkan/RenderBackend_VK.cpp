@@ -10,7 +10,11 @@ extern int GL_GetDrawMode(GLenum mode);
 void VKGL_FUNC(glVertexAttribPointer) (GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer)
 {
 	if (index == PC_ATTRIB_INDEX_VERTEX) // only binding if vertex position(xyz is starting in idDrawVert)
-	R_VK_CmdBindVertexBuffer(vertexCache.BufferBinding_VK(), (uintptr_t)pointer);
+	{
+		//printf("xxx %p %p\n", pointer,vertexCache.BufferBinding_VK());
+		R_VK_CmdBindVertexBuffer(vertexCache.BufferBinding_VK(), (uintptr_t)pointer);
+		//printf("yyy %p %p\n", pointer,vertexCache.BufferBinding_VK());
+	}
 }
 
 void VKGL_FUNC(glDrawElements) (GLenum mode, GLsizei count, GLenum type, const void *indices)
@@ -24,7 +28,9 @@ void VKGL_FUNC(glDrawElements) (GLenum mode, GLsizei count, GLenum type, const v
 	{
 		vertCache_t *indexCache = vertexCache.AllocFrameTempInRendering_VK((void *)indices, count * size, true);
 		void *mustFirstCallThisAndCannotInline = vertexCache.Position(indexCache);
+		//printf("qqq %p %p\n", indices,vertexCache.IndexBufferBinding_VK());
 		R_VK_CmdBindIndexBuffer(vertexCache.IndexBufferBinding_VK(), (uintptr_t)mustFirstCallThisAndCannotInline);
+		//printf("www %p %p\n", indices,vertexCache.IndexBufferBinding_VK());
 	}
 
 	globalState_t lastSt1 = vk_backend.state.st1;

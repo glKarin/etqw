@@ -50,6 +50,8 @@
 #endif
 
 VKBackEnd_t vk_backend;
+int tyu;
+int tyui;
 
 #define globalUBOState (vk_backend.uboState)
 
@@ -682,7 +684,6 @@ void R_VK_CreatePipelineLayout(VKShaderProgram_t *program)
 
     VkShaderModule vertexModule = program->vertexShader;
     VkShaderModule fragmentModule = program->fragmentShader;
-    VkDescriptorSetLayout descriptorSetLayout;
     VKPipelineLayout_t *pipelineLayout;
 	VKHandle_t handle = VK_AllocPipelineLayout(&pipelineLayout);
 
@@ -694,15 +695,21 @@ void R_VK_CreatePipelineLayout(VKShaderProgram_t *program)
 	VKZERO(fragmentShaderCreateInfo);
     R_CreateFragmentShader(&fragmentShaderCreateInfo, fragmentModule);
 
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[VKBINDING_NUM];
+	// set 0
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[VKBINDING_UBO_NUM];
 	VKZERO(descriptorSetLayoutBindings);
 	int numDescriptorSetLayoutBindings = 0;
+
+	// set 1
+	VkDescriptorSetLayoutBinding samplerDescriptorSetLayoutBindings[VKBINDING_NUM];
+	VKZERO(samplerDescriptorSetLayoutBindings);
+	int numSamplerDescriptorSetLayoutBindings = 0;
 
 	if (program->ubo_vertex)
 	{
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].binding = 0;
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorCount = 1;
-		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].pImmutableSamplers = NULL;
 		numDescriptorSetLayoutBindings++;
@@ -712,7 +719,7 @@ void R_VK_CreatePipelineLayout(VKShaderProgram_t *program)
 	{
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].binding = 1;
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorCount = 1;
-		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].pImmutableSamplers = NULL;
 		numDescriptorSetLayoutBindings++;
@@ -722,32 +729,54 @@ void R_VK_CreatePipelineLayout(VKShaderProgram_t *program)
 	{
 		for (int i = 0; i < program->numTextureUnits; i++)
 		{
-			descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].binding = VKBINDING_TRXTURES_SLOT(i);
-			descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorCount = 1;
-			descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-			descriptorSetLayoutBindings[numDescriptorSetLayoutBindings].pImmutableSamplers = NULL;
-			numDescriptorSetLayoutBindings++;
+			samplerDescriptorSetLayoutBindings[numSamplerDescriptorSetLayoutBindings].binding = VKBINDING_TRXTURES_SLOT(i);
+			samplerDescriptorSetLayoutBindings[numSamplerDescriptorSetLayoutBindings].descriptorCount = 1;
+			samplerDescriptorSetLayoutBindings[numSamplerDescriptorSetLayoutBindings].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			samplerDescriptorSetLayoutBindings[numSamplerDescriptorSetLayoutBindings].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			samplerDescriptorSetLayoutBindings[numSamplerDescriptorSetLayoutBindings].pImmutableSamplers = NULL;
+			numSamplerDescriptorSetLayoutBindings++;
 		}
 	}
 
+	VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout samplerDescriptorSetLayout = VK_NULL_HANDLE;
+	VkDescriptorSetLayout descriptorSetLayouts[2];
+	int numDescriptorSetLayouts = 0;
+	VKPTRZERO(descriptorSetLayouts);
+	
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-	VKZERO(descriptorSetLayoutCreateInfo);
-    descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCreateInfo.bindingCount = numDescriptorSetLayoutBindings;
-    descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings;
+	if (numDescriptorSetLayoutBindings > 0)
+	{
+		VKZERO(descriptorSetLayoutCreateInfo);
+		descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		descriptorSetLayoutCreateInfo.bindingCount = numDescriptorSetLayoutBindings;
+		descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings;
 
-    result = vkCreateDescriptorSetLayout(vk_context.device, &descriptorSetLayoutCreateInfo, NULL, &descriptorSetLayout);
-    HANDLE_VK_ERROR_EXIT(result, "vkCreateDescriptorSetLayout");
-	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)descriptorSetLayout, "descriptorSetLayout::%d::%s", handle, program->name);
+		result = vkCreateDescriptorSetLayout(vk_context.device, &descriptorSetLayoutCreateInfo, NULL, &descriptorSetLayout);
+		HANDLE_VK_ERROR_EXIT(result, "vkCreateDescriptorSetLayout");
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)descriptorSetLayout, "descriptorSetLayout::%d::%s", handle, program->name);
+		descriptorSetLayouts[numDescriptorSetLayouts++] = descriptorSetLayout;
+	}
+	if (numSamplerDescriptorSetLayoutBindings > 0)
+	{
+		VKZERO(descriptorSetLayoutCreateInfo);
+		descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		descriptorSetLayoutCreateInfo.bindingCount = numSamplerDescriptorSetLayoutBindings;
+		descriptorSetLayoutCreateInfo.pBindings = samplerDescriptorSetLayoutBindings;
+
+		result = vkCreateDescriptorSetLayout(vk_context.device, &descriptorSetLayoutCreateInfo, NULL, &samplerDescriptorSetLayout);
+		HANDLE_VK_ERROR_EXIT(result, "vkCreateDescriptorSetLayout");
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)samplerDescriptorSetLayout, "descriptorSetLayout_sampler::%d::%s", handle, program->name);
+		descriptorSetLayouts[numDescriptorSetLayouts++] = samplerDescriptorSetLayout;
+	}
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo;
 	VKZERO(pipelineLayoutCreateInfo);
     pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutCreateInfo.pPushConstantRanges = NULL;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-    pipelineLayoutCreateInfo.setLayoutCount = 1;
-    pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
+    pipelineLayoutCreateInfo.setLayoutCount = numDescriptorSetLayouts;
+    pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts;
     result = vkCreatePipelineLayout(vk_context.device, &pipelineLayoutCreateInfo, NULL, &pipelineLayout->pipelineLayout);
     HANDLE_VK_ERROR_EXIT(result, "vkCreatePipelineLayout");
 
@@ -756,6 +785,7 @@ void R_VK_CreatePipelineLayout(VKShaderProgram_t *program)
     pipelineLayout->vertexShader = vertexModule;
     pipelineLayout->fragmentShader = fragmentModule;
     pipelineLayout->descriptorSetLayout = descriptorSetLayout;
+    pipelineLayout->samplerDescriptorSetLayout = samplerDescriptorSetLayout;
 
     program->pipelineLayout = pipelineLayout;
 }
@@ -884,6 +914,7 @@ void R_VK_UploadBufferData(VKBuffer_t *dstBuffer, int size, const void *data, in
 
 	VKZERO(map);
 	R_VK_AllocStageWriteBuffer(size, &map);
+	//printf("BBB %d %d %d %d %d %d\n", vk_backend.frameCount, vk_context.frameIndex, tyui++,size, tyu+=size, vk_buffer.stageBuffer.currentStageBuffer.blocks.num);
 	//VK_WriteBuffer(map.buffer, data, map.offset, size, map.ptr);
 	memcpy(map.ptr, data, size);
 
@@ -902,6 +933,7 @@ void R_VK_UploadImageData(VKImage_t *image, int totalSize, const byte *totalData
 	VKBufferMap_t map;
 
 	VKZERO(map);
+	//printf("III %d %d %d %d %d %d\n", vk_backend.frameCount, vk_context.frameIndex, tyui++, totalSize, tyu+=totalSize, vk_buffer.stageBuffer.currentStageBuffer.blocks.num);
 	R_VK_AllocStageWriteBuffer(totalSize, &map);
     //VK_WriteBuffer(map.buffer, totalData, map.offset, totalSize, map.ptr);
 	memcpy(map.ptr, totalData, totalSize);
@@ -919,6 +951,7 @@ void R_VK_UploadImageSubData(VKImage_t *image, int totalSize, const byte *totalD
 
 	VKZERO(map);
 	R_VK_AllocStageWriteBuffer(totalSize, &map);
+	//printf("JJJ %d %d %d %d %d %d\n", vk_backend.frameCount, vk_context.frameIndex,totalSize, tyui++, tyu+=totalSize, vk_buffer.stageBuffer.currentStageBuffer.blocks.num);
     //VK_WriteBuffer(map.buffer, totalData, map.offset, totalSize, map.ptr);
 	memcpy(map.ptr, totalData, totalSize);
 
@@ -986,9 +1019,11 @@ void R_VK_BindTextureType(int unit, int tut, const VKImage_t *image)
 /**
  * 从全局uniform拷贝到当前将要渲染的渲染管线的uniform
  */
-static void R_VK_CopyAllUniforms()
+static int R_VK_CopyAllUniforms()
 {
 	ASSERT_PROGRAM;
+
+	int uboUpdateMask = 0;
 
 	vk_backend.currentProgram->uboUpdate = false;
 	if(vk_backend.currentProgram->copyUniform_vertex)
@@ -996,7 +1031,7 @@ static void R_VK_CopyAllUniforms()
 		vk_backend.currentProgram->copyUniform_vertex();
 		if (vk_backend.currentProgram->uboUpdate)
 		{
-			vk_backend.currentProgram->uboUpdateMask |= UTM_VERTEX;
+			uboUpdateMask |= UTM_VERTEX;
 			vk_backend.currentProgram->uboUpdate = false;
 		}
 	}
@@ -1006,7 +1041,7 @@ static void R_VK_CopyAllUniforms()
 		vk_backend.currentProgram->copyUniform_fragment();
 		if (vk_backend.currentProgram->uboUpdate)
 		{
-			vk_backend.currentProgram->uboUpdateMask |= UTM_FRAGMENT;
+			uboUpdateMask |= UTM_FRAGMENT;
 			vk_backend.currentProgram->uboUpdate = false;
 		}
 	}
@@ -1020,13 +1055,14 @@ static void R_VK_CopyAllUniforms()
 			if (vk_backend.currentProgram->textures[i] != vk_backend.tmu[textureType][i])
 			{
 				vk_backend.currentProgram->textures[i] = vk_backend.tmu[textureType][i];
-
-				vk_backend.currentProgram->uboUpdateMask |= (UTM_IMAGE << i);
+				uboUpdateMask |= (UTM_IMAGE << i);
 			}
 		}
 	}
 
-	vk_backend.currentProgram->frameCount = vk_backend.frameCount; 
+	vk_backend.currentProgram->frameCount = vk_backend.frameCount;
+
+	return uboUpdateMask;
 }
 
 /**
@@ -1096,13 +1132,25 @@ void R_VK_DestroyImage(VKHandle_t handle)
 /**
  * 使用当前的渲染管线布局的描述符布局分配新的描述符集
  */
-static VkDescriptorSet R_VK_CreateDescriptorSetForUpdate()
+static VkDescriptorSet R_VK_CreateUniformDescriptorSetForUpdate()
 {
 	VkDescriptorSet *descriptorSet;
 	VkDescriptorPool descriptorPool;
-	VKHandle_t handle = VK_AllocDescriptorSet(&descriptorSet, &descriptorPool, vk_backend.currentProgram->numUBO, vk_backend.currentProgram->numTextureUnits);
+	VKHandle_t handle = VK_AllocDescriptorSet(&descriptorSet, &descriptorPool, vk_backend.currentProgram->numUBO, 0);
 
-	VK_CreateDescriptorSet(&descriptorSet, &descriptorPool, &vk_backend.currentProgram->pipelineLayout->descriptorSetLayout, 1, vk_backend.currentProgram->numUBO, vk_backend.currentProgram->numTextureUnits);
+	VK_CreateDescriptorSet(&descriptorSet, &descriptorPool, &vk_backend.currentProgram->pipelineLayout->descriptorSetLayout, 1, vk_backend.currentProgram->numUBO, 0);
+	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)*descriptorSet, "descriptorSet_static::%d::%s_%d_%d", handle, vk_backend.currentProgram->name, vk_backend.currentProgram->numUBO, vk_backend.currentProgram->numTextureUnits);
+
+	return *descriptorSet;
+}
+
+static VkDescriptorSet R_VK_CreateSamplerDescriptorSetForUpdate()
+{
+	VkDescriptorSet *descriptorSet;
+	VkDescriptorPool descriptorPool;
+	VKHandle_t handle = VK_AllocDescriptorSet(&descriptorSet, &descriptorPool, 0, vk_backend.currentProgram->numTextureUnits);
+
+	VK_CreateDescriptorSet(&descriptorSet, &descriptorPool, &vk_backend.currentProgram->pipelineLayout->samplerDescriptorSetLayout, 1, 0, vk_backend.currentProgram->numTextureUnits);
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)*descriptorSet, "descriptorSet::%d::%s_%d_%d", handle, vk_backend.currentProgram->name, vk_backend.currentProgram->numUBO, vk_backend.currentProgram->numTextureUnits);
 
 	return *descriptorSet;
@@ -1180,10 +1228,14 @@ void R_VK_ResetGlobalState()
 {
 	memset(vk_backend.tmu, 0, sizeof(vk_backend.tmu));
 	vk_backend.frameCount++;
-	vk_backend.currentDescriptorSet = VK_NULL_HANDLE;
+	vk_backend.currentDescriptorSet[0] = VK_NULL_HANDLE;
+	vk_backend.currentDescriptorSet[1] = VK_NULL_HANDLE;
 	for(int i = 0; i < vk_backend.programs.num; i++)
 	{
-		vk_backend.programs.list[i]->descriptorSet = VK_NULL_HANDLE;
+		vk_backend.programs.list[i]->descriptorSet[0] = VK_NULL_HANDLE;
+		vk_backend.programs.list[i]->descriptorSet[1] = VK_NULL_HANDLE;
+		VKZERO(vk_backend.programs.list[i]->uniformBuffer_vertex);
+		VKZERO(vk_backend.programs.list[i]->uniformBuffer_fragment);
 	}
 	R_VK_SetRenderPass(vk_context.renderPass, 0, 0);
 }
@@ -1234,6 +1286,8 @@ void R_VK_EndFrame()
 
 	// 提交该帧要用到的临时缓冲区
 	R_VK_VertexCacheEndFrame();
+	tyu=0;
+	tyui=0;
 
 	// 上下文结束本帧
 	VK_EndFrame();
@@ -1246,79 +1300,145 @@ void R_VK_UpdateUniformBufferObject()
 {
 	R_VK_SyncPipelineState();
 
-	R_VK_CopyAllUniforms();
+	int uboUpdateMask = R_VK_CopyAllUniforms();
 
-	if (vk_backend.currentProgram->uboUpdateMask == 0 && VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet)
-	{
-		if (vk_backend.currentDescriptorSet != vk_backend.currentProgram->descriptorSet)
-		{
-			vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, 1, &vk_backend.currentProgram->descriptorSet, 0, NULL);
-			vk_backend.currentDescriptorSet = vk_backend.currentProgram->descriptorSet;
-		}
-		return;
-	}
-
-	vk_backend.currentProgram->descriptorSet = VK_NULL_HANDLE;
-
-    VkWriteDescriptorSet writeDescriptorSets[VKBINDING_NUM];
+	VkWriteDescriptorSet writeDescriptorSets[VKBINDING_UBO_NUM];
 	VKZERO(writeDescriptorSets);
 	int numWriteDescriptorSets = 0;
 	VkDescriptorBufferInfo descriptorBufferInfo0;
 	VkDescriptorBufferInfo descriptorBufferInfo1;
 
-	VkDescriptorSet descriptorSet = R_VK_CreateDescriptorSetForUpdate();
+	uint32_t dynamicOffsets[VKBINDING_UBO_NUM];
+	VKZERO(dynamicOffsets);
+	int numDynamicOffsets = 0;
+
+	VkWriteDescriptorSet writeSamplerDescriptorSets[VKBINDING_NUM];
+	VKZERO(writeSamplerDescriptorSets);
+	int numWriteSamplerDescriptorSets = 0;
+
+	VkDescriptorSet samplerDescriptorSet = VK_NULL_HANDLE;
+	VkDescriptorSet uniformDescriptorSet = VK_NULL_HANDLE;
+
+	if (uboUpdateMask == 0)
+	{
+		if (vk_backend.currentDescriptorSet[0] != vk_backend.currentProgram->descriptorSet[0] || vk_backend.currentDescriptorSet[1] != vk_backend.currentProgram->descriptorSet[1])
+		{
+			if (VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet[0])
+			{
+				if(vk_backend.currentProgram->ubo_vertex)
+				{
+					dynamicOffsets[numDynamicOffsets] = vk_backend.currentProgram->uniformBuffer_vertex.offset;
+					numDynamicOffsets++;
+				}
+				if(vk_backend.currentProgram->ubo_fragment)
+				{
+					dynamicOffsets[numDynamicOffsets] = vk_backend.currentProgram->uniformBuffer_fragment.offset;
+					numDynamicOffsets++;
+				}
+				numWriteDescriptorSets++;
+			}
+
+			if (VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet[1])
+			{
+				numWriteDescriptorSets++;
+			}
+
+			vk_backend.currentDescriptorSet[0] = vk_backend.currentProgram->descriptorSet[0];
+			vk_backend.currentDescriptorSet[1] = vk_backend.currentProgram->descriptorSet[1];
+
+			vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, numWriteDescriptorSets, vk_backend.currentProgram->descriptorSet, numDynamicOffsets, dynamicOffsets);
+		}
+		return;
+	}
+
+	vk_backend.currentProgram->uboUpdate = false;
+
+	//vk_backend.currentProgram->descriptorSet = VK_NULL_HANDLE;
 
 	if(vk_backend.currentProgram->ubo_vertex)
 	{
-		if(vk_backend.currentProgram->uboUpdateMask & UTM_VERTEX)
-			R_VK_WriteUniformBufferObject(vk_backend.currentProgram->ubo_vertex, vk_backend.currentProgram->uboSize_vertex, &vk_backend.currentProgram->uniformBuffer_vertex);
+		VKBufferMap_t vertexMap;
+		if(uboUpdateMask & UTM_VERTEX)
+		{
+			// update UBO data
+			R_VK_WriteUniformBufferObject(vk_backend.currentProgram->ubo_vertex, vk_backend.currentProgram->uboSize_vertex, &vertexMap);
 
-		VKZERO(descriptorBufferInfo0);
-		descriptorBufferInfo0.buffer = vk_backend.currentProgram->uniformBuffer_vertex.buffer->buffer;
-		descriptorBufferInfo0.offset = vk_backend.currentProgram->uniformBuffer_vertex.offset;
-		descriptorBufferInfo0.range = vk_backend.currentProgram->uniformBuffer_vertex.size;
+			// if pipeline not update descriptor sets in this frame, or last buffer is full
+			if (!vk_backend.currentProgram->uniformBuffer_vertex.buffer || vk_backend.currentProgram->uniformBuffer_vertex.buffer->buffer != vertexMap.buffer->buffer)
+			{
+				vk_backend.currentProgram->uniformBuffer_vertex = vertexMap;
+				if (VK_NULL_HANDLE == uniformDescriptorSet)
+					uniformDescriptorSet = R_VK_CreateUniformDescriptorSetForUpdate();
 
-		writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[numWriteDescriptorSets].dstSet = descriptorSet;
-		writeDescriptorSets[numWriteDescriptorSets].dstBinding = 0;
-		writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
-		writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
-		writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo0;
-		writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
-		writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
+				VKZERO(descriptorBufferInfo0);
+				descriptorBufferInfo0.buffer = vk_backend.currentProgram->uniformBuffer_vertex.buffer->buffer;
+				descriptorBufferInfo0.offset = 0;
+				descriptorBufferInfo0.range = vk_backend.currentProgram->uboSize_vertex;
 
-		numWriteDescriptorSets++;
+				writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets[numWriteDescriptorSets].dstSet = uniformDescriptorSet;
+				writeDescriptorSets[numWriteDescriptorSets].dstBinding = 0;
+				writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
+				writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+				writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
+				writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo0;
+				writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
+				writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
+
+				numWriteDescriptorSets++;
+			}
+		}
+
+		dynamicOffsets[numDynamicOffsets] = vertexMap.offset;
+		numDynamicOffsets++;
 	}
 
 	if(vk_backend.currentProgram->ubo_fragment)
 	{
-		if(vk_backend.currentProgram->uboUpdateMask & UTM_FRAGMENT)
-			R_VK_WriteUniformBufferObject(vk_backend.currentProgram->ubo_fragment, vk_backend.currentProgram->uboSize_fragment, &vk_backend.currentProgram->uniformBuffer_fragment);
+		VKBufferMap_t fragmentMap;
 
-		VKZERO(descriptorBufferInfo1);
-		descriptorBufferInfo1.buffer = vk_backend.currentProgram->uniformBuffer_fragment.buffer->buffer;
-		descriptorBufferInfo1.offset = vk_backend.currentProgram->uniformBuffer_fragment.offset;
-		descriptorBufferInfo1.range = vk_backend.currentProgram->uniformBuffer_fragment.size;
+		if(uboUpdateMask & UTM_FRAGMENT)
+		{
+			// update UBO data
+			R_VK_WriteUniformBufferObject(vk_backend.currentProgram->ubo_fragment, vk_backend.currentProgram->uboSize_fragment, &fragmentMap);
 
-		writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[numWriteDescriptorSets].dstSet = descriptorSet;
-		writeDescriptorSets[numWriteDescriptorSets].dstBinding = 1;
-		writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
-		writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
-		writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo1;
-		writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
-		writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
-		numWriteDescriptorSets++;
+			// if pipeline not update descriptor sets in this frame, or last buffer is full
+			if (!vk_backend.currentProgram->uniformBuffer_fragment.buffer || vk_backend.currentProgram->uniformBuffer_fragment.buffer->buffer != fragmentMap.buffer->buffer)
+			{
+				vk_backend.currentProgram->uniformBuffer_fragment = fragmentMap;
+				if (VK_NULL_HANDLE == uniformDescriptorSet)
+					uniformDescriptorSet = R_VK_CreateUniformDescriptorSetForUpdate();
+
+				VKZERO(descriptorBufferInfo1);
+				descriptorBufferInfo1.buffer = vk_backend.currentProgram->uniformBuffer_fragment.buffer->buffer;
+				descriptorBufferInfo1.offset = 0;
+				descriptorBufferInfo1.range = vk_backend.currentProgram->uboSize_fragment;
+
+				writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeDescriptorSets[numWriteDescriptorSets].dstSet = uniformDescriptorSet;
+				writeDescriptorSets[numWriteDescriptorSets].dstBinding = 1;
+				writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
+				writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+				writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
+				writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo1;
+				writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
+				writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
+				numWriteDescriptorSets++;
+			}
+		}
+
+		dynamicOffsets[numDynamicOffsets] = fragmentMap.offset;
+		numDynamicOffsets++;
 	}
 
 	VkDescriptorImageInfo descriptorImageInfos[VKBINDING_MAX_TRXTURE_UNITS];
 	if (vk_backend.currentProgram->numTextureUnits > 0)
 	{
+		if (VK_NULL_HANDLE == samplerDescriptorSet)
+			samplerDescriptorSet = R_VK_CreateSamplerDescriptorSetForUpdate();
 		for (int i = 0; i < vk_backend.currentProgram->numTextureUnits; i++)
 		{
-			//if (vk_backend.currentProgram->uboUpdateMask & (UTM_IMAGE << i))
+			//if (uboUpdateMask & (UTM_IMAGE << i))
 			{
 				VKZERO(descriptorImageInfos[i]);
 				const VKImage_t *image = vk_backend.currentProgram->textures[i];
@@ -1329,29 +1449,53 @@ void R_VK_UpdateUniformBufferObject()
 				descriptorImageInfos[i].imageView = image->imageView;
 				descriptorImageInfos[i].sampler = image->sampler;
 
-				writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets[numWriteDescriptorSets].dstSet = descriptorSet;
-				writeDescriptorSets[numWriteDescriptorSets].dstBinding = VKBINDING_TRXTURES_SLOT(i);
-				writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
-				writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
-				writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = NULL;
-				writeDescriptorSets[numWriteDescriptorSets].pImageInfo = &descriptorImageInfos[i];
-				writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
-				numWriteDescriptorSets++;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].dstSet = samplerDescriptorSet;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].dstBinding = VKBINDING_TRXTURES_SLOT(i);
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].dstArrayElement = 0;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].descriptorCount = 1;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].pBufferInfo = NULL;
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].pImageInfo = &descriptorImageInfos[i];
+				writeSamplerDescriptorSets[numWriteSamplerDescriptorSets].pTexelBufferView = NULL;
+				numWriteSamplerDescriptorSets++;
 			}
 		}
 	}
 
-	vk_backend.currentProgram->uboUpdate = false;
-	vk_backend.currentProgram->uboUpdateMask = 0;
+	if (uniformDescriptorSet)
+	{
+		vkUpdateDescriptorSets(vk_context.device, numWriteDescriptorSets, writeDescriptorSets, 0, NULL);
+		vk_backend.currentProgram->descriptorSet[0] = uniformDescriptorSet;
+	}
+	else
+		uniformDescriptorSet = vk_backend.currentProgram->descriptorSet[0];
 
-    vkUpdateDescriptorSets(vk_context.device, numWriteDescriptorSets, writeDescriptorSets, 0, NULL);
+	if (samplerDescriptorSet)
+	{
+		vkUpdateDescriptorSets(vk_context.device, numWriteSamplerDescriptorSets, writeSamplerDescriptorSets, 0, NULL);
+		vk_backend.currentProgram->descriptorSet[1] = samplerDescriptorSet;
+	}
+	else
+		samplerDescriptorSet = vk_backend.currentProgram->descriptorSet[1];
 
-	vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
+	VkDescriptorSet descriptorSets[2];
+	int numDescriptorSets = 0;
+	if (VK_NULL_HANDLE != uniformDescriptorSet)
+	{
+		descriptorSets[numDescriptorSets] = uniformDescriptorSet;
+		numDescriptorSets++;
+	}
+	if (VK_NULL_HANDLE != samplerDescriptorSet)
+	{
+		descriptorSets[numDescriptorSets] = samplerDescriptorSet;
+		numDescriptorSets++;
+	}
 
-	vk_backend.currentProgram->descriptorSet = descriptorSet;
-	vk_backend.currentDescriptorSet = descriptorSet;
+	vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, numDescriptorSets, descriptorSets, numDynamicOffsets, dynamicOffsets);
+
+	vk_backend.currentDescriptorSet[0] = vk_backend.currentProgram->descriptorSet[0];
+	vk_backend.currentDescriptorSet[1] = vk_backend.currentProgram->descriptorSet[1];
 }
 
 void R_VK_CmdDraw(int vertexCount, int firstVertex)

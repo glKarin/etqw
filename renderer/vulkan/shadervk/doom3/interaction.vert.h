@@ -35,7 +35,7 @@ GLSL_SHADER const char VK_INTERACTION_VERT[] =
 "layout(location = 9) out mat3 var_TangentToWorldMatrix;\n"
 "#endif\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    vec4 u_lightProjectionS;\n"
 "    vec4 u_lightProjectionT;\n"
 "    vec4 u_lightFalloff;\n"

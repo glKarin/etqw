@@ -7,7 +7,7 @@ GLSL_SHADER const char VK_BLENDLIGHT_VERT[] =
 "\n"
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    mat4 u_fogMatrix;\n"
 "};\n"

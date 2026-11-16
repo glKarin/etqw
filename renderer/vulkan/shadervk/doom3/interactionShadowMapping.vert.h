@@ -48,7 +48,7 @@ GLSL_SHADER const char VK_INTERACTION_SHADOW_MAPPING_VERT[] =
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "layout(location = 3) in vec4 attr_Color;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    vec4 u_lightProjectionS;\n"
 "    vec4 u_lightProjectionT;\n"
 "    vec4 u_lightFalloff;\n"

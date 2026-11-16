@@ -506,7 +506,9 @@
 		_vkc_isNew = false; \
 	} else { \
 		VKQUEUE_RESIZE2(T, data, size, num, granularity, used) \
-		used++; \
+		if(num == size) { \
+			used++; \
+		} \
 		num++; \
 		_vkc_index = used; \
 		_vkc_value = &data[_vkc_index]; \

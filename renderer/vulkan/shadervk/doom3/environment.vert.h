@@ -10,7 +10,7 @@ GLSL_SHADER const char VK_ENVIRONMENT_VERT[] =
 "layout(location = 8) in vec3 attr_TexCoord;\n"
 "layout(location = 11) in vec3 attr_Normal;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    mat4 u_modelViewMatrix;\n"
 "    mat4 u_textureMatrix;\n"

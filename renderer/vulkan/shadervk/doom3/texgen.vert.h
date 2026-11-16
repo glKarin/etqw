@@ -8,7 +8,7 @@ GLSL_SHADER const char VK_TEXGEN_VERT[] =
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "layout(location = 3) in vec4 attr_Color;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    vec4 u_texgenS;\n"
 "    vec4 u_texgenT;\n"
 "    vec4 u_texgenQ;\n"

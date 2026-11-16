@@ -8,7 +8,7 @@ GLSL_SHADER const char VK_ZFILLCLIP_VERT[] =
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "layout(location = 8) in vec4 attr_TexCoord;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    mat4 u_textureMatrix;\n"
 "    vec4 u_clipPlane;\n"

@@ -1,0 +1,25 @@
+
+// screenprocess
+GLSL_SHADER const char VK_SCREENPROCESS_VERT[] =
+"#version 450\n"
+"#pragma shader_stage( vertex )\n"
+"#extension GL_ARB_separate_shader_objects: enable\n"
+"\n"
+"layout(location = 0) in vec4 attr_Vertex;\n"
+"layout(location = 8) in vec4 attr_TexCoord;\n"
+"\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
+"    mat4 u_modelViewProjectionMatrix;\n"
+"};\n"
+"\n"
+"layout(location = 0) out vec4 var_TexCoord;\n"
+"\n"
+"// # texture 0 takes the texture coordinates unmodified\n"
+"\n"
+"void main(void)\n"
+"{\n"
+"    gl_Position = u_modelViewProjectionMatrix * attr_Vertex;\n"
+"\n"
+"    var_TexCoord = attr_TexCoord;\n"
+"}\n"
+;

@@ -10,8 +10,8 @@
 
 #define VKCONTEXT_ALLOCATOR vk_context.allocator
 
-#define IDVK_DESCRIPTOR_POOL_SIZE_UBO (IDVK_MAX_DESCRIPTOR_POOL_SETS * 2) // vertex shader + fragment shader
-#define IDVK_DESCRIPTOR_POOL_SIZE_SAMPLER (IDVK_MAX_DESCRIPTOR_POOL_SETS * 8) // max texture units in fragment shader
+#define IDVK_DESCRIPTOR_POOL_SIZE_UBO (IDVK_MAX_DESCRIPTOR_POOL_SETS * VKBINDING_UBO_NUM) // vertex shader + fragment shader
+#define IDVK_DESCRIPTOR_POOL_SIZE_SAMPLER (IDVK_MAX_DESCRIPTOR_POOL_SETS * VKBINDING_MAX_TRXTURE_UNITS) // max texture units in fragment shader
 
 #if IDVK_CONTAINER_SIZE_CONFIG
 
@@ -81,6 +81,7 @@
 #define currentFrameRenderFinishedSemaphore renderFinishedSemaphores[vk_context.frameIndex]
 #define currentFrameInFlightFence inFlightFences[vk_context.frameIndex]
 #define currentDescriptorPool descriptorPools[vk_context.frameIndex]
+#define currentStaticDescriptorPool staticDescriptorPools[vk_context.frameIndex]
 
 #define IDVK_CHECK_RENDERPASS_IDLE() assert(!vk_context.inRenderPass)
 
@@ -1571,18 +1572,28 @@ void VK_ReadBuffer(VKBuffer_t *buffer, void *dst, int offset, int size, void *pt
 /**
  * 创建描述符池
  */
-void VK_CreateDescriptorPool(VKDescriptorPool_t *descriptorPool)
+void VK_CreateDescriptorPool(VKDescriptorPool_t *descriptorPool, int numUniforms, int numSamplers)
 {
     VkDescriptorPoolSize descriptorPoolSizes[2];
-    descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // Uniform块
-    descriptorPoolSizes[0].descriptorCount = IDVK_DESCRIPTOR_POOL_SIZE_UBO; // Uniform块数量
-    descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; // 图像采样器
-    descriptorPoolSizes[1].descriptorCount = IDVK_DESCRIPTOR_POOL_SIZE_SAMPLER; // 图像采样器数量
+    int numDescriptorPoolSizes = 0;
+
+    //if (numUniforms > 0)
+    {
+        descriptorPoolSizes[numDescriptorPoolSizes].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // Uniform块
+        descriptorPoolSizes[numDescriptorPoolSizes].descriptorCount = IDVK_DESCRIPTOR_POOL_SIZE_UBO; // Uniform块数量
+        numDescriptorPoolSizes++;
+    }
+    //if (numSamplers > 0)
+    {
+        descriptorPoolSizes[numDescriptorPoolSizes].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; // 图像采样器
+        descriptorPoolSizes[numDescriptorPoolSizes].descriptorCount = IDVK_DESCRIPTOR_POOL_SIZE_SAMPLER; // 图像采样器数量
+        numDescriptorPoolSizes++;
+    }
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo;
     VKZERO(descriptorPoolCreateInfo);
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolCreateInfo.poolSizeCount = COUNT_OF(descriptorPoolSizes);
+    descriptorPoolCreateInfo.poolSizeCount = numDescriptorPoolSizes;
     descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes;
     descriptorPoolCreateInfo.maxSets = IDVK_MAX_DESCRIPTOR_POOL_SETS; // 最大描述符集数量
 
@@ -1597,11 +1608,11 @@ void VK_CreateDescriptorPool(VKDescriptorPool_t *descriptorPool)
  */
 void VK_CreateDescriptorPools()
 {
-	for(int i = 0; i < NUM_INFLIGHT_FRAME; i++)
+	/*for(int i = 0; i < NUM_INFLIGHT_FRAME; i++)
 	{
-	    VKQUEUE_ALLOC(VKDescriptorPool_t, vk_context.descriptorPools[i]);
-		VK_CreateDescriptorPool(_vkc_value);
-	}
+	    { VKQUEUE_ALLOC(VKDescriptorPool_t, vk_context.descriptorPools[i]); }
+	    { VKQUEUE_ALLOC(VKDescriptorPool_t, vk_context.staticDescriptorPools[i]); }
+	}*/
 }
 
 /**
@@ -1638,6 +1649,39 @@ VKHandle_t VK_CreateDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorP
     HANDLE_VK_ERROR_EXIT(result, "vkAllocateDescriptorSets");
 
 	return VKHANDLE_INVALID;
+}
+
+VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers)
+{
+    VkDescriptorSetAllocateInfo descriptorSetAllocateInfo;
+    VKZERO(descriptorSetAllocateInfo);
+    descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorSetAllocateInfo.descriptorPool = *descriptorPool; // 描述符池
+    descriptorSetAllocateInfo.descriptorSetCount = count; // 分配描述符集数量
+    descriptorSetAllocateInfo.pSetLayouts = layouts; // 每个描述符集布局
+
+    VkResult result = vkAllocateDescriptorSets(vk_context.device, &descriptorSetAllocateInfo, *descriptorSet);
+    if(result == VK_ERROR_OUT_OF_POOL_MEMORY)
+    {
+        VKQUEUE_FOREACH(VKDescriptorPool_t, vk_context.currentStaticDescriptorPool)
+        {
+            if(*descriptorPool == vk_context.currentStaticDescriptorPool.list[i].descriptorPool)
+            {
+                vk_context.currentStaticDescriptorPool.list[i].usedDescriptorSets = IDVK_MAX_DESCRIPTOR_POOL_SETS;
+                break;
+            }
+        }
+
+        VKHandle_t handle = VK_AllocDescriptorSet(descriptorSet, descriptorPool, numUniforms, numSamplers);
+
+        descriptorSetAllocateInfo.descriptorPool = *descriptorPool; // 描述符池
+        result = vkAllocateDescriptorSets(vk_context.device, &descriptorSetAllocateInfo, *descriptorSet);
+        return handle;
+    }
+
+    HANDLE_VK_ERROR_EXIT(result, "vkAllocateDescriptorSets");
+
+    return VKHANDLE_INVALID;
 }
 
 void VK_BlitColorImage(VKImage_t *dstImage, const VKImage_t *srcImage)
@@ -3060,7 +3104,8 @@ static bool IsDescriptorPoolCanCreateSet(VKDescriptorPool_t *descriptorPool, int
 
 static bool IsDescriptorPoolFull(VKDescriptorPool_t *descriptorPool, int numUniforms, int numSamplers)
 {
-    return (descriptorPool->usedDescriptorSets + 1 > IDVK_MAX_DESCRIPTOR_POOL_SETS
+    return (!descriptorPool || VK_NULL_HANDLE == descriptorPool->descriptorPool
+        || descriptorPool->usedDescriptorSets + 1 > IDVK_MAX_DESCRIPTOR_POOL_SETS
         || descriptorPool->usedUniforms + numUniforms > IDVK_DESCRIPTOR_POOL_SIZE_UBO
         || descriptorPool->usedSamplers + numSamplers > IDVK_DESCRIPTOR_POOL_SIZE_SAMPLER
         );
@@ -3072,13 +3117,13 @@ static bool IsDescriptorPoolFull(VKDescriptorPool_t *descriptorPool, int numUnif
 VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers)
 {
 	VKASSERT_THREAD;
-    VKDescriptorPool_t *descriptorPool = &VKQUEUE_CURRENT(VKDescriptorPool_t, vk_context.currentDescriptorPool);
+    VKDescriptorPool_t *descriptorPool = vk_context.currentDescriptorPool.num > 0 ? &VKQUEUE_CURRENT(VKDescriptorPool_t, vk_context.currentDescriptorPool) : NULL;
     if (IsDescriptorPoolFull(descriptorPool, numUniforms, numSamplers))
     {
         VKQUEUE_NEXT(VKDescriptorPool_t, vk_context.currentDescriptorPool);
         if (_vkc_isNew)
         {
-            VK_CreateDescriptorPool(_vkc_value);
+            VK_CreateDescriptorPool(_vkc_value, numUniforms, numSamplers);
         }
         else
         {
@@ -3101,6 +3146,40 @@ VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, 
     if(pool)
         *pool = descriptorPool->descriptorPool;
     return vk_context.currentDescriptorPool.used * IDVK_MAX_DESCRIPTOR_POOL_SETS + index;
+}
+
+VKHandle_t VK_AllocStaticDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers)
+{
+    VKASSERT_THREAD;
+    VKDescriptorPool_t *descriptorPool = vk_context.currentStaticDescriptorPool.num > 0 ? &VKQUEUE_CURRENT(VKDescriptorPool_t, vk_context.currentStaticDescriptorPool) : NULL;
+    if (IsDescriptorPoolFull(descriptorPool, numUniforms, numSamplers))
+    {
+        VKQUEUE_NEXT(VKDescriptorPool_t, vk_context.currentStaticDescriptorPool);
+        if (_vkc_isNew)
+        {
+            VK_CreateDescriptorPool(_vkc_value, numUniforms, numSamplers);
+        }
+        else
+        {
+            _vkc_value->usedDescriptorSets = 0;
+            _vkc_value->usedUniforms = 0;
+            _vkc_value->usedSamplers = 0;
+            VKZERO(_vkc_value->descriptorSets);
+        }
+        descriptorPool = _vkc_value;
+    }
+
+    int index = descriptorPool->usedDescriptorSets;
+    VkDescriptorSet *descriptorSet = &descriptorPool->descriptorSets[index];
+    VKPTRZERO(descriptorSet);
+    descriptorPool->usedDescriptorSets++;
+    descriptorPool->usedUniforms += numUniforms;
+    descriptorPool->usedSamplers += numSamplers;
+    if(set)
+        *set = descriptorSet;
+    if(pool)
+        *pool = descriptorPool->descriptorPool;
+    return vk_context.currentStaticDescriptorPool.used * IDVK_MAX_DESCRIPTOR_POOL_SETS + index;
 }
 
 /**
@@ -3478,7 +3557,7 @@ void VK_GetQueryResult(VKQueryPool_t *query, int offset, int num, uint64_t *ret)
  * @param query 查询池对象
  * @param offset 起始索引
  * @param num 查询数量
- * @param ret 返回数据(总是uint64_t)
+ * @param buffer 返回数据(总是uint64_t)
  */
 void VK_CopyQueryResult(VKQueryPool_t *query, int offset, int num, VKBuffer_t *buffer, int bufferOffset)
 {
@@ -3557,6 +3636,9 @@ void VK_ClearColor(float r, float g, float b, float a)
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+/**
+ * 清空当前渲染通道的帧缓冲区的颜色附件(指定范围)
+ */
 void VK_ClearColorEXT(float r, float g, float b, float a, int x, int y, int width, int height)
 {
     VkClearAttachment clearAttachment;
@@ -3604,6 +3686,9 @@ void VK_ClearDepth(float depth)
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+/**
+ * 清空当前渲染通道的帧缓冲区的深度附件(指定范围)
+ */
 void VK_ClearDepthEXT(float depth, int x, int y, int width, int height)
 {
     VkClearAttachment clearAttachment;
@@ -3647,6 +3732,9 @@ void VK_ClearStencil(int stencil)
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+/**
+ * 清空当前渲染通道的帧缓冲区的模版附件(指定范围)
+ */
 void VK_ClearStencilEXT(int stencil, int x, int y, int width, int height)
 {
     VkClearAttachment clearAttachment;
@@ -3691,6 +3779,9 @@ void VK_ClearDepthStencil(float depth, int stencil)
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, 1, &clearAttachment, 1, &clearRect);
 }
 
+/**
+ * 清空当前渲染通道的帧缓冲区的深度和模版附件(指定范围)
+ */
 void VK_ClearDepthStencilEXT(float depth, int stencil, int x, int y, int width, int height)
 {
     VkClearAttachment clearAttachment;
@@ -3763,6 +3854,9 @@ void VK_Clear(int mask, float r, float g, float b, float a, float depth, int ste
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, numClearAttachments, clearAttachments, 1, &clearRect);
 }
 
+/**
+ * 清空当前渲染通道的帧缓冲区的附件(指定范围)
+ */
 void VK_ClearEXT(int mask, float r, float g, float b, float a, float depth, int stencil, int x, int y, int width, int height)
 {
     VkClearAttachment clearAttachments[2];
@@ -3829,6 +3923,11 @@ void VK_ResetQueryPool(VKQueryPool_t *query)
     query->usedQuery = 0;
 }
 
+/**
+ * 创建渲染管线缓存
+ * @param data 数据(可为空)
+ * @param size 数据大小
+ */
 void VK_CreatePipelineCache(const void *data, int size)
 {
 	VkPipelineCacheCreateInfo createInfo;
@@ -3841,6 +3940,10 @@ void VK_CreatePipelineCache(const void *data, int size)
     HANDLE_VK_ERROR_RETURN(result, "vkCreatePipelineCache");
 }
 
+/**
+ * 读取渲染管线缓存
+ * @param data 返回数据
+ */
 int VK_GetPipelineCacheData(void **data)
 {
 	if(VK_NULL_HANDLE == vk_context.pipelineCache)
@@ -4257,6 +4360,7 @@ static void VK_DestroyBuffers()
 }
 
 /**
+ * 销毁全部查询池
  */
 void VK_DestroyQueryPool(VKQueryPool_t *query)
 {
@@ -4443,6 +4547,9 @@ void VK_WaitIdle()
         vkDeviceWaitIdle(vk_context.device);
 }
 
+/**
+ * 结束当前帧, 并同步等待设备空闲
+ */
 void VK_WaitFrameIdle()
 {
 	while(vk_context.inRenderFrame)
@@ -4465,6 +4572,9 @@ void VK_RecreateSwapchain()
     VK_CreateSwapchainFramebuffers();
 }
 
+/**
+ * 销毁交换链和图层
+ */
 void VK_DestroySwapchainAndSurface()
 {
     // 等待设备空闲
@@ -4476,7 +4586,7 @@ void VK_DestroySwapchainAndSurface()
 }
 
 /**
- * 重新创建交换链
+ * 重新创建交换链(图层变化时)
  */
 void VK_RecreateNewSwapchain()
 {
@@ -4489,9 +4599,9 @@ void VK_RecreateNewSwapchain()
     VK_WaitIdle();
     // 销毁旧的交换链
     VK_DestroySwapchain(false);
-	//
+	// 销毁图层
 	VK_DestroySurface();
-	//
+	// 重新创建图层
     VK_CreateSurface(nativeWindow);
     // 创建新的交换链
     VK_CreateSwapchain();
@@ -4528,6 +4638,7 @@ void VK_Init()
     for (int i = 0; i < NUM_INFLIGHT_FRAME; i++)
     {
         VKQUEUE_INIT(VKDescriptorPool_t, vk_context.descriptorPools[i], IDVK_DESCRIPTORPOOL_INIT_SIZE, IDVK_DESCRIPTORPOOL_GRANULARITY);
+        VKQUEUE_INIT(VKDescriptorPool_t, vk_context.staticDescriptorPools[i], IDVK_DESCRIPTORPOOL_INIT_SIZE, IDVK_DESCRIPTORPOOL_GRANULARITY);
     }
 
     // 获取所有支持的验证层

@@ -25,6 +25,7 @@ static idList<VKActuallyLoadBuffer_t> loadBuffers[NUM_INFLIGHT_FRAME];
 void R_VK_AddLoadBufferList( vertCache_t *block )
 {
     loadBuffers[vertexCache.GetListNum()].Append( VKActuallyLoadBuffer_t( block ) );
+	//printf("aaa %d %d %p\n", vk_backend.frameCount, vertexCache.GetListNum(), block);
 }
 
 // only call in backend after vulkan context command recording in multi-threading
@@ -42,6 +43,7 @@ void R_VK_HandleLoadBufferList( void )
 		for(int i = 0; i < loadList.Num(); i++)
 		{
 			vertexCache.TransferData_VK(loadList[i]);
+			//printf("ttt %d %d %p\n", vk_backend.frameCount, multithreadActive ? renderThread->vertListToRender : vertexCache.GetListNum(), loadList[i]);
 		}
 		loadList.SetNum(0);
 	}
@@ -138,6 +140,8 @@ void idVertexCache::Alloc_VK(void *data, int size, vertCache_t **buffer, bool in
 		common->Error("idVertexCache::Alloc_VK: size = %i\n", size);
 	}
 
+	if(Sys_InRenderThread())
+	assert(!vk_context.inCommandRecording || !vk_context.inRenderPass);
 	// if we can't find anything, it will be NULL
 	*buffer = NULL;
 

@@ -5,7 +5,7 @@ GLSL_SHADER const char VK_ENVIROSUIT_VERT[] =
 "#pragma shader_stage( vertex )\n"
 "#extension GL_ARB_separate_shader_objects: enable\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "\n"
 "    vec4 u_vertexParm0; // local[0]    scroll\n"

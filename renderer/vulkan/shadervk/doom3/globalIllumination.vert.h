@@ -15,7 +15,7 @@ GLSL_SHADER const char VK_GLOBAL_ILLUMINATION_VERT[] =
 "layout(location = 0) in vec4 attr_Vertex;\n"
 "layout(location = 3) in vec4 attr_Color;\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    vec4 u_viewOrigin;\n"
 "\n"

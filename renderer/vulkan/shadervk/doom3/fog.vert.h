@@ -7,7 +7,7 @@ GLSL_SHADER const char VK_FOG_VERT[] =
 "\n"
 "layout(location = 0) in vec4 attr_Vertex;      // input Vertex Coordinates\n"
 "\n"
-"layout(binding = 0) uniform UniformBufferObject {\n"
+"layout(binding = 0, set = 0, std140) uniform UniformBufferObject {\n"
 "    mat4 u_modelViewProjectionMatrix;\n"
 "    mat4 u_fogMatrix;        // fogPlanes 0, 1, 3 (CATION: not 2!), 2\n"
 "};\n"

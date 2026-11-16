@@ -45,6 +45,7 @@ public:
 // These are set if the backend should save pixels
     volatile renderCrop_t	*pixelsCrop;
     volatile byte           *pixels;
+    bool                    running;
 
     void                    BackendThreadExecute( void );
     void                    BackendThreadShutdown( void );
@@ -53,6 +54,7 @@ public:
     void                    BackendThreadSingleTask( void );
     void                    BackendThreadToolsTask( void );
     bool                    IsActive( void ) const;
+    bool                    IsRunning( void ) const;
 
 // images queue
     void				    AddAllocList( idImage * image, bool checkForPrecompressed, bool fromBackEnd );
@@ -84,7 +86,7 @@ private:
     void                    operator delete(void *);
     void                    operator delete[](void *);
 };
-	void				R_EnableRenderThread_f(const idCmdArgs &args);
+void				R_EnableRenderThread_f(const idCmdArgs &args);
 
 extern idRenderThread *renderThread;
 
