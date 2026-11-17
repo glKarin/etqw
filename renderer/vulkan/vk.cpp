@@ -136,6 +136,8 @@ void VK_PreInit()
 int VK_QueryExtensions()
 {
     uint32_t num;
+    VkExtensionProperties *props;
+
     VkResult result = vkEnumerateInstanceExtensionProperties(NULL, &num, NULL);
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateInstanceExtensionProperties");
     Sys_Printf("Enumerate Vulkan extensions: %d\n", num);
@@ -143,7 +145,7 @@ int VK_QueryExtensions()
     vk_context.numExtensions = num;
     if(num > 0)
     {
-        VkExtensionProperties *props = (VkExtensionProperties *)malloc(num * sizeof(props[0]));
+        VKARRAY_ALLOC2(VkExtensionProperties, props, num);
         vkEnumerateInstanceExtensionProperties(NULL, &num, props);
         VKARRAY_ALLOC2(char *, vk_context.extensions, vk_context.numExtensions);
         for (int i = 0; i < num; ++i) {
@@ -151,7 +153,7 @@ int VK_QueryExtensions()
             vk_context.extensions[i] = _strdup(prop->extensionName);
             Sys_Printf("%3d: %s(%x)\n", i + 1, prop->extensionName, prop->specVersion);
         }
-        free(props);
+        VKFREE(props);
     }
 
     return (int)num;
@@ -254,6 +256,8 @@ int VK_QueryPhysicalDevices()
 int VK_QueryValidationLayers()
 {
     uint32_t num;
+    VkLayerProperties *supportValidationLayers;
+
     VkResult result = vkEnumerateInstanceLayerProperties(&num, NULL);
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateInstanceLayerProperties");
     Sys_Printf("Enumerate Vulkan validation layers: %d\n", num);
@@ -261,7 +265,7 @@ int VK_QueryValidationLayers()
     vk_context.numValidationLayers = num;
     if(num > 0)
     {
-        VkLayerProperties *supportValidationLayers = (VkLayerProperties *)malloc(num * sizeof(supportValidationLayers[0]));
+        VKARRAY_ALLOC2(VkLayerProperties, supportValidationLayers, num);
         vkEnumerateInstanceLayerProperties(&num, supportValidationLayers);
         VKARRAY_ALLOC2(char *, vk_context.validationLayers, vk_context.numValidationLayers);
         for (int i = 0; i < num; ++i) {
@@ -269,6 +273,7 @@ int VK_QueryValidationLayers()
             Sys_Printf("%3d: %s: %s\n", i + 1, layer->layerName, layer->description);
             vk_context.validationLayers[i] = _strdup(layer->layerName);
         }
+        VKFREE(supportValidationLayers);
     }
 
     return (int)num;
@@ -283,6 +288,8 @@ int VK_QueryValidationLayers()
 int VK_QueryPhysicalDeviceValidationLayers(VkPhysicalDevice pd, char ***ret)
 {
     uint32_t num;
+    VkLayerProperties *supportValidationLayers;
+
     VkResult result = vkEnumerateDeviceLayerProperties(pd, &num, NULL);
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateDeviceLayerProperties");
     Sys_Printf("Enumerate Vulkan device validation layers: %d\n", num);
@@ -292,15 +299,15 @@ int VK_QueryPhysicalDeviceValidationLayers(VkPhysicalDevice pd, char ***ret)
 
     if(ret)
     {
-        VkLayerProperties *supportValidationLayers = (VkLayerProperties *)malloc(num * sizeof(supportValidationLayers[0]));
+        VKARRAY_ALLOC2(VkLayerProperties, supportValidationLayers, num);
         vkEnumerateDeviceLayerProperties(pd, &num, supportValidationLayers);
-        *ret = (char **)malloc(num * sizeof((*ret)[0]));
+        VKARRAY_ALLOC2(char *, *ret, num);
         for (int i = 0; i < num; ++i) {
             VkLayerProperties *layer = supportValidationLayers + i;
             (*ret)[i] = _strdup(layer->layerName);
             Sys_Printf("%3d: %s: %s\n", i + 1, layer->layerName, layer->description);
         }
-        free(supportValidationLayers);
+        VKFREE(supportValidationLayers);
     }
 
     return (int)num;
@@ -315,6 +322,8 @@ int VK_QueryPhysicalDeviceValidationLayers(VkPhysicalDevice pd, char ***ret)
 int VK_QueryPhysicalDeviceExtensions(VkPhysicalDevice pd, char ***ret)
 {
     uint32_t num;
+    VkExtensionProperties *supportExtensions;
+
     VkResult result = vkEnumerateDeviceExtensionProperties(pd, NULL, &num, NULL);
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateDeviceExtensionProperties");
     Sys_Printf("Enumerate Vulkan device extensions: %d\n", num);
@@ -324,15 +333,15 @@ int VK_QueryPhysicalDeviceExtensions(VkPhysicalDevice pd, char ***ret)
 
     if(ret)
     {
-        VkExtensionProperties *supportExtensions = (VkExtensionProperties *)malloc(num * sizeof(supportExtensions[0]));
+        VKARRAY_ALLOC2(VkExtensionProperties, supportExtensions, num);
         vkEnumerateDeviceExtensionProperties(pd, NULL, &num, supportExtensions);
-        *ret = (char **)malloc(num * sizeof((*ret)[0]));
+        VKARRAY_ALLOC2(char *, *ret, num);
         for (int i = 0; i < num; ++i) {
             VkExtensionProperties *extension = supportExtensions + i;
             (*ret)[i] = _strdup(extension->extensionName);
             Sys_Printf("%3d: %s(%u)\n", i, extension->extensionName, extension->specVersion);
         }
-        free(supportExtensions);
+        VKFREE(supportExtensions);
     }
 
     return (int)num;
@@ -369,7 +378,7 @@ static int VK_EnableValidationLayers(char *total[], int length, const char ***re
 
 #define USING_VALIDATION_LAYER(x) \
         if (!usedValidationLayers) \
-            usedValidationLayers = (const char **)malloc(sizeof(*usedValidationLayers) * length); \
+            VKARRAY_ALLOC2(const char *, usedValidationLayers, length); \
         usedValidationLayers[usedValidationLayerCount++] = x;
 
     for (int i = 0; i < length; i++)
@@ -407,7 +416,7 @@ void VK_CreateInstance()
     VkApplicationInfo applicationInfo;
     VKZERO(applicationInfo);
     applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationInfo.pEngineName = "idTech4A"; // 引擎名称
+    applicationInfo.pEngineName = "idTech4A++"; // 引擎名称
     applicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0); // 引擎版本
     applicationInfo.pApplicationName = GAME_NAME; // 程序名称
     applicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0); // 程序版本
@@ -428,7 +437,7 @@ void VK_CreateInstance()
     instanceCreateInfo.enabledExtensionCount = vk_context.numExtensions; // 启用的扩展数量
 
     result = vkCreateInstance(&instanceCreateInfo, VKCONTEXT_ALLOCATOR, &vk_context.instance);
-    free(usedValidationLayers);
+    VKFREE(usedValidationLayers);
     HANDLE_VK_ERROR_EXIT(result, "vkCreateInstance");
 
     //Sys_Printf("vkInstance: %p\n", vk_context.instance);
@@ -486,13 +495,15 @@ void VK_CreateSurface(void *window)
 int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
 {
     uint32_t num;
+    VkQueueFamilyProperties *queueFamilyProperties;
+
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, NULL);
     Sys_Printf("Enumerate Vulkan physics device queue family: %d\n", num);
 
     if(num <= 0)
         return 0;
 
-    VkQueueFamilyProperties *queueFamilyProperties = (VkQueueFamilyProperties *)malloc(num * sizeof(queueFamilyProperties[0]));
+    VKARRAY_ALLOC2(VkQueueFamilyProperties, queueFamilyProperties, num);
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, queueFamilyProperties);
     int res = 0;
     for (int i = 0; i < num; ++i) {
@@ -506,13 +517,13 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
 
     if(!res)
     {
-        free(queueFamilyProperties);
+        VKFREE(queueFamilyProperties);
         return 0;
     }
 
     if(ret)
     {
-        *ret = (uint32_t *)malloc(res * sizeof(uint32_t));
+        VKARRAY_ALLOC2(uint32_t, *ret, res);
         uint32_t *ptr = *ret;
         for (int i = 0; i < num; ++i) {
             VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
@@ -523,7 +534,7 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
             }
         }
     }
-    free(queueFamilyProperties);
+    VKFREE(queueFamilyProperties);
 
     return res;
 }
@@ -536,23 +547,27 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
 int VK_QueryPhysicalDeviceGraphicsQueueFamilyIndex(VkPhysicalDevice pd, int mask)
 {
     uint32_t num;
+    VkQueueFamilyProperties *queueFamilyProperties;
+
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, NULL);
     Sys_Printf("Enumerate Vulkan device queue family: %d\n", num);
 
     if(num <= 0)
         return -1;
 
-    VkQueueFamilyProperties *queueFamilyProperties = (VkQueueFamilyProperties *)malloc(num * sizeof(queueFamilyProperties[0]));
+    VKARRAY_ALLOC2(VkQueueFamilyProperties, queueFamilyProperties, num);
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, queueFamilyProperties);
-    int res = 0;
+    int res = -2;
     for (int i = 0; i < num; ++i) {
         VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
         if(queueFamily->queueCount > 0 && (queueFamily->queueFlags & mask) == mask)
         {
-            return i;
+            res = i;
+            break;
         }
     }
-    return -2;
+    VKFREE(queueFamilyProperties);
+    return res;
 }
 
 /**
@@ -598,7 +613,7 @@ bool VK_CheckPhysicalDevice(VkPhysicalDevice pd)
             ret = true;
         }
     }
-    free(deviceExtensions);
+    VKFREE(deviceExtensions);
 
     return ret;
 }
@@ -637,7 +652,7 @@ int VK_QueryPhysicalDeviceSurfaceFormats(VkSurfaceFormatKHR **surfaceFormats)
     HANDLE_VK_ERROR_EXIT(result, "vkGetPhysicalDeviceSurfaceFormatsKHR");
     if(num > 0 && surfaceFormats)
     {
-        *surfaceFormats = (VkSurfaceFormatKHR *)malloc(num * sizeof(surfaceFormats[0]));
+        VKARRAY_ALLOC2(VkSurfaceFormatKHR, *surfaceFormats, num);
         vkGetPhysicalDeviceSurfaceFormatsKHR(vk_context.physicalDevice, vk_context.surface, &num, *surfaceFormats);
     }
 
@@ -656,7 +671,7 @@ int VK_QueryPhysicalDevicePresentModes(VkPresentModeKHR **presentModes)
     HANDLE_VK_ERROR_EXIT(result, "vkGetPhysicalDeviceSurfacePresentModesKHR");
     if(num > 0 && presentModes)
     {
-        *presentModes = (VkPresentModeKHR *)malloc(num * sizeof(presentModes[0]));
+        VKARRAY_ALLOC2(VkPresentModeKHR, *presentModes, num);
         vkGetPhysicalDeviceSurfacePresentModesKHR(vk_context.physicalDevice, vk_context.surface, &num, *presentModes);
     }
 
@@ -705,7 +720,7 @@ bool VK_ChooseSurfaceFormat(VkSurfaceFormatKHR *ret)
     }
 
     *ret = targetFormat;
-    free(surfaceFormats);
+    VKFREE(surfaceFormats);
     return true;
 }
 
@@ -749,7 +764,7 @@ bool VK_ChoosePresentMode(VkPresentModeKHR *ret)
     }
 
     *ret = presentModes[found];
-    free(presentModes);
+    VKFREE(presentModes);
     return true;
 }
 
@@ -971,10 +986,12 @@ void VK_CreateSwapchain()
 void VK_CreateDevice()
 {
     uint32_t *queueFamily = NULL;
+    VkDeviceQueueCreateInfo *deviceQueueCreateInfos;
+
     int num = VK_QueryPhysicalDeviceQueueFamily(vk_context.physicalDevice, &queueFamily);
     float queuePriorities = 1.0f;
 
-    VkDeviceQueueCreateInfo *deviceQueueCreateInfos = (VkDeviceQueueCreateInfo *)malloc(num * sizeof(deviceQueueCreateInfos[0]));
+    VKARRAY_ALLOC2(VkDeviceQueueCreateInfo, deviceQueueCreateInfos, num);
     for (int i = 0; i < num; ++i) {
         VkDeviceQueueCreateInfo deviceQueueCreateInfo;
         VKZERO(deviceQueueCreateInfo);
@@ -1025,8 +1042,9 @@ void VK_CreateDevice()
     else
         vk_context.transferQueue.queue = vk_context.graphicsQueue.queue;
 
-    free(queueFamily);
-    free(usedValidationLayers);
+    VKFREE(deviceQueueCreateInfos);
+    VKFREE(queueFamily);
+    VKFREE(usedValidationLayers);
 }
 
 /**
@@ -1053,7 +1071,7 @@ VkShaderModule VK_CreateShaderModule(const uint8_t *data, int length)
 static void VK_CreateLoadRenderPass()
 {
     VkAttachmentDescription attachments[2];
-    VKZERO(attachments);
+    VKARRZERO(attachments);
     // 颜色附件
     attachments[0].format = vk_context.swapchain.format; // 颜色图像格式
     attachments[0].samples = VK_SAMPLE_COUNT_1_BIT; // 采样数
@@ -1133,7 +1151,7 @@ static void VK_CreateLoadRenderPass()
 void VK_CreateRenderPass()
 {
     VkAttachmentDescription attachments[2];
-    VKZERO(attachments);
+    VKARRZERO(attachments);
     // 颜色附件
     attachments[0].format = vk_context.swapchain.format; // 颜色图像格式
     attachments[0].samples = VK_SAMPLE_COUNT_1_BIT; // 采样数
@@ -1176,7 +1194,7 @@ void VK_CreateRenderPass()
 
     // 子通道阶段依赖
     VkSubpassDependency subpassDependencys[2];
-	VKZERO(subpassDependencys);
+	VKARRZERO(subpassDependencys);
     // 颜色通道
     subpassDependencys[0].srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
     subpassDependencys[0].dstSubpass = 0; // 进入子通道0
@@ -1687,7 +1705,7 @@ VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescr
 void VK_BlitColorImage(VKImage_t *dstImage, const VKImage_t *srcImage)
 {
     VkImageBlit imageBlit;
-    VKZERO(imageBlit);
+    //VKZERO(imageBlit);
     imageBlit.srcOffsets[0].x = 0;
     imageBlit.srcOffsets[0].y = 0;
     imageBlit.srcOffsets[0].z = 0;
@@ -1718,7 +1736,7 @@ void VK_MakeSwapchainColorImageToCopy(VKImage_t *image)
 	IDVK_CHECK_RENDERPASS_IDLE();
 
     VkImageSubresourceRange subresourceRange;
-    VKZERO(subresourceRange);
+    //VKZERO(subresourceRange);
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount = 1;
@@ -1754,7 +1772,7 @@ void VK_CopyBufferToBuffer(const VKBuffer_t *dstBuffer, const VKBuffer_t *buffer
 	IDVK_CHECK_RENDERPASS_IDLE();
 
 	VkBufferCopy bufferCopy;
-	VKZERO(bufferCopy);
+	//VKZERO(bufferCopy);
 	bufferCopy.srcOffset = offset;
 	bufferCopy.dstOffset = dstOffset;
 	bufferCopy.size = size;
@@ -1787,7 +1805,7 @@ void VK_CopyBufferToImage(VKImage_t *image, const VKBuffer_t *buffer, int offset
 	int layerCount = image->cubeMap ? 6 : 1;
 
     VkImageSubresourceRange subresourceRange;
-    VKZERO(subresourceRange);
+    //VKZERO(subresourceRange);
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount = mipLevels;
@@ -1833,7 +1851,8 @@ void VK_CopyBufferToImage(VKImage_t *image, const VKBuffer_t *buffer, int offset
     }
     else
     {
-		VkBufferImageCopy *bufferImageCopy = (VkBufferImageCopy *)malloc(sizeof(*bufferImageCopy) * mipLevels);
+		VkBufferImageCopy *bufferImageCopy;
+        VKARRAY_ALLOC2(VkBufferImageCopy, bufferImageCopy, mipLevels);
         for(int i = 0; i < mipLevels; i++)
         {
             VKZERO(bufferImageCopy[i]);
@@ -1850,7 +1869,7 @@ void VK_CopyBufferToImage(VKImage_t *image, const VKBuffer_t *buffer, int offset
 		vkCmdCopyBufferToImage(cmd, buffer->buffer, image->image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 				mipLevels, bufferImageCopy);
-		free(bufferImageCopy);
+		VKFREE(bufferImageCopy);
     }
 
     imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -3955,7 +3974,7 @@ int VK_GetPipelineCacheData(void **data)
 	if(size == 0)
 		return 0;
 
-	void *ptr = malloc(size);
+	void *ptr = VKMALLOCT(size, VK_GetPipelineCacheData);
 	vkGetPipelineCacheData(vk_context.device, vk_context.pipelineCache, &size, ptr);
 	*data = ptr;
 
@@ -4448,8 +4467,12 @@ static void VK_DestroyPipelineLayout(VKPipelineLayout_t *pipelineLayout)
     pipelineLayout->fragmentShader = VK_NULL_HANDLE;
     if (VK_NULL_HANDLE != pipelineLayout->pipelineLayout)
         vkDestroyPipelineLayout(vk_context.device, pipelineLayout->pipelineLayout, VKCONTEXT_ALLOCATOR);
-    if (VK_NULL_HANDLE != pipelineLayout->descriptorSetLayout)
-        vkDestroyDescriptorSetLayout(vk_context.device, pipelineLayout->descriptorSetLayout, VKCONTEXT_ALLOCATOR);
+
+	for(int i = 0; i < LS_TOTAL; i++)
+	{
+		if (VK_NULL_HANDLE != pipelineLayout->descriptorSetLayout[i])
+			vkDestroyDescriptorSetLayout(vk_context.device, pipelineLayout->descriptorSetLayout[i], VKCONTEXT_ALLOCATOR);
+	}
 }
 
 /**
@@ -4524,6 +4547,7 @@ static void VK_DestroySwapchain(bool keep)
     }
 
     VKARRAY_FREE2(VKFramebuffer_t, vk_context.swapchain.framebuffers, vk_context.swapchain.numImages);
+    VKARRAY_FREE2(VKFramebuffer_t, vk_context.swapchain.loadFramebuffers, vk_context.swapchain.numImages);
 }
 
 /**
@@ -4747,3 +4771,9 @@ void VK_Destroy()
 
     vk_context.initialized = false;
 }
+
+#ifdef _VULKAN_MEM_H
+#define _VK_MEM_IMPL
+//#define _VK_MEM_VERBOSE
+#include "vk_mem.inc.h"
+#endif

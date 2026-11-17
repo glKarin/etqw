@@ -1,10 +1,10 @@
 #ifndef _VULKAN_VKSHADER_H
 #define _VULKAN_VKSHADER_H
 
-#define VKBINDING_TRXTURES_START VKBINDING_UBO_NUM // 着色器纹理绑定的偏移(1顶点着色器Uniform + 1片段着色器Uniform)
+#define VKBINDING_TRXTURES_START LB_SAMPLER_1 // 着色器纹理绑定的偏移(1顶点着色器Uniform + 1片段着色器Uniform)
 
 #define VKBINDING_TRXTURES_SLOT(x) (VKBINDING_TRXTURES_START + (x))
-#define VKBINDING_NUM VKBINDING_TRXTURES_SLOT(VKBINDING_MAX_TRXTURE_UNITS) // 全部着色器绑定数
+#define VKBINDING_NUM LB_TOTAL // 全部着色器绑定数
 
 typedef struct VKShaderProgram_t
 {
@@ -47,13 +47,14 @@ typedef struct VKShaderProgram_t
     // 如果数据未脏, 则使用旧的缓冲区
     VKBufferMap_t uniformBuffer_vertex; // 顶点着色器当前引用的Uniform缓冲区映射
     VKBufferMap_t uniformBuffer_fragment; // 片段着色器当前引用的Uniform缓冲区映射
-	VkDescriptorSet descriptorSet[2]; // 上次绑定的描述符
+	VkDescriptorSet descriptorSet[LS_TOTAL]; // 上次绑定的描述符
 
     VKMAP(VKPipeline_t, VKPipelineStateSet_t) pipelinePool; // 渲染管线布局创建的各个状态的渲染管线池
 } VKShaderProgram_t;
 
-void R_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
-void R_CreateFragmentShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
+void R_VK_FreeShaderProgram(VKShaderProgram_t *program);
+void R_VK_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
+void R_VK_CreateFragmentShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
 void R_VK_ListPipeline(const idCmdArgs &);
 
 #endif //_VULKAN_VKSHADER_H

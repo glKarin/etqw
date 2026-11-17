@@ -468,7 +468,7 @@ static /*ID_INLINE */void RB_GLSL_DrawInteraction_shadowMapping(viewLight_t *vLi
             {
                 side = 0;
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-            	if(SHADOW_MAPPING_NEW && r_shadowMapParallelSplitFrustums > 0)
+            	if(USING_MODERN_API && r_shadowMapParallelSplitFrustums > 0)
                     sideStop = r_shadowMapParallelSplitFrustums + 1;
                 else
 #endif
@@ -530,7 +530,7 @@ static /*ID_INLINE */void RB_GLSL_DrawInteraction_shadowMapping_separate(viewLig
             {
                 side = 0;
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-            	if(SHADOW_MAPPING_NEW && r_shadowMapParallelSplitFrustums > 0)
+            	if(USING_MODERN_API && r_shadowMapParallelSplitFrustums > 0)
                     sideStop = r_shadowMapParallelSplitFrustums + 1;
                 else
 #endif

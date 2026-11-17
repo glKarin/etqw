@@ -18,9 +18,33 @@
 
 #define IDVK_MAX_DESCRIPTOR_POOL_SETS 4096
 
-#define VKBINDING_UBO_NUM 2 // 着色器uniform最大绑定数
+typedef enum VKLayoutSet_s
+{
+	LS_UNIFORM = 0,
+	LS_SAMPLER,
+	LS_TOTAL,
+} VKLayoutSet_t;
 
-#define VKBINDING_MAX_TRXTURE_UNITS 8 // 最大使用纹理数
+typedef enum VKLayoutBinding_s
+{
+	LB_VERTEX_UNIFORM = 0, // set = 0
+	LB_FRAGMENT_UNIFORM,
+	LB_SAMPLER_1 = 2, // set = 1
+	LB_SAMPLER_2,
+	LB_SAMPLER_3,
+	LB_SAMPLER_4,
+	LB_SAMPLER_5,
+	LB_SAMPLER_6,
+	LB_SAMPLER_7,
+	LB_SAMPLER_8,
+	LB_TOTAL,
+	LB_NUM_UNIFORM = 2,
+	LB_NUM_SAMPLER = 8,
+} VKLayoutBinding_t;
+
+#define VKBINDING_UBO_NUM LS_TOTAL // 着色器uniform最大绑定数
+
+#define VKBINDING_MAX_TRXTURE_UNITS LB_NUM_SAMPLER // 最大使用纹理数
 
 typedef int VKHandle_t;
 #define VKHANDLE_INVALID (-1)
@@ -212,8 +236,7 @@ typedef struct VKPipelineLayout_s
 	VkShaderModule vertexShader; // 顶点着色器模块
 	VkShaderModule fragmentShader; // 片段着色器模块
 	VkPipelineLayout pipelineLayout; // 管线布局
-	VkDescriptorSetLayout descriptorSetLayout; // 描述符集布局
-	VkDescriptorSetLayout samplerDescriptorSetLayout; // 采样描述符集布局
+	VkDescriptorSetLayout descriptorSetLayout[2]; // 描述符集布局
 } VKPipelineLayout_t;
 
 /**

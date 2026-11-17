@@ -228,13 +228,13 @@ static void RB_GLSL_GetShaderSources(idList<GLSLShaderProp> &ret)
 	{
 #endif
 #ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3 || glConfig.depthTextureAvailable)
+    if(USING_MODERN_API || glConfig.depthTextureAvailable)
 #else
     if(glConfig.depthTextureAvailable)
 #endif
     ret.Append(GLSL_SHADER_SOURCE("depthToColor", SHADER_DEPTH_TO_COLOR, &depthToColorShader, SIMPLE_VERTEX_TEXCOORD_VERT, DEPTH_TO_COLOR_FRAG, "", ""));
 #ifdef GL_ES_VERSION_3_0
-    if(USING_GLES3)
+    if(USING_MODERN_API)
     ret.Append(GLSL_SHADER_SOURCE("stencilToColor", SHADER_STENCIL_TO_COLOR, &stencilToColorShader, SIMPLE_VERTEX_TEXCOORD_VERT, STENCIL_TO_COLOR_FRAG, "", ""));
 #endif
 #ifdef _VULKAN

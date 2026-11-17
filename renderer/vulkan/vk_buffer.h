@@ -1,11 +1,11 @@
 #ifndef _VULKAN_VKBUFFER_H
 #define _VULKAN_VKBUFFER_H
 
-#define currentStageWriteBuffer stageBuffer.buffers[vk_context.frameIndex]
-#define currentStageWriteCommandBuffer stageBuffer.commandPool->commandBuffers[vk_context.frameIndex]
+#define currentStageWriteBuffer stagingUploadBuffer.buffers[vk_context.frameIndex]
+#define currentStageWriteCommandBuffer stagingUploadBuffer.commandPool->commandBuffers[vk_context.frameIndex]
 
-#define currentStageReadBuffer stageReadBuffer.buffers[vk_context.frameIndex]
-#define currentStageReadCommandBuffer stageReadBuffer.commandPool->commandBuffers[vk_context.frameIndex]
+#define currentStageReadBuffer stagingReadBuffer.buffers[vk_context.frameIndex]
+#define currentStageReadCommandBuffer stagingReadBuffer.commandPool->commandBuffers[vk_context.frameIndex]
 
 #define currentStageBuffer buffers[vk_context.frameIndex]
 #define currentStageCommandBuffer commandPool->commandBuffers[vk_context.frameIndex]
@@ -70,20 +70,20 @@ typedef struct VKBufferQueue_s {
 /**
  * Staging缓冲区队列
  */
-typedef struct VKStageBufferQueue_s
+typedef struct VKStagingBufferQueue_s
 {
     VKBufferQueue_t blocks; // 缓冲区组
     bool recording; // 当前是否命令记录中, 为true则需要结束命令和提交命令
-} VKStageBufferQueue_t;
+} VKStagingBufferQueue_t;
 
 /**
  * Staging缓冲区
  */
-typedef struct VKStageBuffer_s
+typedef struct VKStagingBuffer_s
 {
     VKCommandPool_t *commandPool; // 命令池
-    VKStageBufferQueue_t buffers[NUM_INFLIGHT_FRAME];
-} VKStageBuffer_t;
+    VKStagingBufferQueue_t buffers[NUM_INFLIGHT_FRAME];
+} VKStagingBuffer_t;
 
 /**
  * Vulkan全局缓冲区
@@ -94,8 +94,8 @@ typedef struct VKBufferObject_s
     VKBufferQueue_t vertexBuffers[NUM_INFLIGHT_FRAME]; // 顶点数据上传缓冲区(映射到Host/手动刷新)
     VKBufferQueue_t indexBuffers[NUM_INFLIGHT_FRAME]; // 索引数据上传缓冲区(映射到Host/手动刷新)
 
-    VKStageBuffer_t stageBuffer; // 上传staging缓冲区(映射到Host/手动刷新)
-    VKStageBuffer_t stageReadBuffer; // 读取staging缓冲区(映射到Host/手动刷新)
+    VKStagingBuffer_t stagingUploadBuffer; // 上传staging缓冲区(映射到Host/手动刷新)
+    VKStagingBuffer_t stagingReadBuffer; // 读取staging缓冲区(映射到Host/手动刷新)
 
     // 计数器
     struct {

@@ -5,7 +5,7 @@ GLSL_SHADER const char VK_STENCIL_TO_COLOR_FRAG[] =
 "#pragma shader_stage( fragment )\n"
 "#extension GL_ARB_separate_shader_objects: enable\n"
 "\n"
-"layout(binding = 2) uniform usampler2D u_fragmentMap0; // stencil index\n"
+"layout(binding = 2, set = 1) uniform usampler2D u_fragmentMap0; // stencil index\n"
 "\n"
 "layout(binding = 1, set = 0, std140) uniform UniformBufferObject {\n"
 "    int u_uniformParm0; // 0=RGB, 1=R, 2=G, 4=B\n"

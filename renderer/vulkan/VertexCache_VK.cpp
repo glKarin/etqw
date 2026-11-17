@@ -513,3 +513,47 @@ void idVertexCache::TransferData_VK(vertCache_t *block)
 	block->vk_offset = 0;
 	block->virtMemDirty = false;
 }
+
+#ifdef _MULTITHREAD
+void  idVertexCache::BeginBackEnd_VK(int which)
+{
+	// Transfer current frame temp data to GPU
+	if(multithreadActive) // upload all used temp host memory: don't upload full memory once, because tempBuffers is linked by `->next` in vulkan, blocks of `TAG_TEMP` always not in `static Alloc()` through `tempOverflow == true`
+	{
+		for (vertCache_t *block = dynamicHeaderss[which].next ; block != &dynamicHeaderss[which] ; block = block->next) {
+			VKBufferMap_t map;
+			if (block->indexBuffer)
+			{
+				R_VK_AllocIndexBuffer((byte *)block->virtMem + block->offset, block->size, &map);
+				BindIndexBuffer_VK(map.buffer->buffer);
+			}
+			else
+			{
+				R_VK_AllocVertexBuffer((byte *)block->virtMem + block->offset, block->size, &map);
+				BindBuffer_VK(map.buffer->buffer);
+			}
+			block->vk_buffer = map.buffer;
+			block->vbo = map.handle;
+			block->vk_offset = map.offset;
+		}
+	}
+}
+
+void idVertexCache::EndBackEnd_VK(int which)
+{
+	if (multithreadActive)
+	{
+		for (vertCache_t *block = deferredFreeLists[which].next; block && block != &deferredFreeLists[which]; block = block->next) {
+			// temp blocks are in a shared space that won't be freed
+			if (block->tag != TAG_TEMP) {
+				if (block->vk_buffer) {
+					VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)block->vk_buffer->buffer, "free_buffer_%d::%d::%s_%s", vk_context.frameIndex, block->vbo, "static", block->indexBuffer ? "index" : "vertex");
+					R_VK_DestroyBuffer(block->vbo);
+					block->vbo = VBO_INVALID_HANDLE;
+					block->vk_buffer = NULL;
+				}
+			}
+		}
+	}
+}
+#endif

@@ -1,10 +1,21 @@
 ﻿#ifndef _VULKAN_VKCONTAINER_H
 #define _VULKAN_VKCONTAINER_H
 
+#if 1
+#define VKMALLOC(size, tag) malloc(size)
+#define VKMALLOCT(size, tag) malloc(size)
+#define VKFREE(ptr) free(ptr)
+#else
+#define _VULKAN_MEM_H
+#define _VK_MEM_DEF
+#include "vk_mem.inc.h"
+#endif
+
 #define VKMEM_ALIGN( x, a ) ( ( ( x ) + ((a)-1) ) & ~((a)-1) )
 
-#define VKZERO(x) memset(&(x), 0, sizeof(x))
-#define VKPTRZERO(x) memset(x, 0, sizeof(*(x)))
+#define VKZERO(x) memset(&(x), 0, sizeof(x)) // non-pointer
+#define VKPTRZERO(x) memset(x, 0, sizeof(*(x))) // pointer
+#define VKARRZERO(x) memset(x, 0, sizeof(x)) // array
 #define VKPTRNZERO(x, n) memset((x), 0, sizeof(*(x)) * (n))
 #define VKSWAP(T, a, b) \
     { \
@@ -29,7 +40,7 @@
 }
 
 #define VKARRAY_ALLOC2(T, data, num) \
-	data = (T *)malloc(sizeof(*data) * num);
+	data = (T *)VKMALLOCT(sizeof(*(data)) * num, ARRAY::ALLOC##::##T);
 
 #define VKARRAY_ALLOC(T, arr) VKARRAY_ALLOC2(T, (arr).list, (arr).size)
 
@@ -40,7 +51,7 @@
 
 #define VKARRAY_FREE2(T, data, num) \
 	if(data) { \
-		free(data); \
+		VKFREE(data); \
 		data = NULL; \
 	} \
 	num = 0;
@@ -52,9 +63,9 @@
 #define VKPTRARRAY_FREE2(T, data, num) \
 	if(data) { \
 		for(int i = 0; i < num; i++) { \
-			free(data[i]); \
+			VKFREE(data[i]); \
 		} \
-		free(data); \
+		VKFREE(data); \
 		data = (T **)0; \
 	} \
 	num = 0;
@@ -79,12 +90,12 @@
 		if(num == size) { \
 			T *_vkc_oldData = data; \
 			size += granularity; \
-			data = (T *)malloc(sizeof(*data) * size); \
+			data = (T *)VKMALLOCT(sizeof(*data) * size, LIST::RESIZE##::##T); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * num); \
-			free(_vkc_oldData); \
+			VKFREE(_vkc_oldData); \
 		} \
 	} else { \
-		data = (T *)malloc(sizeof(*data) * size); \
+		data = (T *)VKMALLOCT(sizeof(*data) * size, LIST::ALLOC##::##T); \
 		num = 0; \
 	}
 
@@ -92,7 +103,7 @@
 
 #define VKLIST_FREE2(T, data, size, num) \
 	if(data) { \
-		free(data); \
+		VKFREE(data); \
 		data = NULL; \
 	} \
 	num = size = 0;
@@ -113,7 +124,7 @@
 
 
 
-// pool(element is heap pointer, allow free slots)
+// pool(element is heap pointer, allow VKFREE slots)
 #define VKPOOL(T) struct { \
 	T **list; \
 	int size; \
@@ -137,12 +148,12 @@
 		T **_vkc_oldData = data; \
 		int _vkc_oldSize = size; \
 		size += granularity; \
-		data = (T **)malloc(sizeof(*data) * size); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, POOL::RESIZE##::##T); \
 		memset(data, 0, sizeof(*data) * size); \
 		memcpy(data, _vkc_oldData, sizeof(*data) * _vkc_oldSize); \
-		free(_vkc_oldData); \
+		VKFREE(_vkc_oldData); \
 	} else { \
-		data = (T **)malloc(sizeof(*data) * size); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, POOL::ALLOC##::##T); \
 		memset(data, 0, sizeof(*data) * size); \
 		num = 0; \
 	}
@@ -153,10 +164,10 @@
 	if(data) { \
 		for(int _vkc_index = base; _vkc_index < size; _vkc_index++) { \
 			if(data[_vkc_index]) { \
-				free(data[_vkc_index]); \
+				VKFREE(data[_vkc_index]); \
 			} \
 		} \
-		free(data); \
+		VKFREE(data); \
 		data = (T **)0; \
 	} \
 	num = size = 0;
@@ -179,7 +190,7 @@
 		VKPOOL_RESIZE2(T, data, size, num, granularity) \
 	} \
 	num++; \
-	data[_vkc_index] = (T *)malloc(sizeof(*data[_vkc_index])); \
+	data[_vkc_index] = (T *)VKMALLOCT(sizeof(*data[_vkc_index]), POOL::NEW_SLOT##::##T); \
 	memset(data[_vkc_index], 0, sizeof(*data[_vkc_index])); \
 	T *_vkc_value = data[_vkc_index];
 
@@ -188,7 +199,7 @@
 #define VKPOOL_FREESLOT2(T, data, num, size, base, index) \
 	if(data) { \
 		if(index >= base && index < size && data[index]) { \
-			free(data[index]); \
+			VKFREE(data[index]); \
 			data[index] = NULL; \
 			num--; \
 		} \
@@ -220,13 +231,13 @@
 			T **old = data; \
 			int oldSize = size; \
 			size += granularity; \
-			data = (T **)malloc(sizeof(*data) * size); \
+			data = (T **)VKMALLOCT(sizeof(*data) * size, PTRLIST::RESIZE##::##T); \
 			memset(data, 0, sizeof(*data) * size); \
 			memcpy(data, old, sizeof(*data) * oldSize); \
-			free(old); \
+			VKFREE(old); \
 		} \
 	} else { \
-		data = (T **)malloc(sizeof(*data) * size); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, PTRLIST::ALLOC##::##T); \
 		memset(data, 0, sizeof(*data) * size); \
 		num = 0; \
 	}
@@ -236,9 +247,9 @@
 #define VKPTRLIST_FREE2(T, data, size, num) \
 	if(data) { \
 		for(int i = 0; i < num; i++) { \
-			free(data[i]); \
+			VKFREE(data[i]); \
 		} \
-		free(data); \
+		VKFREE(data); \
 		data = (T **)0; \
 	} \
 	num = size = 0;
@@ -248,7 +259,7 @@
 #define VKPTRLIST_ALLOC2(T, data, size, num, granularity) \
 	VKPTRLIST_RESIZE2(T, data, size, num, granularity) \
 	int _vkc_index = num++; \
-	data[_vkc_index] = (T *)malloc(sizeof(*data[_vkc_index])); \
+	data[_vkc_index] = (T *)VKMALLOCT(sizeof(*data[_vkc_index]), PTRLIST::NEW_ITEM##::##T); \
 	memset(data[_vkc_index], 0, sizeof(*data[_vkc_index])); \
 	T *_vkc_value = data[_vkc_index];
 
@@ -304,19 +315,19 @@
 			I *_vkc_oldKeys = keys; \
 			int _vkc_oldSize = size; \
 			size += granularity; \
-			data = (T *)malloc(sizeof(*data) * size); \
+			data = (T *)VKMALLOCT(sizeof(*data) * size, MAP::RESIZE_LIST##::##T##_##I); \
 			memset(data, 0, sizeof(*data) * size); \
-			keys = (I *)malloc(sizeof(*keys) * size); \
+			keys = (I *)VKMALLOCT(sizeof(*keys) * size, MAP::RESIZE_KEY##::##T##_##I); \
 			memset(keys, 0, sizeof(*keys) * size); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * _vkc_oldSize); \
 			memcpy(keys, _vkc_oldKeys, sizeof(*keys) * _vkc_oldSize); \
-			free(_vkc_oldData); \
-			free(_vkc_oldKeys); \
+			VKFREE(_vkc_oldData); \
+			VKFREE(_vkc_oldKeys); \
 		} \
 	} else { \
-		data = (T *)malloc(sizeof(*data) * size); \
+		data = (T *)VKMALLOCT(sizeof(*data) * size, MAP::ALLOC_LIST##::##T##_##I); \
 		memset(data, 0, sizeof(*data) * size); \
-		keys = (I *)malloc(sizeof(*keys) * size); \
+		keys = (I *)VKMALLOCT(sizeof(*keys) * size, MAP::ALLOC_KEY##::##T##_##I); \
 		memset(keys, 0, sizeof(*keys) * size); \
 		num = 0; \
 	}
@@ -325,11 +336,11 @@
 
 #define VKMAP_FREE2(T, I, data, keys, size, num) \
 	if(data) { \
-		free(data); \
+		VKFREE(data); \
 		data = NULL; \
 	} \
 	if(keys) { \
-		free(keys); \
+		VKFREE(keys); \
 		keys = NULL; \
 	} \
 	num = size = 0;
@@ -397,19 +408,19 @@
 			I *_vkc_oldKeys = keys; \
 			int _vkc_oldSize = size; \
 			size += granularity; \
-			data = (T **)malloc(sizeof(*data) * size); \
+			data = (T **)VKMALLOCT(sizeof(*data) * size, PTRMAP::RESIZE_LIST##::##T##_##I); \
 			memset(data, 0, sizeof(*data) * size); \
-			keys = (I *)malloc(sizeof(*keys) * size); \
+			keys = (I *)VKMALLOCT(sizeof(*keys) * size, PTRMAP::RESIZE_KEY##::##T##_##I); \
 			memset(keys, 0, sizeof(*keys) * size); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * _vkc_oldSize); \
 			memcpy(keys, _vkc_oldKeys, sizeof(*keys) * _vkc_oldSize); \
-			free(_vkc_oldData); \
-			free(_vkc_oldKeys); \
+			VKFREE(_vkc_oldData); \
+			VKFREE(_vkc_oldKeys); \
 		} \
 	} else { \
-		data = (T **)malloc(sizeof(*data) * size); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, PTRMAP::ALLOC_LIST##::##T##_##I); \
 		memset(data, 0, sizeof(*data) * size); \
-		keys = (I *)malloc(sizeof(*keys) * size); \
+		keys = (I *)VKMALLOCT(sizeof(*keys) * size, PTRMAP::ALLOC_KEY##::##T##_##I); \
 		memset(keys, 0, sizeof(*keys) * size); \
 		num = 0; \
 	}
@@ -419,13 +430,13 @@
 #define VKPTRMAP_FREE2(T, I, data, keys, size, num) \
 	if(data) { \
 		for(int i = 0; i < num; i++) { \
-			free(data[i]); \
+			VKFREE(data[i]); \
 		} \
-		free(data); \
+		VKFREE(data); \
 		data = (T **)0; \
 	} \
 	if(keys) { \
-		free(keys); \
+		VKFREE(keys); \
 		keys = (I *)0; \
 	} \
 	num = size = 0;
@@ -434,7 +445,7 @@
 
 #define VKPTRMAP_ALLOC2(T, I, data, keys, size, num, granularity) \
 	VKPTRMAP_RESIZE2(T, I, data, keys, size, num, granularity) \
-	data[num] = (T *)malloc(sizeof(*data[num])); \
+	data[num] = (T *)VKMALLOCT(sizeof(*data[num]), PTRMAP::NEW_ITEM##::##T##_##I); \
 	memset(data[num], 0, sizeof(*data[num])); \
 	T *_vkc_value = data[num]; \
 	I *_vkc_key = &keys[num]; \
@@ -466,12 +477,12 @@
 		if(num == size) { \
 			T *_vkc_oldData = data; \
 			size += granularity; \
-			data = (T *)malloc(sizeof(*data) * size); \
+			data = (T *)VKMALLOCT(sizeof(*data) * size, QUEUE::RESIZE##::##T); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * num); \
-			free(_vkc_oldData); \
+			VKFREE(_vkc_oldData); \
 		} \
 	} else { \
-		data = (T *)malloc(sizeof(*data) * size); \
+		data = (T *)VKMALLOCT(sizeof(*data) * size, QUEUE::ALLOC##::##T); \
 		num = 0; \
 		used = 0; \
 	}
@@ -480,7 +491,7 @@
 
 #define VKQUEUE_FREE2(T, data, size, num, used) \
 	if(data) { \
-		free(data); \
+		VKFREE(data); \
 		data = NULL; \
 	} \
 	num = size = used = 0;

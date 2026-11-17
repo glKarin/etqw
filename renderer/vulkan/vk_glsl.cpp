@@ -6,6 +6,16 @@
 
 #define MAX_OSPATH 1024
 
+#if 1
+#define VKMALLOC(size, tag) malloc(size)
+#define VKMALLOCT(size, tag) malloc(size)
+#define VKFREE(ptr) free(ptr)
+#else
+#define _VULKAN_MEM_H
+#define _VK_MEM_IMPL static
+#include "vk_mem.inc.h"
+#endif
+
 static bool glslangInitialized = false;
 
 //#define ID_VK_SAVE_SPV 1
@@ -26,7 +36,7 @@ int VK_LoadFile(const char *path, uint8_t **data)
     int length = (int)ftell(file);
     if(data && length > 0)
     {
-        *data = (uint8_t *)malloc(length * sizeof(uint8_t));
+        *data = (uint8_t *)VKMALLOC(length * sizeof(uint8_t), path);
         fseek(file, 0, SEEK_SET);
         fread(*data, sizeof(uint8_t), length, file);
     }
@@ -144,7 +154,7 @@ static char * VK_GLSL_InsertGlobalDefines(const char *res, const char *list[], i
     }
 	grow += 1; // \n
 
-    char *str = (char *)malloc(strlen(res) + grow + 1);
+    char *str = (char *)VKMALLOCT(strlen(res) + grow + 1, VK_GLSL_InsertGlobalDefines);
     *str = '\0';
 
     strncat(str, res, index);
@@ -171,7 +181,7 @@ static char * VK_GLSL_ExpandMacros(const char *source, const char *macros)
     int n = VK_StrSplit(macros, ',', NULL);
     if(0 == n)
         return NULL;
-    list = (char **)malloc(sizeof(*list) * n);
+    list = (char **)VKMALLOCT(sizeof(*list) * n, VK_GLSL_ExpandMacros);
     VK_StrSplit(macros, ',', list);
 
     char *str = VK_GLSL_InsertGlobalDefines(source, (const char **)list, n);
@@ -180,7 +190,7 @@ static char * VK_GLSL_ExpandMacros(const char *source, const char *macros)
     {
         free(list[i]);
     }
-    free(list);
+    VKFREE(list);
 
     return str;
 }
@@ -216,7 +226,7 @@ int VK_GLSL_LoadShaderData(const char *path, const char *glslData, uint8_t **dat
 	if (glslLength <= 0)
 		return glslLength;
 
-	char *glslText = (char *)malloc(glslLength + 1);
+	char *glslText = (char *)VKMALLOC(glslLength + 1, path);
 	snprintf(glslText, glslLength + 1, "%s", (char *)glslData);
 	glslText[glslLength] = '\0';
 
@@ -225,7 +235,7 @@ int VK_GLSL_LoadShaderData(const char *path, const char *glslData, uint8_t **dat
 		char *str = VK_GLSL_ExpandMacros(glslText, marcos);
 		if (str)
 		{
-			free(glslText);
+			VKFREE(glslText);
 			glslText = str;
 		}
 	}
@@ -233,7 +243,7 @@ int VK_GLSL_LoadShaderData(const char *path, const char *glslData, uint8_t **dat
 	//printf("|%s|\n", glslText);
 	uint32_t** data32 = (uint32_t**)data;
 	int res = VK_GLSL_CompileSPIRV(path, glslText, stage, data32);
-	free(glslText);
+	VKFREE(glslText);
 #ifdef ID_VK_SAVE_SPV
 	if (res > 0)
 	{
@@ -250,17 +260,17 @@ int VK_GLSL_LoadShaderFile(const char *path, uint8_t **data, int stage, const ch
     if (glslLength <= 0)
         return glslLength;
 
-    char *glslText = (char *)malloc(glslLength + 1);
+    char *glslText = (char *)VKMALLOC(glslLength + 1, path);
     snprintf(glslText, glslLength + 1, "%s", (char *)glslData);
     glslText[glslLength] = '\0';
-    free(glslData);
+    VKFREE(glslData);
 
     if (marcos && marcos[0])
     {
         char *str = VK_GLSL_ExpandMacros(glslText, marcos);
         if (str)
         {
-            free(glslText);
+            VKFREE(glslText);
             glslText = str;
         }
     }
@@ -268,7 +278,7 @@ int VK_GLSL_LoadShaderFile(const char *path, uint8_t **data, int stage, const ch
     //printf("|%s|\n", glslText);
     uint32_t** data32 = (uint32_t**)data;
     int res = VK_GLSL_CompileSPIRV(path, glslText, stage, data32);
-    free(glslText);
+    VKFREE(glslText);
 #ifdef ID_VK_SAVE_SPV
     if (res > 0)
     {
@@ -289,7 +299,7 @@ static void VK_GLSL_InitCompiler()
 
 static void * VK_GLSL_AllocSource(int size)
 {
-	return malloc( size );
+	return VKMALLOCT( size, VK_GLSL_AllocSource );
 }
 
 int VK_GLSL_CompileSPIRV( const char* filename, const char* dataGLSL, const int stage, uint32_t** spirvBuffer )
@@ -468,5 +478,8 @@ int VK_GLSL_CompileSPIRV( const char* filename, const char* dataGLSL, const int 
 
 void VK_GLSL_FreeSource(void* spirvBuffer)
 {
-	free( spirvBuffer );
+	VKFREE( spirvBuffer );
+#ifdef _VULKAN_MEM_H
+	//VK_ListMemory(true);
+#endif
 }

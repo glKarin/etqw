@@ -178,15 +178,15 @@ void R_VK_AllocBufferQueue(VKBufferQueue_t *cache, int size, VKBufferMap_t *map)
 	}
 
 	if (!cache->list) {
-		cache->list = (VKBufferBlock_t *) malloc(sizeof(*cache->list) * cache->size);
+		cache->list = (VKBufferBlock_t *) VKMALLOCT(sizeof(*cache->list) * cache->size, VKBufferQueue_t::ALLOC);
 		memset(cache->list, 0, sizeof(*cache->list) * cache->size);
 	} else if (cache->num == cache->size) {
 		VKBufferBlock_t *VKBufferBlock_t_oldData = cache->list;
 		cache->size += cache->granularity;
-		cache->list = (VKBufferBlock_t *) malloc(sizeof(*cache->list) * cache->size);
+		cache->list = (VKBufferBlock_t *) VKMALLOCT(sizeof(*cache->list) * cache->size, VKBufferQueue_t::RESIZE);
 		memset(cache->list, 0, sizeof(*cache->list) * cache->size);
 		memcpy(cache->list, VKBufferBlock_t_oldData, sizeof(*cache->list) * cache->num);
-		free(VKBufferBlock_t_oldData);
+		VKFREE(VKBufferBlock_t_oldData);
 	}
 	int index = cache->num;
 	item = &cache->list[index];
@@ -210,7 +210,7 @@ static void R_VK_FreeBufferQueue(VKBufferQueue_t *cache) {
 		R_VK_FreeBufferBlock(item);
 	}
 
-	free(cache->list);
+	VKFREE(cache->list);
 	VKPTRZERO(cache);
 }
 
@@ -232,7 +232,7 @@ static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 	int numi = 0;
 	block = &cache->list[0];
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
-	VmaMappedMemoryRange *mappedMemoryRanges = (VmaMappedMemoryRange *)malloc(sizeof(*mappedMemoryRanges) * num);
+	VmaMappedMemoryRange *mappedMemoryRanges = (VmaMappedMemoryRange *)VKMALLOCT(sizeof(*mappedMemoryRanges) * num, VKBufferQueue_t::VmaMappedMemoryRange);
 	VKPTRNZERO(mappedMemoryRanges, num);
 	for (int i = 0; i < cache->num; i++, block++) {
 		if(block->ptr && block->offset > 0)
@@ -248,7 +248,7 @@ static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 
 	vmaFlushMappedMemoryRanges(vk_context.vmaAllocator, num, mappedMemoryRanges);
 #else
-	VkMappedMemoryRange *mappedMemoryRanges = (VkMappedMemoryRange *)malloc(sizeof(*mappedMemoryRanges) * num);
+	VkMappedMemoryRange *mappedMemoryRanges = (VkMappedMemoryRange *)VKMALLOCT(sizeof(*mappedMemoryRanges) * num, VKBufferQueue_t::VmaMappedMemoryRange);
 	VKPTRNZERO(mappedMemoryRanges, num);
 	for (int i = 0; i < cache->num; i++, block++) {
 		if(block->ptr && block->offset > 0)
@@ -265,7 +265,7 @@ static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 	vkFlushMappedMemoryRanges(vk_context.device, num, mappedMemoryRanges);
 #endif
 
-	free(mappedMemoryRanges);
+	VKFREE(mappedMemoryRanges);
 
 	return true;
 }
@@ -287,24 +287,24 @@ void R_VK_InitBuffer(void)
 	VKCommandPool_t *commandPool;
 	VKHandle_t handle = VK_AllocCommandPool(&commandPool);
 	VK_CreateCommandPool(commandPool, CU_TRANSFER, true, true);
-	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool->commandPool, "stageBuffer::%d::commandPool", handle);
-	vk_buffer.stageBuffer.commandPool = commandPool;
+	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool->commandPool, "stagingUploadBuffer::%d::commandPool", handle);
+	vk_buffer.stagingUploadBuffer.commandPool = commandPool;
 	for (int i = 0; i < NUM_INFLIGHT_FRAME; i++)
 	{
-		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commandPool->commandBuffers[i], "stageBuffer::%d::commandBuffer%d", handle, i);
-		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_FENCE, (uint64_t)commandPool->fences[i], "stageBuffer::%d::fence%d", handle, i);
-		R_VK_InitBufferQueue(&vk_buffer.stageBuffer.buffers[i].blocks, BT_TRANSFER, 1, 1, IDVK_STAGING_WRITE_BUFFER_BLOCK_SIZE);
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commandPool->commandBuffers[i], "stagingUploadBuffer::%d::commandBuffer%d", handle, i);
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_FENCE, (uint64_t)commandPool->fences[i], "stagingUploadBuffer::%d::fence%d", handle, i);
+		R_VK_InitBufferQueue(&vk_buffer.stagingUploadBuffer.buffers[i].blocks, BT_TRANSFER, 1, 1, IDVK_STAGING_WRITE_BUFFER_BLOCK_SIZE);
 	}
 
 	handle = VK_AllocCommandPool(&commandPool);
 	VK_CreateCommandPool(commandPool, CU_TRANSFER, true, true);
-	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool->commandPool, "stageReadBuffer::%d::commandPool", handle);
-	vk_buffer.stageReadBuffer.commandPool = commandPool;
+	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_POOL, (uint64_t)commandPool->commandPool, "stagingReadBuffer::%d::commandPool", handle);
+	vk_buffer.stagingReadBuffer.commandPool = commandPool;
 	for (int i = 0; i < NUM_INFLIGHT_FRAME; i++)
 	{
-		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commandPool->commandBuffers[i], "stageReadBuffer::%d::commandBuffer%d", handle, i);
-		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_FENCE, (uint64_t)commandPool->fences[i], "stageReadBuffer::%d::fence%d", handle, i);
-		R_VK_InitBufferQueue(&vk_buffer.stageReadBuffer.buffers[i].blocks, BT_TRANSFER_DST, 1, 1, IDVK_STAGING_READ_BUFFER_BLOCK_SIZE);
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)commandPool->commandBuffers[i], "stagingReadBuffer::%d::commandBuffer%d", handle, i);
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_FENCE, (uint64_t)commandPool->fences[i], "stagingReadBuffer::%d::fence%d", handle, i);
+		R_VK_InitBufferQueue(&vk_buffer.stagingReadBuffer.buffers[i].blocks, BT_TRANSFER_DST, 1, 1, IDVK_STAGING_READ_BUFFER_BLOCK_SIZE);
 	}
 
 	vk_buffer.initialized = true;
@@ -317,6 +317,15 @@ static void R_VK_PrintBuffer(void)
 	common->Printf("[Vulkan]: Uniform buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxUniformAllocation, vk_buffer.counter.c_maxUniformBlock);
 	common->Printf("[Vulkan]: Write staging buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxWriteStagingAllocation, vk_buffer.counter.c_maxWriteStagingBlock);
 	common->Printf("[Vulkan]: Read staging buffer max used memory=%d, max used block=%d\n", vk_buffer.counter.c_maxReadStagingAllocation, vk_buffer.counter.c_maxReadStagingBlock);
+}
+
+static void R_VK_FreeStagingBuffer(VKStagingBuffer_t *sbuffer)
+{
+	for (int i = 0; i < NUM_INFLIGHT_FRAME; i++)
+	{
+		R_VK_FreeBufferQueue(&sbuffer->buffers[i].blocks);
+	}
+	VKPTRZERO(sbuffer);
 }
 
 void R_VK_ShutdownBuffer(void)
@@ -333,14 +342,17 @@ void R_VK_ShutdownBuffer(void)
 		R_VK_FreeBufferQueue(&vk_buffer.uniformBuffers[i]);
 	}
 
+	R_VK_FreeStagingBuffer(&vk_buffer.stagingUploadBuffer);
+	R_VK_FreeStagingBuffer(&vk_buffer.stagingReadBuffer);
+
 	VKZERO(vk_buffer);
 
 	vk_buffer.initialized = false;
 }
 
-static void R_VK_BeginStageCommandBuffer(VKStageBuffer_t *sbuffer)
+static void R_VK_BeginStageCommandBuffer(VKStagingBuffer_t *sbuffer)
 {
-	VKStageBufferQueue_t *queue = &sbuffer->currentStageBuffer;
+	VKStagingBufferQueue_t *queue = &sbuffer->currentStageBuffer;
 	if (!queue->recording)
 	{
 		VkResult result;
@@ -361,12 +373,12 @@ static void R_VK_BeginStageCommandBuffer(VKStageBuffer_t *sbuffer)
 	}
 }
 
-static void R_VK_SubmitStageCommandBuffer(VKStageBuffer_t *sbuffer)
+static void R_VK_SubmitStageCommandBuffer(VKStagingBuffer_t *sbuffer)
 {
 	VkResult result;
 
 	VkCommandBuffer commandBuffer = sbuffer->currentStageCommandBuffer;
-	VKStageBufferQueue_t *queue = &sbuffer->currentStageBuffer;
+	VKStagingBufferQueue_t *queue = &sbuffer->currentStageBuffer;
 
 	bool needSubmit = false;
 	if (queue->recording)
@@ -397,9 +409,9 @@ static void R_VK_SubmitStageCommandBuffer(VKStageBuffer_t *sbuffer)
 	}
 }
 
-static bool R_VK_AllocStageBuffer(VKStageBuffer_t *sbuffer, int size, VKBufferMap_t *map)
+static bool R_VK_AllocStageBuffer(VKStagingBuffer_t *sbuffer, int size, VKBufferMap_t *map)
 {
-	VKStageBufferQueue_t *queue = &sbuffer->currentStageBuffer;
+	VKStagingBufferQueue_t *queue = &sbuffer->currentStageBuffer;
 
 	R_VK_BeginStageCommandBuffer(sbuffer);
 
@@ -410,18 +422,18 @@ static bool R_VK_AllocStageBuffer(VKStageBuffer_t *sbuffer, int size, VKBufferMa
 
 bool R_VK_AllocStageWriteBuffer(int size, VKBufferMap_t *map)
 {
-	return R_VK_AllocStageBuffer(&vk_buffer.stageBuffer, size, map);
+	return R_VK_AllocStageBuffer(&vk_buffer.stagingUploadBuffer, size, map);
 }
 
 bool R_VK_AllocStageReadBuffer(int size, VKBufferMap_t *map)
 {
-	return R_VK_AllocStageBuffer(&vk_buffer.stageReadBuffer, size, map);
+	return R_VK_AllocStageBuffer(&vk_buffer.stagingReadBuffer, size, map);
 }
 
-static void R_VK_BeginStageBuffer(VKStageBuffer_t *sbuffer)
+static void R_VK_BeginStageBuffer(VKStagingBuffer_t *sbuffer)
 {
 #if 0
-	VKStageBufferQueue_t *queue = &sbuffer->currentStageBuffer;
+	VKStagingBufferQueue_t *queue = &sbuffer->currentStageBuffer;
 
 	R_VK_ResetBufferQueue(&queue->blocks);
 	queue->recording = false;
@@ -430,29 +442,29 @@ static void R_VK_BeginStageBuffer(VKStageBuffer_t *sbuffer)
 
 static void R_VK_BeginStageBuffers()
 {
-	R_VK_BeginStageBuffer(&vk_buffer.stageBuffer);
-	R_VK_BeginStageBuffer(&vk_buffer.stageReadBuffer);
+	R_VK_BeginStageBuffer(&vk_buffer.stagingUploadBuffer);
+	R_VK_BeginStageBuffer(&vk_buffer.stagingReadBuffer);
 }
 
-static void R_VK_EndStageBuffer(VKStageBuffer_t *sbuffer)
+static void R_VK_EndStageBuffer(VKStagingBuffer_t *sbuffer)
 {
 	R_VK_SubmitStageCommandBuffer(sbuffer);
 }
 
 static void R_VK_EndStageBuffers()
 {
-	R_VK_EndStageBuffer(&vk_buffer.stageBuffer);
-	R_VK_EndStageBuffer(&vk_buffer.stageReadBuffer);
+	R_VK_EndStageBuffer(&vk_buffer.stagingUploadBuffer);
+	R_VK_EndStageBuffer(&vk_buffer.stagingReadBuffer);
 }
 
 void R_VK_EndStageReadBuffer()
 {
-	R_VK_EndStageBuffer(&vk_buffer.stageReadBuffer);
+	R_VK_EndStageBuffer(&vk_buffer.stagingReadBuffer);
 }
 
 void R_VK_BeginStageReadBuffer()
 {
-	R_VK_BeginStageBuffer(&vk_buffer.stageReadBuffer);
+	R_VK_BeginStageBuffer(&vk_buffer.stagingReadBuffer);
 }
 
 void R_VK_VertexCacheBeginFrame()

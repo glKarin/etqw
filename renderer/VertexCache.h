@@ -166,6 +166,10 @@ class idVertexCache
 		}
 		vertCache_t		*AllocFrameTempInRendering_VK(void *data, int bytes, bool indexBuffer); // call in rendering
 		void			TransferData_VK(vertCache_t *block);
+#ifdef _MULTITHREAD
+        void            BeginBackEnd_VK(int which);
+        void            EndBackEnd_VK(int which); // clear VBO
+#endif
 #endif
         int             GetListNum(void) const {
             return listNum;

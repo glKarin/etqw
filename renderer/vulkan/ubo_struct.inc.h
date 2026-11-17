@@ -40,6 +40,10 @@ FRAGMENT_UBO_ALIAS_DEFINE(interactionPBR, interaction)
 FRAGMENT_UBO_ALIAS_DEFINE(ambientLighting, interaction)
 
 
+VERTEX_UBO_ALIAS_DEFINE(depthToColor, simpleVertexTexcoord)
+VERTEX_UBO_ALIAS_DEFINE(stencilToColor, simpleVertexTexcoord)
+
+
 
 #ifdef _STENCIL_SHADOW_IMPROVE
 VERTEX_UBO_ALIAS_DEFINE(interactionBlinnPhongTranslucent, interactionTranslucent)

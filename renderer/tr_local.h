@@ -57,6 +57,18 @@ extern int GLES3_VERSION;
 #define USING_GLES32 (GLES3_VERSION > 1)
 #endif
 
+#ifdef _VULKAN
+#ifdef GL_ES_VERSION_3_0
+#define USING_MODERN_API (USING_VULKAN || USING_GLES3)
+#else
+#define USING_MODERN_API (USING_VULKAN)
+#endif
+#elif defined(GL_ES_VERSION_3_0)
+#define USING_MODERN_API (USING_GLES3)
+#else
+#define USING_MODERN_API false
+#endif
+
 #define COLOR_MODULATE_IS_NORMALIZED 1
 
 extern const float zero[];
@@ -2419,17 +2431,6 @@ void R_ShadowBounds( const idBounds& modelBounds, const idBounds& lightBounds, c
 #endif
 
 #ifdef _SHADOW_MAPPING
-#ifdef _VULKAN
-#ifdef GL_ES_VERSION_3_0
-#define SHADOW_MAPPING_NEW (USING_VULKAN || USING_GLES3)
-#else
-#define SHADOW_MAPPING_NEW (USING_VULKAN)
-#endif
-#elif defined(GL_ES_VERSION_3_0)
-#define SHADOW_MAPPING_NEW (USING_GLES3)
-#else
-#define SHADOW_MAPPING_NEW false
-#endif
 
 #define ALLOW_SHADOW_MAPPING_ON_ALPHATEST_MTR(x) ( ( (shader->GetContentFlags() & CONTENTS_SOLID) != 0 || ( (shader->GetCullType() == CT_TWO_SIDED) || shader->ShouldCreateBackSides() ) ) && (shader->GetSort() != SS_DECAL) )
 

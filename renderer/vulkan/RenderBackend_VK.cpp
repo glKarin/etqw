@@ -123,7 +123,7 @@ void VKGL_FUNC(glReadPixels) (GLint x, GLint y, GLsizei width, GLsizei height, G
 
 	R_VK_AllocStageReadBuffer(size, &map);
 
-	VK_CopyColorAttachmentImageToBuffer(map.buffer, x, vk_context.swapchain.height - y - height, width, height, map.offset, width, height, vk_buffer.stageReadBuffer.currentStageCommandBuffer);
+	VK_CopyColorAttachmentImageToBuffer(map.buffer, x, vk_context.swapchain.height - y - height, width, height, map.offset, width, height, vk_buffer.stagingReadBuffer.currentStageCommandBuffer);
 
 	R_VK_EndStageReadBuffer();
 

@@ -33,7 +33,7 @@ extern bool shaderRequired;
 extern int RB_GLSL_ReadExternalShaderSource(idStr &fullPath, idStr &buffer);
 extern void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *macros, int highp = 0);
 
-void R_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module)
+void R_VK_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module)
 {
     createInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     createInfo->stage = VK_SHADER_STAGE_VERTEX_BIT; // 着色器阶段
@@ -41,7 +41,7 @@ void R_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderM
     createInfo->pName = "main"; // 入口函数名
 }
 
-void R_CreateFragmentShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module)
+void R_VK_CreateFragmentShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module)
 {
     createInfo->sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     createInfo->stage = VK_SHADER_STAGE_FRAGMENT_BIT; // 着色器阶段
@@ -60,7 +60,7 @@ VkShaderModule R_CompileShader(const char *path, int stage, const char *marcos)
 	VKHandle_t handle = VK_AllocShader(&shaderModule);
 
 	*shaderModule = VK_CreateShaderModule(data, shaderLength);
-	free(data);
+	VK_GLSL_FreeSource(data);
 	return vk_context.shaders.list[handle];
 }
 
@@ -452,6 +452,9 @@ SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroCPC, SHADER_RETRO_CPC, 1, VIA_VERTEX_BIT 
 SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroGenesis, SHADER_RETRO_GENESIS, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
 SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_RETRO_PSX, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
 #endif
+SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_DEPTH_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(depthToColor, SHADER_DEPTH_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(stencilToColor, SHADER_STENCIL_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
 };
 
 static const VKShaderProp_t * RB_VK_FindShaderProp(int type)
@@ -467,11 +470,11 @@ static const VKShaderProp_t * RB_VK_FindShaderProp(int type)
 
 static void RB_VK_CreatePipelineLayoutFromShaderProp(VKShaderProgram_t *program, const VKShaderProp_t *prop, const char *name, int type, VKHandle_t vertexShaderHandle, VKHandle_t fragmentShaderHandle, VkShaderModule vertexShader, VkShaderModule fragmentShader)
 {
-	memset(program, 0, sizeof(*program));
+	VKPTRZERO(program);
 	program->uboSize_vertex = prop->uboSize_vertex;
-	program->ubo_vertex = program->uboSize_vertex > 0 ? malloc(program->uboSize_vertex) : NULL;
+	program->ubo_vertex = program->uboSize_vertex > 0 ? VKMALLOC(program->uboSize_vertex, name) : NULL;
 	program->uboSize_fragment = prop->uboSize_fragment;
-	program->ubo_fragment = program->uboSize_fragment > 0 ? malloc(program->uboSize_fragment) : NULL;
+	program->ubo_fragment = program->uboSize_fragment > 0 ? VKMALLOC(program->uboSize_fragment, name) : NULL;
 	program->copyUniform_vertex = prop->copyUniform_vertex;
 	program->copyUniform_fragment = prop->copyUniform_fragment;
 	program->numTextureUnits = prop->numTextureUnits;
@@ -498,7 +501,7 @@ static void RB_VK_InitShaderProgram(shaderProgram_t *shader, VKHandle_t vertexSh
 	if (!prop)
 		return;
 
-	shader->vk_shader = (VKShaderProgram_t *)malloc(sizeof(*shader->vk_shader));
+	shader->vk_shader = (VKShaderProgram_t *)VKMALLOC(sizeof(*shader->vk_shader), shader->name);
 	RB_VK_CreatePipelineLayoutFromShaderProp(shader->vk_shader, prop, shader->name, shader->type, vertexShaderHandle, fragmentShaderHandle, vertexShader, fragmentShader);
 
 	RB_VK_GetOffsets(shader);
@@ -591,4 +594,14 @@ void R_VK_ListPipeline(const idCmdArgs &)
 			common->Printf("    %3d: %p -> %s\n", i + 1, program->pipelinePool.list[i], str.c_str());
 		}
 	}
+}
+
+void R_VK_FreeShaderProgram(VKShaderProgram_t *program)
+{
+	VKMAP_FREE(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool);
+	if (program->ubo_vertex)
+		VKFREE(program->ubo_vertex);
+	if (program->ubo_fragment)
+		VKFREE(program->ubo_fragment);
+	VKFREE(program);
 }

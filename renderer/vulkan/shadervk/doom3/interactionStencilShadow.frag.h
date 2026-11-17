@@ -59,7 +59,7 @@ GLSL_SHADER const char VK_INTERACTION_STENCIL_SHADOW_FRAG[] =
 "layout(binding = 7, set = 1) uniform sampler2D u_fragmentMap5;    /* u_specularFalloffTexture */\n"
 "#endif\n"
 "#ifdef _SOFT\n"
-"layout(binding = 8) uniform usampler2D u_fragmentMap6;    /* stencil shadow texture */\n"
+"layout(binding = 8, set = 1) uniform usampler2D u_fragmentMap6;    /* stencil shadow texture */\n"
 "#endif\n"
 "\n"
 "layout(location = 0) out vec4 _gl_FragColor;\n"

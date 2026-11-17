@@ -207,7 +207,7 @@ ID_INLINE static void RB_ShadowMapping_clearBuffer(void)
 {
     qglDepthMask(GL_TRUE); // depth buffer lock update yet
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-    if(SHADOW_MAPPING_NEW)
+    if(USING_MODERN_API)
     {
 #ifdef SHADOW_MAPPING_DEBUG
         qglClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -326,7 +326,7 @@ ID_INLINE static float RB_GetPointLightFrustumFar(const viewLight_t* vLight)
 ID_INLINE static shaderProgram_t * RB_SelectShadowMapShader(const viewLight_t* vLight, int side)
 {
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-    if(SHADOW_MAPPING_NEW)
+    if(USING_MODERN_API)
         return &depthShader;
 #endif
 #if 1
@@ -350,7 +350,7 @@ ID_INLINE static shaderProgram_t * RB_SelectShadowMapShader(const viewLight_t* v
 ID_INLINE static shaderProgram_t * RB_SelectPerforatedShadowMapShader(const viewLight_t* vLight, int side)
 {
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-    if(SHADOW_MAPPING_NEW)
+    if(USING_MODERN_API)
         return &depthPerforatedShader;
 #endif
 #if 1
@@ -726,7 +726,7 @@ ID_INLINE static void RB_CalcParallelLightMatrix(const viewLight_t* vLight, int 
 
     if(
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-        SHADOW_MAPPING_NEW &&
+        USING_MODERN_API &&
 #endif
         r_shadowMapParallelSplitFrustums > 0)
 	{
@@ -1410,7 +1410,7 @@ void RB_GLSL_CreateDrawInteractions_shadowMapping(const drawSurf_t *surf)
 
 
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-    if(SHADOW_MAPPING_NEW)
+    if(USING_MODERN_API)
 #endif
     if( backEnd.vLight->parallel )
     {
@@ -1538,7 +1538,7 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 	if( backEnd.vLight->parallel )
 	{
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-	    if(SHADOW_MAPPING_NEW && r_shadowMapParallelSplitFrustums > 0)
+	    if(USING_MODERN_API && r_shadowMapParallelSplitFrustums > 0)
         {
             float ms[6 * 16];
             for( int i = 0; i < ( r_shadowMapParallelSplitFrustums + 1 ); i++ )
@@ -1654,7 +1654,7 @@ ID_INLINE static void RB_ShadowMappingInteraction_setupMVP(const drawInteraction
 /*ID_INLINE static */idImage * RB_ShadowMappingInteraction_GetTexture(void)
 {
 #if defined(GL_ES_VERSION_3_0) || defined(_VULKAN)
-    if(SHADOW_MAPPING_NEW)
+    if(USING_MODERN_API)
     {
         return globalImages->shadowImage[backEnd.vLight->shadowLOD];
         /*		if( backEnd.vLight->parallel )
