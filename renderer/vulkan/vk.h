@@ -306,7 +306,7 @@ typedef struct VKContext_s
     VkSemaphore renderFinishedSemaphores[NUM_INFLIGHT_FRAME]; // 当前帧队列渲染完成同步的信号量
     VkFence inFlightFences[NUM_INFLIGHT_FRAME]; // 飞行帧的CPU同步栅栏
     VKQUEUE(VKDescriptorPool_t) descriptorPools[NUM_INFLIGHT_FRAME];
-    VKQUEUE(VKDescriptorPool_t) staticDescriptorPools[NUM_INFLIGHT_FRAME];
+    //VKQUEUE(VKDescriptorPool_t) staticDescriptorPools[NUM_INFLIGHT_FRAME];
 
     VKCommandPool_t commandPool; // 渲染命令池
 	VkPipelineCache pipelineCache; // 渲染管线缓存
@@ -368,7 +368,7 @@ void VK_DebugObjects();
 // Allocate handler
 VKHandle_t VK_AllocPipeline(VKPipeline_t **pipeline);
 VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers);
-VKHandle_t VK_AllocStaticDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers);
+//VKHandle_t VK_AllocStaticDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers);
 VKHandle_t VK_AllocSampler(VkSampler **sampler);
 VKHandle_t VK_AllocImageView(VkImageView **imageView);
 VKHandle_t VK_AllocBuffer(VKBuffer_t **buffer);
@@ -393,9 +393,11 @@ void VK_DestroyBuffer(VKBuffer_t *buffer);
 
 // Pool handler
 VKHandle_t VK_FindImageHandle(VKImage_t *image);
-void VK_SwapBufferHandle(VKHandle_t a, VKHandle_t b);
-void VK_SwapImageHandle(VKHandle_t a, VKHandle_t b);
 VKHandle_t VK_FindBufferHandle(VKBuffer_t *buffer);
+void VK_SwapBuffer(VKHandle_t a, VKHandle_t b);
+void VK_SwapImage(VKHandle_t a, VKHandle_t b);
+void VK_MoveBuffer(VKHandle_t a, VKHandle_t b);
+void VK_MoveImage(VKHandle_t a, VKHandle_t b);
 
 // Create
 void VK_CreateCommandPool(VKCommandPool_t *commandPool, int usage, bool reset, bool createFence);
@@ -410,7 +412,7 @@ VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int
 void VK_CreateSampler(VkSampler *sampler, bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatR, bool depthCmp, float anisotropy, float lodMax);
 VkShaderModule VK_CreateShaderModule(const uint8_t *data, int length);
 VKHandle_t VK_CreateDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers);
-VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers);
+//VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers);
 void VK_CreateQueryPool(VKQueryPool_t *query, int queryType, int num);
 
 // Image

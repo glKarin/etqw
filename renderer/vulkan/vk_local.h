@@ -78,7 +78,8 @@ void * R_VK_VertexAttribPointer (GLint size, const void *pointer);
 void R_VK_BindTexture( GLenum target, VKImage_t *image );
 
 void R_VK_AddLoadImageList( idImage * image, bool checkForPrecompressed );
-void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows );
+void R_VK_AddUploadScratchImageList( idImage * image, byte *data, int cols, int rows );
+void R_VK_AddUpdateCinematicImageList( idImage * image, idCinematic *cinematic, int time );
 void R_VK_HandleLoadImageList( void );
 bool R_VK_DisableUploadImage( void );
 

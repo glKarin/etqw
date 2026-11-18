@@ -22,7 +22,7 @@ typedef struct VKActuallyLoadImage_s
 {
 	idImage *image;
 	bool checkForPrecompressed;
-	const byte *cinData;
+	void *cinData;
 	int cols;
 	int rows;
 
@@ -30,19 +30,25 @@ typedef struct VKActuallyLoadImage_s
 			: image( image ),
 			  checkForPrecompressed( checkForPrecompressed ),
 			  cinData(NULL),
-			  cols(NULL),
-			  rows(NULL)
+			  cols(-1),
+			  rows(-1)
 	{}
-	VKActuallyLoadImage_s( idImage *image, const byte *data, int cols, int rows )
+
+	VKActuallyLoadImage_s( idImage *image, byte *data, int cols, int rows )
 			: image( image ),
 			  checkForPrecompressed( false ),
 			  cinData(data),
 			  cols(cols),
 			  rows(rows)
-	{
-		//cinData = malloc(cols * rows * 4);
-		//memcpy(cinData, data, cols * rows * 4);
-	}
+	{}
+
+	VKActuallyLoadImage_s( idImage *image, idCinematic *cinematic, int time )
+			: image( image ),
+			  checkForPrecompressed( false ),
+			  cinData(cinematic),
+			  cols(-1),
+			  rows(time)
+	{}
 
 	VKActuallyLoadImage_s()
 			: image( NULL ),
@@ -52,12 +58,6 @@ typedef struct VKActuallyLoadImage_s
 			  rows(NULL)
 	{}
 
-#if 0
-	~VKActuallyLoadImage_s() {
-		if(cinData)
-			free(cinData);
-	}
-#endif
 } VKActuallyLoadImage_t;
 
 static idList<VKActuallyLoadImage_t> loadImages[NUM_INFLIGHT_FRAME];
@@ -69,10 +69,16 @@ void R_VK_AddLoadImageList( idImage *image, bool checkForPrecompressed )
     loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, checkForPrecompressed ) );
 }
 
-void R_VK_AddUploadScratchImageList( idImage * image, const byte *data, int cols, int rows )
+void R_VK_AddUploadScratchImageList( idImage * image, byte *data, int cols, int rows )
 {
 	//printf("uuu %d %d %d %p\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image);
     loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, data, cols, rows ) );
+}
+
+void R_VK_AddUpdateCinematicImageList( idImage * image, idCinematic *cinematic, int time )
+{
+	//printf("uuu %d %d %d %p\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image);
+    loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, cinematic, time ) );
 }
 
 void R_VK_HandleLoadImageList( void )
@@ -85,7 +91,18 @@ void R_VK_HandleLoadImageList( void )
 		{
 			//printf("ttt %d %d %d %p %s\n", i, vk_backend.frameCount, vk_context.frameIndex, loadImg->image, loadImg->image->imgName.c_str());
 			if(loadImg->cinData)
-				loadImg->image->UploadScratch_VK(loadImg->cinData, loadImg->cols, loadImg->rows);
+			{
+				if(loadImg->cols == -1)
+				{
+					idCinematic *cinematic = (idCinematic *)loadImg->cinData;
+					cinData_t cin = cinematic->ImageForTime( loadImg->rows );
+					if(cin.image)
+						loadImg->image->UploadScratch_VK(cin.image, cin.imageWidth, cin.imageHeight);
+				}
+				else
+					loadImg->image->UploadScratch_VK((byte *)loadImg->cinData, loadImg->cols, loadImg->rows);
+				//R_WritePNG(va("list/%s_%d.png", loadImg->image->imgName.c_str(), vk_backend.frameCount), loadImg->cinData, loadImg->cols, loadImg->rows, 4);
+			}
 			else
 			{
 #ifdef _MULTITHREAD
@@ -1041,6 +1058,7 @@ if rows = cols * 6, assume it is a cube map animation
 void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 {
 	int			i;
+	const bool rendering = vk_context.inRenderPass;
 
 	// if rows = cols * 6, assume it is a cube map animation
 	if (rows == cols * 6) {
@@ -1068,7 +1086,11 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 			RecreateImage_VK();
 			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, true, oldLayers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
+			if(rendering)
+				VK_EndRenderPass();
 			R_VK_AllocImageBuffer(vk_image, cols * rows * 4 * 6, data, NULL, NULL);
+			if(rendering)
+				VK_BeginRenderPass();
 		}
 
 		// no other clamp mode makes sense
@@ -1091,20 +1113,26 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 #endif
 			uploadWidth = cols;
 			uploadHeight = rows;
-			VKImage_t *newImage;
-			VKHandle_t newHandle = VK_AllocImage(&newImage);
-			VK_SwapImageHandle(texnum, newHandle);
-			VK_CreateImage(newImage, uploadWidth, uploadHeight, vk_image->format, false, vk_image->layers, 1, IU_SAMPLER);
+			const int oldLayers = vk_image->layers;
+			const int oldFormat = vk_image->format;
+			RecreateImage_VK();
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, false, oldLayers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
-			R_VK_AllocImageBuffer(newImage, cols * rows * 4, data, NULL, NULL);
-			R_VK_DestroyImage(newHandle);
-			vk_image = newImage;
+			if(rendering)
+				VK_EndRenderPass();
+			R_VK_AllocImageBuffer(vk_image, cols * rows * 4, data, NULL, NULL);
+			if(rendering)
+				VK_BeginRenderPass();
 		} else {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
 			int sizes[] = { cols, rows };
 			int offsets[] = { 0 };
+			if(rendering)
+				VK_EndRenderPass();
 			R_VK_UploadImageSubData(vk_image, cols * rows * 4, data, 0, offsets, sizes);
+			if(rendering)
+				VK_BeginRenderPass();
 		}
 
 		// these probably should be clamp, but we have a lot of issues with editor
@@ -1310,7 +1338,10 @@ void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight
 
 void idImage::RecreateImage_VK()
 {
-	R_VK_RecreateImage(texnum, &vk_image);
+#if 1
+	R_VK_ReCreateImage(texnum); // now vk_image is not change and zero-filled, and don't need re-binding
+#else
+	R_VK_CreateNewImage(texnum, &vk_image);
 
 	// re-bind the texture if is current
 	tmu_t			*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
@@ -1332,6 +1363,7 @@ void idImage::RecreateImage_VK()
 		if (tmu->current2DArrayMap != texnum)
 			R_VK_BindType(TUT_2D_ARRAY, vk_image);
 	}
+#endif
 #endif
 }
 

@@ -40,7 +40,7 @@
 }
 
 #define VKARRAY_ALLOC2(T, data, num) \
-	data = (T *)VKMALLOCT(sizeof(*(data)) * num, ARRAY::ALLOC##::##T);
+	data = (T *)VKMALLOCT(sizeof(*(data)) * num, ARRAY_ALLOC##_##T);
 
 #define VKARRAY_ALLOC(T, arr) VKARRAY_ALLOC2(T, (arr).list, (arr).size)
 
@@ -90,12 +90,12 @@
 		if(num == size) { \
 			T *_vkc_oldData = data; \
 			size += granularity; \
-			data = (T *)VKMALLOCT(sizeof(*data) * size, LIST::RESIZE##::##T); \
+			data = (T *)VKMALLOCT(sizeof(*data) * size, LIST_RESIZE##_##T); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * num); \
 			VKFREE(_vkc_oldData); \
 		} \
 	} else { \
-		data = (T *)VKMALLOCT(sizeof(*data) * size, LIST::ALLOC##::##T); \
+		data = (T *)VKMALLOCT(sizeof(*data) * size, LIST_ALLOC##_##T); \
 		num = 0; \
 	}
 
@@ -148,12 +148,12 @@
 		T **_vkc_oldData = data; \
 		int _vkc_oldSize = size; \
 		size += granularity; \
-		data = (T **)VKMALLOCT(sizeof(*data) * size, POOL::RESIZE##::##T); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, POOL_RESIZE##_##T); \
 		memset(data, 0, sizeof(*data) * size); \
 		memcpy(data, _vkc_oldData, sizeof(*data) * _vkc_oldSize); \
 		VKFREE(_vkc_oldData); \
 	} else { \
-		data = (T **)VKMALLOCT(sizeof(*data) * size, POOL::ALLOC##::##T); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, POOL_ALLOC##_##T); \
 		memset(data, 0, sizeof(*data) * size); \
 		num = 0; \
 	}
@@ -190,7 +190,7 @@
 		VKPOOL_RESIZE2(T, data, size, num, granularity) \
 	} \
 	num++; \
-	data[_vkc_index] = (T *)VKMALLOCT(sizeof(*data[_vkc_index]), POOL::NEW_SLOT##::##T); \
+	data[_vkc_index] = (T *)VKMALLOCT(sizeof(*data[_vkc_index]), POOL_NEW_SLOT##_##T); \
 	memset(data[_vkc_index], 0, sizeof(*data[_vkc_index])); \
 	T *_vkc_value = data[_vkc_index];
 
@@ -206,6 +206,14 @@
 	}
 
 #define VKPOOL_FREESLOT(T, pool, index) VKPOOL_FREESLOT2(T, (pool).list, (pool).num, (pool).size, (pool).base, index)
+
+#define VKPOOL_HANDLE_IS_VALID2(T, size, base, index) ((index) >= (base) && (index) < (size))
+
+#define VKPOOL_HANDLE_IS_VALID(T, pool, index) VKPOOL_HANDLE_IS_VALID2(T, (pool).size, (pool).base, index)
+
+#define VKPOOL_SLOT_NOT_EMPTY2(T, data, size, base, index) (VKPOOL_HANDLE_IS_VALID2(T, size, base, index) && (data)[index])
+
+#define VKPOOL_SLOT_NOT_EMPTY(T, pool, index) VKPOOL_SLOT_NOT_EMPTY2(T, (pool).list, (pool).size, (pool).base, index)
 
 
 
@@ -231,13 +239,13 @@
 			T **old = data; \
 			int oldSize = size; \
 			size += granularity; \
-			data = (T **)VKMALLOCT(sizeof(*data) * size, PTRLIST::RESIZE##::##T); \
+			data = (T **)VKMALLOCT(sizeof(*data) * size, PTRLIST_RESIZE##_##T); \
 			memset(data, 0, sizeof(*data) * size); \
 			memcpy(data, old, sizeof(*data) * oldSize); \
 			VKFREE(old); \
 		} \
 	} else { \
-		data = (T **)VKMALLOCT(sizeof(*data) * size, PTRLIST::ALLOC##::##T); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, PTRLIST_ALLOC##_##T); \
 		memset(data, 0, sizeof(*data) * size); \
 		num = 0; \
 	}
@@ -259,7 +267,7 @@
 #define VKPTRLIST_ALLOC2(T, data, size, num, granularity) \
 	VKPTRLIST_RESIZE2(T, data, size, num, granularity) \
 	int _vkc_index = num++; \
-	data[_vkc_index] = (T *)VKMALLOCT(sizeof(*data[_vkc_index]), PTRLIST::NEW_ITEM##::##T); \
+	data[_vkc_index] = (T *)VKMALLOCT(sizeof(*data[_vkc_index]), PTRLIST_NEW_ITEM##_##T); \
 	memset(data[_vkc_index], 0, sizeof(*data[_vkc_index])); \
 	T *_vkc_value = data[_vkc_index];
 
@@ -315,9 +323,9 @@
 			I *_vkc_oldKeys = keys; \
 			int _vkc_oldSize = size; \
 			size += granularity; \
-			data = (T *)VKMALLOCT(sizeof(*data) * size, MAP::RESIZE_LIST##::##T##_##I); \
+			data = (T *)VKMALLOCT(sizeof(*data) * size, MAP_RESIZE_LIST##_##T##_##I); \
 			memset(data, 0, sizeof(*data) * size); \
-			keys = (I *)VKMALLOCT(sizeof(*keys) * size, MAP::RESIZE_KEY##::##T##_##I); \
+			keys = (I *)VKMALLOCT(sizeof(*keys) * size, MAP_RESIZE_KEY##_##T##_##I); \
 			memset(keys, 0, sizeof(*keys) * size); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * _vkc_oldSize); \
 			memcpy(keys, _vkc_oldKeys, sizeof(*keys) * _vkc_oldSize); \
@@ -325,9 +333,9 @@
 			VKFREE(_vkc_oldKeys); \
 		} \
 	} else { \
-		data = (T *)VKMALLOCT(sizeof(*data) * size, MAP::ALLOC_LIST##::##T##_##I); \
+		data = (T *)VKMALLOCT(sizeof(*data) * size, MAP_ALLOC_LIST##_##T##_##I); \
 		memset(data, 0, sizeof(*data) * size); \
-		keys = (I *)VKMALLOCT(sizeof(*keys) * size, MAP::ALLOC_KEY##::##T##_##I); \
+		keys = (I *)VKMALLOCT(sizeof(*keys) * size, MAP_ALLOC_KEY##_##T##_##I); \
 		memset(keys, 0, sizeof(*keys) * size); \
 		num = 0; \
 	}
@@ -408,9 +416,9 @@
 			I *_vkc_oldKeys = keys; \
 			int _vkc_oldSize = size; \
 			size += granularity; \
-			data = (T **)VKMALLOCT(sizeof(*data) * size, PTRMAP::RESIZE_LIST##::##T##_##I); \
+			data = (T **)VKMALLOCT(sizeof(*data) * size, PTRMAP_RESIZE_LIST##_##T##_##I); \
 			memset(data, 0, sizeof(*data) * size); \
-			keys = (I *)VKMALLOCT(sizeof(*keys) * size, PTRMAP::RESIZE_KEY##::##T##_##I); \
+			keys = (I *)VKMALLOCT(sizeof(*keys) * size, PTRMAP_RESIZE_KEY##_##T##_##I); \
 			memset(keys, 0, sizeof(*keys) * size); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * _vkc_oldSize); \
 			memcpy(keys, _vkc_oldKeys, sizeof(*keys) * _vkc_oldSize); \
@@ -418,9 +426,9 @@
 			VKFREE(_vkc_oldKeys); \
 		} \
 	} else { \
-		data = (T **)VKMALLOCT(sizeof(*data) * size, PTRMAP::ALLOC_LIST##::##T##_##I); \
+		data = (T **)VKMALLOCT(sizeof(*data) * size, PTRMAP_ALLOC_LIST##_##T##_##I); \
 		memset(data, 0, sizeof(*data) * size); \
-		keys = (I *)VKMALLOCT(sizeof(*keys) * size, PTRMAP::ALLOC_KEY##::##T##_##I); \
+		keys = (I *)VKMALLOCT(sizeof(*keys) * size, PTRMAP_ALLOC_KEY##_##T##_##I); \
 		memset(keys, 0, sizeof(*keys) * size); \
 		num = 0; \
 	}
@@ -445,7 +453,7 @@
 
 #define VKPTRMAP_ALLOC2(T, I, data, keys, size, num, granularity) \
 	VKPTRMAP_RESIZE2(T, I, data, keys, size, num, granularity) \
-	data[num] = (T *)VKMALLOCT(sizeof(*data[num]), PTRMAP::NEW_ITEM##::##T##_##I); \
+	data[num] = (T *)VKMALLOCT(sizeof(*data[num]), PTRMAP_NEW_ITEM##_##T##_##I); \
 	memset(data[num], 0, sizeof(*data[num])); \
 	T *_vkc_value = data[num]; \
 	I *_vkc_key = &keys[num]; \
@@ -477,12 +485,12 @@
 		if(num == size) { \
 			T *_vkc_oldData = data; \
 			size += granularity; \
-			data = (T *)VKMALLOCT(sizeof(*data) * size, QUEUE::RESIZE##::##T); \
+			data = (T *)VKMALLOCT(sizeof(*data) * size, QUEUE_RESIZE##_##T); \
 			memcpy(data, _vkc_oldData, sizeof(*data) * num); \
 			VKFREE(_vkc_oldData); \
 		} \
 	} else { \
-		data = (T *)VKMALLOCT(sizeof(*data) * size, QUEUE::ALLOC##::##T); \
+		data = (T *)VKMALLOCT(sizeof(*data) * size, QUEUE_ALLOC##_##T); \
 		num = 0; \
 		used = 0; \
 	}
@@ -517,7 +525,7 @@
 		_vkc_isNew = false; \
 	} else { \
 		VKQUEUE_RESIZE2(T, data, size, num, granularity, used) \
-		if(num == size) { \
+		if(num > 0) { \
 			used++; \
 		} \
 		num++; \

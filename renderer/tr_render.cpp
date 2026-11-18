@@ -524,6 +524,15 @@ void RB_BindVariableStageImage(const textureStage_t *texture, const float *shade
 		else
 		{
 #endif
+#ifdef _VULKAN
+		if(USING_VULKAN)
+		{
+			globalImages->cinematicImage->Bind(); // must also bind first
+			R_VK_AddUpdateCinematicImageList(globalImages->cinematicImage, texture->cinematic, (int)(1000 * ( backEnd.viewDef->floatTime + backEnd.viewDef->renderView.shaderParms[11] ) ));
+		}
+		else
+		{
+#endif
 		// offset time by shaderParm[7] (FIXME: make the time offset a parameter of the shader?)
 		// We make no attempt to optimize for multiple identical cinematics being in view, or
 		// for cinematics going at a lower framerate than the renderer.
@@ -534,6 +543,9 @@ void RB_BindVariableStageImage(const textureStage_t *texture, const float *shade
 		} else {
 			globalImages->blackImage->Bind();
 		}
+#ifdef _VULKAN
+		}
+#endif
 #ifdef _MULTITHREAD
 		}
 #endif

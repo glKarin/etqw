@@ -56,6 +56,9 @@ VKBackEnd_t vk_backend;
 #define VKSTATE1_CLEAR(x) vk_backend.state.st1 &= ~(globalState_t)(x);
 #define VKSTATE2_CLEAR(x) vk_backend.state.st2 &= ~(globalState_t)(x);
 
+/**
+ * 读取本地渲染通道缓存
+ */
 static void R_VK_LoadPipelineCache(void)
 {
 	if (!r_vkUsePipelineCache.GetBool())
@@ -78,6 +81,9 @@ static void R_VK_LoadPipelineCache(void)
 		fileSystem->FreeFile(data);
 }
 
+/**
+ * 保存渲染通道缓存到本地
+ */
 static void R_VK_SavePipelineCache(void)
 {
 	if (!r_vkUsePipelineCache.GetBool())
@@ -93,6 +99,11 @@ static void R_VK_SavePipelineCache(void)
 	VKFREE(data);
 }
 
+/**
+ * 设置当前全局Uniform变量, 并记录该变量已变更
+ * @param location 相对偏移字节数
+ * @param value 值
+ */
 void R_VK_Uniform1f(int location, float value)
 {
 	assert(location >= 0);
@@ -300,6 +311,13 @@ void R_VK_TransformUniformMatrix4f2(int dst, int src, int st_location, void *to)
 }
 #endif
 
+/**
+ * 拷贝当前全局Uniform变量到当前使用的渲染管线的Uniform变量中, 如果该变量未变更则跳过
+ * @param dst 全局Uniform变量偏移字节数
+ * @param src 当前使用的渲染管线的Uniform变量偏移字节数
+ * @param to 当前使用的渲染管线的Uniform变量起始地址
+ * @param size 大小
+ */
 void R_VK_TransformUniform(int dst, int src, void *to, int size)
 {
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
@@ -352,8 +370,7 @@ void R_VK_TransformUniformMatrix4f(int dst, int src, void *to)
 
 /**
  * 创建渲染管线
- * @param vertex 顶点着色器模块
- * @param fragment 片段着色器模块
+ * @param program 渲染管线配置
  */
 void R_VK_CreatePipeline(VKShaderProgram_t *program)
 {
@@ -665,6 +682,9 @@ void R_VK_UseProgram(VKShaderProgram_t *program)
 	}
 }
 
+/**
+ * 绑定当前渲染管线
+ */
 void R_VK_BindProgram()
 {
 	if (vk_backend.currentProgram)
@@ -835,6 +855,9 @@ static void R_VK_InitBackend()
     vk_backend.dynamicState.stencilWriteMask[0] = vk_backend.dynamicState.stencilWriteMask[1] = 0xFFFFFFFFu;
 }
 
+/**
+ * 将vk_context创建的Vulkan对象命名
+ */
 static void R_VK_DebugObjects()
 {
 	if (r_vkSetDebugInfo.GetBool() && VK_IsExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME))
@@ -948,6 +971,9 @@ void R_VK_UploadImageData(VKImage_t *image, int totalSize, const byte *totalData
 	VK_WriteImageBuffer(image, map.buffer, map.offset, offsets, sizes, commandBuffer);
 }
 
+/**
+ * 使用staging缓冲区上传图像的GPU内存(指定层数)
+ */
 void R_VK_UploadImageSubData(VKImage_t *image, int totalSize, const byte *totalData, int level, int offsets[], int sizes[])
 {
 	if(!totalData)
@@ -968,7 +994,7 @@ void R_VK_UploadImageSubData(VKImage_t *image, int totalSize, const byte *totalD
 /**
  * 绑定图像到当前图像单元
  */
-void R_VK_Bind(const VKImage_t *image)
+void R_VK_Bind(VKImage_t *image)
 {
 	assert(vk_backend.currenttmu >= 0 && vk_backend.currenttmu < VKBINDING_MAX_TRXTURE_UNITS);
 	if(image)
@@ -988,7 +1014,10 @@ void R_VK_Bind(const VKImage_t *image)
 	}
 }
 
-void R_VK_BindType(int tut, const VKImage_t *image)
+/**
+ * 绑定图像到当前对应的类型的图像单元
+ */
+void R_VK_BindType(int tut, VKImage_t *image)
 {
 	assert(tut >= TUT_2D && tut < TUT_TOTAL);
 	assert(vk_backend.currenttmu >= 0 && vk_backend.currenttmu < VKBINDING_MAX_TRXTURE_UNITS);
@@ -1008,14 +1037,17 @@ void R_VK_SelectTexture(int unit)
 /**
  * 绑定图像到图像单元
  */
-void R_VK_BindTexture(int unit, const VKImage_t *image)
+void R_VK_BindTexture(int unit, VKImage_t *image)
 {
 	assert(unit >= 0 && unit < VKBINDING_MAX_TRXTURE_UNITS);
 	vk_backend.currenttmu = unit;
 	R_VK_Bind(image);
 }
 
-void R_VK_BindTextureType(int unit, int tut, const VKImage_t *image)
+/**
+ * 绑定图像到指定对应的类型的图像单元
+ */
+void R_VK_BindTextureType(int unit, int tut, VKImage_t *image)
 {
 	assert(unit >= 0 && unit < VKBINDING_MAX_TRXTURE_UNITS);
 	assert(tut >= TUT_2D && tut < TUT_TOTAL);
@@ -1059,10 +1091,23 @@ static int R_VK_CopyAllUniforms()
 		for (int i = 0; i < vk_backend.currentProgram->numTextureUnits; i++)
 		{
 			const int textureType = vk_backend.currentProgram->textureTypes[i];
-			if (vk_backend.currentProgram->textures[i] != vk_backend.tmu[textureType][i])
+			if (vk_backend.tmu[textureType][i]) // has binding
 			{
-				vk_backend.currentProgram->textures[i] = vk_backend.tmu[textureType][i];
-				uboUpdateMask |= (UTM_IMAGE << i);
+				if (vk_backend.currentProgram->textures[i] != vk_backend.tmu[textureType][i]
+					|| (vk_backend.currentProgram->textures[i] && vk_backend.currentProgram->textures[i]->image != vk_backend.tmu[textureType][i]->image)
+					)
+				{
+					vk_backend.currentProgram->textures[i] = vk_backend.tmu[textureType][i];
+					uboUpdateMask |= (UTM_IMAGE << i);
+				}
+			}
+			else // not binding
+			{
+				if (vk_backend.currentProgram->textures[i])
+				{
+					vk_backend.currentProgram->textures[i] = NULL;
+					uboUpdateMask |= (UTM_IMAGE << i);
+				}
 			}
 		}
 	}
@@ -1084,6 +1129,10 @@ static void R_VK_DestroyPurgeImages()
 	vk_backend.purgeImages[vk_context.frameIndex].num = 0;
 }
 
+/**
+ * 如果图像被当前绑定, 则解绑
+ * @param image 图像
+ */
 void R_VK_Unbind(VKImage_t *image)
 {
 	for(int m = TUT_2D; m < TUT_TOTAL; m++)
@@ -1137,7 +1186,7 @@ void R_VK_DestroyImage(VKHandle_t handle)
 }
 
 /**
- * 使用当前的渲染管线布局的描述符布局分配新的描述符集
+ * 使用当前的渲染管线布局的描述符布局分配新的Uniform描述符集
  */
 static VkDescriptorSet R_VK_CreateUniformDescriptorSetForUpdate()
 {
@@ -1151,6 +1200,9 @@ static VkDescriptorSet R_VK_CreateUniformDescriptorSetForUpdate()
 	return *descriptorSet;
 }
 
+/**
+ * 使用当前的渲染管线布局的描述符布局分配新的采样器描述符集
+ */
 static VkDescriptorSet R_VK_CreateSamplerDescriptorSetForUpdate()
 {
 	VkDescriptorSet *descriptorSet;
@@ -1175,6 +1227,9 @@ static void R_VK_WriteUniformBufferObject(const void *data, int size, VKBufferMa
 	//R_VK_UnmapBufferQueue(cache);
 }
 
+/**
+ * 分配临时顶点缓冲区Host内存
+ */
 void R_VK_AllocVertexBuffer(const void *data, int size, VKBufferMap_t *map)
 {
 	VKASSERT_THREAD;
@@ -1185,6 +1240,9 @@ void R_VK_AllocVertexBuffer(const void *data, int size, VKBufferMap_t *map)
 	//R_VK_UnmapBufferQueue(cache);
 }
 
+/**
+ * 分配临时索引缓冲区Host内存
+ */
 void R_VK_AllocIndexBuffer(const void *data, int size, VKBufferMap_t *map)
 {
 	VKASSERT_THREAD;
@@ -1265,8 +1323,11 @@ void R_VK_BeginFrame()
 	// 重置上一次该帧的进行的查询(必须在渲染通道未开始前执行)
 	R_VK_ResetQuery();
 
-	// 上传图像缓冲区
+	// 上传缓冲区
 	R_VK_HandleLoadBufferList();
+
+	// 上传图像缓冲区
+	R_VK_HandleLoadImageList();
 
     // 发送开始主渲染通道的命令
     VK_BeginRenderPass();
@@ -1303,7 +1364,9 @@ void R_VK_EndFrame()
 }
 
 /**
- * 更新当前渲染管线的uniform数据, 准备发送绘制命令
+ * 更新当前渲染管线的uniform数据, 绑定描述符集, 准备发送绘制命令
+ * Uniform描述符集: 缓冲区变更时Update一次, 之后使用动态偏移
+ * Sampler描述符集: 图像绑定变更时Update一次
  */
 void R_VK_UpdateUniformBufferObject()
 {
@@ -1451,7 +1514,7 @@ void R_VK_UpdateUniformBufferObject()
 			//if (uboUpdateMask & (UTM_IMAGE << i))
 			{
 				VKZERO(descriptorImageInfos[i]);
-				const VKImage_t *image = vk_backend.currentProgram->textures[i];
+				VKImage_t *image = vk_backend.currentProgram->textures[i];
 				if (!image) // always binding one
 				 	image = vk_backend.currentProgram->textureTypes[i] == TUT_CUBEMAP ? globalImages->defaultCubeMapImage->vk_image : globalImages->defaultImage->vk_image;
 
@@ -1958,12 +2021,23 @@ void R_VK_Color4fv(float color[4])
 	R_VK_Uniform4fv(VKGLOBAL_PARM_OFFSET(glColor), color);
 }
 
+/**
+ * 设置当前渲染宽高
+ * @param w 宽度
+ * @param h 高度
+ */
 void R_VK_SetRenderSize(int w, int h)
 {
 	vk_backend.dynamicState.renderWidth = w > 0 ? w : vk_context.swapchain.width;
 	vk_backend.dynamicState.renderHeight = h > 0 ? h : vk_context.swapchain.height;
 }
 
+/**
+ * 设置当前渲染通道信息
+ * @param renderPass 渲染通道
+ * @param w 宽度
+ * @param h 高度
+ */
 void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h)
 {
 	vk_backend.currentRenderPass = renderPass;
@@ -1989,15 +2063,45 @@ void R_VK_UseVertexColor(bool enable)
 	}
 }
 
-void R_VK_RecreateImage(VKHandle_t texnum, VKImage_t **image)
+/**
+ * 交换texnum指向的图像到新创建的临时的图像槽中, 新创建的图像将被延时销毁, 返回新的图像地址(texnum指向新的内存地址)
+ * @param texnum
+ */
+void R_VK_CreateNewImage(VKHandle_t texnum, VKImage_t **image)
 {
+	// Allocate new temp image slot
 	VKImage_t *newImage;
 	VKHandle_t newHandle = VK_AllocImage(&newImage);
-	VK_SwapImageHandle(texnum, newHandle);
+	// Swap texnum and new temp image slot data
+	VK_SwapImage(texnum, newHandle);
+	// Defer destroy the image by new temp handle
 	R_VK_DestroyImage(newHandle);
+	// return new image
 	*image = newImage;
 }
 
+/**
+ * 将texnum指向的图像移动到新创建的临时的图像槽中, 新创建的图像将被延时销毁(texnum指向的内存地址不变)
+ * @param texnum
+ */
+void R_VK_ReCreateImage(VKHandle_t texnum)
+{
+	// Allocate new temp image slot
+	VKImage_t *newImage;
+	VKHandle_t newHandle = VK_AllocImage(&newImage);
+	// Move to new temp image slot
+	VK_MoveImage(texnum, newHandle);
+	// Defer destroy the image by new temp handle
+	R_VK_DestroyImage(newHandle);
+}
+
+/**
+ * 设置Vulkan对象名称
+ * @param objType Vulkan对象类型
+ * @param handle Vulkan对象句柄
+ * @param name 名称
+ * @param ...
+ */
 void R_VK_SetObjectName(int objType, uint64_t handle, const char *name, ...)
 {
 	if (!r_vkSetDebugInfo.GetBool() || !glConfig.debugOutput)

@@ -10,8 +10,8 @@ add_subdirectory(${GLSLANG_PATH} externlibs/glslang)
 
 set(CMAKE_CXX_STANDARD "11")
 
-add_library(idtech_vkglsl STATIC vk_glsl.cpp)
+add_library(idtech4_vkglsl STATIC vk_glsl.cpp)
 
-target_link_libraries(idtech_vkglsl "${GLSLANG_TARGET_PREFIX}glslang" "${GLSLANG_TARGET_PREFIX}SPIRV")
+target_link_libraries(idtech4_vkglsl "${GLSLANG_TARGET_PREFIX}glslang" "${GLSLANG_TARGET_PREFIX}SPIRV")
 
-target_include_directories(idtech_vkglsl PRIVATE ${GLSLANG_PATH})
+target_include_directories(idtech4_vkglsl PRIVATE ${GLSLANG_PATH})

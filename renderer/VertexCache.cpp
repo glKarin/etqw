@@ -723,12 +723,17 @@ void idVertexCache::EndFrame()
 	staticCountThisFrame = 0;
 	dynamicAllocThisFrame = 0;
 #ifdef _VULKAN
-	vertCache_t *ptr = tempBuffers[usingFrame];
-	while (ptr->next)
+#ifdef _MULTITHREAD
+	if(multithreadActive)
 	{
-		ptr->next->offset = 0;
-		ptr = ptr->next;
+		vertCache_t *ptr = tempBuffers[listNum];
+		while (ptr->next && ptr->next != tempBuffers[listNum])
+		{
+			ptr->next->offset = 0;
+			ptr = ptr->next;
+		}
 	}
+#endif
 #endif
 	dynamicCountThisFrame = 0;
 	tempOverflow = false;

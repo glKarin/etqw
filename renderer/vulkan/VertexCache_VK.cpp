@@ -140,8 +140,6 @@ void idVertexCache::Alloc_VK(void *data, int size, vertCache_t **buffer, bool in
 		common->Error("idVertexCache::Alloc_VK: size = %i\n", size);
 	}
 
-	if(Sys_InRenderThread())
-	assert(!vk_context.inCommandRecording || !vk_context.inRenderPass);
 	// if we can't find anything, it will be NULL
 	*buffer = NULL;
 
@@ -511,7 +509,9 @@ void idVertexCache::TransferData_VK(vertCache_t *block)
 		BindBuffer_VK(block->vk_buffer->buffer);
 	}
 	block->vk_offset = 0;
+#ifdef _MULTITHREAD
 	block->virtMemDirty = false;
+#endif
 }
 
 #ifdef _MULTITHREAD

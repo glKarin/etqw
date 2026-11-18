@@ -59,7 +59,7 @@ typedef struct VKDynamicState_s
  */
 typedef struct VKBackEnd_s
 {
-	const VKImage_t *tmu[TUT_TOTAL][VKBINDING_MAX_TRXTURE_UNITS]; // 当前绑定的每种类型的图像
+	VKImage_t *tmu[TUT_TOTAL][VKBINDING_MAX_TRXTURE_UNITS]; // 当前绑定的每种类型的图像
 	int currenttmu; // 当前tmu索引
 	VKShaderProgram_t *currentProgram; // 当前绑定的着色器
 	VKPipeline_t *currentPipeline; // 当前绑定的渲染管线
@@ -115,11 +115,11 @@ void R_VK_TransformUniform1f(int dst, int src, void *to);
 void R_VK_TransformUniform4f(int dst, int src, void *to);
 void R_VK_TransformUniformMatrix4f(int dst, int src, void *to);
 
-void R_VK_Bind(const VKImage_t *image);
-void R_VK_BindType(int type, const VKImage_t *image);
+void R_VK_Bind(VKImage_t *image);
+void R_VK_BindType(int type, VKImage_t *image);
 void R_VK_SelectTexture(int unit);
-void R_VK_BindTexture(int unit, const VKImage_t *image);
-void R_VK_BindTextureType(int unit, int tut, const VKImage_t *image);
+void R_VK_BindTexture(int unit, VKImage_t *image);
+void R_VK_BindTextureType(int unit, int tut, VKImage_t *image);
 void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight);
 void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask);
 
@@ -181,7 +181,8 @@ void R_VK_AllocVertexBuffer(const void *data, int size, VKBufferMap_t *map);
 void R_VK_AllocIndexBuffer(const void *data, int size, VKBufferMap_t *map);
 void R_VK_BindProgram();
 void R_VK_DestroyImage(VKHandle_t handle);
-void R_VK_RecreateImage(VKHandle_t texnum, VKImage_t **image);
+void R_VK_CreateNewImage(VKHandle_t texnum, VKImage_t **image);
+void R_VK_ReCreateImage(VKHandle_t texnum);
 void R_VK_SetObjectName(int objType, uint64_t handle, const char *name, ...);
 void R_VK_CmdDraw(int vertexCount, int firstVertex);
 void R_VK_CmdDrawInstance(int vertexCount, int instanceCount, int firstVertex, int firstInstance);

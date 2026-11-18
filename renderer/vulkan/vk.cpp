@@ -81,7 +81,7 @@
 #define currentFrameRenderFinishedSemaphore renderFinishedSemaphores[vk_context.frameIndex]
 #define currentFrameInFlightFence inFlightFences[vk_context.frameIndex]
 #define currentDescriptorPool descriptorPools[vk_context.frameIndex]
-#define currentStaticDescriptorPool staticDescriptorPools[vk_context.frameIndex]
+//#define currentStaticDescriptorPool staticDescriptorPools[vk_context.frameIndex]
 
 #define IDVK_CHECK_RENDERPASS_IDLE() assert(!vk_context.inRenderPass)
 
@@ -142,16 +142,16 @@ int VK_QueryExtensions()
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateInstanceExtensionProperties");
     Sys_Printf("Enumerate Vulkan extensions: %d\n", num);
 
-    vk_context.numExtensions = num;
+    vk_context.numExtensions = (int)num;
     if(num > 0)
     {
         VKARRAY_ALLOC2(VkExtensionProperties, props, num);
         vkEnumerateInstanceExtensionProperties(NULL, &num, props);
         VKARRAY_ALLOC2(char *, vk_context.extensions, vk_context.numExtensions);
-        for (int i = 0; i < num; ++i) {
+        for (uint32_t i = 0; i < num; i++) {
             VkExtensionProperties *prop = props + i;
             vk_context.extensions[i] = _strdup(prop->extensionName);
-            Sys_Printf("%3d: %s(%x)\n", i + 1, prop->extensionName, prop->specVersion);
+            Sys_Printf("%3u: %s(%x)\n", i + 1, prop->extensionName, prop->specVersion);
         }
         VKFREE(props);
     }
@@ -235,13 +235,13 @@ int VK_QueryPhysicalDevices()
     HANDLE_VK_ERROR_EXIT(result, "vkEnumeratePhysicalDevices");
     Sys_Printf("Enumerate Vulkan physical devices: %d\n", num);
 
-    vk_context.numPhysicalDevices = num;
+    vk_context.numPhysicalDevices = (int)num;
     if(num > 0)
     {
         VKARRAY_ALLOC2(VkPhysicalDevice, vk_context.physicalDevices, vk_context.numPhysicalDevices);
         vkEnumeratePhysicalDevices(vk_context.instance, &num, vk_context.physicalDevices);
-        for (int i = 0; i < num; ++i) {
-            Sys_Printf("%2d: %p\n", i + 1, vk_context.physicalDevices[i]);
+        for (uint32_t i = 0; i < num; i++) {
+            Sys_Printf("%2u: %p\n", i + 1, vk_context.physicalDevices[i]);
             VK_GetPhysicalDeviceInfo(vk_context.physicalDevices[i]);
         }
     }
@@ -262,15 +262,15 @@ int VK_QueryValidationLayers()
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateInstanceLayerProperties");
     Sys_Printf("Enumerate Vulkan validation layers: %d\n", num);
 
-    vk_context.numValidationLayers = num;
+    vk_context.numValidationLayers = (int)num;
     if(num > 0)
     {
         VKARRAY_ALLOC2(VkLayerProperties, supportValidationLayers, num);
         vkEnumerateInstanceLayerProperties(&num, supportValidationLayers);
         VKARRAY_ALLOC2(char *, vk_context.validationLayers, vk_context.numValidationLayers);
-        for (int i = 0; i < num; ++i) {
+        for (uint32_t i = 0; i < num; i++) {
             VkLayerProperties *layer = supportValidationLayers + i;
-            Sys_Printf("%3d: %s: %s\n", i + 1, layer->layerName, layer->description);
+            Sys_Printf("%3u: %s: %s\n", i + 1, layer->layerName, layer->description);
             vk_context.validationLayers[i] = _strdup(layer->layerName);
         }
         VKFREE(supportValidationLayers);
@@ -294,7 +294,7 @@ int VK_QueryPhysicalDeviceValidationLayers(VkPhysicalDevice pd, char ***ret)
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateDeviceLayerProperties");
     Sys_Printf("Enumerate Vulkan device validation layers: %d\n", num);
 
-    if(num <= 0)
+    if(num == 0)
         return 0;
 
     if(ret)
@@ -302,10 +302,10 @@ int VK_QueryPhysicalDeviceValidationLayers(VkPhysicalDevice pd, char ***ret)
         VKARRAY_ALLOC2(VkLayerProperties, supportValidationLayers, num);
         vkEnumerateDeviceLayerProperties(pd, &num, supportValidationLayers);
         VKARRAY_ALLOC2(char *, *ret, num);
-        for (int i = 0; i < num; ++i) {
+        for (uint32_t i = 0; i < num; i++) {
             VkLayerProperties *layer = supportValidationLayers + i;
             (*ret)[i] = _strdup(layer->layerName);
-            Sys_Printf("%3d: %s: %s\n", i + 1, layer->layerName, layer->description);
+            Sys_Printf("%3u: %s: %s\n", i + 1, layer->layerName, layer->description);
         }
         VKFREE(supportValidationLayers);
     }
@@ -328,7 +328,7 @@ int VK_QueryPhysicalDeviceExtensions(VkPhysicalDevice pd, char ***ret)
     HANDLE_VK_ERROR_EXIT(result, "vkEnumerateDeviceExtensionProperties");
     Sys_Printf("Enumerate Vulkan device extensions: %d\n", num);
 
-    if(num <= 0)
+    if(num == 0)
         return 0;
 
     if(ret)
@@ -336,10 +336,10 @@ int VK_QueryPhysicalDeviceExtensions(VkPhysicalDevice pd, char ***ret)
         VKARRAY_ALLOC2(VkExtensionProperties, supportExtensions, num);
         vkEnumerateDeviceExtensionProperties(pd, NULL, &num, supportExtensions);
         VKARRAY_ALLOC2(char *, *ret, num);
-        for (int i = 0; i < num; ++i) {
+        for (uint32_t i = 0; i < num; i++) {
             VkExtensionProperties *extension = supportExtensions + i;
             (*ret)[i] = _strdup(extension->extensionName);
-            Sys_Printf("%3d: %s(%u)\n", i, extension->extensionName, extension->specVersion);
+            Sys_Printf("%3u: %s(%u)\n", i, extension->extensionName, extension->specVersion);
         }
         VKFREE(supportExtensions);
     }
@@ -500,15 +500,15 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, NULL);
     Sys_Printf("Enumerate Vulkan physics device queue family: %d\n", num);
 
-    if(num <= 0)
+    if(num == 0)
         return 0;
 
     VKARRAY_ALLOC2(VkQueueFamilyProperties, queueFamilyProperties, num);
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, queueFamilyProperties);
     int res = 0;
-    for (int i = 0; i < num; ++i) {
+    for (uint32_t i = 0; i < num; i++) {
         VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
-        Sys_Printf("%2d: queue count=%d, flags=%s\n", i + 1, queueFamily->queueCount, VK_VkQueueFlagsBitToName(queueFamily->queueFlags));
+        Sys_Printf("%2u: queue count=%d, flags=%s\n", i + 1, queueFamily->queueCount, VK_VkQueueFlagsBitToName(queueFamily->queueFlags));
         if(queueFamily->queueCount > 0 && queueFamily->queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             res++;
@@ -525,7 +525,7 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
     {
         VKARRAY_ALLOC2(uint32_t, *ret, res);
         uint32_t *ptr = *ret;
-        for (int i = 0; i < num; ++i) {
+        for (uint32_t i = 0; i < num; i++) {
             VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
             if(queueFamily->queueCount > 0 && queueFamily->queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
@@ -552,17 +552,17 @@ int VK_QueryPhysicalDeviceGraphicsQueueFamilyIndex(VkPhysicalDevice pd, int mask
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, NULL);
     Sys_Printf("Enumerate Vulkan device queue family: %d\n", num);
 
-    if(num <= 0)
+    if(num == 0)
         return -1;
 
     VKARRAY_ALLOC2(VkQueueFamilyProperties, queueFamilyProperties, num);
     vkGetPhysicalDeviceQueueFamilyProperties(pd, &num, queueFamilyProperties);
     int res = -2;
-    for (int i = 0; i < num; ++i) {
+    for (uint32_t i = 0; i < num; i++) {
         VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
         if(queueFamily->queueCount > 0 && (queueFamily->queueFlags & mask) == mask)
         {
-            res = i;
+            res = (int)i;
             break;
         }
     }
@@ -591,9 +591,9 @@ bool VK_CheckPhysicalDevice(VkPhysicalDevice pd)
 
     const int count = COUNT_OF(requireExtensions);
     int hasExt = 0;
-    for (int i = 0; i < num; ++i) {
+    for (int i = 0; i < num; i++) {
         int res = 0;
-        for (int m = 0; m < count; ++m) {
+        for (int m = 0; m < count; m++) {
             if(!strcmp(deviceExtensions[i], requireExtensions[m]))
                 res++;
         }
@@ -623,7 +623,7 @@ bool VK_CheckPhysicalDevice(VkPhysicalDevice pd)
  */
 void VK_ChoosePhysicalDevice()
 {
-    for (int i = 0; i < vk_context.numPhysicalDevices; ++i) {
+    for (int i = 0; i < vk_context.numPhysicalDevices; i++) {
         if(VK_CheckPhysicalDevice(vk_context.physicalDevices[i]))
         {
             vk_context.physicalDevice = vk_context.physicalDevices[i];
@@ -706,7 +706,7 @@ bool VK_ChooseSurfaceFormat(VkSurfaceFormatKHR *ret)
     else
     {
         VkSurfaceFormatKHR *found = NULL;
-        for (int i = 0; i < numFormats; ++i) {
+        for (int i = 0; i < numFormats; i++) {
             VkSurfaceFormatKHR *format = surfaceFormats + i;
             if(format->format == VK_FORMAT_R8G8B8A8_UNORM && format->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
@@ -813,7 +813,7 @@ VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int
  */
 void VK_CreateSwapchainImageViews()
 {
-    for (int i = 0; i < vk_context.swapchain.numImages; ++i) {
+    for (int i = 0; i < vk_context.swapchain.numImages; i++) {
         vk_context.swapchain.framebuffers[i].image.imageView = VK_CreateImageView(vk_context.swapchain.framebuffers[i].image.image, vk_context.swapchain.format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0);
         vk_context.swapchain.loadFramebuffers[i].image.imageView = vk_context.swapchain.framebuffers[i].image.imageView;
     }
@@ -845,7 +845,7 @@ void VK_GetSwapchainImages()
     VKARRAY_ALLOC2(VKFramebuffer_t, vk_context.swapchain.loadFramebuffers, vk_context.swapchain.numImages);
 
 	VKImage_t *image;
-    for (int i = 0; i < numImages; ++i)
+    for (uint32_t i = 0; i < numImages; i++)
     {
         image = &vk_context.swapchain.framebuffers[i].image;
         vk_context.swapchain.framebuffers[i].image.image = images[i];
@@ -873,7 +873,7 @@ void VK_CreateSwapchainFramebuffers()
 {
 	VkResult result;
 
-    for (int i = 0; i < vk_context.swapchain.numImages; ++i) {
+    for (int i = 0; i < vk_context.swapchain.numImages; i++) {
         VK_CreateImage(&vk_context.swapchain.framebuffers[i].depthStencilImage, vk_context.swapchain.width, vk_context.swapchain.height, VK_FORMAT_D24_UNORM_S8_UINT, false, 1, 1, IU_ATTACHMENT);
 		vk_context.swapchain.framebuffers[i].depthStencilImage.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
@@ -992,7 +992,7 @@ void VK_CreateDevice()
     float queuePriorities = 1.0f;
 
     VKARRAY_ALLOC2(VkDeviceQueueCreateInfo, deviceQueueCreateInfos, num);
-    for (int i = 0; i < num; ++i) {
+    for (int i = 0; i < num; i++) {
         VkDeviceQueueCreateInfo deviceQueueCreateInfo;
         VKZERO(deviceQueueCreateInfo);
         deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -1343,9 +1343,9 @@ int VK_QueryPhysicalDeviceMemoryType(VkPhysicalDevice physicalDevice, uint32_t m
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
-    for (int i = 0; i < memProperties.memoryTypeCount; ++i) {
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if ((memoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
+            return (int)i;
         }
     }
     return -1;
@@ -1629,7 +1629,7 @@ void VK_CreateDescriptorPools()
 	/*for(int i = 0; i < NUM_INFLIGHT_FRAME; i++)
 	{
 	    { VKQUEUE_ALLOC(VKDescriptorPool_t, vk_context.descriptorPools[i]); }
-	    { VKQUEUE_ALLOC(VKDescriptorPool_t, vk_context.staticDescriptorPools[i]); }
+	    //{ VKQUEUE_ALLOC(VKDescriptorPool_t, vk_context.staticDescriptorPools[i]); }
 	}*/
 }
 
@@ -1669,7 +1669,7 @@ VKHandle_t VK_CreateDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorP
 	return VKHANDLE_INVALID;
 }
 
-VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers)
+/*VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers)
 {
     VkDescriptorSetAllocateInfo descriptorSetAllocateInfo;
     VKZERO(descriptorSetAllocateInfo);
@@ -1700,7 +1700,7 @@ VKHandle_t VK_CreateStaticDescriptorSet(VkDescriptorSet **descriptorSet, VkDescr
     HANDLE_VK_ERROR_EXIT(result, "vkAllocateDescriptorSets");
 
     return VKHANDLE_INVALID;
-}
+}*/
 
 void VK_BlitColorImage(VKImage_t *dstImage, const VKImage_t *srcImage)
 {
@@ -3050,10 +3050,10 @@ int VK_BeginFrame()
     VK_BeginCommandBuffer();
     // 发送将交换链图像布局转为附件布局命令
     VK_SwapchainColorImageToAttachment();
-    // 发送开始主渲染通道的命令
-    //VK_BeginRenderPass();
     // 重置为使用初始渲染通道
     vk_context.renderPassStage = RS_DONT_CARE;
+    // 发送开始主渲染通道的命令
+    //VK_BeginRenderPass();
 
     return vk_context.frameIndex;
 }
@@ -3149,7 +3149,7 @@ VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, 
             _vkc_value->usedDescriptorSets = 0;
             _vkc_value->usedUniforms = 0;
             _vkc_value->usedSamplers = 0;
-            VKZERO(_vkc_value->descriptorSets);
+            VKARRZERO(_vkc_value->descriptorSets);
         }
         descriptorPool = _vkc_value;
     }
@@ -3167,7 +3167,7 @@ VKHandle_t VK_AllocDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, 
     return vk_context.currentDescriptorPool.used * IDVK_MAX_DESCRIPTOR_POOL_SETS + index;
 }
 
-VKHandle_t VK_AllocStaticDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers)
+/*VKHandle_t VK_AllocStaticDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *pool, int numUniforms, int numSamplers)
 {
     VKASSERT_THREAD;
     VKDescriptorPool_t *descriptorPool = vk_context.currentStaticDescriptorPool.num > 0 ? &VKQUEUE_CURRENT(VKDescriptorPool_t, vk_context.currentStaticDescriptorPool) : NULL;
@@ -3199,7 +3199,7 @@ VKHandle_t VK_AllocStaticDescriptorSet(VkDescriptorSet **set, VkDescriptorPool *
     if(pool)
         *pool = descriptorPool->descriptorPool;
     return vk_context.currentStaticDescriptorPool.used * IDVK_MAX_DESCRIPTOR_POOL_SETS + index;
-}
+}*/
 
 /**
  * 分配一个着色器
@@ -3618,14 +3618,54 @@ void VK_DrawElementsEXT(const VKBuffer_t *buffer, int count, int type, int offse
     vkCmdDrawIndexed(vk_context.currentFrameCommandBuffer, count, 1, 0, 0, 0);
 }
 
-void VK_SwapBufferHandle(VKHandle_t a, VKHandle_t b)
+/**
+ * 交换句柄a和b指向的缓冲区
+ * @param a
+ * @param b
+ */
+void VK_SwapBuffer(VKHandle_t a, VKHandle_t b)
 {
     VKPTRSWAP(VKBuffer_t, vk_context.buffers.list[a], vk_context.buffers.list[b])
 }
 
-void VK_SwapImageHandle(VKHandle_t a, VKHandle_t b)
+/**
+ * 交换句柄a和b指向的图像
+ * @param a
+ * @param b
+ */
+void VK_SwapImage(VKHandle_t a, VKHandle_t b)
 {
     VKPTRSWAP(VKImage_t, vk_context.images.list[a], vk_context.images.list[b])
+}
+
+/**
+ * 移动句柄src指向的缓冲区到dst, 并清空src缓冲区(用于保证源内存地址不变)
+ * @param src 源
+ * @param dst 目标
+ */
+void VK_MoveBuffer(VKHandle_t src, VKHandle_t dst)
+{
+    // src and dst must allocated
+    assert (VKPOOL_SLOT_NOT_EMPTY(VKBuffer_t, vk_context.buffers, src));
+    assert (VKPOOL_SLOT_NOT_EMPTY(VKBuffer_t, vk_context.buffers, dst));
+
+    memcpy( vk_context.buffers.list[dst], vk_context.buffers.list[src], sizeof(*vk_context.buffers.list[src]));
+    VKPTRZERO(vk_context.buffers.list[src]);
+}
+
+/**
+ * 移动句柄src指向的图像到dst, 并清空src图像(用于保证源内存地址不变)
+ * @param src 源
+ * @param dst 目标
+ */
+void VK_MoveImage(VKHandle_t src, VKHandle_t dst)
+{
+    // src and dst must allocated
+    assert (VKPOOL_SLOT_NOT_EMPTY(VKImage_t, vk_context.images, src));
+    assert (VKPOOL_SLOT_NOT_EMPTY(VKImage_t, vk_context.images, dst));
+
+    memcpy( vk_context.images.list[dst], vk_context.images.list[src], sizeof(*vk_context.images.list[src]));
+    VKPTRZERO(vk_context.images.list[src]);
 }
 
 /**
@@ -4128,6 +4168,7 @@ static void VK_DestroyDescriptors()
 {
 	for(int m = 0; m < NUM_INFLIGHT_FRAME; m++)
 	{
+        Sys_Printf("Destroy descriptor pools(%d): %d/%d\n", m, vk_context.descriptorPools[m].num, vk_context.descriptorPools[m].size);
 	    VKQUEUE_FOREACH(VKDescriptorPool_t, vk_context.descriptorPools[m])
 	    {
 	        vkDestroyDescriptorPool(vk_context.device, vk_context.descriptorPools[m].list[i].descriptorPool, VKCONTEXT_ALLOCATOR);
@@ -4136,7 +4177,7 @@ static void VK_DestroyDescriptors()
         VKQUEUE_FREE(VKDescriptorPool_t, vk_context.descriptorPools[m]);
 	}
 
-    VKZERO(vk_context.descriptorPools);
+    VKARRZERO(vk_context.descriptorPools);
 }
 
 /**
@@ -4662,7 +4703,7 @@ void VK_Init()
     for (int i = 0; i < NUM_INFLIGHT_FRAME; i++)
     {
         VKQUEUE_INIT(VKDescriptorPool_t, vk_context.descriptorPools[i], IDVK_DESCRIPTORPOOL_INIT_SIZE, IDVK_DESCRIPTORPOOL_GRANULARITY);
-        VKQUEUE_INIT(VKDescriptorPool_t, vk_context.staticDescriptorPools[i], IDVK_DESCRIPTORPOOL_INIT_SIZE, IDVK_DESCRIPTORPOOL_GRANULARITY);
+        //VKQUEUE_INIT(VKDescriptorPool_t, vk_context.staticDescriptorPools[i], IDVK_DESCRIPTORPOOL_INIT_SIZE, IDVK_DESCRIPTORPOOL_GRANULARITY);
     }
 
     // 获取所有支持的验证层

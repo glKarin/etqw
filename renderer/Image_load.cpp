@@ -1983,15 +1983,6 @@ void idImage::UploadPrecompressedImage(byte *data, int len)
 	SetImageFilterAndRepeat();
 }
 
-/*
-===============
-ActuallyLoadImage
-
-Absolutely every image goes through this path
-On exit, the idImage will have a valid OpenGL texture number that can be bound
-===============
-*/
-
 int idImage::GenerateImageETC(int width, int height,
                       textureFilter_t filterParm, bool allowDownSizeParm,
                       textureRepeat_t repeatParm, textureDepth_t depthParm)
@@ -2129,6 +2120,14 @@ int idImage::GenerateImageETC(int width, int height,
 	return (failed == 0);
 }
 
+/*
+===============
+ActuallyLoadImage
+
+Absolutely every image goes through this path
+On exit, the idImage will have a valid OpenGL texture number that can be bound
+===============
+*/
 #ifdef _MULTITHREAD
 void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd, bool pending)
 #else
@@ -2180,6 +2179,7 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 #ifdef _VULKAN
 	if(USING_VULKAN && R_VK_DisableUploadImage())
 	{
+		// has called Bind()
 		R_VK_AddLoadImageList(this, checkForPrecompressed);
 		return;
 	}
@@ -2724,9 +2724,9 @@ void idImage::UploadScratch(const byte *data, int cols, int rows)
 #ifdef _VULKAN
 	if(USING_VULKAN)
 	{
-		if(R_VK_DisableUploadImage())
-			R_VK_AddUploadScratchImageList(this, data, cols, rows);
-		else
+		//if(R_VK_DisableUploadImage())
+		//	R_VK_AddUploadScratchImageList(this, data, cols, rows);
+		//else
 			UploadScratch_VK(data, cols, rows);
 		return;
 	}

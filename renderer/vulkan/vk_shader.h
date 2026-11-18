@@ -28,7 +28,7 @@ typedef struct VKShaderProgram_t
     int uboSize_fragment; // CPU端片段着色器Uniform缓冲区大小(未对齐)
 
     int textureTypes[VKBINDING_MAX_TRXTURE_UNITS]; // 绑定的纹理图像
-    const VKImage_t *textures[VKBINDING_MAX_TRXTURE_UNITS]; // 绑定的纹理图像
+    VKImage_t *textures[VKBINDING_MAX_TRXTURE_UNITS]; // 绑定的纹理图像
     int numTextureUnits; // 最大使用的纹理图像数
     int numUBO; // Uniform对象数量
 
