@@ -1051,11 +1051,10 @@ const char * R_VK_StateStr(const VKPipelineStateSet_t stateSet)
 			strcat(str, "???");
 			break;
 	}
-#ifdef VKRENDERPASS_AS_STATE
+
 	strcat(str, "|[RenderPass]: ");
 	int len = strlen(str);
 	idStr::snPrintf(str + len, sizeof(str) - len, "%p", stateSet.renderPass);
-#endif
 
 	return str;
 }

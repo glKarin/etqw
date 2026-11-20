@@ -246,7 +246,10 @@ static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 		}
 	}
 
-	vmaFlushMappedMemoryRanges(vk_context.vmaAllocator, num, mappedMemoryRanges);
+	if (cache->bufferType == BT_TRANSFER_DST)
+		vmaInvalidateMappedMemoryRanges(vk_context.vmaAllocator, num, mappedMemoryRanges);
+	else
+		vmaFlushMappedMemoryRanges(vk_context.vmaAllocator, num, mappedMemoryRanges);
 #else
 	VkMappedMemoryRange *mappedMemoryRanges = (VkMappedMemoryRange *)VKMALLOCT(sizeof(*mappedMemoryRanges) * num, VKBufferQueue_t::VmaMappedMemoryRange);
 	VKPTRNZERO(mappedMemoryRanges, num);

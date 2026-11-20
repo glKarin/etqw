@@ -75,6 +75,8 @@
 
 #endif
 
+//#define loadFramebuffers framebuffers
+
 #define currentSwapchainImage swapchain.framebuffers[vk_context.swapchain.imageIndex].image
 #define currentSwapchainDepthStencilImage swapchain.framebuffers[vk_context.swapchain.imageIndex].depthStencilImage
 #define currentFrameImageAvailableSemaphore imageAvailableSemaphores[vk_context.frameIndex]
@@ -849,7 +851,6 @@ void VK_GetSwapchainImages()
     {
         image = &vk_context.swapchain.framebuffers[i].image;
         vk_context.swapchain.framebuffers[i].image.image = images[i];
-        vk_context.swapchain.loadFramebuffers[i].image.image = images[i];
 		image->format = (VkFormat)vk_context.swapchain.format;
 		image->width = vk_context.swapchain.width;
 		image->height = vk_context.swapchain.height;
@@ -860,6 +861,7 @@ void VK_GetSwapchainImages()
 		image->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		image->currentImageView = 0;
 		image->type = IA_COLOR;
+        vk_context.swapchain.loadFramebuffers[i].image = *image;
     }
 
     VKARRAY_FREE2(VkImage, images, numImages);
@@ -895,10 +897,12 @@ void VK_CreateSwapchainFramebuffers()
         result = vkCreateFramebuffer(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.swapchain.framebuffers[i].framebuffer);
         HANDLE_VK_ERROR_EXIT(result, "vkCreateFramebuffer");
 
+#if 1
         vk_context.swapchain.loadFramebuffers[i].depthStencilImage = vk_context.swapchain.framebuffers[i].depthStencilImage;
         createInfo.renderPass = vk_context.loadRenderPass; // 渲染通道
         result = vkCreateFramebuffer(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.swapchain.loadFramebuffers[i].framebuffer);
         HANDLE_VK_ERROR_EXIT(result, "vkCreateFramebuffer");
+#endif
     }
 }
 
@@ -944,7 +948,7 @@ void VK_CreateSwapchain()
     createInfo.imageExtent.width = vk_context.swapchain.width; // 交换链图像宽度
     createInfo.imageExtent.height = vk_context.swapchain.height; // 交换链图像高度
     createInfo.imageArrayLayers = 1; // 交换链图像层数
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // 交换链图像用法
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT/* | VK_IMAGE_USAGE_TRANSFER_DST_BIT*/; // 交换链图像用法
 
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.queueFamilyIndexCount = 1; // 队列簇数量
@@ -1114,22 +1118,23 @@ static void VK_CreateLoadRenderPass()
 
     // 子通道阶段依赖
     VkSubpassDependency subpassDependencys[2];
-	VKZERO(subpassDependencys);
+	VKARRZERO(subpassDependencys);
     // 颜色通道
     subpassDependencys[0].srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
     subpassDependencys[0].dstSubpass = 0; // 进入子通道0
-    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-    subpassDependencys[0].srcAccessMask = 0;
-    subpassDependencys[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    subpassDependencys[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+    subpassDependencys[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+    subpassDependencys[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    subpassDependencys[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 
     // 深度通道
     subpassDependencys[1].srcSubpass = 0; // 当前从子通道0进入
     subpassDependencys[1].dstSubpass = VK_SUBPASS_EXTERNAL; // 进入子通道外部
-    subpassDependencys[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    subpassDependencys[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     subpassDependencys[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    subpassDependencys[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // 管线结束
-    subpassDependencys[1].dstAccessMask = 0;
+    subpassDependencys[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    subpassDependencys[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     VkRenderPassCreateInfo createInfo;
     VKZERO(createInfo);
@@ -1143,6 +1148,11 @@ static void VK_CreateLoadRenderPass()
 
     VkResult result = vkCreateRenderPass(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.loadRenderPass);
     HANDLE_VK_ERROR_EXIT(result, "vkCreateRenderPass");
+}
+
+VkRenderPass VK_GetCurrentRenderPass()
+{
+    return vk_context.inRenderPass ? (vk_context.renderPassStage > RSS_CLEAR_OR_DONT_CARE ? vk_context.loadRenderPass : vk_context.renderPass) : VK_NULL_HANDLE;
 }
 
 /**
@@ -1198,18 +1208,18 @@ void VK_CreateRenderPass()
     // 颜色通道
     subpassDependencys[0].srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
     subpassDependencys[0].dstSubpass = 0; // 进入子通道0
-    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT; // VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+    subpassDependencys[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     subpassDependencys[0].srcAccessMask = 0;
-    subpassDependencys[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    subpassDependencys[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     subpassDependencys[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     // 深度通道
     subpassDependencys[1].srcSubpass = 0; // 当前从子通道0进入
     subpassDependencys[1].dstSubpass = VK_SUBPASS_EXTERNAL; // 进入子通道外部
-    subpassDependencys[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    subpassDependencys[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     subpassDependencys[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-    subpassDependencys[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT; // 管线结束
-    subpassDependencys[1].dstAccessMask = 0;
+    subpassDependencys[1].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    subpassDependencys[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     VkRenderPassCreateInfo createInfo;
     VKZERO(createInfo);
@@ -2189,7 +2199,7 @@ void VK_BeginRenderPass()
     VKZERO(renderPassBeginInfo);
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     // first using don't care on beginning
-	if(vk_context.renderPassStage == RS_DONT_CARE)
+	if(vk_context.renderPassStage == RSS_NONE)
 	{
 	    VKZERO(clearValues);
 	    clearValues[0].color.float32[0] = 1.0f;
@@ -2595,10 +2605,7 @@ void VK_DepthStencilImageTransferDstToSampler(VKImage_t *image, int mask)
  */
 void VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY)
 {
-    const bool inRenderPass = vk_context.inRenderPass;
-
-    if (inRenderPass)
-	    VK_EndRenderPass();
+    IDVK_CHECK_RENDERPASS_IDLE();
 
     VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
 
@@ -2639,14 +2646,12 @@ void VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int 
     VK_SwapchainColorImageToAttachment();
 
     VK_ImageTransferDstToSampler(image);
-
-    if (inRenderPass)
-        VK_BeginRenderPass();
 }
 
 static void VK_SwapchainImageToCopy2(VkCommandBuffer cmd)
 {
 	IDVK_CHECK_RENDERPASS_IDLE();
+
     VkImageSubresourceRange subresourceRange;
     VKZERO(subresourceRange);
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -2706,10 +2711,7 @@ static void VK_SwapchainImageToAttachment2(VkCommandBuffer cmd)
  */
 void VK_CopyColorAttachmentImageToBuffer(VKBuffer_t *buffer, int x, int y, int width, int height, int offset, int cols, int rows, VkCommandBuffer cmd)
 {
-    const bool inRenderPass = vk_context.inRenderPass;
-
-    if (inRenderPass)
-        VK_EndRenderPass();
+	IDVK_CHECK_RENDERPASS_IDLE();
 
     VK_SwapchainImageToCopy2(cmd);
 
@@ -2738,17 +2740,11 @@ void VK_CopyColorAttachmentImageToBuffer(VKBuffer_t *buffer, int x, int y, int w
     vkCmdCopyImageToBuffer(cmd, vk_context.currentSwapchainImage.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, buffer->buffer, 1, &bufferImageCopy);
 
     VK_SwapchainImageToAttachment2(cmd);
-
-    if (inRenderPass)
-        VK_BeginRenderPass();
 }
 
 void VK_BlitColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, bool flipY)
 {
-    const bool inRenderPass = vk_context.inRenderPass;
-
-    if (inRenderPass)
-	    VK_EndRenderPass();
+	IDVK_CHECK_RENDERPASS_IDLE();
 
     VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
 
@@ -2793,17 +2789,11 @@ void VK_BlitColorAttachmentImage(VKImage_t *image, int x, int y, int width, int 
     VK_SwapchainColorImageToAttachment();
 
     VK_ImageTransferDstToSampler(image);
-
-    if (inRenderPass)
-        VK_BeginRenderPass();
 }
 
 void VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int mask)
 {
-    const bool inRenderPass = vk_context.inRenderPass;
-
-    if (inRenderPass)
-        VK_EndRenderPass();
+	IDVK_CHECK_RENDERPASS_IDLE();
 
     VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
 
@@ -2850,17 +2840,11 @@ void VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int widt
     VK_SwapchainDepthStencilImageToAttachment(mask);
 
     VK_DepthStencilImageTransferDstToSampler(image, mask);
-
-    if (inRenderPass)
-        VK_BeginRenderPass();
 }
 
 void VK_BlitDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask, bool flipY)
 {
-    const bool inRenderPass = vk_context.inRenderPass;
-
-    if (inRenderPass)
-	    VK_EndRenderPass();
+	IDVK_CHECK_RENDERPASS_IDLE();
 
     VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
 
@@ -2911,9 +2895,6 @@ void VK_BlitDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int widt
     VK_SwapchainDepthStencilImageToAttachment(mask);
 
     VK_DepthStencilImageTransferDstToSampler(image, mask);
-
-    if (inRenderPass)
-        VK_BeginRenderPass();
 }
 
 /**
@@ -3051,7 +3032,7 @@ int VK_BeginFrame()
     // 发送将交换链图像布局转为附件布局命令
     VK_SwapchainColorImageToAttachment();
     // 重置为使用初始渲染通道
-    vk_context.renderPassStage = RS_DONT_CARE;
+    vk_context.renderPassStage = RSS_NONE;
     // 发送开始主渲染通道的命令
     //VK_BeginRenderPass();
 
@@ -3913,13 +3894,113 @@ void VK_Clear(int mask, float r, float g, float b, float a, float depth, int ste
     vkCmdClearAttachments(vk_context.currentFrameCommandBuffer, numClearAttachments, clearAttachments, 1, &clearRect);
 }
 
+static void VK_SwapchainColorImageToTransferDst()
+{
+    if (vk_context.currentSwapchainImage.layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        return;
+
+	IDVK_CHECK_RENDERPASS_IDLE();
+    assert(vk_context.currentSwapchainImage.layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
+
+    VkImageSubresourceRange subresourceRange;
+    VKZERO(subresourceRange);
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = 1;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = 1;
+
+    VkImageMemoryBarrier imageMemoryBarrier;
+    VKZERO(imageMemoryBarrier);
+    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.image = vk_context.currentSwapchainImage.image;
+    imageMemoryBarrier.subresourceRange = subresourceRange;
+    imageMemoryBarrier.srcAccessMask = 0;
+    imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imageMemoryBarrier.oldLayout = vk_context.currentSwapchainImage.layout;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+    vkCmdPipelineBarrier(cmd, 
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0,
+                         NULL, 1, &imageMemoryBarrier);
+	vk_context.currentSwapchainImage.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+}
+
+static void VK_SwapchainColorImageToAttachment2()
+{
+    if (vk_context.currentSwapchainImage.layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+        return;
+
+	IDVK_CHECK_RENDERPASS_IDLE();
+    assert(vk_context.currentSwapchainImage.layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
+
+    VkImageSubresourceRange subresourceRange;
+    VKZERO(subresourceRange);
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = 1;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = 1;
+
+    VkImageMemoryBarrier imageMemoryBarrier;
+    VKZERO(imageMemoryBarrier);
+    imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageMemoryBarrier.image = vk_context.currentSwapchainImage.image;
+    imageMemoryBarrier.subresourceRange = subresourceRange;
+    imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imageMemoryBarrier.dstAccessMask = 0;
+    imageMemoryBarrier.oldLayout = vk_context.currentSwapchainImage.layout;
+    imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    vkCmdPipelineBarrier(cmd, 
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, NULL, 0,
+                         NULL, 1, &imageMemoryBarrier);
+	vk_context.currentSwapchainImage.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+}
+
+void VK_ClearSwapchainColorImage(float r, float g, float b, float a)
+{
+	IDVK_CHECK_RENDERPASS_IDLE();
+
+	VK_SwapchainColorImageToTransferDst();
+
+    VkCommandBuffer cmd = vk_context.currentFrameCommandBuffer;
+
+    VkImageSubresourceRange subresourceRange;
+    VKZERO(subresourceRange);
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = 1;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = 1;
+
+	VkClearColorValue clearValue;
+	VKZERO(clearValue);
+    clearValue.float32[0] = r;
+    clearValue.float32[1] = g;
+    clearValue.float32[2] = b;
+    clearValue.float32[3] = a;
+
+	vkCmdClearColorImage(cmd, vk_context.currentSwapchainImage.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearValue, 1, &subresourceRange);
+
+	VK_SwapchainColorImageToAttachment2();
+}
+
 /**
  * 清空当前渲染通道的帧缓冲区的附件(指定范围)
  */
 void VK_ClearEXT(int mask, float r, float g, float b, float a, float depth, int stencil, int x, int y, int width, int height)
 {
     VkClearAttachment clearAttachments[2];
-    VKZERO(clearAttachments);
+    VKARRZERO(clearAttachments);
     int numClearAttachments = 0;
 
     if (mask & VK_IMAGE_ASPECT_COLOR_BIT)

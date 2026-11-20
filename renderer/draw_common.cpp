@@ -1343,7 +1343,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
                     newStageAttrIsSet[index] = true;
                 }
 
+#ifdef _VULKAN
+                if(!newStageUniformIsSet[index] || USING_VULKAN)
+#else
                 if(!newStageUniformIsSet[index])
+#endif
                 {
                     RB_STD_T_SetNewShaderPassesUniforms(surf, rb_MVP);
                     newStageUniformIsSet[index] = true;
@@ -1361,7 +1365,11 @@ void RB_STD_T_RenderShaderPasses(const drawSurf_t *surf)
                     customNewStageAttrIsSet.Append(index);
                 }
 
+#ifdef _VULKAN
+               if(customNewStageUniformIsSet.FindIndex(index) < 0 || USING_VULKAN)
+#else
                if(customNewStageUniformIsSet.FindIndex(index) < 0)
+#endif
                 {
                     RB_STD_T_SetNewShaderPassesUniforms(surf, rb_MVP);
                     customNewStageUniformIsSet.Append(index);

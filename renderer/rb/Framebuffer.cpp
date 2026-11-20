@@ -651,13 +651,7 @@ void Framebuffer::BindNull()
 		{
 			backEnd.glState.currentFramebuffer->Unbind_VK();
 		}
-		if (vk_context.inCommandRecording)
-		{
-			if (!vk_context.inRenderPass)
-			{
-				VK_BeginRenderPass();
-			}
-		}
+		R_VK_BeginMainRenderPass();
 		return;
 	}
 #endif
@@ -675,13 +669,7 @@ void Framebuffer::Default()
 	{
 		if (vk_context.inRenderFrame)
 		{
-			if (vk_context.inCommandRecording)
-			{
-				if (!vk_context.inRenderPass)
-				{
-					VK_BeginRenderPass();
-				}
-			}
+			R_VK_BeginMainRenderPass();
 		}
 		return;
 	}

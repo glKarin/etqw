@@ -130,7 +130,7 @@ void VKGL_FUNC(glReadPixels) (GLint x, GLint y, GLsizei width, GLsizei height, G
 	//VK_WaitIdle();
 
 	//VK_ReadBuffer(map.buffer, pixels, map.offset, map.size, map.ptr);
-	memcpy(pixels, map.ptr, map.size);
+	memcpy(pixels, map.ptr, size);
 
 #if 0
 

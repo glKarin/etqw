@@ -520,13 +520,17 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
     colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
     colorBlendAttachmentState.dstColorBlendFactor = dstBlendFactor;
     colorBlendAttachmentState.dstAlphaBlendFactor = dstBlendFactor;
-    colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+
+	assert(VK_NULL_HANDLE != program->currentState.renderPass);
+	VkRenderPass pipelineRenderPass = program->currentState.renderPass;
+	int attachmentCount = vk_context.inRenderPass ? 1 : 0;
 
 	VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo;
 	VKZERO(colorBlendStateCreateInfo);
     colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
-    colorBlendStateCreateInfo.attachmentCount = 1;
+    colorBlendStateCreateInfo.attachmentCount = attachmentCount;
     colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
     colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
     colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
@@ -549,15 +553,6 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.dynamicStateCount = COUNT_OF(dynamicStates);
     dynamicStateCreateInfo.pDynamicStates = dynamicStates;
-
-#ifdef VKRENDERPASS_AS_STATE
-	assert(VK_NULL_HANDLE != program->currentState.renderPass);
-	VkRenderPass pipelineRenderPass = program->currentState.renderPass;
-#else
-	//VkRenderPass pipelineRenderPass = program->type == SHADER_DEPTH || program->type == SHADER_DEPTH_PERFORATED ? vk_backend.shadowMappingRenderPass : vk_context.renderPass;
-	assert(VK_NULL_HANDLE != vk_backend.currentRenderPass);
-	VkRenderPass pipelineRenderPass = VK_NULL_HANDLE != vk_backend.currentRenderPass ? vk_backend.currentRenderPass : vk_context.renderPass;
-#endif
 
 	// 创建渲染管线
 	VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
@@ -600,13 +595,13 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
 static void R_VK_FindProgram(VKShaderProgram_t *program)
 {
 	VKMAP_FINDINDEX(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool, vk_backend.state, GLOBAL_ST_EQUALS);
+	program->currentState = vk_backend.state;
 	if (_vkc_index >= 0 && _vkc_index < program->pipelinePool.num)
 	{
 		program->pipeline = &program->pipelinePool.list[_vkc_index];
 	}
 	else
 	{
-		program->currentState = vk_backend.state;
 		R_VK_CreatePipeline(program);
 		VKMAP_ALLOC(VKPipeline_t, VKPipelineStateSet_t, program->pipelinePool);
 		*_vkc_value = *program->pipeline;
@@ -647,6 +642,8 @@ static void R_VK_BindPipeline()
 static void R_VK_SyncPipelineState()
 {
 	ASSERT_PROGRAM;
+
+	assert(VK_NULL_HANDLE != vk_backend.state.renderPass);
 
 	if (GLOBAL_ST_EQUALS(vk_backend.currentProgram->currentState, vk_backend.state) && vk_backend.currentPipeline && vk_backend.currentProgram->pipeline == vk_backend.currentPipeline) {
 		return;
@@ -853,6 +850,9 @@ static void R_VK_InitBackend()
     vk_backend.dynamicState.stencilReference[0] = vk_backend.dynamicState.stencilReference[1] = 0;
     vk_backend.dynamicState.stencilMask[0] = vk_backend.dynamicState.stencilMask[1] = 0xFFFFFFFFu;
     vk_backend.dynamicState.stencilWriteMask[0] = vk_backend.dynamicState.stencilWriteMask[1] = 0xFFFFFFFFu;
+
+	R_VK_GetRenderPass(RST_MAIN_CLEAR);
+	R_VK_GetRenderPass(RST_MAIN_LOAD);
 }
 
 /**
@@ -1129,6 +1129,20 @@ static void R_VK_DestroyPurgeImages()
 	vk_backend.purgeImages[vk_context.frameIndex].num = 0;
 }
 
+static void R_VK_ProgramsUnbind(VKImage_t *image)
+{
+	VKLIST_FOREACH(VKShaderProgram_t *, vk_backend.programs)
+	{
+		for (int m = 0; m < vk_backend.programs.list[i]->numTextureUnits; m++)
+		{
+			if (vk_backend.programs.list[i]->textures[m] == image)
+			{
+				vk_backend.programs.list[i]->textures[m] = NULL;
+			}
+		}
+	}
+}
+
 /**
  * 如果图像被当前绑定, 则解绑
  * @param image 图像
@@ -1144,16 +1158,7 @@ void R_VK_Unbind(VKImage_t *image)
 		}
 	}
 
-	VKLIST_FOREACH(VKShaderProgram_t *, vk_backend.programs)
-	{
-		for (int m = 0; m < vk_backend.programs.list[i]->numTextureUnits; m++)
-		{
-			if (vk_backend.programs.list[i]->textures[m] == image)
-			{
-				vk_backend.programs.list[i]->textures[m] = NULL;
-			}
-		}
-	}
+	R_VK_ProgramsUnbind(image);
 }
 
 /**
@@ -1302,7 +1307,7 @@ void R_VK_ResetGlobalState()
 		VKZERO(vk_backend.programs.list[i]->uniformBuffer_vertex);
 		VKZERO(vk_backend.programs.list[i]->uniformBuffer_fragment);
 	}
-	R_VK_SetRenderPass(vk_context.renderPass, 0, 0);
+	R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
 }
 
 /**
@@ -2040,17 +2045,38 @@ void R_VK_SetRenderSize(int w, int h)
  */
 void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h)
 {
-	vk_backend.currentRenderPass = renderPass;
-#ifdef VKRENDERPASS_AS_STATE
-	vk_backend.state.renderPass = vk_backend.currentRenderPass;
-#endif
+	vk_backend.state.renderPass = renderPass;
 	R_VK_SetRenderSize(w, h);
 }
 
-static const float ColorModulate = 1.0f;
+void R_VK_BeginMainRenderPass()
+{
+	if (vk_context.inCommandRecording)
+	{
+		if (!vk_context.inRenderPass)
+		{
+			VK_BeginRenderPass();
+			R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
+		}
+	}
+}
+
+void R_VK_EndMainRenderPass()
+{
+	if (vk_context.inCommandRecording)
+	{
+		if (vk_context.inRenderPass)
+		{
+			VK_EndRenderPass();
+			R_VK_SetRenderPass(VK_NULL_HANDLE, 0, 0);
+		}
+	}
+}
 
 void R_VK_UseVertexColor(bool enable)
 {
+	static const float ColorModulate = 1.0f;
+
 	if(enable)
 	{
 		R_VK_Uniform1f(VKGLOBAL_PARM_OFFSET(colorModulate), ColorModulate);
@@ -2086,6 +2112,7 @@ void R_VK_CreateNewImage(VKHandle_t texnum, VKImage_t **image)
  */
 void R_VK_ReCreateImage(VKHandle_t texnum)
 {
+	R_VK_ProgramsUnbind(vk_context.images.list[texnum]);
 	// Allocate new temp image slot
 	VKImage_t *newImage;
 	VKHandle_t newHandle = VK_AllocImage(&newImage);
@@ -2123,19 +2150,38 @@ void R_VK_SetObjectName(int objType, uint64_t handle, const char *name, ...)
 		VK_SetObjectName(objType, handle, "");
 }
 
-void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight)
+void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, bool flipY)
 {
+	const bool inRenderPass = vk_context.inRenderPass;
+
+	if(inRenderPass)
+		VK_EndRenderPass();
+
 #if 0
 	if(width == dstWidth && height == dstHeight)
 		VK_CopyColorAttachmentImage(image, x, y, width, height, dstX, dstY);
 	else
 #endif
-	//VK_BlitColorAttachmentImage(image, x, y + height, width, y, dstX, dstY, dstWidth, dstHeight, false);
-	VK_BlitColorAttachmentImage(image, x, y, width, height, dstX, dstY, dstWidth, dstHeight, false);
+	if(flipY)
+		//VK_BlitColorAttachmentImage(image, x, y, width, height, dstX, dstY + dstHeight, dstWidth, dstY, false);
+		VK_BlitColorAttachmentImage(image, x, y, width, height, dstX, dstY + dstHeight, dstWidth, -dstHeight, false);
+	else
+		VK_BlitColorAttachmentImage(image, x, y, width, height, dstX, dstY, dstWidth, dstHeight, false);
+
+	if(inRenderPass)
+	{
+		VK_BeginRenderPass();
+		R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
+	}
 }
 
 void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask)
 {
+	const bool inRenderPass = vk_context.inRenderPass;
+
+	if(inRenderPass)
+		VK_EndRenderPass();
+
 #if 0
 	if(width == dstWidth && height == dstHeight)
 		VK_CopyDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, mask);
@@ -2143,14 +2189,19 @@ void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int wi
 		VK_BlitDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, dstWidth, dstHeight, mask, false);
 #endif
 	VK_CopyDepthStencilAttachmentImage(image, x, y, width, height, dstX, dstY, mask);
+
+	if(inRenderPass)
+	{
+		VK_BeginRenderPass();
+		R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
+	}
 }
 
 #ifdef _SHADOW_MAPPING
-VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load )
+static VkRenderPass R_VK_CreateShadowMappingRenderPass( int index )
 {
-	const int index = load ? RS_LOAD : RS_DONT_CARE;
-	if (VK_NULL_HANDLE != vk_backend.shadowMappingRenderPass[index])
-		return vk_backend.shadowMappingRenderPass[index];
+	//const int index = load ? RST_SHADOW_MAPPING_LOAD : RST_SHADOW_MAPPING_CLEAR;
+	const bool load = index == RST_SHADOW_MAPPING_LOAD;
 
 	VkRenderPass *renderPass;
 	VK_AllocRenderPass(&renderPass);
@@ -2160,7 +2211,7 @@ VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load )
     //附件
     attachment.format = VK_FORMAT_D24_UNORM_S8_UINT; // 颜色图像格式
     attachment.samples = VK_SAMPLE_COUNT_1_BIT; // 采样数
-	attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // 图像附件初始布局
+	attachment.initialLayout = load ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED; // 图像附件初始布局
 
 	attachment.loadOp = load ? VK_ATTACHMENT_LOAD_OP_LOAD : VK_ATTACHMENT_LOAD_OP_CLEAR; // 深度附件加载时执行操作
 	attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // 深度附件存储时的操作
@@ -2188,10 +2239,19 @@ VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load )
     // 颜色通道
     subpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL; // 当前从子通道外部进入
     subpassDependency.dstSubpass = 0; // 进入子通道0
-    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	subpassDependency.srcAccessMask = 0;
+	if (load)
+	{
+		subpassDependency.srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT/* | VK_PIPELINE_STAGE_TRANSFER_BIT*/;
+		subpassDependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT/* | VK_ACCESS_TRANSFER_WRITE_BIT*/;
+		subpassDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	}
+	else
+	{
+		subpassDependency.srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		subpassDependency.srcAccessMask = 0;
+		subpassDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	}
 	subpassDependency.dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-	subpassDependency.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     VkRenderPassCreateInfo createInfo;
     VKZERO(createInfo);
@@ -2207,8 +2267,31 @@ VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load )
     HANDLE_VK_ERROR_EXIT(result, "vkCreateRenderPass");
     VKDEBUG_SET_NAME(VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)*renderPass, "shadowMappingRenderPass_%d", index);
 
-	vk_backend.shadowMappingRenderPass[index] = *renderPass;
-
-	return vk_backend.shadowMappingRenderPass[index];
+	return *renderPass;
 }
 #endif
+
+static VkRenderPass R_VK_GetMainRenderPass( int rst )
+{
+	return rst == RST_MAIN_LOAD ? vk_context.loadRenderPass : vk_context.renderPass;
+}
+
+typedef VkRenderPass (* createRenderPass_f)(int rst);
+
+static createRenderPass_f renderPassLoadFuncs[RST_END] = {
+	&R_VK_GetMainRenderPass, &R_VK_GetMainRenderPass,
+	&R_VK_CreateShadowMappingRenderPass, &R_VK_CreateShadowMappingRenderPass,
+};
+static_assert(COUNT_OF(renderPassLoadFuncs) == RST_END, "");
+
+VkRenderPass R_VK_GetRenderPass( int rst )
+{
+	assert(rst >= RST_MAIN_CLEAR && rst < RST_END);
+
+	if (VK_NULL_HANDLE != vk_backend.stageRenderPasses[rst])
+		return vk_backend.stageRenderPasses[rst];
+
+	VkRenderPass renderPass = renderPassLoadFuncs[rst](rst);
+	vk_backend.stageRenderPasses[rst] = renderPass;
+	return renderPass;
+}

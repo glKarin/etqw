@@ -93,7 +93,7 @@ void idFramebuffer::Bind_VK()
 	    {
 	        if (vk_context.inRenderPass)
 	        {
-	            VK_EndRenderPass();
+	            R_VK_EndMainRenderPass();
 	            R_VK_DepthStencilImageToAttachment(vk_framebuffer.image, IA_DEPTH_STENCIL);
 	        }
 	    }
@@ -110,19 +110,14 @@ void idFramebuffer::Unbind_VK()
 	        vk_framebuffer.layer = -1;
 
 	        R_VK_DepthStencilImageToSampler(vk_framebuffer.image, IA_DEPTH_STENCIL);
-
-	        /*if (!vk_context.inRenderPass)
-	        {
-	            VK_BeginRenderPass();
-	        }*/
 	    }
 	}
-	R_VK_SetRenderPass(vk_context.renderPass, 0, 0);
+	R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
 }
 
 void idFramebuffer::BindDirectly_VK()
 {
-     VK_EndRenderPass();
+	 R_VK_EndMainRenderPass();
 }
 
 void idFramebuffer::UnbindDirectly_VK()
@@ -131,8 +126,7 @@ void idFramebuffer::UnbindDirectly_VK()
 
      vk_framebuffer.layer = -1;
 
-    R_VK_SetRenderPass(vk_context.renderPass, 0, 0);
-     //VK_BeginRenderPass();
+    R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
 }
 
 void idFramebuffer::AttachImage2D_VK( int target, const idImage* image, int index )
@@ -156,7 +150,7 @@ void idFramebuffer::AttachImageDepthLayer_VK( const idImage* image, int layer )
         Bind_VK();
 
 		EndRenderPass_VK();
-        vk_framebuffer.stage = clear ? RS_DONT_CARE : RS_LOAD;
+        vk_framebuffer.stage = clear ? RSS_CLEAR_OR_DONT_CARE : RSS_LOAD;
         vk_framebuffer.layer = layer;
         BeginRenderPass_VK();
     }
@@ -263,17 +257,25 @@ void idFramebuffer::CreateFramebuffer_VK( const idImage* image, int layer )
 
     VKRenderFramebufferStage_t *stage = &vk_framebuffer.framebuffers[clear ? 0 : 1];
 
-    if (stage->framebuffer[layer])
-        return;
-
-    VK_AllocFramebuffer(&stage->framebuffer[layer]);
-
     VKImage_t *vkImg = (VKImage_t *)image->vk_image;
     const bool isDepth = vkImg->type > IA_COLOR;
 
+    if (stage->framebuffer[layer])
+	{
+		if (isDepth)
+			stage->framebuffer[layer]->depthStencilImage = *vkImg;
+		else
+			stage->framebuffer[layer]->image = *vkImg;
+
+		vk_framebuffer.image = vkImg;
+        return;
+	}
+
+    VK_AllocFramebuffer(&stage->framebuffer[layer]);
+
     if (VK_NULL_HANDLE == stage->renderPass)
     {
-        stage->renderPass = R_VK_CreateShadowMappingRenderPass(!clear);
+        stage->renderPass = R_VK_GetRenderPass(clear ? RST_SHADOW_MAPPING_CLEAR : RST_SHADOW_MAPPING_LOAD);
     }
 
     if (VK_NULL_HANDLE == vk_framebuffer.imageView[layer])

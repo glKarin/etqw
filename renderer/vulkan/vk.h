@@ -96,9 +96,9 @@ typedef int VKHandle_t;
  */
 typedef enum VKRenderPassStage_e
 {
-	RS_DONT_CARE = 0, // 忽略之前的缓冲区数据
-	RS_LOAD = 1, // 读取之前的缓冲区数据
-	RS_CLEAR = 2, // 清空之前的缓冲区数据
+	RSS_NONE = -1, // 未渲染
+	RSS_CLEAR_OR_DONT_CARE = 0, // 第一次渲染
+	RSS_LOAD = 1, // 读取之前的缓冲区数据
 } VKRenderPassStage_t;
 
 /**
@@ -360,6 +360,7 @@ void VK_WaitFence(VkFence fence);
 void VK_WaitFrameFence();
 bool VK_IsExtensionSupported(const char *name);
 void VK_WaitFrameIdle();
+VkRenderPass VK_GetCurrentRenderPass();
 
 // debug
 void VK_SetObjectName(int objType, uint64_t handle, const char* name);

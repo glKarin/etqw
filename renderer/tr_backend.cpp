@@ -664,6 +664,11 @@ const void	RB_CopyRender(const void *data)
 	RB_LogComment("***************** RB_CopyRender *****************\n");
 
 	if (cmd->image) {
+#ifdef _VULKAN
+		if(USING_VULKAN)
+			cmd->image->CopyFramebuffer_VK(cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false, true);
+		else
+#endif
 		cmd->image->CopyFramebuffer(cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false);
 	}
 }

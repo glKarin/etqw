@@ -1087,10 +1087,10 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, true, oldLayers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 			if(rendering)
-				VK_EndRenderPass();
+				R_VK_EndMainRenderPass();
 			R_VK_AllocImageBuffer(vk_image, cols * rows * 4 * 6, data, NULL, NULL);
 			if(rendering)
-				VK_BeginRenderPass();
+				R_VK_BeginMainRenderPass();
 		}
 
 		// no other clamp mode makes sense
@@ -1119,20 +1119,20 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, false, oldLayers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 			if(rendering)
-				VK_EndRenderPass();
+				R_VK_EndMainRenderPass();
 			R_VK_AllocImageBuffer(vk_image, cols * rows * 4, data, NULL, NULL);
 			if(rendering)
-				VK_BeginRenderPass();
+				R_VK_BeginMainRenderPass();
 		} else {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
 			int sizes[] = { cols, rows };
 			int offsets[] = { 0 };
 			if(rendering)
-				VK_EndRenderPass();
+				R_VK_EndMainRenderPass();
 			R_VK_UploadImageSubData(vk_image, cols * rows * 4, data, 0, offsets, sizes);
 			if(rendering)
-				VK_BeginRenderPass();
+				R_VK_BeginMainRenderPass();
 		}
 
 		// these probably should be clamp, but we have a lot of issues with editor
@@ -1148,7 +1148,7 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 CopyFramebuffer_VK
 ====================
 */
-void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer)
+void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer, bool flipY)
 {
 	Bind();
 
@@ -1162,6 +1162,9 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 
 	potWidth = MakePowerOfTwo(imageWidth);
 	potHeight = MakePowerOfTwo(imageHeight);
+
+	// flip Y
+	y = vk_backend.dynamicState.renderHeight - y - imageHeight;
 
 #ifdef _SPLASHDAMAGE
 	int scaled_width = potWidth;
@@ -1189,7 +1192,7 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 			VK_CreateImage(vk_image, imageWidth, imageHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 
-			R_VK_CopyColorAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight);
+			R_VK_CopyColorAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, flipY);
 		} else {
 			//byte	*junk;
 			// we need to create a dummy image with power of two dimensions,
@@ -1203,7 +1206,7 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 
 			//Mem_Free(junk);
 
-			R_VK_CopyColorAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, potWidth, potHeight);
+			R_VK_CopyColorAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, potWidth, potHeight, flipY);
 		}
 		R_VK_Bind(vk_image);
 
@@ -1212,7 +1215,7 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
-		R_VK_CopyColorAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight);
+		R_VK_CopyColorAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, flipY);
 	}
 
 	// if the image isn't a full power of two, duplicate an extra row and/or column to fix bilerps
@@ -1225,6 +1228,28 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 	}
 
 	backEnd.c_copyFrameBuffer++;
+
+#if 0
+	if (imgName.Icmp("_scratch"))
+		return;
+	printf("CCC %d %d %d\n", vk_backend.frameCount, vk_context.frameIndex, vk_context.swapchain.imageIndex);
+	const bool inRenderPass = vk_context.inRenderPass;
+	if (inRenderPass)
+				R_VK_EndMainRenderPass();
+	int width = imageWidth;
+	int height = imageHeight; //vk_context.swapchain.height;
+	int size = width * height * 4;
+	VKBufferMap_t map;
+	R_VK_AllocStageReadBuffer(size, &map);
+	VK_CopyColorAttachmentImageToBuffer(map.buffer, x, y, width, height, map.offset, width, height, vk_buffer.stagingReadBuffer.currentStageCommandBuffer);
+	R_VK_EndStageReadBuffer();
+	if (inRenderPass)
+	R_VK_BeginMainRenderPass();
+
+	byte *pixels = (byte *)malloc(size);
+	memcpy(pixels, map.ptr, size);
+	R_WritePNG(va("berserk/%d.png", vk_backend.frameCount), pixels, width, height, 4, false);
+#endif
 }
 
 /*
@@ -1246,6 +1271,9 @@ void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 	potWidth = MakePowerOfTwo(imageWidth);
 	potHeight = MakePowerOfTwo(imageHeight);
 
+	// flip Y
+	y = vk_backend.dynamicState.renderHeight - y - imageHeight;
+
 	if (uploadWidth != potWidth || uploadHeight != potHeight) {
 #ifdef _SPLASHDAMAGE
 		sourceWidth = potWidth;
@@ -1259,7 +1287,7 @@ void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 			VK_CreateImage(vk_image, imageWidth, imageHeight, depthComponent, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 
-			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
 			VK_ChooseImageView(vk_image, IA_DEPTH);
 		} else {
 			// we need to create a dummy image with power of two dimensions,
@@ -1268,7 +1296,7 @@ void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 			VK_CreateImage(vk_image, imageWidth, imageHeight, depthComponent, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 
-			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageHeight, imageHeight, IA_DEPTH_STENCIL);
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageHeight, imageHeight, IA_DEPTH_STENCIL);
 			VK_ChooseImageView(vk_image, IA_DEPTH);
 		}
 
@@ -1277,7 +1305,7 @@ void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
-		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
 	}
 }
 
@@ -1300,6 +1328,9 @@ void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight
 	potWidth = MakePowerOfTwo(imageWidth);
 	potHeight = MakePowerOfTwo(imageHeight);
 
+	// flip Y
+	y = vk_backend.dynamicState.renderHeight - y - imageHeight;
+
 	if (uploadWidth != potWidth || uploadHeight != potHeight) {
 #ifdef _SPLASHDAMAGE
 		sourceWidth = potWidth;
@@ -1313,7 +1344,7 @@ void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight
 			VK_CreateImage(vk_image, imageWidth, imageHeight, stencilComponent, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 
-			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
 			VK_ChooseImageView(vk_image, IA_STENCIL);
 		} else {
 			// we need to create a dummy image with power of two dimensions,
@@ -1322,7 +1353,7 @@ void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight
 			VK_CreateImage(vk_image, imageWidth, imageHeight, stencilComponent, false, 1, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 
-			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageHeight, imageHeight, IA_DEPTH_STENCIL);
+			R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageHeight, imageHeight, IA_DEPTH_STENCIL);
 			VK_ChooseImageView(vk_image, IA_STENCIL);
 		}
 
@@ -1331,7 +1362,7 @@ void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
-		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, vk_context.swapchain.width, vk_context.swapchain.height, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
 	}
 
 }

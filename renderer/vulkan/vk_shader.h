@@ -37,7 +37,7 @@ typedef struct VKShaderProgram_t
     //int uboUpdateMask; // 更新类型
 
     // 用于数据脏检
-    int frameCount; // 帧数
+    uint32_t frameCount; // 帧数
     globalUniformBufferObjectState_t uboState; // 数据脏检
 
     // 拷贝数据函数: 可能为NULL

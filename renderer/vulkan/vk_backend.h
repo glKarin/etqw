@@ -33,6 +33,21 @@ typedef enum VKTextureUnitType_e
 } VKTextureUnitType_t;
 
 /**
+ * 渲染通道类型
+ */
+typedef enum VKRenderPassType_e
+{
+	RST_MAIN_NONE = -1,
+	RST_MAIN_CLEAR = 0,
+	RST_MAIN_LOAD,
+#ifdef _SHADOW_MAPPING
+	RST_SHADOW_MAPPING_CLEAR,
+	RST_SHADOW_MAPPING_LOAD,
+#endif
+	RST_END,
+} VKRenderPassType_t;
+
+/**
  * 动态属性
  */
 typedef struct VKDynamicState_s
@@ -70,10 +85,9 @@ typedef struct VKBackEnd_s
 
 	VKMAP(VkSampler, VKSamplerKey_t) samplerPool; // 采样器池
 	VKQuery_t query; // 查询对象
-	VkRenderPass currentRenderPass;
 
 	globalUniformBufferObject_t ubo; // 当前Uniform变量
-	int frameCount; // 帧计数
+	uint32_t frameCount; // 帧计数
 	globalUniformBufferObjectState_t uboState; // 当前Uniform缓存状态计数
 	VkDescriptorSet currentDescriptorSet[2]; // 当前绑定的描述符集
 
@@ -81,9 +95,7 @@ typedef struct VKBackEnd_s
 	VKLIST(VKHandle_t) purgeImages[NUM_INFLIGHT_FRAME]; // 延时删除图像列表(实际删除时清空)
 	VKLIST(VKShaderProgram_t *) programs; // 全部渲染管线
 
-#ifdef _SHADOW_MAPPING
-	VkRenderPass shadowMappingRenderPass[2];
-#endif
+	VkRenderPass stageRenderPasses[RST_END];
 
 	bool isMirror;
 	bool initialized; // 是否初始化
@@ -120,7 +132,7 @@ void R_VK_BindType(int type, VKImage_t *image);
 void R_VK_SelectTexture(int unit);
 void R_VK_BindTexture(int unit, VKImage_t *image);
 void R_VK_BindTextureType(int unit, int tut, VKImage_t *image);
-void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight);
+void R_VK_CopyColorAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, bool flipY);
 void R_VK_CopyDepthStencilAttachmentImage(VKImage_t *image, int x, int y, int width, int height, int dstX, int dstY, int dstWidth, int dstHeight, int mask);
 
 #define VKSTATE_STAGE_OFFSET(x) ( IS_SECOND_ST(x) ? offsetof(VKPipelineStateSet_t, st2) : offsetof(VKPipelineStateSet_t, st1) )
@@ -168,8 +180,6 @@ void R_VK_Viewport(int x, int y, int w, int h);
 void R_VK_Scissor(int x, int y, int w, int h);
 void R_VK_LineWidth(float width);
 void R_VK_DepthRange(float minZ, float maxZ);
-void R_VK_SetRenderSize(int w, int h);
-void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h);
 
 void R_VK_UpdateUniformBufferObject();
 void R_VK_BeginFrame();
@@ -184,6 +194,7 @@ void R_VK_DestroyImage(VKHandle_t handle);
 void R_VK_CreateNewImage(VKHandle_t texnum, VKImage_t **image);
 void R_VK_ReCreateImage(VKHandle_t texnum);
 void R_VK_SetObjectName(int objType, uint64_t handle, const char *name, ...);
+
 void R_VK_CmdDraw(int vertexCount, int firstVertex);
 void R_VK_CmdDrawInstance(int vertexCount, int instanceCount, int firstVertex, int firstInstance);
 void R_VK_CmdDrawIndexed(int indexCount, int firstIndex, int vertexOffset);
@@ -192,8 +203,10 @@ void R_VK_CmdBindIndexBuffer(VkBuffer buffer, int offset);
 void R_VK_CmdBindVertexBuffer(VkBuffer pBuffer, VkDeviceSize offset);
 void R_VK_CmdBindVertexBuffers(int bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets);
 
-#ifdef _SHADOW_MAPPING
-VkRenderPass R_VK_CreateShadowMappingRenderPass( bool load );
-#endif
+void R_VK_SetRenderSize(int w, int h);
+void R_VK_SetRenderPass(VkRenderPass renderPass, int w, int h);
+void R_VK_BeginMainRenderPass();
+void R_VK_EndMainRenderPass();
+VkRenderPass R_VK_GetRenderPass( int rst );
 
 #endif //_VULKAN_VKBACKEND_H
