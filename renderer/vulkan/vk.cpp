@@ -3453,7 +3453,7 @@ void VK_DepthBounds(float minz, float maxz)
  */
 void VK_PolygonOffset(float factor, float units)
 {
-    vkCmdSetDepthBias(vk_context.currentFrameCommandBuffer, factor, 0.0f, units);
+    vkCmdSetDepthBias(vk_context.currentFrameCommandBuffer, units, 0.0f, factor);
 }
 
 /**
