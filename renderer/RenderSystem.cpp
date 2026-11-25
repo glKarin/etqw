@@ -1026,6 +1026,10 @@ void idRenderSystemLocal::UnCrop()
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
+#ifdef _VULKANxxx //karin: clear color buffer for vision rendering, _scratch image has alpha channel
+	if(USING_VULKAN)
+		R_AddClearColorCmd();
+#endif
 	currentRenderCrop--;
 
 	if (session->writeDemo) {

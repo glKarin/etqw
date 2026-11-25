@@ -214,3 +214,48 @@ void R_VK_FlipY( float dst[ 16 ], const float src[ 16 ] )
 		dst[ col * 4 + 1 ] = -src[ col * 4 + 1 ];
 	}
 }
+
+#if 0
+/*
+=============
+RB_ClearColor
+
+=============
+*/
+void	RB_ClearColor(const void *data)
+{
+	const setBufferCommand_t	*cmd;
+
+	cmd = (const setBufferCommand_t *)data;
+
+	// clear screen for debugging
+	// automatically enable this with several other debug tools
+	// that might leave unrendered portions of the screen
+	if (r_clear.GetFloat() || idStr::Length(r_clear.GetString()) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool()) {
+		float c[3];
+
+		if (sscanf(r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2]) == 3) {
+			qglClearColor(c[0], c[1], c[2], 1);
+		} else if (r_clear.GetInteger() == 2) {
+			qglClearColor(0.0f, 0.0f,  0.0f, 1.0f);
+		} else if (r_showOverDraw.GetBool()) {
+			qglClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		} else {
+			qglClearColor(0.4f, 0.0f, 0.25f, 1.0f);
+		}
+
+		qglClear(GL_COLOR_BUFFER_BIT);
+	}
+}
+
+void R_AddClearColorCmd(void)
+{
+	setBufferCommand_t *cmd;
+
+	//
+	// draw buffer stuff
+	//
+	cmd = (setBufferCommand_t *)R_GetCommandBuffer(sizeof(*cmd));
+	cmd->commandId = RC_CLEAR_COLOR;
+}
+#endif

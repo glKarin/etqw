@@ -667,6 +667,9 @@ typedef enum {
 #ifdef _SPLASHDAMAGE //karin: copy frontend parms to backend
 		, RC_COPY_PARMS
 #endif
+#ifdef _VULKANxxx
+		, RC_CLEAR_COLOR
+#endif
 } renderCommand_t;
 
 typedef struct {

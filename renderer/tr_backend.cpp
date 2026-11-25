@@ -739,6 +739,11 @@ void RB_ExecuteBackEndCommands(const emptyCommand_t *cmds)
 				RB_CopyParms(cmds);
 				break;
 #endif
+#ifdef _VULKANxxx
+			case RC_CLEAR_COLOR:
+				RB_ClearColor(cmds);
+				break;
+#endif
 			default:
 				common->Error("RB_ExecuteBackEndCommands: bad commandId");
 				break;

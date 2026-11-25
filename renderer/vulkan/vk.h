@@ -108,6 +108,7 @@ typedef enum VKImageUsage_e
 {
 	IU_SAMPLER = 1, // 只读采样
 	IU_ATTACHMENT = 1 << 1, // 帧缓冲区附件
+	IU_COPY_COLOR = 1 << 2, // 帧缓冲区附件
 } VKImageUsage_t;
 
 /**
@@ -409,7 +410,7 @@ void VK_CreateIndexBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateUniformBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateTransferSrcBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
 void VK_CreateTransferDstBuffer(VKBuffer_t *ret, uint32_t size, bool map, bool flush);
-VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers, int baseArrayLayer);
+VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers, int baseArrayLayer, bool ignoreAlpha);
 void VK_CreateSampler(VkSampler *sampler, bool minLinear, bool magLinear, bool mipmapLinear, int repeatS, int repeatT, int repeatR, bool depthCmp, float anisotropy, float lodMax);
 VkShaderModule VK_CreateShaderModule(const uint8_t *data, int length);
 VKHandle_t VK_CreateDescriptorSet(VkDescriptorSet **descriptorSet, VkDescriptorPool *descriptorPool, VkDescriptorSetLayout layouts[], int count, int numUniforms, int numSamplers);

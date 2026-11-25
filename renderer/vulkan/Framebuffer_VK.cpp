@@ -282,7 +282,7 @@ void idFramebuffer::CreateFramebuffer_VK( const idImage* image, int layer )
     {
         VkImageView *imageView = &vk_framebuffer.imageView[layer];
         VK_AllocImageView(&imageView);
-        *imageView = VK_CreateImageView(vkImg->image, vkImg->format, VK_IMAGE_VIEW_TYPE_2D, isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, layer);
+        *imageView = VK_CreateImageView(vkImg->image, vkImg->format, VK_IMAGE_VIEW_TYPE_2D, isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, layer, false);
         vk_framebuffer.imageView[layer] = *imageView;
         VKDEBUG_SET_NAME(VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)vk_framebuffer.imageView[layer], "framebuffer_%s::image_view_%d", fboName.c_str(), layer);
     }

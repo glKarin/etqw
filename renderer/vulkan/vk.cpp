@@ -200,6 +200,7 @@ void VK_GetPhysicalDeviceInfo(VkPhysicalDevice physicalDevice)
 #undef SUPPORT_BOOL
 
 #define SUPPORT_LIMIT(x, name, fmt) Sys_Printf(name " = " fmt "\n", physicalDeviceProperties.limits.x);
+#define SUPPORT_LIMIT_T(x, name, fmt, T) Sys_Printf(name " = " fmt "\n", (T)physicalDeviceProperties.limits.x);
     Sys_Printf("\n");
     Sys_Printf("Check limits: \n");
     SUPPORT_LIMIT(maxImageDimension2D, "Maximum 2D image dimension", "%u");
@@ -212,12 +213,13 @@ void VK_GetPhysicalDeviceInfo(VkPhysicalDevice physicalDevice)
     SUPPORT_LIMIT(maxColorAttachments, "Maximum color attachments", "%u");
     SUPPORT_LIMIT(maxSamplerAnisotropy, "Maximum sampler anisotropy", "%f");
     SUPPORT_LIMIT(minMemoryMapAlignment, "Minimum memory alignment", "%zu");
-    SUPPORT_LIMIT(minTexelBufferOffsetAlignment, "Minimum texel buffer offset alignment", "%llu");
-    SUPPORT_LIMIT(minUniformBufferOffsetAlignment, "Minimum uniform buffer offset alignment", "%llu");
-    SUPPORT_LIMIT(minStorageBufferOffsetAlignment, "Minimum storage buffer offset alignment", "%llu");
-    SUPPORT_LIMIT(optimalBufferCopyOffsetAlignment, "Optimal buffer copy offset alignment", "%llu");
-    SUPPORT_LIMIT(optimalBufferCopyRowPitchAlignment, "Optimal buffer copy row pitch alignment", "%llu");
+    SUPPORT_LIMIT_T(minTexelBufferOffsetAlignment, "Minimum texel buffer offset alignment", "%llu", unsigned long long);
+    SUPPORT_LIMIT_T(minUniformBufferOffsetAlignment, "Minimum uniform buffer offset alignment", "%llu", unsigned long long);
+    SUPPORT_LIMIT_T(minStorageBufferOffsetAlignment, "Minimum storage buffer offset alignment", "%llu", unsigned long long);
+    SUPPORT_LIMIT_T(optimalBufferCopyOffsetAlignment, "Optimal buffer copy offset alignment", "%llu", unsigned long long);
+    SUPPORT_LIMIT_T(optimalBufferCopyRowPitchAlignment, "Optimal buffer copy row pitch alignment", "%llu", unsigned long long);
 #undef SUPPORT_LIMIT
+#undef SUPPORT_LIMIT_T
     Sys_Printf("Maximum framebuffer size = %u x %u x %u\n", physicalDeviceProperties.limits.maxFramebufferWidth, physicalDeviceProperties.limits.maxFramebufferHeight, physicalDeviceProperties.limits.maxFramebufferLayers);
     Sys_Printf("Point size range = %f - %f, granularity = %f\n", physicalDeviceProperties.limits.pointSizeRange[0], physicalDeviceProperties.limits.pointSizeRange[1], physicalDeviceProperties.limits.pointSizeGranularity);
     Sys_Printf("Line width range = %f - %f, granularity = %f\n", physicalDeviceProperties.limits.lineWidthRange[0], physicalDeviceProperties.limits.lineWidthRange[1], physicalDeviceProperties.limits.lineWidthGranularity);
@@ -780,7 +782,7 @@ bool VK_ChoosePresentMode(VkPresentModeKHR *ret)
  * @param numLayers 图像层数
  * @return
  */
-VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers, int baseArrayLayer)
+VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int viewAspectFlags, int mipLevels, int numLayers, int baseArrayLayer, bool ignoreAlpha)
 {
 	VkResult result;
 
@@ -795,7 +797,10 @@ VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int
     createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY; // R分量读取
     createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY; // G分量读取
     createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY; // B分量读取
-    createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // A分量读取
+	if(ignoreAlpha)
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_ONE; // A分量读取
+	else
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY; // A分量读取
 
     createInfo.subresourceRange.aspectMask = (VkImageAspectFlags)viewAspectFlags;
     createInfo.subresourceRange.baseMipLevel = 0; // 最基础的mipmap层
@@ -816,7 +821,7 @@ VkImageView VK_CreateImageView(VkImage image, int format, int imageViewType, int
 void VK_CreateSwapchainImageViews()
 {
     for (int i = 0; i < vk_context.swapchain.numImages; i++) {
-        vk_context.swapchain.framebuffers[i].image.imageView = VK_CreateImageView(vk_context.swapchain.framebuffers[i].image.image, vk_context.swapchain.format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0);
+        vk_context.swapchain.framebuffers[i].image.imageView = VK_CreateImageView(vk_context.swapchain.framebuffers[i].image.image, vk_context.swapchain.format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, false);
         vk_context.swapchain.loadFramebuffers[i].image.imageView = vk_context.swapchain.framebuffers[i].image.imageView;
     }
 }
@@ -1938,6 +1943,7 @@ void VK_CreateImage(VKImage_t *res, uint32_t width, uint32_t height, int format,
     int arrayLayers = cubeMap ? 6 : layers;
     bool samplerUsage = usageType & IU_SAMPLER;
     bool attachmentUsage = usageType & IU_ATTACHMENT;
+	bool copyRGB = usageType & IU_COPY_COLOR;
 
     VkImageUsageFlags usage = 0;
     if (samplerUsage)
@@ -2021,12 +2027,12 @@ void VK_CreateImage(VKImage_t *res, uint32_t width, uint32_t height, int format,
     VkImageViewType imageViewType = cubeMap ? VK_IMAGE_VIEW_TYPE_CUBE : (layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D);
     VkImageAspectFlags viewAspectFlags = depth > 0 ? (VK_IMAGE_ASPECT_DEPTH_BIT | (stencil > 0 && (attachmentUsage && !samplerUsage) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0)) : VK_IMAGE_ASPECT_COLOR_BIT;
 
-    res->imageView = VK_CreateImageView(image, format, imageViewType, viewAspectFlags, mipLevels, arrayLayers, 0);
+    res->imageView = VK_CreateImageView(image, format, imageViewType, viewAspectFlags, mipLevels, arrayLayers, 0, copyRGB);
 
     // 如果是深度+模版图像, 且需要采样, 则生成第二个模版图像视图
 	if(depth > 0 && stencil > 0 && (samplerUsage))
 	{
-		res->imageView2 = VK_CreateImageView(image, format, imageViewType, VK_IMAGE_ASPECT_STENCIL_BIT, mipLevels, arrayLayers, 0);
+		res->imageView2 = VK_CreateImageView(image, format, imageViewType, VK_IMAGE_ASPECT_STENCIL_BIT, mipLevels, arrayLayers, 0, false);
 	}
 }
 
@@ -3329,7 +3335,7 @@ void VK_SetObjectName(int objType, uint64_t handle, const char* name)
     vkSetDebugUtilsObjectNameEXT(vk_context.device, &createInfo);
 
     if (r_vkSetDebugInfo.GetInteger() > 1)
-        Sys_Printf("Vulkan object %s %s: 0x%llx\n", VK_VkObjectTypeToName((VkObjectType)objType), name, handle);
+        Sys_Printf("Vulkan object %s %s: 0x%llx\n", VK_VkObjectTypeToName((VkObjectType)objType), name, (unsigned long long)handle);
 }
 
 void VK_DebugObjects()
@@ -3453,7 +3459,7 @@ void VK_DepthBounds(float minz, float maxz)
  */
 void VK_PolygonOffset(float factor, float units)
 {
-    vkCmdSetDepthBias(vk_context.currentFrameCommandBuffer, factor, 0.0f, units);
+    vkCmdSetDepthBias(vk_context.currentFrameCommandBuffer, units, 0.0f, factor);
 }
 
 /**
