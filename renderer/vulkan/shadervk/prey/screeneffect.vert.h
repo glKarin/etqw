@@ -14,7 +14,7 @@ GLSL_SHADER const char VK_SCREENEFFECT_VERT[] =
 "};\n"
 "\n"
 "layout(location = 0) out vec4 var_TexCoord;\n"
-"layout(location = ) out vec4 var_Color;\n"
+"layout(location = 1) out vec4 var_Color;\n"
 "\n"
 "// # texture 0 takes the texture coordinates unmodified\n"
 "\n"
