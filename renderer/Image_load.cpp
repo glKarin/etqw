@@ -2154,16 +2154,26 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 
 		if( cinematic )
 		{
+#ifdef _VULKAN
+			if(USING_VULKAN)
+			{
+				if( texnum == TEXTURE_NOT_LOADED )
+				{
+					texnum = VK_AllocImage(&vk_image);
+					vk_image->layers = 1;
+					vk_image->format = VK_FORMAT_R8G8B8A8_UNORM;
+				}
+
+				R_VK_AddUpdateCinematicImageList(this, cinematic, cinmaticNextTime);
+			}
+			else
+			{
+#endif
 			cinData_t	cin;
 
 			cin = cinematic->ImageForTime( cinmaticNextTime );
 
 			if( texnum == TEXTURE_NOT_LOADED )
-#ifdef _VULKAN
-				if(USING_VULKAN)
-					texnum = VK_AllocImage(&vk_image);
-				else
-#endif
 				qglGenTextures( 1, &texnum );
 
 			if ( cin.image ) {
@@ -2171,6 +2181,9 @@ void	idImage::ActuallyLoadImage(bool checkForPrecompressed, bool fromBackEnd)
 			} else {
 				//globalImages->blackImage->Bind();
 			}
+#ifdef _VULKAN
+			}
+#endif
 
 			return;
 		}

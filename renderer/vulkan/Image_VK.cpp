@@ -77,8 +77,23 @@ void R_VK_AddUploadScratchImageList( idImage * image, byte *data, int cols, int 
 
 void R_VK_AddUpdateCinematicImageList( idImage * image, idCinematic *cinematic, int time )
 {
-	//printf("uuu %d %d %d %p\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image);
+	//printf("uuu %d %d %d %p %s\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image, image->imgName.c_str());
     loadImages[vk_context.frameIndex].Append( VKActuallyLoadImage_t( image, cinematic, time ) );
+}
+
+void R_VK_RemoveUploadImageList( idImage * image )
+{
+	//printf("rrr %d %d %d %p %s\n", loadImages[vk_context.frameIndex].Num(), vk_backend.frameCount, vk_context.frameIndex, image, image->imgName.c_str());
+	int i = 0;
+	while(i < loadImages[vk_context.frameIndex].Num())
+	{
+		if(loadImages[vk_context.frameIndex][i].image == image)
+		{
+			loadImages[vk_context.frameIndex].RemoveIndex(i);
+		}
+		else
+			i++;
+	}
 }
 
 void R_VK_HandleLoadImageList( void )
@@ -89,13 +104,15 @@ void R_VK_HandleLoadImageList( void )
 		VKActuallyLoadImage_t *loadImg = loadImages[vk_context.frameIndex].Ptr();
 		for(int i = 0; i < loadImages[vk_context.frameIndex].Num(); i++, loadImg++)
 		{
-			//printf("ttt %d %d %d %p %s\n", i, vk_backend.frameCount, vk_context.frameIndex, loadImg->image, loadImg->image->imgName.c_str());
+			//if(!loadImg->image)
+				//continue;
 			if(loadImg->cinData)
 			{
 				if(loadImg->cols == -1)
 				{
 					idCinematic *cinematic = (idCinematic *)loadImg->cinData;
 					cinData_t cin = cinematic->ImageForTime( loadImg->rows );
+					//printf("ttt %d %d %d %p %s\n", i, vk_backend.frameCount, vk_context.frameIndex, loadImg->image, loadImg->image->imgName.c_str());
 					if(cin.image)
 						loadImg->image->UploadScratch_VK(cin.image, cin.imageWidth, cin.imageHeight);
 				}
@@ -1034,11 +1051,12 @@ void idImage::PurgeImage_VK()
 	}
 #endif
 	if (vk_image) {
+		R_VK_RemoveUploadImageList(this);
 		R_VK_DestroyImage(texnum);	// this should be the ONLY place it is ever called!
 		SetDebugInfo_VK(true);
-		texnum = TEXTURE_NOT_LOADED;
+		vk_image = NULL;
 	}
-	vk_image = NULL;
+	texnum = TEXTURE_NOT_LOADED;
 
 	// clear all the current binding caches, so the next bind will do a real one
 	for (int i = 0 ; i < MAX_MULTITEXTURE_UNITS ; i++) {
@@ -1081,10 +1099,8 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 			uploadHeight = rows;
 
 			// upload the base level
-			const int oldLayers = vk_image->layers;
-			const int oldFormat = vk_image->format;
 			RecreateImage_VK();
-			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, true, oldLayers, 1, IU_SAMPLER);
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, vk_image->format, true, vk_image->layers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 			if(rendering)
 				R_VK_EndMainRenderPass();
@@ -1113,10 +1129,9 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 #endif
 			uploadWidth = cols;
 			uploadHeight = rows;
-			const int oldLayers = vk_image->layers;
-			const int oldFormat = vk_image->format;
+
 			RecreateImage_VK();
-			VK_CreateImage(vk_image, uploadWidth, uploadHeight, oldFormat, false, oldLayers, 1, IU_SAMPLER);
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, vk_image->format, false, vk_image->layers, 1, IU_SAMPLER);
 			SetDebugInfo_VK(false);
 			if(rendering)
 				R_VK_EndMainRenderPass();
@@ -1126,6 +1141,11 @@ void idImage::UploadScratch_VK(const byte *data, int cols, int rows)
 		} else {
 			// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 			// it and don't try and do a texture compression
+			if(!vk_image->image)
+			{
+				VK_CreateImage(vk_image, uploadWidth, uploadHeight, vk_image->format, false, vk_image->layers, 1, IU_SAMPLER);
+			}
+
 			int sizes[] = { cols, rows };
 			int offsets[] = { 0 };
 			if(rendering)
@@ -1150,6 +1170,11 @@ CopyFramebuffer_VK
 */
 void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, bool useOversizedBuffer, bool flipY)
 {
+	const bool inRenderPass = vk_context.inRenderPass;
+
+	if(inRenderPass)
+		VK_EndRenderPass();
+
 	Bind();
 
 	if (cvarSystem->GetCVarBool("g_lowresFullscreenFX")) {
@@ -1189,7 +1214,7 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 
 		if (potWidth == imageWidth && potHeight == imageHeight) {
 			RecreateImage_VK();
-			VK_CreateImage(vk_image, imageWidth, imageHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER);
+			VK_CreateImage(vk_image, imageWidth, imageHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER | IU_COPY_COLOR); // only RGB and alpha is 1
 			SetDebugInfo_VK(false);
 
 			R_VK_CopyColorAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, flipY);
@@ -1201,7 +1226,7 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 			//junk = (byte *)Mem_Alloc(potWidth * potHeight * 4);
 			//memset(junk, 0, potWidth * potHeight * 4);		//!@#
 			RecreateImage_VK();
-			VK_CreateImage(vk_image, potWidth, potHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER);
+			VK_CreateImage(vk_image, potWidth, potHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER | IU_COPY_COLOR); // only RGB and alpha is 1
 			SetDebugInfo_VK(false);
 
 			//Mem_Free(junk);
@@ -1215,19 +1240,30 @@ void idImage::CopyFramebuffer_VK(int x, int y, int imageWidth, int imageHeight, 
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
+		if(!vk_image->image)
+		{
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, VK_FORMAT_R8G8B8A8_UNORM, false, 1, 1, IU_SAMPLER | IU_COPY_COLOR);
+		}
+
 		R_VK_CopyColorAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, flipY);
 	}
 
 	// if the image isn't a full power of two, duplicate an extra row and/or column to fix bilerps
 	if (imageWidth != potWidth) {
-		VK_CopyColorAttachmentImage(vk_image, x+imageWidth-1, y, 1, imageHeight, imageWidth, 0);
+		R_VK_CopyColorAttachmentImage(vk_image, x+imageWidth-1, y, 1, imageHeight, imageWidth, 0, 1, imageHeight, flipY);
 	}
 
 	if (imageHeight != potHeight) {
-		VK_CopyColorAttachmentImage(vk_image, x, y+imageHeight-1, imageWidth, 1, 0, imageHeight);
+		R_VK_CopyColorAttachmentImage(vk_image, x, y+imageHeight-1, imageWidth, 1, 0, imageHeight, imageWidth, 1, flipY);
 	}
 
 	backEnd.c_copyFrameBuffer++;
+
+	if(inRenderPass)
+	{
+		VK_BeginRenderPass();
+		R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
+	}
 
 #if 0
 	if (imgName.Icmp("_scratch"))
@@ -1261,6 +1297,11 @@ This should just be part of copyFramebuffer once we have a proper image type fie
 */
 void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 {
+	const bool inRenderPass = vk_context.inRenderPass;
+
+	if(inRenderPass)
+		VK_EndRenderPass();
+
 	Bind();
 
 	// if the size isn't a power of 2, the image must be increased in size
@@ -1305,7 +1346,18 @@ void idImage::CopyDepthbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
+		if(!vk_image->image)
+		{
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, depthComponent, false, 1, 1, IU_SAMPLER);
+		}
+
 		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
+	}
+
+	if(inRenderPass)
+	{
+		VK_BeginRenderPass();
+		R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
 	}
 }
 
@@ -1318,6 +1370,11 @@ This should just be part of copyFramebuffer once we have a proper image type fie
 */
 void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight)
 {
+	const bool inRenderPass = vk_context.inRenderPass;
+
+	if(inRenderPass)
+		VK_EndRenderPass();
+
 	Bind();
 
 	// if the size isn't a power of 2, the image must be increased in size
@@ -1362,40 +1419,67 @@ void idImage::CopyStencilbuffer_VK(int x, int y, int imageWidth, int imageHeight
 	} else {
 		// otherwise, just subimage upload it so that drivers can tell we are going to be changing
 		// it and don't try and do a texture compression or some other silliness
+		if(!vk_image->image)
+		{
+			VK_CreateImage(vk_image, uploadWidth, uploadHeight, stencilComponent, false, 1, 1, IU_SAMPLER);
+		}
+
 		R_VK_CopyDepthStencilAttachmentImage(vk_image, x, y, imageWidth, imageHeight, 0, 0, imageWidth, imageHeight, IA_DEPTH_STENCIL);
 	}
 
+	if(inRenderPass)
+	{
+		VK_BeginRenderPass();
+		R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
+	}
 }
 
 void idImage::RecreateImage_VK()
 {
+	const int oldLayers = vk_image && vk_image->layers > 0 ? vk_image->layers : 1;
+	const VkFormat oldFormat = vk_image && vk_image->format > 0 ? vk_image->format : VK_FORMAT_R8G8B8A8_UNORM;
+#if 0
+	if(TEXTURE_NOT_LOADED != texnum)
+#endif
+	{
 #if 1
-	R_VK_ReCreateImage(texnum); // now vk_image is not change and zero-filled, and don't need re-binding
+		R_VK_ReCreateImage(texnum); // now vk_image is not change and zero-filled, and don't need re-binding
 #else
-	R_VK_CreateNewImage(texnum, &vk_image);
+		R_VK_CreateNewImage(texnum, &vk_image);
 
-	// re-bind the texture if is current
-	tmu_t			*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-	if (type == TT_2D) {
-		if (tmu->current2DMap == texnum)
-			R_VK_BindType(TUT_2D, vk_image);
-	} else if (type == TT_CUBIC) {
-		if (tmu->currentCubeMap != texnum)
-			R_VK_BindType(TUT_CUBEMAP, vk_image);
-	}
+		// re-bind the texture if is current
+		tmu_t			*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
+		if (type == TT_2D) {
+			if (tmu->current2DMap == texnum)
+				R_VK_BindType(TUT_2D, vk_image);
+		} else if (type == TT_CUBIC) {
+			if (tmu->currentCubeMap != texnum)
+				R_VK_BindType(TUT_CUBEMAP, vk_image);
+		}
 #if !defined(GL_ES_VERSION_2_0)
-	else if (type == TT_3D) {
-		if (tmu->current3DMap != texnum)
-			R_VK_BindTexture(GL_TEXTURE_3D, vk_image);
-	}
+		else if (type == TT_3D) {
+			if (tmu->current3DMap != texnum)
+				R_VK_BindTexture(GL_TEXTURE_3D, vk_image);
+		}
 #endif
 #ifdef GL_ES_VERSION_3_0
-	else if (type == TT_2D_ARRAY) {
-		if (tmu->current2DArrayMap != texnum)
-			R_VK_BindType(TUT_2D_ARRAY, vk_image);
+		else if (type == TT_2D_ARRAY) {
+			if (tmu->current2DArrayMap != texnum)
+				R_VK_BindType(TUT_2D_ARRAY, vk_image);
+		}
+#endif
+#endif
+	}
+#if 0
+	else
+	{
+		texnum = VK_AllocImage(&vk_image);
+		//common->Error("RecreateImage_VK: texnum %d is invalid.\n", texnum);
 	}
 #endif
-#endif
+
+	vk_image->layers = oldLayers;
+	vk_image->format = oldFormat;
 }
 
 void idImage::SetDebugInfo_VK(bool purge)
@@ -1454,3 +1538,4 @@ void idImage::UpdateImageFilter_VK()
 
 	vk_image->sampler = sampler;
 }
+
