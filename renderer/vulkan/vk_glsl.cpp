@@ -458,6 +458,8 @@ int VK_GLSL_CompileSPIRV( const char* filename, const char* dataGLSL, const int 
 		printf( "GLSL linking failed for: %s\n", filename );
 		printf( "%s\n", shader.getInfoLog() );
 		printf( "%s\n", shader.getInfoDebugLog() );
+
+		return -1;
 	}
 
 	// All that's left to do now is to convert the program's intermediate representation into SpirV:

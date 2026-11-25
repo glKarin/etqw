@@ -79,12 +79,12 @@ void R_VK_ListSampler(const idCmdArgs &)
     {
         key = &vk_backend.samplerPool.keys[i];
         common->Printf("%3d: %p -> filter: min=%s, mag=%s, mipmap=%s; repeat: x=%s, y=%s, z=%s; compare depth=%s; max lod=%f\n", i + 1, vk_backend.samplerPool.list[i],
-            VK_VkFilterToName(key->minLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST),
-            VK_VkFilterToName(key->magLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST),
-            VK_VkFilterToName(key->mipmapLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST),
-            VK_VkSamplerAddressModeToName((VkSamplerAddressMode)key->repeatS),
-            VK_VkSamplerAddressModeToName((VkSamplerAddressMode)key->repeatT),
-            VK_VkSamplerAddressModeToName((VkSamplerAddressMode)key->repeatU),
+            VK_VkFilter_ToName(key->minLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST),
+            VK_VkFilter_ToName(key->magLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST),
+            VK_VkFilter_ToName(key->mipmapLinear ? VK_FILTER_LINEAR : VK_FILTER_NEAREST),
+            VK_VkSamplerAddressMode_ToName((VkSamplerAddressMode)key->repeatS),
+            VK_VkSamplerAddressMode_ToName((VkSamplerAddressMode)key->repeatT),
+            VK_VkSamplerAddressMode_ToName((VkSamplerAddressMode)key->repeatU),
             key->depthCmp ? "true" : "false", key->lod);
     }
 }

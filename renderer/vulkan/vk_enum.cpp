@@ -33,8 +33,8 @@ typedef VKEnumName_t VKEnumNameValueWrap_t;
     }
 
 static /*thread_local*/ char vkbit_to_name_func_buf[1024];
-#define VKBIT_TO_NAME_FUNC(enumType, ...) \
-        VKENUMBIT_TO_NAME_FUNC_PROTO(enumType) { \
+#define VKBIT_TO_NAME_FUNC(enumType, flagsType, ...) \
+        VKENUMBIT_TO_NAME_FUNC_PROTO(enumType, flagsType) { \
         char *buf = vkbit_to_name_func_buf; \
         buf[0] = '\0'; \
         const VKEnumNameValueWrap_t arr[] = { \
@@ -61,7 +61,7 @@ VKENUM_TO_NAME_FUNC(VkPhysicalDeviceType,
 #undef VKENUM_NAME
 
 #define VKENUM_NAME(x) VKBIT_TO_NAME_ITEM(VK_QUEUE_, x)
-VKBIT_TO_NAME_FUNC(VkQueueFlags,
+VKBIT_TO_NAME_FUNC(VkQueueFlagBits, VkQueueFlags,
     VKENUM_NAME(GRAPHICS),
     VKENUM_NAME(COMPUTE),
     VKENUM_NAME(TRANSFER),
@@ -415,5 +415,31 @@ VKENUM_TO_NAME_FUNC(VkPresentModeKHR,
     VKENUM_NAME(FIFO_RELAXED_KHR),
     VKENUM_NAME(SHARED_DEMAND_REFRESH_KHR),
     VKENUM_NAME(SHARED_CONTINUOUS_REFRESH_KHR),
+)
+#undef VKENUM_NAME
+
+#ifdef OPAQUE
+#undef OPAQUE
+#endif
+#define VKENUM_NAME(x) VKBIT_TO_NAME_ITEM_KHR(VK_COMPOSITE_ALPHA_, x)
+VKBIT_TO_NAME_FUNC(VkCompositeAlphaFlagBitsKHR, VkCompositeAlphaFlagsKHR,
+    VKENUM_NAME(OPAQUE),
+    VKENUM_NAME(PRE_MULTIPLIED),
+    VKENUM_NAME(POST_MULTIPLIED),
+    VKENUM_NAME(INHERIT),
+)
+#undef VKENUM_NAME
+
+#define VKENUM_NAME(x) VKBIT_TO_NAME_ITEM_KHR(VK_SURFACE_TRANSFORM_, x)
+VKBIT_TO_NAME_FUNC(VkSurfaceTransformFlagBitsKHR, VkSurfaceTransformFlagsKHR,
+    VKENUM_NAME(IDENTITY),
+    VKENUM_NAME(ROTATE_90),
+    VKENUM_NAME(ROTATE_180),
+    VKENUM_NAME(ROTATE_270),
+    VKENUM_NAME(HORIZONTAL_MIRROR),
+    VKENUM_NAME(HORIZONTAL_MIRROR_ROTATE_90),
+    VKENUM_NAME(HORIZONTAL_MIRROR_ROTATE_180),
+    VKENUM_NAME(HORIZONTAL_MIRROR_ROTATE_270),
+    VKENUM_NAME(INHERIT),
 )
 #undef VKENUM_NAME

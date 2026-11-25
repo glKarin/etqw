@@ -377,8 +377,8 @@ GLenum VKGL_FUNC(glGetError)(void)
 #define GLGET_WRITE1(params, a) params[0] = (GLGET_WRITE_TYPE)(a);
 #define GLGET_WRITE2(params, a, b) params[0] = (GLGET_WRITE_TYPE)(a); params[1] = (GLGET_WRITE_TYPE)(b);
 #define GLGET_WRITE2V(params, a) GLGET_WRITE2(params, (a)[0], (a)[1]);
-#define GLGET_WRITE4(params, a, b, c, d) params[0] = (GLGET_WRITE_TYPE)(a); params[1] = (GLGET_WRITE_TYPE)b; params[2] = (GLGET_WRITE_TYPE)(c); params[3] = (GLGET_WRITE_TYPE)(d);
-#define GLGET_WRITE4V(params, a) GLGET_WRITE4(params, a[0], a[1], a[2], a[3]);
+#define GLGET_WRITE4(params, a, b, c, d) params[0] = (GLGET_WRITE_TYPE)(a); params[1] = (GLGET_WRITE_TYPE)(b); params[2] = (GLGET_WRITE_TYPE)(c); params[3] = (GLGET_WRITE_TYPE)(d);
+#define GLGET_WRITE4V(params, a) GLGET_WRITE4(params, (a)[0], (a)[1], (a)[2], (a)[3]);
 
 #define GLGET_FUNC(Type) void VKGL_FUNC(glGet##Type##v)(GLenum pname, GLGET_WRITE_TYPE *params) \
 { \
@@ -689,7 +689,7 @@ void VKGL_FUNC(glViewport)(GLint x, GLint y, GLsizei width, GLsizei height)
     R_VK_Viewport(x, vk_backend.dynamicState.renderHeight - y - height, width, height);
 }
 
-#include "vk_gl_placeholder.inc.h"
+#include "gl_placeholder.inc.h"
 
 void R_VK_LoadOpenGLCompatFunc(void)
 {

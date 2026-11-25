@@ -56,31 +56,6 @@ VKBackEnd_t vk_backend;
 #define VKSTATE1_CLEAR(x) vk_backend.state.st1 &= ~(globalState_t)(x);
 #define VKSTATE2_CLEAR(x) vk_backend.state.st2 &= ~(globalState_t)(x);
 
-typedef struct vec2_s
-{
-	vec2 v;
-} vec2_t;
-
-typedef struct vec3_s
-{
-	vec3 v;
-} vec3_t;
-
-typedef struct vec4_s
-{
-	vec4 v;
-} vec4_t;
-
-typedef struct mat4_s
-{
-	mat4 m;
-} mat4_t;
-
-#define MAT4CPY(dst, src) *((mat4_t *)(dst)) = *((mat4_t *)(src))
-#define VEC4CPY(dst, src) *((vec4_t *)(dst)) = *((vec4_t *)(src))
-#define VEC3CPY(dst, src) *((vec3_t *)(dst)) = *((vec3_t *)(src))
-#define VEC2CPY(dst, src) *((vec2_t *)(dst)) = *((vec2_t *)(src))
-
 /**
  * 读取本地渲染通道缓存
  */
@@ -379,7 +354,6 @@ void R_VK_ProgramUniform2fv(int location, const vec2 arr)
 {
 	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
 	assert(location >= 0);
-	float *ptr;
 	int loc;
 	if(vk_backend.currentProgram)
 	{
@@ -526,6 +500,10 @@ void R_VK_TransformUniformMatrix4f(int dst, int src, void *to)
 	SHADER_UBO_STATE_NOT_UPDATE
 }
 
+/**
+ * Check uniform state is dirty
+ * @param src offset
+ */
 void R_VK_CheckUniform(int src)
 {
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
@@ -535,6 +513,10 @@ void R_VK_CheckUniform(int src)
 	SHADER_UBO_STATE_NOT_UPDATE
 }
 
+/**
+ * Clear uniform dirty state
+ * @param src offset
+ */
 void R_VK_ClearUniform(int src)
 {
 	if (SHADER_UBO_STATE_IS_DIRTY(src))

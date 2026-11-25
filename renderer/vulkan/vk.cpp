@@ -178,7 +178,7 @@ void VK_GetPhysicalDeviceInfo(VkPhysicalDevice physicalDevice)
             physicalDeviceProperties.driverVersion,
             physicalDeviceProperties.vendorID,
             physicalDeviceProperties.deviceID,
-            VK_VkPhysicalDeviceTypeToName(physicalDeviceProperties.deviceType),
+            VK_VkPhysicalDeviceType_ToName(physicalDeviceProperties.deviceType),
             physicalDeviceProperties.deviceName
             );
 
@@ -512,7 +512,7 @@ int VK_QueryPhysicalDeviceQueueFamily(VkPhysicalDevice pd, uint32_t **ret)
     int res = 0;
     for (uint32_t i = 0; i < num; i++) {
         VkQueueFamilyProperties *queueFamily = queueFamilyProperties + i;
-        Sys_Printf("%2u: queue count=%d, flags=%s\n", i + 1, queueFamily->queueCount, VK_VkQueueFlagsBitToName(queueFamily->queueFlags));
+        Sys_Printf("%2u: queue count=%d, flags=%s\n", i + 1, queueFamily->queueCount, VK_VkQueueFlagBits_BitToName(queueFamily->queueFlags));
         if(queueFamily->queueCount > 0 && queueFamily->queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             res++;
@@ -697,7 +697,7 @@ bool VK_ChooseSurfaceFormat(VkSurfaceFormatKHR *ret)
 
 	for (int i = 0; i < numFormats; i++) {
 		VkSurfaceFormatKHR *format = surfaceFormats + i;
-		Sys_Printf("%2d: format=%s, color space=%s\n", i + 1, VK_VkFormatToName(format->format), VK_VkColorSpaceKHRToName(format->colorSpace));
+		Sys_Printf("%2d: format=%s, color space=%s\n", i + 1, VK_VkFormat_ToName(format->format), VK_VkColorSpaceKHR_ToName(format->colorSpace));
 	}
 
 	VkSurfaceFormatKHR targetFormat;
@@ -745,7 +745,7 @@ bool VK_ChoosePresentMode(VkPresentModeKHR *ret)
 
     for (int i = 0; i < numModes; i++)
     {
-        Sys_Printf("%2d: %s\n", i + 1, VK_VkPresentModeKHRToName(presentModes[i]));
+        Sys_Printf("%2d: %s\n", i + 1, VK_VkPresentModeKHR_ToName(presentModes[i]));
     }
 
     for (int i = 0; i < numModes; i++)
@@ -935,6 +935,9 @@ void VK_CreateSwapchain()
         return;
     }
 
+    Sys_Printf("Swapchain support transforms: %s\n", VK_VkSurfaceTransformFlagBitsKHR_BitToName(surfaceCapabilities.supportedTransforms));
+    Sys_Printf("Swapchain support alpha composite: %s\n", VK_VkCompositeAlphaFlagBitsKHR_BitToName(surfaceCapabilities.supportedCompositeAlpha));
+
     vk_context.swapchain.width = windowWidth > 0 ? windowWidth : surfaceCapabilities.currentExtent.width;
     vk_context.swapchain.height = windowHeight > 0 ? windowHeight : surfaceCapabilities.currentExtent.height;
     vk_context.swapchain.format = targetFormat.format;
@@ -975,9 +978,11 @@ void VK_CreateSwapchain()
     VkSwapchainKHR old = vk_context.swapchain.swapchain;
     createInfo.oldSwapchain = old; // 旧的交换链
 
-    Sys_Printf("Swapchain present mode: %s\n", VK_VkPresentModeKHRToName(createInfo.presentMode));
-    Sys_Printf("Swapchain format: %s\n", VK_VkFormatToName(vk_context.swapchain.format));
-    Sys_Printf("Swapchain color space: %s\n", VK_VkColorSpaceKHRToName(vk_context.swapchain.colorSpace));
+    Sys_Printf("Swapchain present mode: %s\n", VK_VkPresentModeKHR_ToName(createInfo.presentMode));
+    Sys_Printf("Swapchain format: %s\n", VK_VkFormat_ToName(vk_context.swapchain.format));
+    Sys_Printf("Swapchain color space: %s\n", VK_VkColorSpaceKHR_ToName(vk_context.swapchain.colorSpace));
+    Sys_Printf("Swapchain transform: %s\n", VK_VkSurfaceTransformFlagBitsKHR_BitToName(createInfo.preTransform));
+    Sys_Printf("Aplha composite: %s\n", VK_VkCompositeAlphaFlagBitsKHR_BitToName(createInfo.compositeAlpha));
 
     result = vkCreateSwapchainKHR(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.swapchain.swapchain);
     HANDLE_VK_ERROR_EXIT(result, "vkCreateSwapchainKHR");
@@ -3335,7 +3340,7 @@ void VK_SetObjectName(int objType, uint64_t handle, const char* name)
     vkSetDebugUtilsObjectNameEXT(vk_context.device, &createInfo);
 
     if (r_vkSetDebugInfo.GetInteger() > 1)
-        Sys_Printf("Vulkan object %s %s: 0x%llx\n", VK_VkObjectTypeToName((VkObjectType)objType), name, (unsigned long long)handle);
+        Sys_Printf("Vulkan object %s %s: 0x%llx\n", VK_VkObjectType_ToName((VkObjectType)objType), name, (unsigned long long)handle);
 }
 
 void VK_DebugObjects()
