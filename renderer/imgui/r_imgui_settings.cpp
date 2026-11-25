@@ -26,6 +26,9 @@ enum cvarFlag
     IG_CVAR_GROUP_GUI = BIT(13),
     IG_CVAR_GROUP_GAME = BIT(14),
     IG_CVAR_GROUP_OTHER = BIT(15),
+#ifdef _VULKAN
+    IG_CVAR_GROUP_VULKAN = BIT(16),
+#endif
     //IG_CVAR_GROUP_ABOUT = BIT(16),
 };
 
@@ -152,6 +155,11 @@ void idImGuiSettings::AddOption(const char *name, const char *displayName, int f
     else if(flag & IG_CVAR_GROUP_OTHER) {
         gname = "Other";
     }
+#ifdef _VULKAN
+    else if(flag & IG_CVAR_GROUP_VULKAN) {
+        gname = "Vulkan";
+    }
+#endif
     else if(cvar && (cvar->GetFlags() & CVAR_RENDERER)) {
         gname = "Renderer";
     }
@@ -806,11 +814,31 @@ ID_INLINE static void ImGui_RegisterDivide(int flag = 0)
     imGuiSettings.AddOption(NULL, NULL, flag, NULL);
 }
 
-void ImGui_RegisterOptions(void)
+ID_INLINE static void ImGui_RegisterConsole(void)
 {
-    if(imGuiSettings.isInitialized)
-        return;
+    // console
+    ImGui_RegisterLabel("Console", IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterCvar("harm_com_consoleHistory", "Record console history", IG_CVAR_COMPONENT_COMBO, "0=Don't save;1=Save on exit;2=Save on every command");
+    ImGui_RegisterCvar("harm_con_float", "Float console");
+    ImGui_RegisterCvar("harm_con_floatGeometry", "Float console geometry", IG_CVAR_COMPONENT_INPUT_INT4);
+    ImGui_RegisterCvar("harm_con_floatZoomStep", "Zoom step of float console");
+    ImGui_RegisterCvar("harm_con_alwaysShow", "Always show console");
+    ImGui_RegisterCvar("harm_con_noBackground", "Don't draw console background");
+    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
+}
 
+ID_INLINE static void ImGui_RegisterFileSystem(void)
+{
+    // filesystem
+    ImGui_RegisterLabel("File System", IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterCvar("harm_fs_addon_extras", "Extras game addon resource path before add base game paths");
+    ImGui_RegisterCvar("harm_fs_basepath_extras", "Extras base game paths(absolute system path)");
+    ImGui_RegisterCvar("harm_fs_game_base_extras", "Extras game base name(extras fs_game_base)");
+    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
+}
+
+ID_INLINE static void ImGui_RegisterFramework(void)
+{
     // framework
     ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_FRAMEWORK);
     ImGui_RegisterCvar("harm_r_maxAllocStackMemory", "Control memory allocation on heap or stack", IG_CVAR_GROUP_FRAMEWORK);
@@ -822,23 +850,17 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_sys_sse2neon", "Emulate MMX/SSE/SSE2 SIMD by sse2neon on arm32/arm64 device");
 #endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
-    // console
-    ImGui_RegisterLabel("Console", IG_CVAR_GROUP_FRAMEWORK);
-    ImGui_RegisterCvar("harm_com_consoleHistory", "Record console history", IG_CVAR_COMPONENT_COMBO, "0=Don't save;1=Save on exit;2=Save on every command");
-    ImGui_RegisterCvar("harm_con_float", "Float console");
-    ImGui_RegisterCvar("harm_con_floatGeometry", "Float console geometry", IG_CVAR_COMPONENT_INPUT_INT4);
-    ImGui_RegisterCvar("harm_con_floatZoomStep", "Zoom step of float console");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
-    ImGui_RegisterCvar("harm_con_alwaysShow", "Always show console");
-    ImGui_RegisterCvar("harm_con_noBackground", "Don't draw console background");
-    // filesystem
-    ImGui_RegisterLabel("File System", IG_CVAR_GROUP_FRAMEWORK);
-    ImGui_RegisterCvar("harm_fs_addon_extras", "Extras game addon resource path before add base game paths");
-    ImGui_RegisterCvar("harm_fs_basepath_extras", "Extras base game paths(absolute system path)");
-    ImGui_RegisterCvar("harm_fs_game_base_extras", "Extras game base name(extras fs_game_base)");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
 
-    // renderer
+    // console
+    ImGui_RegisterConsole();
+
+    // filesystem
+    ImGui_RegisterFileSystem();
+}
+
+ID_INLINE static void ImGui_RegisterLighting(void)
+{
+    // lighting
     ImGui_RegisterLabel("Lighting", IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterCvar("harm_r_lightingModel", "Lighting model", IG_CVAR_COMPONENT_COMBO, "0=No light;1=Phong;2=Blinn-Phong;3=PBR;4=Ambient");
     ImGui_RegisterCvar("harm_r_specularExponent", "Specular exponent in Phong");
@@ -856,8 +878,11 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("r_noLight", "No lighting");
 #endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
 
 #ifdef _SHADOW_MAPPING
+ID_INLINE static void ImGui_RegisterShadowMapping(void)
+{
     ImGui_RegisterLabel("Shadow mapping", IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterCvar("r_useShadowMapping", "Soft shadow mapping", IG_CVAR_COMPONENT_CHECKBOX);
     ImGui_RegisterCvar("r_forceShadowMapsOnAlphaTestedSurfaces", "Shadow mapping on perforated surface");
@@ -865,11 +890,14 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_r_shadowMapCombine", "Combine local and global shadow mapping");
     ImGui_RegisterCvar("r_shadowMapSplits", "Cascaded shadow mapping with parallel lights", IG_CVAR_COMPONENT_INT_SLIDER);
     ImGui_RegisterCvar("harm_r_shadowMapNonParallelLightUltra", "Non-parallel light allow ultra quality shadow mapping");
-#endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
+#endif
 
-    ImGui_RegisterLabel("Stencil shadow", IG_CVAR_GROUP_RENDERER);
 #ifdef _STENCIL_SHADOW_IMPROVE
+ID_INLINE static void ImGui_RegisterStencilShadow(void)
+{
+    ImGui_RegisterLabel("Stencil shadow", IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterCvar("harm_r_stencilShadowTranslucent", "Translucent stencil shadow");
     ImGui_RegisterCvar("harm_r_stencilShadowCombine", "Combine local and global stencil shadow");
     ImGui_RegisterCvar("harm_r_stencilShadowAlpha", "Stencil shadow alpha");
@@ -879,23 +907,12 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_r_shadowCarmackInverse", "Use Carmack-inverse on stencil testing for shadow");
     ImGui_RegisterCvar("harm_r_stencilShadowSoftCopyStencilBuffer", "Copy stencil buffer directly for soft stencil shadow", IG_CVAR_COMPONENT_COMBO, "0=Copy depth buffer and bind and renderer stencil buffer to texture directly;1=Copy stencil buffer to texture directly");
 #endif
-#endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
+#endif
 
-    ImGui_RegisterLabel("Renderer", IG_CVAR_GROUP_RENDERER);
-#ifdef _D3BFG_CULLING
-    ImGui_RegisterCvar("harm_r_occlusionCulling", "DOOM3-BFG style occlusion culling", IG_CVAR_COMPONENT_CHECKBOX);
-#endif
-    ImGui_RegisterCvar("r_maxFps", "Max FPS", IG_CVAR_COMPONENT_INT_SLIDER);
-    ImGui_RegisterCvar("r_renderMode", "Retro postprocess", IG_CVAR_COMPONENT_COMBO, "0=Doom;1=CGA;2=CGA Highres;3=Commodore 64;4=Commodore 64 Highres;5=Amstrad CPC 6128;6=Amstrad CPC 6128 Highres;7=Sega Genesis;8=Sega Genesis Highres;9=Sony PSX");
-#ifdef _MULTITHREAD
-    ImGui_RegisterCvar("harm_r_renderToolsMultithread", "Enable debug render on multithreading");
-#endif
-#ifdef _HUMANHEAD
-    ImGui_RegisterCvar("harm_r_skipHHBeam", "Skip beam model render");
-#endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
-
+ID_INLINE static void ImGui_RegisterImage(void)
+{
     ImGui_RegisterLabel("Image", IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterCvar("r_useETC1", "Use ETC1/RGBA4444 compression");
     ImGui_RegisterCvar("r_useETC1cache", "Cache compression textures");
@@ -903,7 +920,10 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("r_useETC2", "Use ETC2 compression instead of RGBA4444");
 #endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
 
+ID_INLINE static void ImGui_RegisterShader(void)
+{
     ImGui_RegisterLabel("Shader", IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterCvar("harm_r_useHighPrecision", "Use high precision float on GLSL shader", IG_CVAR_COMPONENT_CHECKBOX);
     ImGui_RegisterCvar("harm_r_shaderProgramDir", "External OpenGLES2 GLSL shader path");
@@ -920,7 +940,10 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCmd("cleanGLSLShaderBinary", "Remove GLSL shader binaries directory", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
 #endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
 
+ID_INLINE static void ImGui_RegisterRendererSystem(void)
+{
     ImGui_RegisterLabel("System", IG_CVAR_GROUP_RENDERER);
 #if !defined(__ANDROID__)
     ImGui_RegisterCvar("harm_r_openglVersion", "OpenGL version", IG_CVAR_COMPONENT_COMBO | IG_CVAR_GROUP_RENDERER, "GLES2=GLES 2.0;GLES3.0=GLES 3.0+;OpenGL_core=OpenGL desktop core;OpenGL_compatibility=OpenGL desktop compatibility");
@@ -931,7 +954,10 @@ void ImGui_RegisterOptions(void)
 #endif
     ImGui_RegisterCvar("harm_r_clearVertexBuffer", "Clear vertex buffer on every frame", IG_CVAR_COMPONENT_COMBO, "0=No clear(original);1=Only free memory;2=Free memory and delete VBO(same as 1 if multi-threading)");
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
 
+ID_INLINE static void ImGui_RegisterRendererOther(void)
+{
     ImGui_RegisterLabel("Other", IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterCvar("r_screenshotFormat", "Screenshot image format", IG_CVAR_COMPONENT_COMBO, "0=TGA;1=BMP;2=PNG;3=JPG;4=DDS;5=EXP;6=HDR");
     ImGui_RegisterCvar("r_screenshotJpgQuality", "Screenshot quality for JPG", IG_CVAR_COMPONENT_INT_SLIDER);
@@ -940,7 +966,46 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_r_autoAspectRatio", "Setup view aspect ratio automatic", IG_CVAR_COMPONENT_COMBO, "0=Manual;1=Setup r_aspectRatio to -1;2=Setup r_aspectRatio to 0,1,2 by screen size");
     ImGui_RegisterCmd("glConfig", "Print OpenGL config", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
     ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+}
 
+ID_INLINE static void ImGui_RegisterRenderer(void)
+{
+    // lighting
+    ImGui_RegisterLighting();
+
+#ifdef _SHADOW_MAPPING
+    ImGui_RegisterShadowMapping();
+#endif
+
+#ifdef _STENCIL_SHADOW_IMPROVE
+    ImGui_RegisterStencilShadow();
+#endif
+
+    ImGui_RegisterLabel("Renderer", IG_CVAR_GROUP_RENDERER);
+#ifdef _D3BFG_CULLING
+    ImGui_RegisterCvar("harm_r_occlusionCulling", "DOOM3-BFG style occlusion culling", IG_CVAR_COMPONENT_CHECKBOX);
+#endif
+    ImGui_RegisterCvar("r_maxFps", "Max FPS", IG_CVAR_COMPONENT_INT_SLIDER);
+    ImGui_RegisterCvar("r_renderMode", "Retro postprocess", IG_CVAR_COMPONENT_COMBO, "0=Doom;1=CGA;2=CGA Highres;3=Commodore 64;4=Commodore 64 Highres;5=Amstrad CPC 6128;6=Amstrad CPC 6128 Highres;7=Sega Genesis;8=Sega Genesis Highres;9=Sony PSX");
+#ifdef _MULTITHREAD
+    ImGui_RegisterCvar("harm_r_renderToolsMultithread", "Enable debug render on multithreading");
+#endif
+#ifdef _HUMANHEAD
+    ImGui_RegisterCvar("harm_r_skipHHBeam", "Skip beam model render");
+#endif
+    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+
+    ImGui_RegisterImage();
+
+    ImGui_RegisterShader();
+
+    ImGui_RegisterRendererSystem();
+
+    ImGui_RegisterRendererOther();
+}
+
+ID_INLINE static void ImGui_RegisterGUI(void)
+{
     // GUI
     ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_GUI);
     ImGui_RegisterCvar("r_scaleMenusTo43", "4:3 aspect ratio GUI", IG_CVAR_GROUP_GUI | IG_CVAR_COMPONENT_COMBO, "0=Disable;1=Only main menu;2=All");
@@ -958,12 +1023,11 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_ui_subtitlesTextScale", "Subtitles text scale");
 #endif
     ImGui_RegisterDivide(IG_CVAR_GROUP_GUI);
+}
 
-	// game
-    ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_GAME);
-    ImGui_RegisterCvar("harm_g_skipHitEffect", "Skip hit effect in game when starting engine");
-    ImGui_RegisterCmd("skipHitEffect", "Skip hit effect in game", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
 #ifdef _RAVEN
+ID_INLINE static void ImGui_RegisterQuake4(void)
+{
     ImGui_RegisterCvar("harm_g_allowFireWhenFocusNPC", "Allow fire when focus NPC");
     ImGui_RegisterCvar("harm_g_mutePlayerFootStep", "Mute player footstep sound");
     ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
@@ -987,7 +1051,12 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCmd("fillBots", "Fill bots to limit", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
     ImGui_RegisterCmd("cleanBots", "Disconnect all bots", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
     ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
-#elif defined(_HUMANHEAD)
+}
+#endif
+
+#ifdef _HUMANHEAD
+ID_INLINE static void ImGui_RegisterPrey(void)
+{
     ImGui_RegisterLabel("Full-body awareness", IG_CVAR_GROUP_GAME);
     ImGui_RegisterCvar("harm_pm_fullBodyAwareness", "Enable full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IG_CVAR_COMPONENT_INPUT_VECTOR);
@@ -995,7 +1064,11 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessFixed", "Don't attach view to head in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadVisible", "Hide head in full-body awareness");
     ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
-#else
+}
+#endif
+
+ID_INLINE static void ImGui_RegisterDoom3(void)
+{
     ImGui_RegisterCvar("harm_si_useCombatBboxInMPGame", "Players force use combat bbox in MP game");
     ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
 
@@ -1032,9 +1105,27 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCvar("harm_pm_autoForceThirdPerson", "Third person view when start");
     ImGui_RegisterCvar("harm_pm_preferCrouchViewHeight", "Crouch view height in third person");
     ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
-#endif
+}
 
-	// other
+ID_INLINE static void ImGui_RegisterGame(void)
+{
+    // game
+    ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterCvar("harm_g_skipHitEffect", "Skip hit effect in game when starting engine");
+    ImGui_RegisterCmd("skipHitEffect", "Skip hit effect in game", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
+
+#ifdef _RAVEN
+    ImGui_RegisterQuake4();
+#elif defined(_HUMANHEAD)
+    ImGui_RegisterPrey();
+#else
+    ImGui_RegisterDoom3();
+#endif
+}
+
+ID_INLINE static void ImGui_RegisterOther(void)
+{
+    // other
     ImGui_RegisterLabel("ImGui", IG_CVAR_GROUP_OTHER);
     ImGui_RegisterCvar("imgui_scale", "ImGui scale", IG_CVAR_GROUP_OTHER);
     ImGui_RegisterCvar("imgui_fontScale", "ImGui font scale", IG_CVAR_GROUP_OTHER);
@@ -1044,6 +1135,87 @@ void ImGui_RegisterOptions(void)
     ImGui_RegisterCmd(IG_COMMAND_NAME " reset size", "Reset ImGui size", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_OTHER);
     ImGui_RegisterCmd(IG_COMMAND_NAME " close", "Close ImGui", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_OTHER);
     ImGui_RegisterDivide(IG_CVAR_GROUP_OTHER);
+}
+
+#ifdef _VULKAN
+ID_INLINE static void ImGui_RegisterVulkan(void)
+{
+    // Vulkan
+    ImGui_RegisterLabel("Vulkan", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("harm_r_renderBackend", "Render backend", IG_CVAR_COMPONENT_COMBO | IG_CVAR_GROUP_VULKAN, RB_OPENGL ";" RB_VULKAN);
+    ImGui_RegisterCvar("r_vkUsePipelineCache", "Using pipeline cache", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkSetDebugInfo", "Setup object debug info", IG_CVAR_COMPONENT_COMBO | IG_CVAR_GROUP_VULKAN, "0=Disable;1=Enable;2=Enable and print");
+    ImGui_RegisterCvar("r_vkEnableValidationLayer", "Enable validation layer", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkUseGlobalUniform", "Using global uniform", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("harm_r_shaderProgramVKDir", "External Vulkan GLSL shader path", IG_CVAR_GROUP_VULKAN);
+
+    ImGui_RegisterLabel("Context", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineSize", "Global pipeline list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineGranularity", "Global pipeline list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineLayoutSize", "Global pipeline layout list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineLayoutGranularity", "Global pipeline layout list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextShaderSize", "Global shader list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextShaderGranularity", "Global shader list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextSamplerSize", "Global sampler list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextSamplerGranularity", "Global sampler list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextImageViewSize", "Global image view list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContexImageViewGranularity", "Global image view list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextImageSize", "Global image list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextImageGranularity", "Global image list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextBufferSize", "Global buffer list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextBufferGranularity", "Global buffer list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+
+    ImGui_RegisterLabel("Backend", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendSamplerSize", "Sampler list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendSamplerGranularity", "Sampler list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendFreeBuffersSize", "Defer free buffers list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendFreeBuffersGranularity", "Defer free buffers list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPurgeImagesSize", "Defer purge images list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPurgeImagesGranularity", "Defer purge images list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPipelineLayoutSize", "Pipeline layout list initialize size", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPipelineLayoutGranularity", "Pipeline layout list allocation granularity", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkQueryFrameCount", "Query count in frame", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCmd("vk_listPipelines", "List pipeline pool", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCmd("vk_listSamplers", "List sampler pool", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+
+    ImGui_RegisterLabel("Buffer", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkStagingWriteBufferBlockSize", "Staging write buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkStagingReadBufferBlockSize", "Staging read buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkUniformBufferBlockSize", "Uniform buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkVertexBufferBlockSize", "Vertex buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkIndexBufferBlockSize", "Index buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterCmd("vk_listBuffers", "List buffer state", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+}
+#endif
+
+void ImGui_RegisterOptions(void)
+{
+    if(imGuiSettings.isInitialized)
+        return;
+
+    // framework
+    ImGui_RegisterFramework();
+
+    // renderer
+    ImGui_RegisterRenderer();
+
+    // GUI
+    ImGui_RegisterGUI();
+
+	// game
+    ImGui_RegisterGame();
+
+	// other
+    ImGui_RegisterOther();
+
+#ifdef _VULKAN
+    // Vulkan
+    ImGui_RegisterVulkan();
+#endif
 
     imGuiSettings.isInitialized = true;
 }

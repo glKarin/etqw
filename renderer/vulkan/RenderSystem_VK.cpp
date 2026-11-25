@@ -5,45 +5,48 @@
 
 #if IDVK_CONTAINER_SIZE_CONFIG
 idCVar r_vkUsePipelineCache("r_vkUsePipelineCache", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: using pipeline cache");
-idCVar r_vkSetDebugInfo("r_vkSetDebugInfo", "0", CVAR_INTEGER | CVAR_RENDERER, "[Vulkan]: setup debug info");
-idCVar r_vkEnableValidationLayer("r_vkEnableValidationLayer", "0", CVAR_BOOL | CVAR_RENDERER, "[Vulkan]: setup debug info");
+idCVar r_vkSetDebugInfo("r_vkSetDebugInfo", "0", CVAR_INTEGER | CVAR_RENDERER, "[Vulkan]: setup object debug info", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+idCVar r_vkEnableValidationLayer("r_vkEnableValidationLayer", "0", CVAR_BOOL | CVAR_RENDERER, "[Vulkan]: enable validation layer");
 idCVar r_vkUseGlobalUniform("r_vkUseGlobalUniform", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: using global uniform");
 
+#define VKCVAR_ELEMENT_RANGE , 1, INT_MAX
+#define VKCVAR_MEMORY_RANGE , 1, INT_MAX
+
 // vk_context
-idCVar r_vkContextPipelineSize("r_vkContextPipelineSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline list initialize size");
-idCVar r_vkContextPipelineGranularity("r_vkContextPipelineGranularity", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline list allocation granularity");
-idCVar r_vkContextPipelineLayoutSize("r_vkContextPipelineLayoutSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline layout list initialize size");
-idCVar r_vkContextPipelineLayoutGranularity("r_vkContextPipelineLayoutGranularity", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline layout list allocation granularity");
-idCVar r_vkContextShaderSize("r_vkContextShaderSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global shader list initialize size");
-idCVar r_vkContextShaderGranularity("r_vkContextShaderGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global shader list allocation granularity");
-idCVar r_vkContextSamplerSize("r_vkContextSamplerSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global sampler list initialize size");
-idCVar r_vkContextSamplerGranularity("r_vkContextSamplerGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global sampler list allocation granularity");
-idCVar r_vkContextImageViewSize("r_vkContextImageViewSize", "6", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image view list initialize size");
-idCVar r_vkContextImageViewGranularity("r_vkContexImageViewGranularity", "6", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image view list allocation granularity");
-idCVar r_vkContextImageSize("r_vkContextImageSize", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image list initialize size");
-idCVar r_vkContextImageGranularity("r_vkContextImageGranularity", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image list allocation granularity");
-idCVar r_vkContextBufferSize("r_vkContextBufferSize", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global buffer list initialize size");
-idCVar r_vkContextBufferGranularity("r_vkContextBufferGranularity", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global buffer list allocation granularity");
+idCVar r_vkContextPipelineSize("r_vkContextPipelineSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextPipelineGranularity("r_vkContextPipelineGranularity", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextPipelineLayoutSize("r_vkContextPipelineLayoutSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline layout list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextPipelineLayoutGranularity("r_vkContextPipelineLayoutGranularity", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline layout list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextShaderSize("r_vkContextShaderSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global shader list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextShaderGranularity("r_vkContextShaderGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global shader list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextSamplerSize("r_vkContextSamplerSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global sampler list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextSamplerGranularity("r_vkContextSamplerGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global sampler list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextImageViewSize("r_vkContextImageViewSize", "6", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image view list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextImageViewGranularity("r_vkContexImageViewGranularity", "6", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image view list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextImageSize("r_vkContextImageSize", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextImageGranularity("r_vkContextImageGranularity", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global image list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextBufferSize("r_vkContextBufferSize", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global buffer list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkContextBufferGranularity("r_vkContextBufferGranularity", "2048", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global buffer list allocation granularity" VKCVAR_ELEMENT_RANGE);
 
 // vk_backend
-idCVar r_vkBackendSamplerSize("r_vkBackendSamplerSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: sampler list initialize size");
-idCVar r_vkBackendSamplerGranularity("r_vkBackendSamplerGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: sampler list allocation granularity");
-idCVar r_vkBackendFreeBufferSize("r_vkBackendFreeBuffersSize", "1024", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer free buffers list initialize size");
-idCVar r_vkBackendFreeBufferGranularity("r_vkBackendFreeBuffersGranularity", "1024", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer free buffers list allocation granularity");
-idCVar r_vkBackendPurgeImageSize("r_vkBackendPurgeImagesSize", "512", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer purge images list initialize size");
-idCVar r_vkBackendPurgeImageGranularity("r_vkBackendPurgeImagesGranularity", "512", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer purge images list allocation granularity");
-idCVar r_vkBackendPipelineLayoutSize("r_vkBackendPipelineLayoutSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: pipeline layout list initialize size");
-idCVar r_vkBackendPipelineLayoutGranularity("r_vkBackendPipelineLayoutGranularity", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: pipeline layout list allocation granularity");
+idCVar r_vkBackendSamplerSize("r_vkBackendSamplerSize", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: sampler list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendSamplerGranularity("r_vkBackendSamplerGranularity", "128", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: sampler list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendFreeBufferSize("r_vkBackendFreeBuffersSize", "1024", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer free buffers list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendFreeBufferGranularity("r_vkBackendFreeBuffersGranularity", "1024", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer free buffers list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendPurgeImageSize("r_vkBackendPurgeImagesSize", "512", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer purge images list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendPurgeImageGranularity("r_vkBackendPurgeImagesGranularity", "512", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: defer purge images list allocation granularity" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendPipelineLayoutSize("r_vkBackendPipelineLayoutSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: pipeline layout list initialize size" VKCVAR_ELEMENT_RANGE);
+idCVar r_vkBackendPipelineLayoutGranularity("r_vkBackendPipelineLayoutGranularity", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: pipeline layout list allocation granularity" VKCVAR_ELEMENT_RANGE);
 
 // vk_query
-idCVar r_vkQueryFrameCount("r_vkQueryFrameCount", "256", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: query count in frame");
+idCVar r_vkQueryFrameCount("r_vkQueryFrameCount", "256", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: query count in frame" VKCVAR_ELEMENT_RANGE);
 
 // vk_buffer
-idCVar r_vkStagingWriteBufferBlockSize("r_vkStagingWriteBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging write buffer block size(Mb)");
-idCVar r_vkStagingReadBufferBlockSize("r_vkStagingReadBufferBlockSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging read buffer block size(Mb)");
-idCVar r_vkUniformBufferBlockSize("r_vkUniformBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: uniform buffer block size(Mb)");
-idCVar r_vkVertexBufferBlockSize("r_vkVertexBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: vertex buffer block size(Mb)");
-idCVar r_vkIndexBufferBlockSize("r_vkIndexBufferBlockSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: index buffer block size(Mb)");
+idCVar r_vkStagingWriteBufferBlockSize("r_vkStagingWriteBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging write buffer block size(Mb)" VKCVAR_MEMORY_RANGE);
+idCVar r_vkStagingReadBufferBlockSize("r_vkStagingReadBufferBlockSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: staging read buffer block size(Mb)" VKCVAR_MEMORY_RANGE);
+idCVar r_vkUniformBufferBlockSize("r_vkUniformBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: uniform buffer block size(Mb)" VKCVAR_MEMORY_RANGE);
+idCVar r_vkVertexBufferBlockSize("r_vkVertexBufferBlockSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: vertex buffer block size(Mb)" VKCVAR_MEMORY_RANGE);
+idCVar r_vkIndexBufferBlockSize("r_vkIndexBufferBlockSize", "16", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: index buffer block size(Mb)" VKCVAR_MEMORY_RANGE);
 #endif
 
 void R_VK_CheckPortableExtensions(void)
