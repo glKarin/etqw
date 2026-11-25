@@ -15,7 +15,7 @@
 #define UBO_VEC4_N_PROC(X, N)
 #define UBO_MAT4_N_PROC(X, N)
 
-#include "ubo_type.inc.h"
+#include "ubo_prop_shader.inc.h"
 
 #define R_VK_TransformUniform0_fragment_blendLight R_VK_TransformUniform0_fragment_fog
 
@@ -89,4 +89,7 @@
 
 #define R_VK_TransformUniform0_vertex_depthToColor R_VK_TransformUniform0_vertex_simpleVertexTexcoord
 #define R_VK_TransformUniform0_vertex_stencilToColor R_VK_TransformUniform0_vertex_simpleVertexTexcoord
+
+
+typedef void (*VKCopyUniform_f)(void);
 

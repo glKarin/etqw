@@ -7,6 +7,7 @@
 idCVar r_vkUsePipelineCache("r_vkUsePipelineCache", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: using pipeline cache");
 idCVar r_vkSetDebugInfo("r_vkSetDebugInfo", "0", CVAR_INTEGER | CVAR_RENDERER, "[Vulkan]: setup debug info");
 idCVar r_vkEnableValidationLayer("r_vkEnableValidationLayer", "0", CVAR_BOOL | CVAR_RENDERER, "[Vulkan]: setup debug info");
+idCVar r_vkUseGlobalUniform("r_vkUseGlobalUniform", "0", CVAR_BOOL | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: using global uniform");
 
 // vk_context
 idCVar r_vkContextPipelineSize("r_vkContextPipelineSize", "64", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "[Vulkan]: global pipeline list initialize size");

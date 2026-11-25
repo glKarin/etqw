@@ -86,3 +86,9 @@ void R_VK_InitGlobalUBO()
 }
 
 #include "ubo_copy.inc.h"
+
+#include "ubo_clear.inc.h"
+
+#include "ubo_loc.inc.h"
+
+#include "ubo_check.inc.h"

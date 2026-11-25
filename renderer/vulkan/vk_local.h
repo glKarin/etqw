@@ -33,6 +33,7 @@ extern bool USING_VULKAN;
 
 extern idCVar harm_r_renderBackend;
 extern idCVar r_vkUsePipelineCache;
+extern idCVar r_vkUseGlobalUniform;
 extern idCVar r_vkSetDebugInfo;
 extern idCVar r_vkEnableValidationLayer;
 
@@ -81,6 +82,7 @@ void R_VK_AddLoadImageList( idImage * image, bool checkForPrecompressed );
 void R_VK_AddUploadScratchImageList( idImage * image, byte *data, int cols, int rows );
 void R_VK_AddUpdateCinematicImageList( idImage * image, idCinematic *cinematic, int time );
 void R_VK_HandleLoadImageList( void );
+void R_VK_RemoveUploadImageList( idImage * image );
 bool R_VK_DisableUploadImage( void );
 
 void R_VK_AddLoadBufferList( struct vertCache_s *block );
@@ -88,5 +90,9 @@ void R_VK_HandleLoadBufferList( void );
 bool R_VK_DisableUploadBuffer(void);
 
 void R_VK_AddCommands();
+#if 0
+void RB_ClearColor(const void *data);
+void R_AddClearColorCmd(void);
+#endif
 
 #endif //_VULKAN_LOCAL_H

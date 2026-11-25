@@ -494,6 +494,19 @@ UBO_FRAGMENT_PROC_END(retroPS1)
 #endif
 
 
+UBO_VERTEX_PROC_BEGIN(enviroSuit)
+	UBO_MAT4_PROC(modelViewProjectionMatrix);
+	UBO_VEC4_N_PROC(vertexParm, 0);
+	UBO_VEC4_N_PROC(vertexParm, 1);
+UBO_VERTEX_PROC_END(enviroSuit)
+
+UBO_FRAGMENT_PROC_BEGIN(enviroSuit)
+	UBO_VEC4_PROC(nonPowerOfTwo);
+	UBO_VEC4_PROC(windowCoords);
+UBO_FRAGMENT_PROC_END(enviroSuit)
+
+
+
 #undef UBO_VERTEX_PROC_BEGIN
 #undef UBO_FRAGMENT_PROC_BEGIN
 #undef UBO_VERTEX_PROC_END

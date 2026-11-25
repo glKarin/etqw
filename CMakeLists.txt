@@ -1030,11 +1030,11 @@ if(VULKAN)
 			renderer/vulkan/vk_shader.cpp
 			renderer/vulkan/vk_ubo.cpp
 			renderer/vulkan/vk_sampler.cpp
-			renderer/vulkan/RenderSystem_VK.cpp
-			renderer/vulkan/VertexCache_VK.cpp
-			renderer/vulkan/Image_VK.cpp
-			renderer/vulkan/Framebuffer_VK.cpp
-			renderer/vulkan/RenderBackend_VK.cpp
+			renderer/vulkan/RenderSystem_vk.cpp
+			renderer/vulkan/VertexCache_vk.cpp
+			renderer/vulkan/Image_vk.cpp
+			renderer/vulkan/Framebuffer_vk.cpp
+			renderer/vulkan/RenderBackend_vk.cpp
 	)
 	set(src_renderer ${src_renderer} ${VK_LIST})
 endif()

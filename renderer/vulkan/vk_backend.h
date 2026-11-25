@@ -26,6 +26,7 @@ typedef enum VKUboTypeMask_e
  */
 typedef enum VKTextureUnitType_e
 {
+	TUT_NONE = -1,
 	TUT_2D = 0,
 	TUT_CUBEMAP,
 	TUT_2D_ARRAY,
@@ -52,10 +53,10 @@ typedef enum VKRenderPassType_e
  */
 typedef struct VKDynamicState_s
 {
-	int renderWidth;
-	int renderHeight;
+	uint32_t renderWidth;
+	uint32_t renderHeight;
 	int viewport[4];
-	int scissor[4];
+	uint32_t scissor[4];
 	float lineWidth;
 	float clearColor[4];
 	float clearDepth;
@@ -63,9 +64,9 @@ typedef struct VKDynamicState_s
 	float polygonFactor;
 	float polygonUnits;
 	int cullFace;
-	unsigned int stencilMask[2];
+	uint32_t stencilMask[2];
 	int stencilReference[2];
-	unsigned int stencilWriteMask[2];
+	uint32_t stencilWriteMask[2];
 	float depthRanges[2];
 } VKDynamicState_t;
 
@@ -86,9 +87,9 @@ typedef struct VKBackEnd_s
 	VKMAP(VkSampler, VKSamplerKey_t) samplerPool; // 采样器池
 	VKQuery_t query; // 查询对象
 
-	globalUniformBufferObject_t ubo; // 当前Uniform变量
+	VKGlobalUniformObject_t ubo; // 当前Uniform变量
 	uint32_t frameCount; // 帧计数
-	globalUniformBufferObjectState_t uboState; // 当前Uniform缓存状态计数
+	VKGlobalUniformObjectState_t uboState; // 当前Uniform缓存状态计数
 	VkDescriptorSet currentDescriptorSet[2]; // 当前绑定的描述符集
 
 	VKLIST(VKHandle_t) purgeBuffers[NUM_INFLIGHT_FRAME]; // 延时删除缓冲区列表(实际删除时清空)
@@ -100,7 +101,7 @@ typedef struct VKBackEnd_s
 	bool isMirror;
 	bool initialized; // 是否初始化
 } VKBackEnd_t;
-//static_assert(offsetof(VKBackEnd_t, ubo) + offsetof(globalUniformBufferObject_t, alphaTest) + 4 + 4 == offsetof(VKBackEnd_t, uboState));
+//static_assert(offsetof(VKBackEnd_t, ubo) + offsetof(VKGlobalUniformObject_t, alphaTest) + 4 + 4 == offsetof(VKBackEnd_t, uboState));
 
 extern VKBackEnd_t vk_backend;
 
@@ -126,6 +127,19 @@ void R_VK_TransformUniform1i(int dst, int src, void *to);
 void R_VK_TransformUniform1f(int dst, int src, void *to);
 void R_VK_TransformUniform4f(int dst, int src, void *to);
 void R_VK_TransformUniformMatrix4f(int dst, int src, void *to);
+
+void R_VK_ProgramUniform4f(int location, float x, float y, float z, float w);
+void R_VK_ProgramUniform4fv(int location, const vec4 arr);
+void R_VK_ProgramUniform1f(int location, float x);
+void R_VK_ProgramUniformMatrix4fv(int location, const mat4 mat);
+void R_VK_ProgramUniformMatrix4fv(int location, const float mat[4][4]);
+void R_VK_ProgramUniform1i(int location, int x);
+void R_VK_ProgramUniform2fv(int location, const vec2 arr);
+void R_VK_ProgramUniform3fv(int location, const vec3 arr);
+void R_VK_ProgramUniformMatrix4fv(int location, const mat4 mat, int n);
+
+void R_VK_CheckUniform(int src);
+void R_VK_ClearUniform(int src);
 
 void R_VK_Bind(VKImage_t *image);
 void R_VK_BindType(int type, VKImage_t *image);

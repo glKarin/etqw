@@ -374,10 +374,10 @@ GLenum VKGL_FUNC(glGetError)(void)
     return error;
 }
 
-#define GLGET_WRITE1(params, a) params[0] = (GLGET_WRITE_TYPE)a;
-#define GLGET_WRITE2(params, a, b) params[0] = (GLGET_WRITE_TYPE)a; params[1] = (GLGET_WRITE_TYPE)b;
-#define GLGET_WRITE2V(params, a) GLGET_WRITE2(params, a[0], a[1]);
-#define GLGET_WRITE4(params, a, b, c, d) params[0] = (GLGET_WRITE_TYPE)a; params[1] = (GLGET_WRITE_TYPE)b; params[2] = (GLGET_WRITE_TYPE)c; params[3] = (GLGET_WRITE_TYPE)d;
+#define GLGET_WRITE1(params, a) params[0] = (GLGET_WRITE_TYPE)(a);
+#define GLGET_WRITE2(params, a, b) params[0] = (GLGET_WRITE_TYPE)(a); params[1] = (GLGET_WRITE_TYPE)(b);
+#define GLGET_WRITE2V(params, a) GLGET_WRITE2(params, (a)[0], (a)[1]);
+#define GLGET_WRITE4(params, a, b, c, d) params[0] = (GLGET_WRITE_TYPE)(a); params[1] = (GLGET_WRITE_TYPE)b; params[2] = (GLGET_WRITE_TYPE)(c); params[3] = (GLGET_WRITE_TYPE)(d);
 #define GLGET_WRITE4V(params, a) GLGET_WRITE4(params, a[0], a[1], a[2], a[3]);
 
 #define GLGET_FUNC(Type) void VKGL_FUNC(glGet##Type##v)(GLenum pname, GLGET_WRITE_TYPE *params) \
@@ -622,42 +622,66 @@ void VKGL_FUNC(glStencilOpSeparate)(GLenum face, GLenum sfail, GLenum dpfail, GL
 
 void VKGL_FUNC(glUniform1f)(GLint location, GLfloat x)
 {
-    R_VK_Uniform1f(location, x);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform1f(location, x);
+	else
+		R_VK_ProgramUniform1f(location, x);
 }
 
 void VKGL_FUNC(glUniform1fv)(GLint location, GLsizei, const GLfloat *value)
 {
-    R_VK_Uniform1f(location, *value);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform1f(location, *value);
+	else
+		R_VK_ProgramUniform1f(location, *value);
 }
 
 void VKGL_FUNC(glUniform2fv)(GLint location, GLsizei, const GLfloat *value)
 {
-    R_VK_Uniform2fv(location, value);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform2fv(location, value);
+	else
+		R_VK_ProgramUniform2fv(location, value);
 }
 
 void VKGL_FUNC(glUniform3fv)(GLint location, GLsizei, const GLfloat *value)
 {
-    R_VK_Uniform3fv(location, value);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform3fv(location, value);
+	else
+		R_VK_ProgramUniform3fv(location, value);
 }
 
 void VKGL_FUNC(glUniform4f)(GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
-    R_VK_Uniform4f(location, x, y, z, w);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform4f(location, x, y, z, w);
+	else
+		R_VK_ProgramUniform4f(location, x, y, z, w);
 }
 
 void VKGL_FUNC(glUniform4fv)(GLint location, GLsizei, const GLfloat *value)
 {
-    R_VK_Uniform4fv(location, value);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform4fv(location, value);
+	else
+		R_VK_ProgramUniform4fv(location, value);
 }
 
 void VKGL_FUNC(glUniform1i)(GLint location, GLint value)
 {
-    R_VK_Uniform1i(location, value);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_Uniform1i(location, value);
+	else
+		R_VK_ProgramUniform1i(location, value);
 }
 
 void VKGL_FUNC(glUniformMatrix4fv)(GLint location, GLsizei count, GLboolean, const GLfloat *value)
 {
-    R_VK_UniformMatrix4fv(location, value, count);
+	if(r_vkUseGlobalUniform.GetBool())
+		R_VK_UniformMatrix4fv(location, value, count);
+	else
+		R_VK_ProgramUniformMatrix4fv(location, value, count);
 }
 
 void VKGL_FUNC(glViewport)(GLint x, GLint y, GLsizei width, GLsizei height)
@@ -665,7 +689,7 @@ void VKGL_FUNC(glViewport)(GLint x, GLint y, GLsizei width, GLsizei height)
     R_VK_Viewport(x, vk_backend.dynamicState.renderHeight - y - height, width, height);
 }
 
-#include "gles2proc_placeholder.inc.h"
+#include "vk_gl_placeholder.inc.h"
 
 void R_VK_LoadOpenGLCompatFunc(void)
 {

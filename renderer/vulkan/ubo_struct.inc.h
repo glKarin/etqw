@@ -18,7 +18,7 @@
 #define UBO_VEC4_N_PROC(X, N) vec4 X##N
 #define UBO_MAT4_N_PROC(X, N) mat4 X[N]
 
-#include "ubo_type.inc.h"
+#include "ubo_prop_shader.inc.h"
 
 
 FRAGMENT_UBO_ALIAS_DEFINE(blendLight, fog)

@@ -574,6 +574,7 @@ void RB_SetProgramEnvironment(void)
 	parm[3] = 1;
 	GL_Uniform4fv(offsetof(shaderProgram_t, windowCoords), parm);
 
+#if 0 // UNUSED
 	//
 	// set eye position in global space
 	//
@@ -582,6 +583,7 @@ void RB_SetProgramEnvironment(void)
 	parm[2] = backEnd.viewDef->renderView.vieworg[2];
 	parm[3] = 1.0;
     GL_Uniform4fv(offsetof(shaderProgram_t, eyeOrigin), parm);
+#endif
 }
 
 /*

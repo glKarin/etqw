@@ -56,6 +56,31 @@ VKBackEnd_t vk_backend;
 #define VKSTATE1_CLEAR(x) vk_backend.state.st1 &= ~(globalState_t)(x);
 #define VKSTATE2_CLEAR(x) vk_backend.state.st2 &= ~(globalState_t)(x);
 
+typedef struct vec2_s
+{
+	vec2 v;
+} vec2_t;
+
+typedef struct vec3_s
+{
+	vec3 v;
+} vec3_t;
+
+typedef struct vec4_s
+{
+	vec4 v;
+} vec4_t;
+
+typedef struct mat4_s
+{
+	mat4 m;
+} mat4_t;
+
+#define MAT4CPY(dst, src) *((mat4_t *)(dst)) = *((mat4_t *)(src))
+#define VEC4CPY(dst, src) *((vec4_t *)(dst)) = *((vec4_t *)(src))
+#define VEC3CPY(dst, src) *((vec3_t *)(dst)) = *((vec3_t *)(src))
+#define VEC2CPY(dst, src) *((vec2_t *)(dst)) = *((vec2_t *)(src))
+
 /**
  * 读取本地渲染通道缓存
  */
@@ -107,14 +132,14 @@ static void R_VK_SavePipelineCache(void)
 void R_VK_Uniform1f(int location, float value)
 {
 	assert(location >= 0);
-	assert(sizeof(globalUniformBufferObject_t) >= location + 4 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 4 );
 	*GLOBAL_UBO_PTR_FLOAT(location) = value;
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
 void R_VK_Uniform4f(int location, float x, float y, float z, float w)
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 16 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
 	assert(location >= 0);
 	float *ptr = GLOBAL_UBO_PTR_FLOAT(location);
 	ptr[0] = x;
@@ -126,36 +151,31 @@ void R_VK_Uniform4f(int location, float x, float y, float z, float w)
 
 void R_VK_Uniform4fv(int location, const vec4 arr)
 {
-	//memcpy(GLOBAL_UBO_PTR(location), arr, sizeof(float) * 4);
-	assert(sizeof(globalUniformBufferObject_t) >= location + 16 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
 	assert(location >= 0);
-	float *ptr = GLOBAL_UBO_PTR_FLOAT(location);
-	ptr[0] = arr[0];
-	ptr[1] = arr[1];
-	ptr[2] = arr[2];
-	ptr[3] = arr[3];
+	VEC4CPY(GLOBAL_UBO_PTR_FLOAT(location), arr);
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
 void R_VK_UniformMatrix4fv(int location, const mat4 mat)
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 64 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 64 );
 	assert(location >= 0);
-	memcpy(GLOBAL_UBO_PTR(location), mat, sizeof(float) * 16);
+	MAT4CPY(GLOBAL_UBO_PTR(location), mat);
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
 void R_VK_UniformMatrix4fv(int location, const float mat[4][4])
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 64 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 64 );
 	assert(location >= 0);
-	memcpy(GLOBAL_UBO_PTR(location), mat, sizeof(float) * 16);
+	MAT4CPY(GLOBAL_UBO_PTR(location), mat);
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
 void R_VK_Uniform1i(int location, int value)
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 4 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 4 );
 	assert(location >= 0);
 	*GLOBAL_UBO_PTR_INT(location) = value;
 	GLOBAL_UBO_STATE_MOD(location);
@@ -163,31 +183,266 @@ void R_VK_Uniform1i(int location, int value)
 
 void R_VK_Uniform2fv(int location, const vec2 arr)
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 16 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
 	assert(location >= 0);
-	float *ptr = GLOBAL_UBO_PTR_FLOAT(location);
-	ptr[0] = arr[0];
-	ptr[1] = arr[1];
+	VEC2CPY(GLOBAL_UBO_PTR_FLOAT(location), arr);
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
 void R_VK_Uniform3fv(int location, const vec3 arr)
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 16 );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
 	assert(location >= 0);
-	float *ptr = GLOBAL_UBO_PTR_FLOAT(location);
-	ptr[0] = arr[0];
-	ptr[1] = arr[1];
-	ptr[2] = arr[2];
+	VEC3CPY(GLOBAL_UBO_PTR_FLOAT(location), arr);
 	GLOBAL_UBO_STATE_MOD(location);
 }
 
 void R_VK_UniformMatrix4fv(int location, const mat4 mat, int n)
 {
-	assert(sizeof(globalUniformBufferObject_t) >= location + 64*n );
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 64*n );
 	assert(location >= 0);
 	memcpy(GLOBAL_UBO_PTR(location), mat, sizeof(float) * 16 * n);
 	GLOBAL_UBO_STATE_MOD(location);
+}
+
+#define SHADER_UBOX_LOC_PTR(stage, location) (((char *)(&vk_backend.currentProgram->uboLocation_##stage)) + (location))
+#define SHADER_UBOX_LOC(stage, location) (*(int *)SHADER_UBOX_LOC_PTR(stage, location))
+#define SHADER_UBOX_LOC_PTR_FLOAT(stage, location) SHADER_UBO_PTR_FLOAT(vk_backend.currentProgram->ubo_##stage, location)
+#define SHADER_UBOX_LOC_PTR_INT(stage, location) SHADER_UBO_PTR_INT(vk_backend.currentProgram->ubo_##stage, location)
+
+#define SHADER_UBO0_LOC_PTR(location) SHADER_UBOX_LOC_PTR(vertex, location)
+#define SHADER_UBO0_LOC(location) SHADER_UBOX_LOC(vertex, location)
+#define SHADER_UBO0_LOC_PTR_FLOAT(location) SHADER_UBOX_LOC_PTR_FLOAT(vertex, location)
+#define SHADER_UBO0_LOC_PTR_INT(location) SHADER_UBOX_LOC_PTR_INT(vertex, location)
+
+#define SHADER_UBO1_LOC_PTR(location) SHADER_UBOX_LOC_PTR(fragment, location)
+#define SHADER_UBO1_LOC(location) SHADER_UBOX_LOC(fragment, location)
+#define SHADER_UBO1_LOC_PTR_FLOAT(location) SHADER_UBOX_LOC_PTR_FLOAT(fragment, location)
+#define SHADER_UBO1_LOC_PTR_INT(location) SHADER_UBOX_LOC_PTR_INT(fragment, location)
+
+#define SHADER_UBO_STATE_PTR(location) (((char *)&vk_backend.currentProgram->uboState) + (location))
+#define SHADER_UBO_STATE_VALUE(location) (*((int *)SHADER_UBO_STATE_PTR(location)))
+#define SHADER_UBO_STATE_MOD(location) SHADER_UBO_STATE_VALUE(location)++
+/**
+ * 设置当前全局Uniform变量, 并记录该变量已变更
+ * @param location 相对偏移字节数
+ * @param value 值
+ */
+void R_VK_ProgramUniform1f(int location, float value)
+{
+	assert(location >= 0);
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 4 );
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			*SHADER_UBO0_LOC_PTR_FLOAT(loc) = value;
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			*SHADER_UBO1_LOC_PTR_FLOAT(loc) = value;
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniform4f(int location, float x, float y, float z, float w)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
+	assert(location >= 0);
+	float *ptr;
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			ptr = SHADER_UBO0_LOC_PTR_FLOAT(loc);
+			ptr[0] = x;
+			ptr[1] = y;
+			ptr[2] = z;
+			ptr[3] = w;
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			ptr = SHADER_UBO1_LOC_PTR_FLOAT(loc);
+			ptr[0] = x;
+			ptr[1] = y;
+			ptr[2] = z;
+			ptr[3] = w;
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniform4fv(int location, const vec4 arr)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
+	assert(location >= 0);
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			VEC4CPY(SHADER_UBO0_LOC_PTR_FLOAT(loc), arr);
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			VEC4CPY(SHADER_UBO1_LOC_PTR_FLOAT(loc), arr);
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniformMatrix4fv(int location, const mat4 mat)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 64 );
+	assert(location >= 0);
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			MAT4CPY(SHADER_UBO0_LOC_PTR_FLOAT(loc), mat);
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			MAT4CPY(SHADER_UBO1_LOC_PTR_FLOAT(loc), mat);
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniformMatrix4fv(int location, const float mat[4][4])
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 64 );
+	assert(location >= 0);
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			MAT4CPY(SHADER_UBO0_LOC_PTR_FLOAT(loc), mat);
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			MAT4CPY(SHADER_UBO1_LOC_PTR_FLOAT(loc), mat);
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniform1i(int location, int value)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 4 );
+	assert(location >= 0);
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			*SHADER_UBO0_LOC_PTR_INT(loc) = value;
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			*SHADER_UBO1_LOC_PTR_INT(loc) = value;
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniform2fv(int location, const vec2 arr)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
+	assert(location >= 0);
+	float *ptr;
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			VEC2CPY(SHADER_UBO0_LOC_PTR_FLOAT(loc), arr);
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			VEC2CPY(SHADER_UBO1_LOC_PTR_FLOAT(loc), arr);
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniform3fv(int location, const vec3 arr)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 16 );
+	assert(location >= 0);
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			VEC3CPY(SHADER_UBO0_LOC_PTR_FLOAT(loc), arr);
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			VEC3CPY(SHADER_UBO1_LOC_PTR_FLOAT(loc), arr);
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
+}
+
+void R_VK_ProgramUniformMatrix4fv(int location, const mat4 mat, int n)
+{
+	assert(sizeof(VKGlobalUniformObject_t) >= location + 64*n );
+	assert(location >= 0);
+	int loc;
+	if(vk_backend.currentProgram)
+	{
+		loc = SHADER_UBO0_LOC(location);
+		if(loc >= 0)
+		{
+			memcpy(SHADER_UBO0_LOC_PTR_FLOAT(loc), mat, sizeof(float) * 16 * n);
+			SHADER_UBO_STATE_MOD(location);
+		}
+
+		loc = SHADER_UBO1_LOC(location);
+		if(loc >= 0)
+		{
+			memcpy(SHADER_UBO1_LOC_PTR_FLOAT(loc), mat, sizeof(float) * 16 * n);
+			SHADER_UBO_STATE_MOD(location);
+		}
+	}
 }
 
 #define SHADER_UBO_STATE_PTR(location) (((char *)&vk_backend.currentProgram->uboState) + (location))
@@ -210,106 +465,9 @@ void R_VK_UniformMatrix4fv(int location, const mat4 mat, int n)
 #endif
 
 #define SHADER_UBO_STATE_IS_DIRTY(location) (GLOBAL_UBO_STATE_VALUE(location) != SHADER_UBO_STATE_VALUE(location) || vk_backend.frameCount != vk_backend.currentProgram->frameCount)
-#define SHADER_UBO_STATE_CLEAR_DIRTY(location) { SHADER_UBO_STATE_HAS_UPDATE(location) SHADER_UBO_STATE_VALUE(location) = GLOBAL_UBO_STATE_VALUE(location); vk_backend.currentProgram->uboUpdate = true; }
+#define SHADER_UBO_STATE_CLEAR_DIRTY(location) { SHADER_UBO_STATE_HAS_UPDATE(location) SHADER_UBO_STATE_VALUE(location) = GLOBAL_UBO_STATE_VALUE(location); }
+#define SHADER_UBO_STATE_MARK_UPDATE(location) { SHADER_UBO_STATE_HAS_UPDATE(location) vk_backend.currentProgram->uboUpdate = true; }
 
-typedef struct vec4_s
-{
-	vec4 v;
-} vec4_t;
-
-typedef struct mat4_s
-{
-	mat4 m;
-} mat4_t;
-
-#define MAT4CPY(dst, src) *((mat4_t *)(dst)) = *((mat4_t *)(src))
-#define VEC4CPY(dst, src) *((vec4_t *)(dst)) = *((vec4_t *)(src))
-
-#if 0
-void R_VK_Uniform1f2(int location, int st_location, float value)
-{
-	*GLOBAL_UBO_PTR_FLOAT(location) = value;
-	GLOBAL_UBO_STATE_MOD(st_location);
-}
-
-void R_VK_Uniform4f2(int location, int st_location, float x, float y, float z, float w)
-{
-	float *ptr = GLOBAL_UBO_PTR_FLOAT(location);
-	ptr[0] = x;
-	ptr[1] = y;
-	ptr[2] = z;
-	ptr[3] = w;
-	GLOBAL_UBO_STATE_MOD(st_location);
-}
-
-void R_VK_Uniform4fv2(int location, int st_location, const vec4 arr)
-{
-	memcpy(GLOBAL_UBO_PTR(location), arr, sizeof(float) * 4);
-	GLOBAL_UBO_STATE_MOD(st_location);
-}
-
-void R_VK_UniformMatrix4fv2(int location, int st_location, const mat4 mat)
-{
-	memcpy(GLOBAL_UBO_PTR(location), mat, sizeof(float) * 16);
-	GLOBAL_UBO_STATE_MOD(st_location);
-}
-
-void R_VK_UniformMatrix4fv2(int location, int st_location, const float mat[4][4])
-{
-	memcpy(GLOBAL_UBO_PTR(location), mat, sizeof(float) * 16);
-	GLOBAL_UBO_STATE_MOD(st_location);
-}
-
-void R_VK_TransformUniform2(int dst, int src, int st_location, void *to, int size)
-{
-	if (SHADER_UBO_STATE_IS_DIRTY(st_location))
-	{
-		memcpy(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src), size);
-		SHADER_UBO_STATE_CLEAR_DIRTY(st_location);
-	}
-	SHADER_UBO_STATE_NOT_UPDATE
-}
-
-void R_VK_TransformUniform1i2(int dst, int src, int st_location, void *to)
-{
-	if (SHADER_UBO_STATE_IS_DIRTY(st_location))
-	{
-		*SHADER_UBO_PTR_INT(to, dst) = *GLOBAL_UBO_PTR_INT(src);
-		SHADER_UBO_STATE_CLEAR_DIRTY(st_location);
-	}
-	SHADER_UBO_STATE_NOT_UPDATE
-}
-
-void R_VK_TransformUniform1f2(int dst, int src, int st_location, void *to)
-{
-	if (SHADER_UBO_STATE_IS_DIRTY(st_location))
-	{
-		*SHADER_UBO_PTR_FLOAT(to, dst) = *GLOBAL_UBO_PTR_FLOAT(src);
-		SHADER_UBO_STATE_CLEAR_DIRTY(st_location);
-	}
-	SHADER_UBO_STATE_NOT_UPDATE
-}
-
-void R_VK_TransformUniform4f2(int dst, int src, int st_location, void *to)
-{
-	if (SHADER_UBO_STATE_IS_DIRTY(st_location))
-	{
-		VEC4CPY(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src));
-		SHADER_UBO_STATE_CLEAR_DIRTY(st_location);
-	}
-	SHADER_UBO_STATE_NOT_UPDATE
-}
-
-void R_VK_TransformUniformMatrix4f2(int dst, int src, int st_location, void *to)
-{
-	if (SHADER_UBO_STATE_IS_DIRTY(st_location))
-	{
-		MAT4CPY(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src));
-		SHADER_UBO_STATE_CLEAR_DIRTY(st_location);
-	}
-	SHADER_UBO_STATE_NOT_UPDATE
-}
-#endif
 
 /**
  * 拷贝当前全局Uniform变量到当前使用的渲染管线的Uniform变量中, 如果该变量未变更则跳过
@@ -323,7 +481,7 @@ void R_VK_TransformUniform(int dst, int src, void *to, int size)
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
 	{
 		memcpy(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src), size);
-		SHADER_UBO_STATE_CLEAR_DIRTY(src);
+		SHADER_UBO_STATE_MARK_UPDATE(src);
 	}
 	SHADER_UBO_STATE_NOT_UPDATE
 }
@@ -333,7 +491,7 @@ void R_VK_TransformUniform1i(int dst, int src, void *to)
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
 	{
 		*SHADER_UBO_PTR_INT(to, dst) = *GLOBAL_UBO_PTR_INT(src);
-		SHADER_UBO_STATE_CLEAR_DIRTY(src);
+		SHADER_UBO_STATE_MARK_UPDATE(src);
 	}
 	SHADER_UBO_STATE_NOT_UPDATE
 }
@@ -343,7 +501,7 @@ void R_VK_TransformUniform1f(int dst, int src, void *to)
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
 	{
 		*SHADER_UBO_PTR_FLOAT(to, dst) = *GLOBAL_UBO_PTR_FLOAT(src);
-		SHADER_UBO_STATE_CLEAR_DIRTY(src);
+		SHADER_UBO_STATE_MARK_UPDATE(src);
 	}
 	SHADER_UBO_STATE_NOT_UPDATE
 }
@@ -353,7 +511,7 @@ void R_VK_TransformUniform4f(int dst, int src, void *to)
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
 	{
 		VEC4CPY(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src));
-		SHADER_UBO_STATE_CLEAR_DIRTY(src);
+		SHADER_UBO_STATE_MARK_UPDATE(src);
 	}
 	SHADER_UBO_STATE_NOT_UPDATE
 }
@@ -363,6 +521,24 @@ void R_VK_TransformUniformMatrix4f(int dst, int src, void *to)
 	if (SHADER_UBO_STATE_IS_DIRTY(src))
 	{
 		MAT4CPY(SHADER_UBO_PTR(to, dst), GLOBAL_UBO_PTR(src));
+		SHADER_UBO_STATE_MARK_UPDATE(src);
+	}
+	SHADER_UBO_STATE_NOT_UPDATE
+}
+
+void R_VK_CheckUniform(int src)
+{
+	if (SHADER_UBO_STATE_IS_DIRTY(src))
+	{
+		SHADER_UBO_STATE_MARK_UPDATE(src);
+	}
+	SHADER_UBO_STATE_NOT_UPDATE
+}
+
+void R_VK_ClearUniform(int src)
+{
+	if (SHADER_UBO_STATE_IS_DIRTY(src))
+	{
 		SHADER_UBO_STATE_CLEAR_DIRTY(src);
 	}
 	SHADER_UBO_STATE_NOT_UPDATE
@@ -586,7 +762,7 @@ void R_VK_CreatePipeline(VKShaderProgram_t *program)
 	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->pipeline, "pipeline::%d::%s", handle, program->name);
 
 	const char *stStr = R_VK_StateStr(program->currentState);
-	Sys_Printf("Create new pipeline: %s, state=0x%llx|%llx = %s\n", program->name, program->currentState.st1, program->currentState.st2, stStr);
+	Sys_Printf("Create new pipeline: %s, state=0x%llx|%llx = %s\n", program->name, (unsigned long long)program->currentState.st1, (unsigned long long)program->currentState.st2, stStr);
 }
 
 /**
@@ -1091,25 +1267,108 @@ static int R_VK_CopyAllUniforms()
 		for (int i = 0; i < vk_backend.currentProgram->numTextureUnits; i++)
 		{
 			const int textureType = vk_backend.currentProgram->textureTypes[i];
-			if (vk_backend.tmu[textureType][i]) // has binding
+			if(textureType != TUT_NONE)
 			{
-				if (vk_backend.currentProgram->textures[i] != vk_backend.tmu[textureType][i]
-					|| (vk_backend.currentProgram->textures[i] && vk_backend.currentProgram->textures[i]->image != vk_backend.tmu[textureType][i]->image)
-					)
+				if (vk_backend.tmu[textureType][i]) // has binding
 				{
-					vk_backend.currentProgram->textures[i] = vk_backend.tmu[textureType][i];
-					uboUpdateMask |= (UTM_IMAGE << i);
+					if (vk_backend.currentProgram->textures[i] != vk_backend.tmu[textureType][i]
+							|| (vk_backend.currentProgram->textures[i] && vk_backend.currentProgram->textures[i]->image != vk_backend.tmu[textureType][i]->image)
+					   )
+					{
+						vk_backend.currentProgram->textures[i] = vk_backend.tmu[textureType][i];
+						uboUpdateMask |= (UTM_IMAGE << i);
+					}
 				}
-			}
-			else // not binding
-			{
-				if (vk_backend.currentProgram->textures[i])
+				else // not binding
 				{
-					vk_backend.currentProgram->textures[i] = NULL;
-					uboUpdateMask |= (UTM_IMAGE << i);
+					if (vk_backend.currentProgram->textures[i])
+					{
+						vk_backend.currentProgram->textures[i] = NULL;
+						uboUpdateMask |= (UTM_IMAGE << i);
+					}
 				}
 			}
 		}
+	}
+
+	if(uboUpdateMask & UTM_VERTEX)
+	{
+		vk_backend.currentProgram->clearUniformState_vertex();
+	}
+	if(uboUpdateMask & UTM_FRAGMENT)
+	{
+		vk_backend.currentProgram->clearUniformState_fragment();
+	}
+
+	vk_backend.currentProgram->frameCount = vk_backend.frameCount;
+
+	return uboUpdateMask;
+}
+
+static int R_VK_CheckAllUniforms()
+{
+	ASSERT_PROGRAM;
+
+	int uboUpdateMask = 0;
+
+	vk_backend.currentProgram->uboUpdate = false;
+	if(vk_backend.currentProgram->checkUniformState_vertex)
+	{
+		vk_backend.currentProgram->checkUniformState_vertex();
+		if (vk_backend.currentProgram->uboUpdate)
+		{
+			uboUpdateMask |= UTM_VERTEX;
+			vk_backend.currentProgram->uboUpdate = false;
+		}
+	}
+
+	if(vk_backend.currentProgram->checkUniformState_fragment)
+	{
+		vk_backend.currentProgram->checkUniformState_fragment();
+		if (vk_backend.currentProgram->uboUpdate)
+		{
+			uboUpdateMask |= UTM_FRAGMENT;
+			vk_backend.currentProgram->uboUpdate = false;
+		}
+	}
+
+	if(vk_backend.currentProgram->numTextureUnits > 0)
+	{
+		//memcpy(vk_backend.currentProgram->textures, vk_backend.tmu, vk_backend.currentProgram->numTextureUnits * sizeof(VKImage_t *));
+		for (int i = 0; i < vk_backend.currentProgram->numTextureUnits; i++)
+		{
+			const int textureType = vk_backend.currentProgram->textureTypes[i];
+			if(textureType != TUT_NONE)
+			{
+				if (vk_backend.tmu[textureType][i]) // has binding
+				{
+					if (vk_backend.currentProgram->textures[i] != vk_backend.tmu[textureType][i]
+							|| (vk_backend.currentProgram->textures[i] && vk_backend.currentProgram->textures[i]->image != vk_backend.tmu[textureType][i]->image)
+					   )
+					{
+						vk_backend.currentProgram->textures[i] = vk_backend.tmu[textureType][i];
+						uboUpdateMask |= (UTM_IMAGE << i);
+					}
+				}
+				else // not binding
+				{
+					if (vk_backend.currentProgram->textures[i])
+					{
+						vk_backend.currentProgram->textures[i] = NULL;
+						uboUpdateMask |= (UTM_IMAGE << i);
+					}
+				}
+			}
+		}
+	}
+
+	if(uboUpdateMask & UTM_VERTEX)
+	{
+		vk_backend.currentProgram->clearUniformState_vertex();
+	}
+	if(uboUpdateMask & UTM_FRAGMENT)
+	{
+		vk_backend.currentProgram->clearUniformState_fragment();
 	}
 
 	vk_backend.currentProgram->frameCount = vk_backend.frameCount;
@@ -1377,7 +1636,7 @@ void R_VK_UpdateUniformBufferObject()
 {
 	R_VK_SyncPipelineState();
 
-	int uboUpdateMask = R_VK_CopyAllUniforms();
+	int uboUpdateMask = r_vkUseGlobalUniform.GetBool() ? R_VK_CopyAllUniforms() : R_VK_CheckAllUniforms();
 
 	VkWriteDescriptorSet writeDescriptorSets[VKBINDING_UBO_NUM];
 	VKARRZERO(writeDescriptorSets);
@@ -1517,6 +1776,7 @@ void R_VK_UpdateUniformBufferObject()
 		for (int i = 0; i < vk_backend.currentProgram->numTextureUnits; i++)
 		{
 			//if (uboUpdateMask & (UTM_IMAGE << i))
+			if(vk_backend.currentProgram->textureTypes[i] != TUT_NONE)
 			{
 				VKZERO(descriptorImageInfos[i]);
 				VKImage_t *image = vk_backend.currentProgram->textures[i];
@@ -1967,6 +2227,8 @@ void R_VK_Scissor(int x, int y, int w, int h)
 {
 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
+	if (w < 0) w = idMath::Max(INT32_MAX - x, 0);
+	if (h < 0) h = idMath::Max(INT32_MAX - y, 0);
 	vk_backend.dynamicState.scissor[0] = x;
 	vk_backend.dynamicState.scissor[1] = y;
 	vk_backend.dynamicState.scissor[2] = w;
@@ -2089,17 +2351,34 @@ void R_VK_UseVertexColor(bool enable)
 	}
 }
 
+static void R_VK_CopyImageBaseInfo(VKImage_t *dstImage, const VKImage_t *srcImage)
+{
+	dstImage->sampler = srcImage->sampler;
+	dstImage->format = srcImage->format;
+	dstImage->width = srcImage->width;
+	dstImage->height = srcImage->height;
+	dstImage->mipLevels = srcImage->mipLevels;
+	dstImage->layers = srcImage->layers;
+	dstImage->usage = srcImage->usage;
+	dstImage->cubeMap = srcImage->cubeMap;
+	dstImage->type = srcImage->type;
+}
+
 /**
  * 交换texnum指向的图像到新创建的临时的图像槽中, 新创建的图像将被延时销毁, 返回新的图像地址(texnum指向新的内存地址)
  * @param texnum
  */
 void R_VK_CreateNewImage(VKHandle_t texnum, VKImage_t **image)
 {
+	VKImage_t *oldImage = vk_context.images.list[texnum];
+
 	// Allocate new temp image slot
 	VKImage_t *newImage;
 	VKHandle_t newHandle = VK_AllocImage(&newImage);
 	// Swap texnum and new temp image slot data
 	VK_SwapImage(texnum, newHandle);
+	// Copy image base info
+	R_VK_CopyImageBaseInfo(newImage, oldImage);
 	// Defer destroy the image by new temp handle
 	R_VK_DestroyImage(newHandle);
 	// return new image
@@ -2112,12 +2391,16 @@ void R_VK_CreateNewImage(VKHandle_t texnum, VKImage_t **image)
  */
 void R_VK_ReCreateImage(VKHandle_t texnum)
 {
-	R_VK_ProgramsUnbind(vk_context.images.list[texnum]);
+	VKImage_t *image = vk_context.images.list[texnum];
+
+	R_VK_ProgramsUnbind(image);
 	// Allocate new temp image slot
 	VKImage_t *newImage;
 	VKHandle_t newHandle = VK_AllocImage(&newImage);
 	// Move to new temp image slot
 	VK_MoveImage(texnum, newHandle);
+	// Copy image base info
+	R_VK_CopyImageBaseInfo(image, newImage);
 	// Defer destroy the image by new temp handle
 	R_VK_DestroyImage(newHandle);
 }

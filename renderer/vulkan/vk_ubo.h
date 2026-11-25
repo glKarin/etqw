@@ -12,7 +12,7 @@ typedef unsigned char byte;
 typedef int ivec4[4];
 typedef int imat4[16];
 
-typedef struct globalUniformBufferObject_s
+typedef struct VKGlobalUniformObject_s
 {
 #define UBO_DEF(T, x) T x
 #define UBO_MAT4(x) UBO_DEF(mat4, x)
@@ -21,14 +21,14 @@ typedef struct globalUniformBufferObject_s
 #define UBO_INT(x) UBO_DEF(int, x)
 #define UBO_BOOL(x) UBO_DEF(bool32, x)
 
-#include "ubo_prop.inc.h"
+#include "ubo_prop_global.inc.h"
 #undef UBO_DEF
-} globalUniformBufferObject_t;
+} VKGlobalUniformObject_t;
 
-static_assert(sizeof(globalUniformBufferObject_t) % 4 == 0);
+static_assert(sizeof(VKGlobalUniformObject_t) % 4 == 0);
 
 // align with ubo
-typedef struct globalUniformBufferObjectState_s
+typedef struct VKGlobalUniformObjectState_s
 {
 #define UBO_DEF(x) int x
 #define UBO_MAT4(x) imat4 x
@@ -37,25 +37,25 @@ typedef struct globalUniformBufferObjectState_s
 #define UBO_INT UBO_DEF
 #define UBO_BOOL UBO_DEF
 
-#include "ubo_prop.inc.h"
+#include "ubo_prop_global.inc.h"
 #undef UBO_DEF
-} globalUniformBufferObjectState_t;
+} VKGlobalUniformObjectState_t;
 
-static_assert(sizeof(globalUniformBufferObjectState_t) % 4 == 0);
+static_assert(sizeof(VKGlobalUniformObjectState_t) % 4 == 0);
 
-static_assert(sizeof(globalUniformBufferObjectState_t) == sizeof(globalUniformBufferObject_t));
+static_assert(sizeof(VKGlobalUniformObjectState_t) == sizeof(VKGlobalUniformObject_t));
 
-#define UBO_DEF(x) static_assert(offsetof(globalUniformBufferObject_t, x) == offsetof(globalUniformBufferObjectState_t, x), "")
+typedef VKGlobalUniformObjectState_t VKGlobalUniformObjectLocation_t;
+
+#define UBO_DEF(x) static_assert(offsetof(VKGlobalUniformObject_t, x) == offsetof(VKGlobalUniformObjectState_t, x), "")
 #define UBO_MAT4 UBO_DEF
 #define UBO_VEC4 UBO_DEF
 #define UBO_FLOAT UBO_DEF
 #define UBO_INT UBO_DEF
 #define UBO_BOOL UBO_DEF
 
-#include "ubo_prop.inc.h"
+#include "ubo_prop_global.inc.h"
 #undef UBO_DEF
-
-typedef void (*copyUniform_f)();
 
 
 #define UBO_DECLARATION(stage, type) typedef struct stage##UniformBufferObject_##type {
@@ -76,11 +76,11 @@ typedef void (*copyUniform_f)();
 #include "ubo_struct.inc.h"
 
 
-#define VKSTATE_PARM_OFFSET(p) offsetof(globalUniformBufferObjectState_t, p)
-#define VKSTATE_PARMS_OFFSET(p, n) (offsetof(globalUniformBufferObjectState_t, p) + (n) * sizeof(((globalUniformBufferObjectState_t *)0)->p[0]))
+#define VKSTATE_PARM_OFFSET(p) offsetof(VKGlobalUniformObjectState_t, p)
+#define VKSTATE_PARMS_OFFSET(p, n) (offsetof(VKGlobalUniformObjectState_t, p) + (n) * sizeof(((VKGlobalUniformObjectState_t *)0)->p[0]))
 
-#define VKGLOBAL_PARM_OFFSET(p) offsetof(globalUniformBufferObject_t, p)
-#define VKGLOBAL_PARMS_OFFSET(p, n) (offsetof(globalUniformBufferObject_t, p) + (n) * sizeof(((globalUniformBufferObject_t *)0)->p[0]))
+#define VKGLOBAL_PARM_OFFSET(p) offsetof(VKGlobalUniformObject_t, p)
+#define VKGLOBAL_PARMS_OFFSET(p, n) (offsetof(VKGlobalUniformObject_t, p) + (n) * sizeof(((VKGlobalUniformObject_t *)0)->p[0]))
 
 #define SHADER_PARM_ADDR2(p) VKGLOBAL_PARM_OFFSET(p), VKSTATE_PARM_OFFSET(p)
 #define SHADER_PARMS_ADDR2(p, n) VKGLOBAL_PARMS_OFFSET(p, n), VKSTATE_PARMS_OFFSET(p, n)
@@ -121,6 +121,39 @@ typedef void (*copyUniform_f)();
 #define UBO1_CPYN(T, name, n) UBOX_CPYN(T, fragment, name, n)
 
 #include "ubo_copy_func.inc.h"
+
+
+#define UBOX_CLEAR_NAME(stage, T) R_VK_ClearUniformState_##stage##_##T
+#define UBO0_CLEAR_NAME(T) UBOX_CLEAR_NAME(vertex, T)
+#define UBO1_CLEAR_NAME(T) UBOX_CLEAR_NAME(fragment, T)
+
+#define UBOX_CLEAR_DEFINE(stage, T) void UBOX_CLEAR_NAME(stage, T)(void)
+#define UBO0_CLEAR_DEFINE(T) UBOX_CLEAR_DEFINE(vertex, T)
+#define UBO1_CLEAR_DEFINE(T) UBOX_CLEAR_DEFINE(fragment, T)
+
+#include "ubo_clear_func.inc.h"
+
+
+#define UBOX_LOCATION_NAME(stage, T) R_VK_GetUniformLocation_##stage##_##T
+#define UBO0_LOCATION_NAME(T) UBOX_LOCATION_NAME(vertex, T)
+#define UBO1_LOCATION_NAME(T) UBOX_LOCATION_NAME(fragment, T)
+
+#define UBOX_LOCATION_DEFINE(stage, T) void UBOX_LOCATION_NAME(stage, T)(VKGlobalUniformObjectLocation_t *ret)
+#define UBO0_LOCATION_DEFINE(T) UBOX_LOCATION_DEFINE(vertex, T)
+#define UBO1_LOCATION_DEFINE(T) UBOX_LOCATION_DEFINE(fragment, T)
+
+#include "ubo_loc_func.inc.h"
+
+
+#define UBOX_CHECK_NAME(stage, T) R_VK_CheckUniformState_##stage##_##T
+#define UBO0_CHECK_NAME(T) UBOX_CHECK_NAME(vertex, T)
+#define UBO1_CHECK_NAME(T) UBOX_CHECK_NAME(fragment, T)
+
+#define UBOX_CHECK_DEFINE(stage, T) void UBOX_CHECK_NAME(stage, T)(void)
+#define UBO0_CHECK_DEFINE(T) UBOX_CHECK_DEFINE(vertex, T)
+#define UBO1_CHECK_DEFINE(T) UBOX_CHECK_DEFINE(fragment, T)
+
+#include "ubo_check_func.inc.h"
 
 void R_VK_InitGlobalUBO();
 

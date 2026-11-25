@@ -3,8 +3,6 @@
 
 #include "../tr_local.h"
 
-#define MAX_OSPATH 1024
-
 #define PIPELINE_POOL_INIT_SIZE 1
 #define PIPELINE_POOL_GRANULARITY 1
 
@@ -66,8 +64,8 @@ VkShaderModule R_CompileShader(const char *path, int stage, const char *marcos)
 
 //#undef VKGLOBAL_PARM_OFFSET
 //#undef VKGLOBAL_PARMS_OFFSET
-//#define VKGLOBAL_PARM_OFFSET(p) (int)offsetof(globalUniformBufferObject_t, p); printf("yyy " #p " %d\n", offsetof(globalUniformBufferObject_t, p));
-//#define VKGLOBAL_PARMS_OFFSET(p,n) (int)(offsetof(globalUniformBufferObject_t, p) + (n) * sizeof(((globalUniformBufferObject_t *)0)->p[0])); printf("yyy " #p "[%d] %d\n",n, (offsetof(globalUniformBufferObject_t, p) + (n) * sizeof(((globalUniformBufferObject_t *)0)->p[0])));
+//#define VKGLOBAL_PARM_OFFSET(p) (int)offsetof(VKGlobalUniformObject_t, p); printf("yyy " #p " %d\n", offsetof(VKGlobalUniformObject_t, p));
+//#define VKGLOBAL_PARMS_OFFSET(p,n) (int)(offsetof(VKGlobalUniformObject_t, p) + (n) * sizeof(((VKGlobalUniformObject_t *)0)->p[0])); printf("yyy " #p "[%d] %d\n",n, (offsetof(VKGlobalUniformObject_t, p) + (n) * sizeof(((VKGlobalUniformObject_t *)0)->p[0])));
 static void RB_VK_GetOffsets(shaderProgram_t *shader)
 {
 	shader->localLightOrigin = VKGLOBAL_PARM_OFFSET(lightOrigin);
@@ -382,19 +380,54 @@ typedef struct VKShaderProp_t
 	int type;
 	int uboSize_vertex;
 	int uboSize_fragment;
-	copyUniform_f copyUniform_vertex;
-	copyUniform_f copyUniform_fragment;
+	VKCopyUniform_f copyUniform_vertex;
+	VKCopyUniform_f copyUniform_fragment;
+	VKClearUniformState_f clearUniformState_vertex;
+	VKClearUniformState_f clearUniformState_fragment;
+	VKCheckUniformState_f checkUniformState_vertex;
+	VKCheckUniformState_f checkUniformState_fragment;
+	VKGetProgramLocation_f getUniformLocation_vertex;
+	VKGetProgramLocation_f getUniformLocation_fragment;
 	int numTextureUnits;
     globalState_t vertexInputAttribute;
     int textureTypes[VKBINDING_MAX_TRXTURE_UNITS];
 } VKShaderProp_t;
 
-#define SHADER_PROGRAM_PROP_DECL(nameVal, type, texUnits, attrs, ...) { type, sizeof(VERTEX_UBO_DEFINE(nameVal)), sizeof(FRAGMENT_UBO_DEFINE(nameVal)), &UBO0_TRANSFORM_NAME(nameVal), &UBO1_TRANSFORM_NAME(nameVal), texUnits, attrs, { __VA_ARGS__ } },
-#define SHADER_PROGRAM_VERTEX_PROP_DECL(nameVal, type, texUnits, attrs, ...) { type, sizeof(VERTEX_UBO_DEFINE(nameVal)), 0, &UBO0_TRANSFORM_NAME(nameVal), NULL, texUnits, attrs, { __VA_ARGS__ } },
-#define SHADER_PROGRAM_FRAGMENT_PROP_DECL(nameVal, type, texUnits, attrs, ...) { type, 0, sizeof(FRAGMENT_UBO_DEFINE(nameVal)), NULL, &UBO1_TRANSFORM_NAME(nameVal), texUnits, attrs, { __VA_ARGS__ } },
+#define SHADER_PROGRAM_PROP_DECL(nameVal, type, texUnits, attrs, ...) { \
+	type, \
+	sizeof(VERTEX_UBO_DEFINE(nameVal)), sizeof(FRAGMENT_UBO_DEFINE(nameVal)), \
+	&UBO0_TRANSFORM_NAME(nameVal), &UBO1_TRANSFORM_NAME(nameVal), \
+	&UBO0_CLEAR_NAME(nameVal), &UBO1_CLEAR_NAME(nameVal), \
+	&UBO0_CHECK_NAME(nameVal), &UBO1_CHECK_NAME(nameVal), \
+	&UBO0_LOCATION_NAME(nameVal), &UBO1_LOCATION_NAME(nameVal), \
+	texUnits, attrs, \
+	{ __VA_ARGS__ } \
+},
+
+#define SHADER_PROGRAM_VERTEX_PROP_DECL(nameVal, type, texUnits, attrs, ...) { \
+	type, \
+	sizeof(VERTEX_UBO_DEFINE(nameVal)), 0, \
+	&UBO0_TRANSFORM_NAME(nameVal), NULL, \
+	&UBO0_CLEAR_NAME(nameVal), NULL, \
+	&UBO0_CHECK_NAME(nameVal), NULL, \
+	&UBO0_LOCATION_NAME(nameVal), &UBOX_LOCATION_NAME_ALL_CLEAR, \
+	texUnits, attrs, \
+	{ __VA_ARGS__ } \
+},
+
+#define SHADER_PROGRAM_FRAGMENT_PROP_DECL(nameVal, type, texUnits, attrs, ...) { \
+	type, \
+	0, sizeof(FRAGMENT_UBO_DEFINE(nameVal)), \
+	NULL, &UBO1_TRANSFORM_NAME(nameVal), \
+	NULL, &UBO1_CLEAR_NAME(nameVal), \
+	NULL, &UBO1_CHECK_NAME(nameVal), \
+	&UBOX_LOCATION_NAME_ALL_CLEAR, &UBO1_LOCATION_NAME(nameVal), \
+	texUnits, attrs, \
+	{ __VA_ARGS__ } \
+},
 
 static const VKShaderProp_t shaderProps[] = {
-SHADER_PROGRAM_PROP_DECL(interaction, SHADER_INTERACTION, 6, VIA_ALL_BIT | VIA_BITANGENT_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D )
+SHADER_PROGRAM_PROP_DECL(interaction, SHADER_INTERACTION, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D )
 SHADER_PROGRAM_VERTEX_PROP_DECL(shadow, SHADER_SHADOW, 1, VIA_VERTEX_BIT | VIA_VERTEX4_BIT)
 SHADER_PROGRAM_PROP_DECL(default, SHADER_DEFAULT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(zfill, SHADER_ZFILL, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
@@ -425,15 +458,15 @@ SHADER_PROGRAM_PROP_DECL(depthPerforated, SHADER_DEPTH_PERFORATED, 1, VIA_VERTEX
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPointLight, SHADER_INTERACTION_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongPointLight, SHADER_INTERACTION_BLINNPHONG_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRPointLight, SHADER_INTERACTION_PBR_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingPointLight, SHADER_AMBIENT_LIGHTING_POINT_LIGHT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_2D_ARRAY, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingPointLight, SHADER_AMBIENT_LIGHTING_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingParallelLight, SHADER_INTERACTION_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongParallelLight, SHADER_INTERACTION_BLINNPHONG_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRParallelLight, SHADER_INTERACTION_PBR_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingParallelLight, SHADER_AMBIENT_LIGHTING_PARALLEL_LIGHT, 7, VIA_ALL_BIT, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_2D_ARRAY, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingParallelLight, SHADER_AMBIENT_LIGHTING_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingSpotLight, SHADER_INTERACTION_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongSpotLight, SHADER_INTERACTION_BLINNPHONG_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRSpotLight, SHADER_INTERACTION_PBR_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingSpotLight, SHADER_AMBIENT_LIGHTING_SPOT_LIGHT, 7, VIA_ALL_BIT, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_2D_ARRAY, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingSpotLight, SHADER_AMBIENT_LIGHTING_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
 #endif
 #ifdef _STENCIL_SHADOW_IMPROVE
 SHADER_PROGRAM_PROP_DECL(interactionTranslucent, SHADER_INTERACTION_TRANSLUCENT, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
@@ -443,7 +476,7 @@ SHADER_PROGRAM_PROP_DECL(ambientLightingTranslucent, SHADER_AMBIENT_LIGHTING_TRA
 SHADER_PROGRAM_PROP_DECL(interactionSoft, SHADER_INTERACTION_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionBlinnPhongSoft, SHADER_INTERACTION_PBR_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(interactionPBRSoft, SHADER_INTERACTION_BLINNPHONG_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingSoft, SHADER_AMBIENT_LIGHTING_SOFT, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(ambientLightingSoft, SHADER_AMBIENT_LIGHTING_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D)
 #endif
 #ifdef _POSTPROCESS
 SHADER_PROGRAM_FRAGMENT_PROP_DECL(retro2Bit, SHADER_RETRO_2BIT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
@@ -455,6 +488,7 @@ SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_RETRO_PSX, 1, VIA_VERTEX_BIT 
 SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_DEPTH_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(depthToColor, SHADER_DEPTH_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
 SHADER_PROGRAM_PROP_DECL(stencilToColor, SHADER_STENCIL_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
+SHADER_PROGRAM_PROP_DECL(enviroSuit, SHADER_ENVIROSUIT, 2, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D, TUT_2D)
 };
 
 static const VKShaderProp_t * RB_VK_FindShaderProp(int type)
@@ -477,6 +511,10 @@ static void RB_VK_CreatePipelineLayoutFromShaderProp(VKShaderProgram_t *program,
 	program->ubo_fragment = program->uboSize_fragment > 0 ? VKMALLOC(program->uboSize_fragment, name) : NULL;
 	program->copyUniform_vertex = prop->copyUniform_vertex;
 	program->copyUniform_fragment = prop->copyUniform_fragment;
+	program->clearUniformState_vertex = prop->clearUniformState_vertex;
+	program->clearUniformState_fragment = prop->clearUniformState_fragment;
+	program->checkUniformState_vertex = prop->checkUniformState_vertex;
+	program->checkUniformState_fragment = prop->checkUniformState_fragment;
 	program->numTextureUnits = prop->numTextureUnits;
 	program->numUBO = 0;
 	if (program->ubo_vertex) program->numUBO++;
@@ -488,6 +526,10 @@ static void RB_VK_CreatePipelineLayoutFromShaderProp(VKShaderProgram_t *program,
 	program->vertexInputAttribute = prop->vertexInputAttribute;
 	for(int i = 0; i < program->numTextureUnits; i++)
 		program->textureTypes[i] = prop->textureTypes[i];
+
+	prop->getUniformLocation_vertex(&program->uboLocation_vertex);
+	prop->getUniformLocation_fragment(&program->uboLocation_fragment);
+
 	idStr::Copynz(program->name, name, sizeof(program->name));
 	program->type = type;
 	R_VK_CreatePipelineLayout(program);
@@ -518,7 +560,6 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 
 	const char *vs;
 	const char *fs;
-	const char *macros;
 	VkShaderModule vertexShaderModule = VK_NULL_HANDLE;
 	VkShaderModule fragmentShaderModule = VK_NULL_HANDLE;
 	VKHandle_t vertexHandle = VKHANDLE_INVALID;
@@ -526,7 +567,12 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 
 	vs = prop->default_vertex_shader_source.c_str();
 	fs = prop->default_fragment_shader_source.c_str();
-	macros = prop->macros.c_str();
+	idStr macros = "_VULKAN";
+	if(!prop->macros.IsEmpty())
+	{
+		macros.Append(",");
+		macros.Append(prop->macros);
+	}
 
 	if(RB_VK_LoadShaderProgram(
 			prop->name.c_str(),
@@ -536,7 +582,7 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 			fs,
 			prop->vertex_shader_source_file.c_str(),
 			prop->fragment_shader_source_file.c_str(),
-			macros,
+			macros.c_str(),
 			vertexHandle, fragmentHandle, vertexShaderModule, fragmentShaderModule
 	) < 0)
 		return false;
@@ -577,6 +623,9 @@ void R_VK_ListPipeline(const idCmdArgs &)
 				case TUT_2D:
 					str.Append("2D");
 					break;
+				case TUT_NONE:
+					str.Append("None");
+					break;
 			}
 			str.Append(" ");
 		}
@@ -591,7 +640,7 @@ void R_VK_ListPipeline(const idCmdArgs &)
 		{
 			st = &program->pipelinePool.keys[i];
 			str = R_VK_StateStr(*st);
-			common->Printf("    %3d: %p -> %s\n", i + 1, program->pipelinePool.list[i], str.c_str());
+			common->Printf("    %2d: %p -> %s\n", i + 1, program->pipelinePool.list[i].pipeline, str.c_str());
 		}
 	}
 }
@@ -605,3 +654,4 @@ void R_VK_FreeShaderProgram(VKShaderProgram_t *program)
 		VKFREE(program->ubo_fragment);
 	VKFREE(program);
 }
+

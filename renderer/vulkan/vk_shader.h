@@ -38,11 +38,17 @@ typedef struct VKShaderProgram_t
 
     // 用于数据脏检
     uint32_t frameCount; // 帧数
-    globalUniformBufferObjectState_t uboState; // 数据脏检
+    VKGlobalUniformObjectState_t uboState; // 数据脏检
+	VKClearUniformState_f clearUniformState_vertex;
+	VKClearUniformState_f clearUniformState_fragment;
+	VKCheckUniformState_f checkUniformState_vertex;
+	VKCheckUniformState_f checkUniformState_fragment;
+    VKGlobalUniformObjectLocation_t uboLocation_vertex; // 数据脏检
+    VKGlobalUniformObjectLocation_t uboLocation_fragment; // 数据脏检
 
     // 拷贝数据函数: 可能为NULL
-    copyUniform_f copyUniform_vertex; // CPU端从全局Uniform内存复制到此顶点着色器内存
-    copyUniform_f copyUniform_fragment; // CPU端从全局Uniform内存复制到此片段着色器内存
+    VKCopyUniform_f copyUniform_vertex; // CPU端从全局Uniform内存复制到此顶点着色器内存
+    VKCopyUniform_f copyUniform_fragment; // CPU端从全局Uniform内存复制到此片段着色器内存
 
     // 如果数据未脏, 则使用旧的缓冲区
     VKBufferMap_t uniformBuffer_vertex; // 顶点着色器当前引用的Uniform缓冲区映射

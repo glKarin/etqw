@@ -36,5 +36,5 @@
 #define UBO_VEC4_N_PROC UBO_COPY_GLOBAL_TO_SHADER_VEC4_N
 #define UBO_MAT4_N_PROC(X, N) UBO_COPY_GLOBAL_TO_SHADER_NMAT4(X)
 
-#include "ubo_type.inc.h"
+#include "ubo_prop_shader.inc.h"
 
