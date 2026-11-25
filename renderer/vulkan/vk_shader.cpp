@@ -6,8 +6,21 @@
 #define PIPELINE_POOL_INIT_SIZE 1
 #define PIPELINE_POOL_GRANULARITY 1
 
+#define GLSL_STD140_MEM_ALIGN(x) VKMEM_ALIGN(x, 16) // align16
+
+#define GLSL_SHADER_BINARY_HEADER_EXT "glslbinh"
+#define GLSL_SHADER_BINARY_DATA_EXT "glslbin"
+#define GLSL_VERTEX_SHADER_BINARY_DATA_EXT ".vert.spv." GLSL_SHADER_BINARY_DATA_EXT
+#define GLSL_FRAGMENT_SHADER_BINARY_DATA_EXT ".frag.spv." GLSL_SHADER_BINARY_DATA_EXT
+
 #undef snprintf
 #define snprintf idStr::snPrintf
+
+extern idCVar harm_r_useGLSLShaderBinaryCache;
+
+extern bool RB_GLSL_CacheShaderBinary(GLuint program, const char *name, const idStr &vertexSource, const idStr &fragmentSource, int type, bool external);
+extern bool RB_GLSL_LoadShaderBinaryCache(shaderProgram_t *shaderProgram, const char *name, const idStr &vertexSource, const idStr &fragmentSource, int type, bool external);
+extern bool RB_GLSL_LoadShaderBinaryCacheUncheck(shaderProgram_t *shaderProgram, const char *name, int type, bool external);
 
 extern bool shaderRequired;
 #if !defined(_MSC_VER)
@@ -27,6 +40,14 @@ extern bool shaderRequired;
 	}                                    \
 }
 #endif
+
+typedef struct VKShaderHandle_s
+{
+	VKHandle_t vertexHandle;
+	VKHandle_t fragmentHandle;
+	VkShaderModule vertexShader;
+	VkShaderModule fragmentShader;
+} VKShaderHandle_t;
 
 extern int RB_GLSL_ReadExternalShaderSource(idStr &fullPath, idStr &buffer);
 extern void RB_GLSL_ExpandMacros(idStr &res, const char *source, const char *macros, int highp = 0);
@@ -158,6 +179,232 @@ static void RB_VK_GetOffsets(shaderProgram_t *shader)
 #endif
 }
 
+// Only for compat with OpenGL
+static idList<byte> cacheBinary;
+static VKShaderHandle_t cacheShader;
+
+int RB_VK_GetCacheShaderBinary(byte **ret)
+{
+	const int len = cacheBinary.Num();
+
+	if (ret)
+	{
+		if (len == 0)
+			*ret = NULL;
+		else
+		{
+			*ret = (byte *)malloc(len);
+			memcpy(*ret, cacheBinary.Ptr(), len);
+		}
+	}
+
+	cacheBinary.Clear();
+	return len;
+}
+
+void RB_VK_WriteCacheShaderBinary(const char *path, const byte *binary, int length)
+{
+	idStr vertexFullPath = path;
+	vertexFullPath.SetFileExtension(GLSL_VERTEX_SHADER_BINARY_DATA_EXT);
+	idStr fragmentFullPath = path;
+	fragmentFullPath.SetFileExtension(GLSL_FRAGMENT_SHADER_BINARY_DATA_EXT);
+	common->Printf("    Write GLSL spirv shader data: %s, %s\n", vertexFullPath.c_str(), fragmentFullPath.c_str());
+	const byte *ptr = binary;
+	int vertexLength = *(int *)ptr;
+	ptr += 4;
+	fileSystem->WriteFile(vertexFullPath, ptr, vertexLength);
+	ptr += vertexLength;
+	int fragmentLength = *(int *)ptr;
+	ptr += 4;
+	fileSystem->WriteFile(fragmentFullPath, ptr, fragmentLength);
+	assert(ptr + fragmentLength == binary + length);
+}
+
+int RB_VK_ReadShaderBinaryData(const char *path, byte **ret)
+{
+	idStr vertexFullPath = path;
+	vertexFullPath.SetFileExtension(GLSL_VERTEX_SHADER_BINARY_DATA_EXT);
+	idStr fragmentFullPath = path;
+	fragmentFullPath.SetFileExtension(GLSL_FRAGMENT_SHADER_BINARY_DATA_EXT);
+
+	idFile *vertexFile = NULL;
+	idFile *fragmentFile = NULL;
+	int vertexLength = 0;
+	int fragmentLength = 0;
+	int length = -1;
+
+	do
+	{
+		vertexFile = fileSystem->OpenFileRead(vertexFullPath, false);
+		if(!vertexFile)
+		{
+			common->Printf("    Can not load GLSL vertex shader spirv file: %s\n", vertexFullPath.c_str());
+			break;
+		}
+
+		vertexLength = vertexFile->Length();
+		if (vertexLength == 0)
+		{
+			break;
+		}
+
+		fragmentFile = fileSystem->OpenFileRead(fragmentFullPath, false);
+		if(!fragmentFile)
+		{
+			common->Printf("    Can not load GLSL fragment shader spirv file: %s\n", fragmentFullPath.c_str());
+			break;
+		}
+
+		fragmentLength = fragmentFile->Length();
+		if (fragmentLength == 0)
+		{
+			break;
+		}
+
+		length = vertexLength + fragmentLength + 4 * 2;
+		if (ret)
+		{
+			*ret = (byte *)malloc(length);
+			byte *ptr = *ret;
+			*(int *)ptr = vertexLength;
+			ptr += 4;
+			if(vertexFile->Read(ptr, vertexLength) != vertexLength)
+			{
+				common->Printf("    Can not read GLSL vertex shader spirv file: %s\n", vertexFullPath.c_str());
+				length = -2;
+				break;
+			}
+
+			ptr += vertexLength;
+			*(int *)ptr = fragmentLength;
+			ptr += 4;
+			if(fragmentFile->Read(ptr, fragmentLength) != fragmentLength)
+			{
+				common->Printf("    Can not read GLSL fragment shader spirv file: %s\n", fragmentFullPath.c_str());
+				length = -3;
+				break;
+			}
+		}
+
+	} while (false);
+
+	if (vertexFile)
+		fileSystem->CloseFile(vertexFile);
+	if (fragmentFile)
+		fileSystem->CloseFile(fragmentFile);
+
+	if (length <= 0 && *ret)
+	{
+		free(*ret);
+		*ret = NULL;
+	}
+
+	return length;
+}
+
+void RB_VK_RemoveShaderBinaryCache(const char *path)
+{
+	idStr fullPath = path;
+    bool p = false;
+
+    const char *exts[] = {
+    	GLSL_SHADER_BINARY_HEADER_EXT,
+        GLSL_VERTEX_SHADER_BINARY_DATA_EXT,
+        GLSL_FRAGMENT_SHADER_BINARY_DATA_EXT,
+    };
+
+	for(int i = 0; i < sizeof(exts) / sizeof(exts[0]); i++)
+	{
+		fullPath.SetFileExtension(exts[i]);
+		if(fileSystem->ReadFile(fullPath, NULL, NULL) >= 0)
+		{
+			fileSystem->RemoveFile(fullPath);
+			p = true;
+		}
+	}
+
+	if(p)
+		common->Printf("    Remove GLSL shader spirv cache file: %s" "/" GLSL_VERTEX_SHADER_BINARY_DATA_EXT ", " GLSL_FRAGMENT_SHADER_BINARY_DATA_EXT "\n", fullPath.c_str());
+}
+
+static bool RB_VK_CreateShaderSpirv(const char *name, const uint8_t *vertexSpirv, int vertexSpirvLength, const uint8_t *fragmentSpirv, int fragmentSpirvLength, VKShaderHandle_t &ret)
+{
+	if (vertexSpirvLength <= 0 || !vertexSpirv || fragmentSpirvLength <= 0 || !fragmentSpirv)
+		return false;
+
+	VkShaderModule *vertexShaderModule = NULL;
+	VkShaderModule *fragmentShaderModule = NULL;
+	VKHandle_t vertexHandle = VKHANDLE_INVALID;
+	VKHandle_t fragmentHandle = VKHANDLE_INVALID;
+
+	vertexHandle = VK_AllocShader(&vertexShaderModule);
+	*vertexShaderModule = VK_CreateShaderModule(vertexSpirv, vertexSpirvLength);
+
+	if (!*vertexShaderModule)
+		return false;
+
+	fragmentHandle = VK_AllocShader(&fragmentShaderModule);
+	*fragmentShaderModule = VK_CreateShaderModule(fragmentSpirv, fragmentSpirvLength);
+
+	if (!*fragmentShaderModule)
+		return false;
+
+	if (*vertexShaderModule && *fragmentShaderModule)
+	{
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)*vertexShaderModule, "shader::vertex%d::%s", vertexHandle, name);
+		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)*fragmentShaderModule, "shader::fragment%d::%s", fragmentHandle, name);
+
+		ret.vertexHandle = vertexHandle;
+		ret.fragmentHandle = fragmentHandle;
+		ret.vertexShader = *vertexShaderModule;
+		ret.fragmentShader = *fragmentShaderModule;
+		return true;
+	}
+
+	return true;
+}
+
+bool RB_VK_CreateShaderProgramFromBinary(const char *name, const byte *binary, int length)
+{
+	const byte *ptr = binary;
+	int vertexSpirvLength = *(int *)ptr;
+	ptr += 4;
+	const uint8_t *vertexSpirv = (const uint8_t *)ptr;
+
+	ptr += vertexSpirvLength;
+	int fragmentSpirvLength = *(int *)ptr;
+	ptr += 4;
+	const uint8_t *fragmentSpirv = (const uint8_t *)ptr;
+
+	assert(fragmentSpirv + fragmentSpirvLength == binary + length);
+
+	VKZERO(cacheShader);
+	bool success = RB_VK_CreateShaderSpirv(name, vertexSpirv, vertexSpirvLength, fragmentSpirv, fragmentSpirvLength, cacheShader);
+
+	if (!success)
+		VKZERO(cacheShader);
+
+	return success;
+}
+
+ID_INLINE static void RB_VK_LoadCacheShader(VKShaderHandle_t &ret)
+{
+	ret = cacheShader;
+	VKZERO(cacheShader);
+}
+
+static bool RB_VK_CacheShaderBinary(uint8_t *vertexSpirv, int vertexSpirvLength, uint8_t *fragmentSpirv, int fragmentSpirvLength)
+{
+	cacheBinary.Clear();
+
+	R_VK_ByteListAppend(cacheBinary, &vertexSpirvLength, 4);
+	R_VK_ByteListAppend(cacheBinary, vertexSpirv, vertexSpirvLength);
+	R_VK_ByteListAppend(cacheBinary, &fragmentSpirvLength, 4);
+	R_VK_ByteListAppend(cacheBinary, fragmentSpirv, fragmentSpirvLength);
+
+	return cacheBinary.Num() > 0;
+}
+
 static int RB_VK_LoadShaderProgram(
 		const char *name,
         int type,
@@ -167,10 +414,7 @@ static int RB_VK_LoadShaderProgram(
 		const char *vertex_shader_source_file,
 		const char *fragment_shader_source_file,
 		const char *macros,
-		VKHandle_t &vertexHandleRet,
-		VKHandle_t &fragmentHandleRet,
-		VkShaderModule &vertexShaderRet,
-		VkShaderModule &fragmentShaderRet
+		VKShaderHandle_t &ret
 		)
 {
     enum {
@@ -187,26 +431,27 @@ static int RB_VK_LoadShaderProgram(
 
 	common->Printf("\nLoad Vulkan GLSL shader program: %s -> %d\n", name, type);
     int step = 1;
-#if 0
+
     if(harm_r_useGLSLShaderBinaryCache.GetInteger() == 2)
     {
-        common->Printf(" %d. Load external shader binary:\n", step);
+        common->Printf(" %d. Load external shader spirv:\n", step);
         if(RB_GLSL_LoadShaderBinaryCacheUncheck(program, name, type, true))
         {
-            common->Printf("    Load external shader binary success!\n");
-            return VK_LOAD_EXTERNAL_BINARY;
+        	RB_VK_LoadCacheShader(ret);
+            common->Printf("    Load external shader spirv success!\n");
+            return VK_LOAD_EXTERNAL_SPIRV;
         }
         step++;
 
-        common->Printf(" %d. Load built-in shader binary:\n", step);
+        common->Printf(" %d. Load built-in shader spirv:\n", step);
         if(RB_GLSL_LoadShaderBinaryCacheUncheck(program, name, type, false))
         {
-            common->Printf("    Load built-in shader binary success!\n");
-            return GLSL_LOAD_BUILT_IN_BINARY;
+        	RB_VK_LoadCacheShader(ret);
+            common->Printf("    Load built-in shader spirv success!\n");
+            return VK_LOAD_EXTERNAL_SPIRV;
         }
         step++;
     }
-#endif
 
 	common->Printf(" %d. Load external shader source: Vertex(%s), Fragment(%s)\n", step, vertex_shader_source_file, fragment_shader_source_file);
 
@@ -224,23 +469,23 @@ static int RB_VK_LoadShaderProgram(
 	int vertexSpirvLength = 0;
 	uint8_t *fragmentSpirv = NULL;
 	int fragmentSpirvLength = 0;
+	bool success = false;
 
     if(vertexFileBuffer && fragmentFileBuffer)
     {
-#if 0
-        // Create external GLSL shader with binary
-        if(USING_GLES3 && harm_r_useGLSLShaderBinaryCache.GetBool())
+        // Create external GLSL shader with spirv
+        if(harm_r_useGLSLShaderBinaryCache.GetBool())
         {
-            common->Printf("    Load and check external shader binary: Vertex(%s), Fragment(%s)\n", vertex_shader_source_file, fragment_shader_source_file);
+            common->Printf("    Load and check external shader spirv: Vertex(%s), Fragment(%s)\n", vertex_shader_source_file, fragment_shader_source_file);
             if(RB_GLSL_LoadShaderBinaryCache(program, name, vertexShaderStr, fragmentShaderStr, type, true))
             {
-                common->Printf("    Load and check external shader binary success!\n");
-                return VK_LOAD_EXTERNAL_BINARY;
+        		RB_VK_LoadCacheShader(ret);
+                common->Printf("    Load and check external shader spirv success!\n");
+                return VK_LOAD_EXTERNAL_SPIRV;
             }
         }
-#endif
-        // Create external GLSL shader with source
 
+        // Create external GLSL shader with source
     	do
     	{
     		vertexSpirvLength = VK_GLSL_LoadShaderData(vertexFullPath.c_str(), vertexShaderStr.c_str(), &vertexSpirv, SHADER_STAGE_VERTEX, macros);
@@ -251,27 +496,18 @@ static int RB_VK_LoadShaderProgram(
     		if (fragmentSpirvLength <= 0)
     			break;
 
-    		vertexHandle = VK_AllocShader(&vertexShaderModule);
-    		*vertexShaderModule = VK_CreateShaderModule(vertexSpirv, vertexSpirvLength);
-
-    		if (!*vertexShaderModule)
-    			break;
-
-    		fragmentHandle = VK_AllocShader(&fragmentShaderModule);
-    		*fragmentShaderModule = VK_CreateShaderModule(fragmentSpirv, fragmentSpirvLength);
-
-    		if (!*fragmentShaderModule)
+    		success = RB_VK_CreateShaderSpirv(name, vertexSpirv, vertexSpirvLength, fragmentSpirv, fragmentSpirvLength, ret);
+    		if (!success)
     			break;
 
     		common->Printf("    Load external shader program success!\n");
 
-#if 0
-    		// Cache external GLSL shader binary
-    		if(USING_GLES3 && harm_r_useGLSLShaderBinaryCache.GetBool())
+    		// Cache external GLSL shader spirv
+    		if(harm_r_useGLSLShaderBinaryCache.GetBool())
     		{
+				RB_VK_CacheShaderBinary(vertexSpirv, vertexSpirvLength, fragmentSpirv, fragmentSpirvLength);
     			RB_GLSL_CacheShaderBinary(program->program, name, vertexShaderStr, fragmentShaderStr, type, true);
     		}
-#endif
     	} while (false);
 
     	if (vertexSpirv)
@@ -283,15 +519,8 @@ static int RB_VK_LoadShaderProgram(
     		VK_GLSL_FreeSource(fragmentSpirv);
     	}
 
-    	if (*vertexShaderModule && *fragmentShaderModule)
+    	if (success)
     	{
-			VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)*vertexShaderModule, "shader::vertex%d::%s", vertexHandle, name);
-			VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)*fragmentShaderModule, "shader::fragment%d::%s", fragmentHandle, name);
-
-    		vertexHandleRet = vertexHandle;
-    		fragmentHandleRet = fragmentHandle;
-    		vertexShaderRet = *vertexShaderModule;
-    		fragmentShaderRet = *fragmentShaderModule;
     		return VK_LOAD_EXTERNAL_SOURCE;
     	}
     }
@@ -304,18 +533,17 @@ static int RB_VK_LoadShaderProgram(
     idStr fs;
     RB_GLSL_ExpandMacros(fs, default_fragment_shader_source, macros, harm_r_useHighPrecision.GetInteger());
 
-#if 0
-    // Create built-in GLSL shader with binary
-    if(USING_GLES3 && harm_r_useGLSLShaderBinaryCache.GetBool())
+    // Create built-in GLSL shader with spirv
+    if(harm_r_useGLSLShaderBinaryCache.GetBool())
     {
-        common->Printf("    Load and check built-in shader binary\n");
+        common->Printf("    Load and check built-in shader spirv\n");
         if(RB_GLSL_LoadShaderBinaryCache(program, name, vs, fs, type, false))
         {
-            common->Printf("    Load and check built-in shader binary success!\n");
-            return GLSL_LOAD_BUILT_IN_BINARY;
+        	RB_VK_LoadCacheShader(ret);
+            common->Printf("    Load and check built-in shader spirv success!\n");
+            return VK_LOAD_BUILT_IN_SPIRV;
         }
     }
-#endif
 
 	// Create built-in GLSL shader with source
 	do
@@ -328,23 +556,17 @@ static int RB_VK_LoadShaderProgram(
 		if (fragmentSpirvLength <= 0)
 			break;
 
-		vertexHandle = VK_AllocShader(&vertexShaderModule);
-		*vertexShaderModule = VK_CreateShaderModule(vertexSpirv, vertexSpirvLength);
-		if (!*vertexShaderModule)
+		success = RB_VK_CreateShaderSpirv(name, vertexSpirv, vertexSpirvLength, fragmentSpirv, fragmentSpirvLength, ret);
+
+		if (!success)
 			break;
 
-		fragmentHandle = VK_AllocShader(&fragmentShaderModule);
-		*fragmentShaderModule = VK_CreateShaderModule(fragmentSpirv, fragmentSpirvLength);
-		if (!*fragmentShaderModule)
-			break;
-
-#if 0
-		// Cache external GLSL shader binary
-		if(USING_GLES3 && harm_r_useGLSLShaderBinaryCache.GetBool())
+		// Cache built-in GLSL shader spirv
+		if(harm_r_useGLSLShaderBinaryCache.GetBool())
 		{
+			RB_VK_CacheShaderBinary(vertexSpirv, vertexSpirvLength, fragmentSpirv, fragmentSpirvLength);
 			RB_GLSL_CacheShaderBinary(program->program, name, vs, fs, type, false);
 		}
-#endif
 
 		common->Printf("    Load built-in shader program success!\n");
 
@@ -359,15 +581,8 @@ static int RB_VK_LoadShaderProgram(
 		VK_GLSL_FreeSource(fragmentSpirv);
 	}
 
-	if (*vertexShaderModule && *fragmentShaderModule)
+	if (success)
 	{
-		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)*vertexShaderModule, "shader::vertex%d::%s", vertexHandle, name);
-		VKDEBUG_SET_NAME(VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)*fragmentShaderModule, "shader::fragment%d::%s", fragmentHandle, name);
-
-		vertexHandleRet = vertexHandle;
-		fragmentHandleRet = fragmentHandle;
-		vertexShaderRet = *vertexShaderModule;
-		fragmentShaderRet = *fragmentShaderModule;
 		return VK_LOAD_BUILT_IN_SOURCE;
 	}
 
@@ -388,107 +603,238 @@ typedef struct VKShaderProp_t
 	VKCheckUniformState_f checkUniformState_fragment;
 	VKGetProgramLocation_f getUniformLocation_vertex;
 	VKGetProgramLocation_f getUniformLocation_fragment;
-	int numTextureUnits;
     globalState_t vertexInputAttribute;
+	int numTextureUnits;
     int textureTypes[VKBINDING_MAX_TRXTURE_UNITS];
 } VKShaderProp_t;
 
-#define SHADER_PROGRAM_PROP_DECL(nameVal, type, texUnits, attrs, ...) { \
+#define SHADER_PROGRAM_PROP_DECL(nameVal, type, attrs, texUnits, ...) { \
 	type, \
 	sizeof(VERTEX_UBO_DEFINE(nameVal)), sizeof(FRAGMENT_UBO_DEFINE(nameVal)), \
 	&UBO0_TRANSFORM_NAME(nameVal), &UBO1_TRANSFORM_NAME(nameVal), \
 	&UBO0_CLEAR_NAME(nameVal), &UBO1_CLEAR_NAME(nameVal), \
 	&UBO0_CHECK_NAME(nameVal), &UBO1_CHECK_NAME(nameVal), \
 	&UBO0_LOCATION_NAME(nameVal), &UBO1_LOCATION_NAME(nameVal), \
-	texUnits, attrs, \
+	attrs, texUnits, \
 	{ __VA_ARGS__ } \
 },
 
-#define SHADER_PROGRAM_VERTEX_PROP_DECL(nameVal, type, texUnits, attrs, ...) { \
+#define SHADER_PROGRAM_VERTEX_PROP_DECL(nameVal, type, attrs, texUnits, ...) { \
 	type, \
 	sizeof(VERTEX_UBO_DEFINE(nameVal)), 0, \
 	&UBO0_TRANSFORM_NAME(nameVal), NULL, \
 	&UBO0_CLEAR_NAME(nameVal), NULL, \
 	&UBO0_CHECK_NAME(nameVal), NULL, \
 	&UBO0_LOCATION_NAME(nameVal), &UBOX_LOCATION_NAME_ALL_CLEAR, \
-	texUnits, attrs, \
+	 attrs, texUnits,\
 	{ __VA_ARGS__ } \
 },
 
-#define SHADER_PROGRAM_FRAGMENT_PROP_DECL(nameVal, type, texUnits, attrs, ...) { \
+#define SHADER_PROGRAM_FRAGMENT_PROP_DECL(nameVal, type, attrs, texUnits, ...) { \
 	type, \
 	0, sizeof(FRAGMENT_UBO_DEFINE(nameVal)), \
 	NULL, &UBO1_TRANSFORM_NAME(nameVal), \
 	NULL, &UBO1_CLEAR_NAME(nameVal), \
 	NULL, &UBO1_CHECK_NAME(nameVal), \
 	&UBOX_LOCATION_NAME_ALL_CLEAR, &UBO1_LOCATION_NAME(nameVal), \
-	texUnits, attrs, \
+	attrs, texUnits, \
 	{ __VA_ARGS__ } \
 },
 
 static const VKShaderProp_t shaderProps[] = {
-SHADER_PROGRAM_PROP_DECL(interaction, SHADER_INTERACTION, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D )
-SHADER_PROGRAM_VERTEX_PROP_DECL(shadow, SHADER_SHADOW, 1, VIA_VERTEX_BIT | VIA_VERTEX4_BIT)
-SHADER_PROGRAM_PROP_DECL(default, SHADER_DEFAULT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(zfill, SHADER_ZFILL, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(zfillClip, SHADER_ZFILLCLIP, 2, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(cubemap, SHADER_CUBEMAP, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_TEXCOORD3_BIT, TUT_CUBEMAP)
-SHADER_PROGRAM_PROP_DECL(environment, SHADER_ENVIRONMENT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_NORMAL_BIT, TUT_CUBEMAP)
-SHADER_PROGRAM_PROP_DECL(bumpyEnvironment, SHADER_BUMPY_ENVIRONMENT, 2, VIA_ALL_BIT, TUT_CUBEMAP, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(fog, SHADER_FOG, 2, VIA_VERTEX_BIT, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionPBR, SHADER_INTERACTION_PBR, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(blendLight, SHADER_BLENDLIGHT, 2, VIA_VERTEX_BIT, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionBlinnPhong, SHADER_INTERACTION_BLINNPHONG, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLighting, SHADER_AMBIENT_LIGHTING, 5, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP)
+	SHADER_PROGRAM_PROP_DECL(interaction, SHADER_INTERACTION,
+		VIA_ALL_BIT,
+		6, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D )
+	SHADER_PROGRAM_VERTEX_PROP_DECL(shadow, SHADER_SHADOW,
+		VIA_VERTEX_BIT | VIA_VERTEX4_BIT,
+		0)
+	SHADER_PROGRAM_PROP_DECL(default, SHADER_DEFAULT,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(zfill, SHADER_ZFILL,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(zfillClip, SHADER_ZFILLCLIP,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		2, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(cubemap, SHADER_CUBEMAP,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_TEXCOORD3_BIT,
+		1, TUT_CUBEMAP)
+	SHADER_PROGRAM_PROP_DECL(environment, SHADER_ENVIRONMENT,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_NORMAL_BIT,
+		1, TUT_CUBEMAP)
+	SHADER_PROGRAM_PROP_DECL(bumpyEnvironment, SHADER_BUMPY_ENVIRONMENT,
+		VIA_ALL_BIT,
+		2, TUT_CUBEMAP, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(fog, SHADER_FOG,
+		VIA_VERTEX_BIT,
+		2, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionPBR, SHADER_INTERACTION_PBR,
+		VIA_ALL_BIT,
+		6, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(blendLight, SHADER_BLENDLIGHT,
+		VIA_VERTEX_BIT,
+		2, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionBlinnPhong, SHADER_INTERACTION_BLINNPHONG,
+		VIA_ALL_BIT,
+		6, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(ambientLighting, SHADER_AMBIENT_LIGHTING,
+		VIA_ALL_BIT,
+		5, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP)
+
 #ifdef _GLOBAL_ILLUMINATION
-SHADER_PROGRAM_PROP_DECL(globalIllumination, SHADER_GLOBAL_ILLUMINATION, 3, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(globalIllumination, SHADER_GLOBAL_ILLUMINATION,
+		VIA_ALL_BIT,
+		3, TUT_2D, TUT_2D, TUT_2D)
 #endif
-SHADER_PROGRAM_PROP_DECL(diffuseCubemap, SHADER_DIFFUSECUBEMAP, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_TEXCOORD3_BIT, TUT_CUBEMAP)
-SHADER_PROGRAM_PROP_DECL(texgen, SHADER_TEXGEN, 1, VIA_VERTEX_BIT | VIA_COLOR_BIT, TUT_2D)
+
+	SHADER_PROGRAM_PROP_DECL(diffuseCubemap, SHADER_DIFFUSECUBEMAP,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT | VIA_TEXCOORD3_BIT,
+		1, TUT_CUBEMAP)
+	SHADER_PROGRAM_PROP_DECL(texgen, SHADER_TEXGEN,
+		VIA_VERTEX_BIT | VIA_COLOR_BIT,
+		1, TUT_2D)
+
 #if !defined(_SPLASHDAMAGE)
-SHADER_PROGRAM_PROP_DECL(colorProcess, SHADER_COLORPROCESS, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(heatHaze, SHADER_HEATHAZE, 2, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(heatHazeWithMask, SHADER_HEATHAZE_WITH_MASK, 3, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(heatHazeWithMaskAndVertex, SHADER_HEATHAZE_WITH_MASK_AND_VERTEX, 3, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(colorProcess, SHADER_COLORPROCESS,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(heatHaze, SHADER_HEATHAZE,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		2, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(heatHazeWithMask, SHADER_HEATHAZE_WITH_MASK,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		3, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(heatHazeWithMaskAndVertex, SHADER_HEATHAZE_WITH_MASK_AND_VERTEX,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT,
+		3, TUT_2D, TUT_2D, TUT_2D)
 #endif
-SHADER_PROGRAM_VERTEX_PROP_DECL(megaTexture, SHADER_MEGATEXTURE, 8, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+
+	SHADER_PROGRAM_VERTEX_PROP_DECL(megaTexture, SHADER_MEGATEXTURE,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+
 #ifdef _SHADOW_MAPPING
-SHADER_PROGRAM_VERTEX_PROP_DECL(depth, SHADER_DEPTH, 0, VIA_VERTEX_BIT | VIA_VERTEX4_BIT)
-SHADER_PROGRAM_PROP_DECL(depthPerforated, SHADER_DEPTH_PERFORATED, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPointLight, SHADER_INTERACTION_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongPointLight, SHADER_INTERACTION_BLINNPHONG_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRPointLight, SHADER_INTERACTION_PBR_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingPointLight, SHADER_AMBIENT_LIGHTING_POINT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingParallelLight, SHADER_INTERACTION_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongParallelLight, SHADER_INTERACTION_BLINNPHONG_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRParallelLight, SHADER_INTERACTION_PBR_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingParallelLight, SHADER_AMBIENT_LIGHTING_PARALLEL_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingSpotLight, SHADER_INTERACTION_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongSpotLight, SHADER_INTERACTION_BLINNPHONG_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRSpotLight, SHADER_INTERACTION_PBR_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingSpotLight, SHADER_AMBIENT_LIGHTING_SPOT_LIGHT, 8, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_VERTEX_PROP_DECL(depth, SHADER_DEPTH,
+		VIA_VERTEX_BIT | VIA_VERTEX4_BIT,
+		0)
+	SHADER_PROGRAM_PROP_DECL(depthPerforated, SHADER_DEPTH_PERFORATED,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPointLight, SHADER_INTERACTION_POINT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongPointLight, SHADER_INTERACTION_BLINNPHONG_POINT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRPointLight, SHADER_INTERACTION_PBR_POINT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingPointLight, SHADER_AMBIENT_LIGHTING_POINT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
+
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingParallelLight, SHADER_INTERACTION_PARALLEL_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongParallelLight, SHADER_INTERACTION_BLINNPHONG_PARALLEL_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRParallelLight, SHADER_INTERACTION_PBR_PARALLEL_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingParallelLight, SHADER_AMBIENT_LIGHTING_PARALLEL_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
+
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingSpotLight, SHADER_INTERACTION_SPOT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingBlinnPhongSpotLight, SHADER_INTERACTION_BLINNPHONG_SPOT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionShadowMappingPBRSpotLight, SHADER_INTERACTION_PBR_SPOT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D_ARRAY, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(ambientLightingShadowMappingSpotLight, SHADER_AMBIENT_LIGHTING_SPOT_LIGHT,
+		VIA_ALL_BIT,
+		8, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D_ARRAY, TUT_2D)
 #endif
+
 #ifdef _STENCIL_SHADOW_IMPROVE
-SHADER_PROGRAM_PROP_DECL(interactionTranslucent, SHADER_INTERACTION_TRANSLUCENT, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionBlinnPhongTranslucent, SHADER_INTERACTION_PBR_TRANSLUCENT, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionPBRTranslucent, SHADER_INTERACTION_BLINNPHONG_TRANSLUCENT, 6, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingTranslucent, SHADER_AMBIENT_LIGHTING_TRANSLUCENT, 5, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP)
-SHADER_PROGRAM_PROP_DECL(interactionSoft, SHADER_INTERACTION_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionBlinnPhongSoft, SHADER_INTERACTION_PBR_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(interactionPBRSoft, SHADER_INTERACTION_BLINNPHONG_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(ambientLightingSoft, SHADER_AMBIENT_LIGHTING_SOFT, 7, VIA_ALL_BIT, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionTranslucent, SHADER_INTERACTION_TRANSLUCENT,
+		VIA_ALL_BIT,
+		6, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionBlinnPhongTranslucent, SHADER_INTERACTION_PBR_TRANSLUCENT,
+		VIA_ALL_BIT,
+		6, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionPBRTranslucent, SHADER_INTERACTION_BLINNPHONG_TRANSLUCENT,
+		VIA_ALL_BIT,
+		6, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(ambientLightingTranslucent, SHADER_AMBIENT_LIGHTING_TRANSLUCENT,
+		VIA_ALL_BIT,
+		5, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP)
+
+	SHADER_PROGRAM_PROP_DECL(interactionSoft, SHADER_INTERACTION_SOFT,
+		VIA_ALL_BIT,
+		7, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionBlinnPhongSoft, SHADER_INTERACTION_PBR_SOFT,
+		VIA_ALL_BIT,
+		7, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(interactionPBRSoft, SHADER_INTERACTION_BLINNPHONG_SOFT,
+		VIA_ALL_BIT,
+		7, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(ambientLightingSoft, SHADER_AMBIENT_LIGHTING_SOFT,
+		VIA_ALL_BIT,
+		7, TUT_2D, TUT_2D, TUT_2D, TUT_2D, TUT_CUBEMAP, TUT_NONE, TUT_2D)
 #endif
+
 #ifdef _POSTPROCESS
-SHADER_PROGRAM_FRAGMENT_PROP_DECL(retro2Bit, SHADER_RETRO_2BIT, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroC64, SHADER_RETRO_C64, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroCPC, SHADER_RETRO_CPC, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroGenesis, SHADER_RETRO_GENESIS, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_RETRO_PSX, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
+	SHADER_PROGRAM_FRAGMENT_PROP_DECL(retro2Bit, SHADER_RETRO_2BIT,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroC64, SHADER_RETRO_C64,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroCPC, SHADER_RETRO_CPC,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroGenesis, SHADER_RETRO_GENESIS,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_RETRO_PSX,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
 #endif
-SHADER_PROGRAM_FRAGMENT_PROP_DECL(retroPS1, SHADER_DEPTH_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(depthToColor, SHADER_DEPTH_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(stencilToColor, SHADER_STENCIL_TO_COLOR, 1, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D)
-SHADER_PROGRAM_PROP_DECL(enviroSuit, SHADER_ENVIROSUIT, 2, VIA_VERTEX_BIT | VIA_TEXCOORD_BIT, TUT_2D, TUT_2D)
+
+	SHADER_PROGRAM_PROP_DECL(depthToColor, SHADER_DEPTH_TO_COLOR,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(stencilToColor, SHADER_STENCIL_TO_COLOR,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+
+	SHADER_PROGRAM_PROP_DECL(enviroSuit, SHADER_ENVIROSUIT,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		2, TUT_2D, TUT_2D)
+
+#ifdef _HUMANHEAD
+	SHADER_PROGRAM_PROP_DECL(screeneffect, SHADER_SCREENEFFECT,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT,
+		2, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(radialblur, SHADER_RADIALBLUR,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_COLOR_BIT,
+		1, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(liquid, SHADER_LIQUID,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_NORMAL_BIT | VIA_TANGENT_BIT | VIA_BITANGENT_BIT,
+		3, TUT_CUBEMAP, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(membrane, SHADER_MEMBRANE,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT | VIA_NORMAL_BIT | VIA_TANGENT_BIT | VIA_BITANGENT_BIT,
+		4, TUT_2D, TUT_2D, TUT_2D, TUT_2D)
+	SHADER_PROGRAM_PROP_DECL(screenprocess, SHADER_SCREENPROCESS,
+		VIA_VERTEX_BIT | VIA_TEXCOORD_BIT,
+		1, TUT_2D)
+#endif
 };
 
 static const VKShaderProp_t * RB_VK_FindShaderProp(int type)
@@ -505,9 +851,9 @@ static const VKShaderProp_t * RB_VK_FindShaderProp(int type)
 static void RB_VK_CreatePipelineLayoutFromShaderProp(VKShaderProgram_t *program, const VKShaderProp_t *prop, const char *name, int type, VKHandle_t vertexShaderHandle, VKHandle_t fragmentShaderHandle, VkShaderModule vertexShader, VkShaderModule fragmentShader)
 {
 	VKPTRZERO(program);
-	program->uboSize_vertex = prop->uboSize_vertex;
+	program->uboSize_vertex = GLSL_STD140_MEM_ALIGN(prop->uboSize_vertex);
 	program->ubo_vertex = program->uboSize_vertex > 0 ? VKMALLOC(program->uboSize_vertex, name) : NULL;
-	program->uboSize_fragment = prop->uboSize_fragment;
+	program->uboSize_fragment = GLSL_STD140_MEM_ALIGN(prop->uboSize_fragment);
 	program->ubo_fragment = program->uboSize_fragment > 0 ? VKMALLOC(program->uboSize_fragment, name) : NULL;
 	program->copyUniform_vertex = prop->copyUniform_vertex;
 	program->copyUniform_fragment = prop->copyUniform_fragment;
@@ -560,10 +906,6 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 
 	const char *vs;
 	const char *fs;
-	VkShaderModule vertexShaderModule = VK_NULL_HANDLE;
-	VkShaderModule fragmentShaderModule = VK_NULL_HANDLE;
-	VKHandle_t vertexHandle = VKHANDLE_INVALID;
-	VKHandle_t fragmentHandle = VKHANDLE_INVALID;
 
 	vs = prop->default_vertex_shader_source.c_str();
 	fs = prop->default_fragment_shader_source.c_str();
@@ -574,6 +916,8 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 		macros.Append(prop->macros);
 	}
 
+	VKShaderHandle_t shaderHandle;
+	VKZERO(shaderHandle);
 	if(RB_VK_LoadShaderProgram(
 			prop->name.c_str(),
 			prop->type,
@@ -583,7 +927,7 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 			prop->vertex_shader_source_file.c_str(),
 			prop->fragment_shader_source_file.c_str(),
 			macros.c_str(),
-			vertexHandle, fragmentHandle, vertexShaderModule, fragmentShaderModule
+			shaderHandle
 	) < 0)
 		return false;
 
@@ -595,7 +939,7 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 	shaderProgram->type = type;
 	shaderProgram->program = vk_backend.programs.num;
 
-	RB_VK_InitShaderProgram(shaderProgram, vertexHandle, fragmentHandle, vertexShaderModule, fragmentShaderModule);
+	RB_VK_InitShaderProgram(shaderProgram, shaderHandle.vertexHandle, shaderHandle.fragmentHandle, shaderHandle.vertexShader, shaderHandle.fragmentShader);
 
 	return true;
 }

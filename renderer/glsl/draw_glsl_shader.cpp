@@ -45,7 +45,7 @@ GLint GL_GetUniformLocation(GLuint program, const char *name)
 #endif
 
 #ifdef GL_ES_VERSION_3_0
-static idCVar harm_r_useGLSLShaderBinaryCache("harm_r_useGLSLShaderBinaryCache", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Use/cache GLSL shader compiled binary(OpenGL ES2.0 not support)", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
+idCVar harm_r_useGLSLShaderBinaryCache("harm_r_useGLSLShaderBinaryCache", "0", CVAR_INTEGER | CVAR_RENDERER | CVAR_ARCHIVE, "Use/cache GLSL shader compiled binary(OpenGL ES2.0 not support)", 0, 2, idCmdSystem::ArgCompletion_Integer<0, 2>);
 #endif
 
 // change CVAR_INIT to CVAR_ARCHIVE
@@ -1083,7 +1083,7 @@ int RB_GLSL_LoadShaderProgram(
         common->Printf("    Load built-in shader program success!\n");
 
 #ifdef GL_ES_VERSION_3_0
-        // Cache external GLSL shader binary
+        // Cache built-in GLSL shader binary
         if(USING_GLES3 && harm_r_useGLSLShaderBinaryCache.GetBool())
         {
             RB_GLSL_CacheShaderBinary(program->program, name, vs, fs, type, false);

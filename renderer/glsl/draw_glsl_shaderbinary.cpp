@@ -19,6 +19,9 @@
 enum {
     GLSL_VERSION_ES2 = 0x0100,
     GLSL_VERSION_ES3 = 0x0300,
+#ifdef _VULKAN
+    GLSL_VERSION_VULKAN = 0x0450,
+#endif
 };
 
 enum {
@@ -76,7 +79,12 @@ static idStr RB_GLSL_GetExternalShaderBinaryPath(bool external)
 
     fullPath.StripTrailing('/');
     fullPath.StripTrailing('\\');
-    fullPath. Append(_GLPROGSBIN);
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        fullPath.Append(_VKPROGSSPIRV);
+    else
+#endif
+    fullPath.Append(_GLPROGSBIN);
 
     if(external)
         fullPath.AppendPath("external");
@@ -86,6 +94,13 @@ static idStr RB_GLSL_GetExternalShaderBinaryPath(bool external)
 
 static void RB_GLSL_RemoveShaderBinaryCache(const char *path)
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        RB_VK_RemoveShaderBinaryCache(path);
+        return;
+    }
+#endif
     idStr fullPath = path;
     bool p = false;
 
@@ -114,6 +129,16 @@ static void RB_GLSL_RemoveShaderBinaryCache(const char *name, bool external)
 
     fullPath.AppendPath(name);
     RB_GLSL_RemoveShaderBinaryCache(fullPath.c_str());
+}
+
+static int RB_GLSL_GetShaderVersion(void)
+{
+#ifdef _VULKAN
+    if (USING_VULKAN)
+        return GLSL_VERSION_VULKAN;
+    else
+#endif
+    return USING_GLES3 ? GLSL_VERSION_ES3 : GLSL_VERSION_ES2;
 }
 
 static void RB_GLSL_WriteShaderBinaryCache(const glslShaderBinaryCache_t *cache)
@@ -146,6 +171,13 @@ static void RB_GLSL_WriteShaderBinaryCache(const glslShaderBinaryCache_t *cache)
 
     fileSystem->CloseFile(file);
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        RB_VK_WriteCacheShaderBinary(fullPath, (const byte *)cache->binary, cache->header.length);
+        return;
+    }
+#endif
     fullPath.SetFileExtension("." GLSL_SHADER_BINARY_DATA_EXT);
     common->Printf("    Write GLSL shader binary data: %s\n", fullPath.c_str());
     fileSystem->WriteFile(fullPath, cache->binary, cache->header.length);
@@ -158,21 +190,48 @@ static void RB_GLSL_GenShaderBinaryHeader(glslShaderBinaryHeader_t *header, cons
     header->type = external ? GLSL_EXTERNAL : GLSL_BUILT_IN;
     header->digest_method = GLSL_DIGEST_CRC32;
     header->shader_type = type;
-    header->glsl_version = USING_GLES3 ? GLSL_VERSION_ES3 : GLSL_VERSION_ES2;
+    header->glsl_version = RB_GLSL_GetShaderVersion();
     idStr::Copynz(header->name, name, sizeof(header->name));
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        header->gl_vendor = vk_context.physicalDeviceProperties.vendorID;
+        header->gl_version = vk_context.physicalDeviceProperties.apiVersion;
+        GLSL_BIN_DIGESTS_CSTR(header->gl_renderer, glConfig.renderer_string);
+        GLSL_BIN_DIGESTS_CSTR(header->gl_shading_language_version, glConfig.shading_language_version_string);
+    }
+    else
+    {
+#endif
     GLSL_BIN_DIGESTS_CSTR(header->gl_vendor, glConfig.vendor_string);
     GLSL_BIN_DIGESTS_CSTR(header->gl_version, glConfig.version_string);
     GLSL_BIN_DIGESTS_CSTR(header->gl_renderer, glConfig.renderer_string);
     GLSL_BIN_DIGESTS_CSTR(header->gl_shading_language_version, glConfig.shading_language_version_string);
+#ifdef _VULKAN
+    }
+#endif
 
     GLSL_BIN_DIGESTS_STR(header->vertex_shader_digest, vertexSource);
     GLSL_BIN_DIGESTS_STR(header->fragment_shader_digest, fragmentSource);
 }
 
-static bool RB_GLSL_CacheShaderBinary(GLuint program, const char *name, const idStr &vertexSource, const idStr &fragmentSource, int type, bool external)
+bool RB_GLSL_CacheShaderBinary(GLuint program, const char *name, const idStr &vertexSource, const idStr &fragmentSource, int type, bool external)
 {
+    byte *data;
+    GLsizei length = 0;
+    GLenum binaryFormat = 0;
+
     RB_GLSL_RemoveShaderBinaryCache(name, external);
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        length = RB_VK_GetCacheShaderBinary(&data);
+        binaryFormat = VULKAN_BINARY_FORMAT;
+    }
+    else
+    {
+#endif
     if(program == 0)
         return false;
 
@@ -184,10 +243,11 @@ static bool RB_GLSL_CacheShaderBinary(GLuint program, const char *name, const id
     if(len == 0)
         return false;
 
-    byte *data = (byte *)malloc(len);
-    GLsizei length = 0;
-    GLenum binaryFormat = 0;
+    data = (byte *)malloc(len);
     qglGetProgramBinary(program, len, &length, &binaryFormat, data);
+#ifdef _VULKAN
+    }
+#endif
 
     if(length <= 0)
     {
@@ -310,10 +370,27 @@ static bool RB_GLSL_ReadShaderBinaryHeader(const char *path, glslShaderBinaryHea
 
 static bool RB_GLSL_ReadShaderBinaryData(const char *path, glslShaderBinaryCache_t *cache)
 {
+    byte *data = NULL;
+
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        int length = RB_VK_ReadShaderBinaryData(path, NULL);
+        if(length != cache->header.length)
+        {
+            common->Printf("    GLSL shader binary length not match: %d != %u\n", length, cache->header.length);
+            return false;
+        }
+
+        RB_VK_ReadShaderBinaryData(path, &data);
+    }
+    else
+    {
+#endif
     idFile *file = fileSystem->OpenFileRead(path, false);
     if(!file)
     {
-        common->Printf("    Can not load GLSL shader binary file: %s\n",path);
+        common->Printf("    Can not load GLSL shader binary file: %s\n", path);
         return false;
     }
 
@@ -323,16 +400,19 @@ static bool RB_GLSL_ReadShaderBinaryData(const char *path, glslShaderBinaryCache
         return false;
     }
 
-    byte *data = (byte *)malloc(cache->header.length);
+    data = (byte *)malloc(cache->header.length);
     if(file->Read(data, cache->header.length) != cache->header.length)
     {
         fileSystem->CloseFile(file);
         return false;
     }
 
-    cache->binary = data;
-
     fileSystem->CloseFile(file);
+#ifdef _VULKAN
+    }
+#endif
+
+    cache->binary = data;
     return true;
 }
 
@@ -353,21 +433,43 @@ static bool RB_GLSL_CheckShaderBinaryHeader(const glslShaderBinaryHeader_t *head
         common->Printf("    GLSL shader binary header digest method not match: %d != %d\n", header->digest_method, GLSL_DIGEST_CRC32);
         return false;
     }
-    uint16_t glsl_version = USING_GLES3 ? GLSL_VERSION_ES3 : GLSL_VERSION_ES2;
+    uint16_t glsl_version = RB_GLSL_GetShaderVersion();
     if(header->glsl_version != glsl_version)
     {
         common->Printf("    GLSL shader binary header glsl version not match: %u != %u\n", header->glsl_version, glsl_version);
         return false;
     }
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        if(header->gl_vendor != vk_context.physicalDeviceProperties.vendorID)
+        {
+            common->Printf("    GLSL shader binary header vulkan vendor not match: %u != %u\n", header->gl_vendor, vk_context.physicalDeviceProperties.vendorID);
+            return false;
+        }
+        if(header->gl_version != vk_context.physicalDeviceProperties.apiVersion)
+        {
+            common->Printf("    GLSL shader binary header vulkan version not match: %u != %u\n", header->gl_version, vk_context.physicalDeviceProperties.apiVersion);
+            return false;
+        }
+        if(!GLSL_BIN_DIGESTS_CMP(header->gl_renderer, glConfig.renderer_string))
+        {
+            common->Printf("    GLSL shader binary header gl renderer not match: %u != %s\n", header->gl_renderer, glConfig.renderer_string);
+            return false;
+        }
+        if(!GLSL_BIN_DIGESTS_CMP(header->gl_shading_language_version, glConfig.shading_language_version_string))
+        {
+            common->Printf("    GLSL shader binary header gl shading language version not match: %u != %s\n", header->gl_shading_language_version, glConfig.shading_language_version_string);
+            return false;
+        }
+    }
+    else
+    {
+#endif
     if(!GLSL_BIN_DIGESTS_CMP(header->gl_vendor, glConfig.vendor_string))
     {
         common->Printf("    GLSL shader binary header gl vendor not match: %u != %s\n", header->gl_vendor, glConfig.vendor_string);
-        return false;
-    }
-    if(!GLSL_BIN_DIGESTS_CMP(header->gl_renderer, glConfig.renderer_string))
-    {
-        common->Printf("    GLSL shader binary header gl renderer not match: %u != %s\n", header->gl_renderer, glConfig.renderer_string);
         return false;
     }
     if(!GLSL_BIN_DIGESTS_CMP(header->gl_version, glConfig.version_string))
@@ -375,11 +477,19 @@ static bool RB_GLSL_CheckShaderBinaryHeader(const glslShaderBinaryHeader_t *head
         common->Printf("    GLSL shader binary header gl version not match: %u != %s\n", header->gl_version, glConfig.version_string);
         return false;
     }
+    if(!GLSL_BIN_DIGESTS_CMP(header->gl_renderer, glConfig.renderer_string))
+    {
+        common->Printf("    GLSL shader binary header gl renderer not match: %u != %s\n", header->gl_renderer, glConfig.renderer_string);
+        return false;
+    }
     if(!GLSL_BIN_DIGESTS_CMP(header->gl_shading_language_version, glConfig.shading_language_version_string))
     {
         common->Printf("    GLSL shader binary header gl shading language version not match: %u != %s\n", header->gl_shading_language_version, glConfig.shading_language_version_string);
         return false;
     }
+#ifdef _VULKAN
+    }
+#endif
 
     if(header->length == 0)
     {
@@ -435,6 +545,12 @@ static GLuint RB_GLSL_CreateProgramFromBinary(GLuint &program, const void *binar
 
 static bool RB_GLSL_CreateShaderProgramFromBinary(shaderProgram_t *shaderProgram, const char *name, const void *binary, int length, GLenum binaryFormat, int type)
 {
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        return RB_VK_CreateShaderProgramFromBinary(name, (const byte *)binary, length);
+    }
+#endif
     RB_GLSL_DeleteShaderProgram(shaderProgram);
 
     shaderProgram->program = RB_GLSL_CreateProgramFromBinary(shaderProgram->program, binary, length, binaryFormat);
@@ -448,9 +564,11 @@ static bool RB_GLSL_CreateShaderProgramFromBinary(shaderProgram_t *shaderProgram
     return true;
 }
 
-static bool RB_GLSL_LoadShaderBinaryCacheUncheck(shaderProgram_t *shaderProgram, const char *name, int type, bool external)
+bool RB_GLSL_LoadShaderBinaryCacheUncheck(shaderProgram_t *shaderProgram, const char *name, int type, bool external)
 {
     idStr fullPath = RB_GLSL_GetExternalShaderBinaryPath(external);
+    void *binary = NULL;
+    int length = 0;
 
     fullPath.AppendPath(name);
     fullPath.SetFileExtension("." GLSL_SHADER_BINARY_HEADER_EXT);
@@ -468,15 +586,31 @@ static bool RB_GLSL_LoadShaderBinaryCacheUncheck(shaderProgram_t *shaderProgram,
         binaryFormat = header.binaryFormat;
     }
 
+#ifdef _VULKAN
+    if (USING_VULKAN)
+    {
+        length = RB_VK_ReadShaderBinaryData(fullPath, (byte **)&binary);
+        if(length <= 0)
+        {
+            common->Printf("    Can not load GLSL shader spirv cache data file: %s\n", fullPath.c_str());
+            RB_GLSL_RemoveShaderBinaryCache(fullPath);
+            return false;
+        }
+    }
+    else
+    {
+#endif
     fullPath.SetFileExtension("." GLSL_SHADER_BINARY_DATA_EXT);
-    void *binary = NULL;
-    int length = fileSystem->ReadFile(fullPath, &binary, NULL);
+    length = fileSystem->ReadFile(fullPath, &binary, NULL);
     if(length <= 0)
     {
         common->Printf("    Can not load GLSL shader binary cache data file: %s\n", fullPath.c_str());
         RB_GLSL_RemoveShaderBinaryCache(fullPath);
         return false;
     }
+#ifdef _VULKAN
+    }
+#endif
 
     bool res = RB_GLSL_CreateShaderProgramFromBinary(shaderProgram, name, binary, length, binaryFormat, type);
 
@@ -491,7 +625,7 @@ static bool RB_GLSL_LoadShaderBinaryCacheUncheck(shaderProgram_t *shaderProgram,
     return res;
 }
 
-static bool RB_GLSL_LoadShaderBinaryCache(shaderProgram_t *shaderProgram, const char *name, const idStr &vertexSource, const idStr &fragmentSource, int type, bool external)
+bool RB_GLSL_LoadShaderBinaryCache(shaderProgram_t *shaderProgram, const char *name, const idStr &vertexSource, const idStr &fragmentSource, int type, bool external)
 {
     idStr fullPath = RB_GLSL_GetExternalShaderBinaryPath(external);
 

@@ -14,6 +14,7 @@
 #define VKASSERT_THREAD
 #endif
 
+#include "vk_type.h"
 #include "vk.h"
 #include "vk_enum.h"
 #include "vk_sampler.h"
@@ -28,6 +29,8 @@
 
 #define RB_OPENGL "OpenGL"
 #define RB_VULKAN "Vulkan"
+
+#define VULKAN_BINARY_FORMAT ((unsigned int)('s' << 24 | 'p' << 16 | 'v' << 8 | '1'))
 
 extern bool USING_VULKAN;
 
@@ -70,6 +73,13 @@ extern idCVar r_vkUniformBufferBlockSize;
 extern idCVar r_vkVertexBufferBlockSize;
 extern idCVar r_vkIndexBufferBlockSize;
 #endif
+
+void R_VK_ByteListAppend(idList<byte> &list, const void *data, int length);
+int RB_VK_GetCacheShaderBinary(byte **ret);
+void RB_VK_WriteCacheShaderBinary(const char *path, const byte *binary, int length);
+int RB_VK_ReadShaderBinaryData(const char *path, byte **ret);
+void RB_VK_RemoveShaderBinaryCache(const char *path);
+bool RB_VK_CreateShaderProgramFromBinary(const char *name, const byte *binary, int length);
 
 void R_VK_CheckPortableExtensions(void);
 bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop);

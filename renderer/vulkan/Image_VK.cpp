@@ -151,7 +151,7 @@ typedef struct VKImageMipmap_s
 
 typedef idList<VKImageMipmap_t> VKImageMipmapList;
 
-static void ByteListAppend(idList<byte> &list, const void *data, int length)
+void R_VK_ByteListAppend(idList<byte> &list, const void *data, int length)
 {
 	int oldOffset = list.Num();
 	idList<byte> tmp;
@@ -680,7 +680,7 @@ void idImage::GenerateImage_VK(const byte *pic, int width, int height,
 	miplevel = 0;
 
 	idList<byte> imgData;
-	ByteListAppend(imgData, scaledBuffer, scaled_width * scaled_height * 4);
+	R_VK_ByteListAppend(imgData, scaledBuffer, scaled_width * scaled_height * 4);
 	VKImageMipmapList mipmapList;
 	VKImageMipmap_t &base = mipmapList.Alloc();
 	base.width = scaled_width;
@@ -728,7 +728,7 @@ void idImage::GenerateImage_VK(const byte *pic, int width, int height,
 		lod.height = scaled_height;
 		lod.offset = imgData.Num();
 		lod.length = scaled_width * scaled_height * 4;
-		ByteListAppend(imgData, scaledBuffer, scaled_width * scaled_height * 4);
+		R_VK_ByteListAppend(imgData, scaledBuffer, scaled_width * scaled_height * 4);
 
 		//R_WritePNG(va("list/%s_%d.png", imgName.c_str(), miplevel + 1), scaledBuffer, scaled_width, scaled_height, 4);
 	}
@@ -819,7 +819,7 @@ void idImage::GenerateCubeImage_VK(const byte *pic[6], int size,
 	int baseHeight = scaled_height;
 	int byteSize = scaled_width * scaled_height * 4;
 	for (i = 0 ; i < 6 ; i++) {
-		ByteListAppend(imgData, pic[i], byteSize);
+		R_VK_ByteListAppend(imgData, pic[i], byteSize);
 	}
 
 	// create and upload the mip map levels
@@ -842,7 +842,7 @@ void idImage::GenerateCubeImage_VK(const byte *pic[6], int size,
 		lod.length = lodWidth * lodHeight * 4;
 		byteSize = lodWidth * lodHeight * 4;
 		for (i = 0 ; i < 6 ; i++) {
-			ByteListAppend(imgData, shrunk[i], byteSize);
+			R_VK_ByteListAppend(imgData, shrunk[i], byteSize);
 			//R_WritePNG(va("cubelist/%s_%d_%d.png", imgName.c_str(), i, miplevel), shrunk[i], lodWidth, lodHeight, 4);
 		}
 
