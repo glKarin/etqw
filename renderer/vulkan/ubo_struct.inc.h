@@ -1,5 +1,12 @@
 
-#include "vk_ubo.h"
+#define UBO_DECLARATION(stage, type) typedef struct stage##UniformBufferObject_##type {
+#define END_UBO(stage, type) } UBO_DEFINE(stage, type);
+
+#define VERTEX_UBO_DECLARATION(type) UBO_DECLARATION(vertex, type)
+#define END_VERTEX_UBO(type) END_UBO(vertex, type)
+
+#define FRAGMENT_UBO_DECLARATION(type) UBO_DECLARATION(fragment, type)
+#define END_FRAGMENT_UBO(type) END_UBO(fragment, type)
 
 #define layout_binding_0_uniform VERTEX_UBO_DECLARATION
 #define end_layout_binding_0_uniform END_VERTEX_UBO
@@ -21,95 +28,10 @@
 #include "ubo_prop_shader.inc.h"
 
 
-FRAGMENT_UBO_ALIAS_DEFINE(blendLight, fog)
+#define UBO_ALIAS_DEFINE(stage, alias, type) typedef stage##UniformBufferObject_##type##_t stage##UniformBufferObject_##alias##_t;
+
+#define UBO_VERTEX_PROC_ALIAS(alias, type) UBO_ALIAS_DEFINE(vertex, alias, type)
+#define UBO_FRAGMENT_PROC_ALIAS(alias, type) UBO_ALIAS_DEFINE(fragment, alias, type)
 
 
-FRAGMENT_UBO_ALIAS_DEFINE(diffuseCubemap, cubemap)
-
-
-
-VERTEX_UBO_ALIAS_DEFINE(interactionBlinnPhong, interaction)
-FRAGMENT_UBO_ALIAS_DEFINE(interactionBlinnPhong, interaction)
-
-
-VERTEX_UBO_ALIAS_DEFINE(interactionPBR, interaction)
-FRAGMENT_UBO_ALIAS_DEFINE(interactionPBR, interaction)
-
-
-
-FRAGMENT_UBO_ALIAS_DEFINE(ambientLighting, interaction)
-
-
-VERTEX_UBO_ALIAS_DEFINE(depthToColor, simpleVertexTexcoord)
-VERTEX_UBO_ALIAS_DEFINE(stencilToColor, simpleVertexTexcoord)
-
-
-
-#ifdef _STENCIL_SHADOW_IMPROVE
-VERTEX_UBO_ALIAS_DEFINE(interactionBlinnPhongTranslucent, interactionTranslucent)
-FRAGMENT_UBO_ALIAS_DEFINE(interactionBlinnPhongTranslucent, interactionTranslucent)
-
-
-VERTEX_UBO_ALIAS_DEFINE(interactionPBRTranslucent, interactionTranslucent)
-FRAGMENT_UBO_ALIAS_DEFINE(interactionPBRTranslucent, interactionTranslucent)
-
-FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingTranslucent, interactionTranslucent)
-
-
-VERTEX_UBO_ALIAS_DEFINE(interactionSoft, interactionTranslucent)
-
-VERTEX_UBO_ALIAS_DEFINE(interactionBlinnPhongSoft, interactionTranslucent)
-FRAGMENT_UBO_ALIAS_DEFINE(interactionBlinnPhongSoft, interactionSoft)
-
-VERTEX_UBO_ALIAS_DEFINE(interactionPBRSoft, interactionPBRTranslucent)
-FRAGMENT_UBO_ALIAS_DEFINE(interactionPBRSoft, interactionSoft)
-
-VERTEX_UBO_ALIAS_DEFINE(ambientLightingSoft, ambientLightingTranslucent)
-FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingSoft, interactionSoft)
-#endif
-
-
-#ifdef _SHADOW_MAPPING
-VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongPointLight, interactionShadowMappingPointLight)
-
-VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingPBRPointLight, interactionShadowMappingPointLight)
-
-VERTEX_UBO_ALIAS_DEFINE(ambientLightingShadowMappingPointLight, interactionShadowMappingPointLight)
-
-
-VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongParallelLight, interactionShadowMappingParallelLight)
-
-VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingPBRParallelLight, interactionShadowMappingParallelLight)
-
-VERTEX_UBO_ALIAS_DEFINE(ambientLightingShadowMappingParallelLight, interactionShadowMappingParallelLight)
-
-
-VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongSpotLight, interactionShadowMappingSpotLight)
-
-VERTEX_UBO_ALIAS_DEFINE(interactionShadowMappingPBRSpotLight, interactionShadowMappingSpotLight)
-
-VERTEX_UBO_ALIAS_DEFINE(ambientLightingShadowMappingSpotLight, interactionShadowMappingSpotLight)
-
-
-
-FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongPointLight, interactionShadowMappingPointLight)
-
-FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingPBRPointLight, interactionShadowMappingPointLight)
-
-FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingShadowMappingPointLight, interactionShadowMappingPointLight)
-
-
-FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongParallelLight, interactionShadowMappingParallelLight)
-
-FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingPBRParallelLight, interactionShadowMappingParallelLight)
-
-FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingShadowMappingParallelLight, interactionShadowMappingParallelLight)
-
-
-FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingBlinnPhongSpotLight, interactionShadowMappingSpotLight)
-
-FRAGMENT_UBO_ALIAS_DEFINE(interactionShadowMappingPBRSpotLight, interactionShadowMappingSpotLight)
-
-FRAGMENT_UBO_ALIAS_DEFINE(ambientLightingShadowMappingSpotLight, interactionShadowMappingSpotLight)
-#endif
-
+#include "ubo_prop_alias.inc.h"

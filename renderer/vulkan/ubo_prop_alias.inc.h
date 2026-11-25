@@ -1,0 +1,98 @@
+#if !defined(UBO_VERTEX_PROC_ALIAS) || !defined(UBO_FRAGMENT_PROC_ALIAS)
+#error "you must define UBO_VERTEX_PROC_ALIAS/UBO_FRAGMENT_PROC_ALIAS before including this file"
+#endif
+
+
+UBO_FRAGMENT_PROC_ALIAS(blendLight, fog)
+
+
+UBO_FRAGMENT_PROC_ALIAS(diffuseCubemap, cubemap)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionBlinnPhong, interaction)
+UBO_FRAGMENT_PROC_ALIAS(interactionBlinnPhong, interaction)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionPBR, interaction)
+UBO_FRAGMENT_PROC_ALIAS(interactionPBR, interaction)
+
+
+UBO_FRAGMENT_PROC_ALIAS(ambientLighting, interaction)
+
+
+#ifdef _STENCIL_SHADOW_IMPROVE
+
+UBO_VERTEX_PROC_ALIAS(interactionBlinnPhongTranslucent, interactionTranslucent)
+UBO_FRAGMENT_PROC_ALIAS(interactionBlinnPhongTranslucent, interactionTranslucent)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionPBRTranslucent, interactionTranslucent)
+UBO_FRAGMENT_PROC_ALIAS(interactionPBRTranslucent, interactionTranslucent)
+
+
+UBO_FRAGMENT_PROC_ALIAS(ambientLightingTranslucent, interactionTranslucent)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionSoft, interactionTranslucent)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionBlinnPhongSoft, interactionTranslucent)
+UBO_FRAGMENT_PROC_ALIAS(interactionBlinnPhongSoft, interactionSoft)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionPBRSoft, interactionTranslucent)
+UBO_FRAGMENT_PROC_ALIAS(interactionPBRSoft, interactionSoft)
+
+
+UBO_VERTEX_PROC_ALIAS(ambientLightingSoft, ambientLightingTranslucent)
+UBO_FRAGMENT_PROC_ALIAS(ambientLightingSoft, interactionSoft)
+
+#endif
+
+
+#ifdef _SHADOW_MAPPING
+
+UBO_VERTEX_PROC_ALIAS(interactionShadowMappingBlinnPhongPointLight, interactionShadowMappingPointLight)
+UBO_FRAGMENT_PROC_ALIAS(interactionShadowMappingBlinnPhongPointLight, interactionShadowMappingPointLight)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionShadowMappingPBRPointLight, interactionShadowMappingPointLight)
+UBO_FRAGMENT_PROC_ALIAS(interactionShadowMappingPBRPointLight, interactionShadowMappingPointLight)
+
+
+UBO_VERTEX_PROC_ALIAS(ambientLightingShadowMappingPointLight, interactionShadowMappingPointLight)
+UBO_FRAGMENT_PROC_ALIAS(ambientLightingShadowMappingPointLight, interactionShadowMappingPointLight)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionShadowMappingBlinnPhongParallelLight, interactionShadowMappingParallelLight)
+UBO_FRAGMENT_PROC_ALIAS(interactionShadowMappingBlinnPhongParallelLight, interactionShadowMappingParallelLight)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionShadowMappingPBRParallelLight , interactionShadowMappingParallelLight)
+UBO_FRAGMENT_PROC_ALIAS(interactionShadowMappingPBRParallelLight , interactionShadowMappingParallelLight)
+
+
+UBO_VERTEX_PROC_ALIAS(ambientLightingShadowMappingParallelLight, interactionShadowMappingParallelLight)
+UBO_FRAGMENT_PROC_ALIAS(ambientLightingShadowMappingParallelLight, interactionShadowMappingParallelLight)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionShadowMappingBlinnPhongSpotLight, interactionShadowMappingSpotLight)
+UBO_FRAGMENT_PROC_ALIAS(interactionShadowMappingBlinnPhongSpotLight, interactionShadowMappingSpotLight)
+
+
+UBO_VERTEX_PROC_ALIAS(interactionShadowMappingPBRSpotLight , interactionShadowMappingSpotLight)
+UBO_FRAGMENT_PROC_ALIAS(interactionShadowMappingPBRSpotLight , interactionShadowMappingSpotLight)
+
+
+UBO_VERTEX_PROC_ALIAS(ambientLightingShadowMappingSpotLight, interactionShadowMappingSpotLight)
+UBO_FRAGMENT_PROC_ALIAS(ambientLightingShadowMappingSpotLight, interactionShadowMappingSpotLight)
+
+#endif
+
+
+UBO_VERTEX_PROC_ALIAS(depthToColor, simpleVertexTexcoord)
+UBO_VERTEX_PROC_ALIAS(stencilToColor, simpleVertexTexcoord)
+
+
+#undef UBO_VERTEX_PROC_ALIAS
+#undef UBO_FRAGMENT_PROC_ALIAS

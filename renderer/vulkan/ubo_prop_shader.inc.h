@@ -506,6 +506,92 @@ UBO_FRAGMENT_PROC_BEGIN(enviroSuit)
 UBO_FRAGMENT_PROC_END(enviroSuit)
 
 
+#ifdef _HUMANHEAD
+
+UBO_VERTEX_PROC_BEGIN(liquid)
+	UBO_VEC4_PROC(viewOrigin);
+	UBO_MAT4_PROC(modelViewProjectionMatrix);
+	UBO_MAT4_PROC(modelMatrix);
+	UBO_MAT4_PROC(modelViewMatrix);
+	UBO_MAT4_PROC(projectionMatrix);
+	UBO_VEC4_N_PROC(vertexParm, 1);
+UBO_VERTEX_PROC_END(liquid)
+
+UBO_FRAGMENT_PROC_BEGIN(liquid)
+	UBO_VEC4_PROC(nonPowerOfTwo);
+	UBO_VEC4_PROC(windowCoords);
+	UBO_VEC4_N_PROC(fragmentParm, 0);
+	UBO_VEC4_N_PROC(fragmentParm, 1);
+	UBO_VEC4_N_PROC(fragmentParm, 2);
+	UBO_VEC4_N_PROC(fragmentParm, 3);
+UBO_FRAGMENT_PROC_END(liquid)
+
+
+UBO_VERTEX_PROC_BEGIN(membrane)
+	UBO_VEC4_N_PROC(vertexParm, 0);
+	UBO_VEC4_N_PROC(vertexParm, 1);
+	UBO_VEC4_N_PROC(vertexParm, 2);
+	UBO_VEC4_N_PROC(vertexParm, 3);
+	UBO_VEC4_PROC(viewOrigin);
+	UBO_MAT4_PROC(modelMatrix);
+	UBO_MAT4_PROC(modelViewMatrix);
+	UBO_MAT4_PROC(projectionMatrix);
+	UBO_MAT4_PROC(modelViewProjectionMatrix);
+UBO_VERTEX_PROC_END(membrane)
+
+UBO_FRAGMENT_PROC_BEGIN(membrane)
+	UBO_VEC4_PROC(nonPowerOfTwo);
+	UBO_VEC4_PROC(windowCoords);
+	UBO_VEC4_N_PROC(fragmentParm, 0);
+	UBO_VEC4_N_PROC(fragmentParm, 1);
+	UBO_VEC4_N_PROC(fragmentParm, 2);
+UBO_FRAGMENT_PROC_END(membrane)
+
+
+UBO_VERTEX_PROC_BEGIN(radialblur)
+	UBO_MAT4_PROC(modelViewProjectionMatrix);
+UBO_VERTEX_PROC_END(radialblur)
+
+UBO_FRAGMENT_PROC_BEGIN(radialblur)
+	UBO_VEC4_PROC(nonPowerOfTwo);
+	UBO_VEC4_N_PROC(fragmentParm, 0);
+	UBO_VEC4_N_PROC(fragmentParm, 1);
+	UBO_VEC4_N_PROC(fragmentParm, 2);
+	UBO_VEC4_N_PROC(fragmentParm, 3);
+	UBO_VEC4_N_PROC(fragmentParm, 4);
+	UBO_VEC4_N_PROC(fragmentParm, 5);
+UBO_FRAGMENT_PROC_END(radialblur)
+
+
+UBO_VERTEX_PROC_BEGIN(screeneffect)
+	UBO_MAT4_PROC(modelViewProjectionMatrix);
+UBO_VERTEX_PROC_END(screeneffect)
+
+UBO_FRAGMENT_PROC_BEGIN(screeneffect)
+	UBO_VEC4_PROC(nonPowerOfTwo);
+	UBO_VEC4_N_PROC(fragmentParm, 0);
+	UBO_VEC4_N_PROC(fragmentParm, 1);
+	UBO_VEC4_N_PROC(fragmentParm, 2);
+	UBO_VEC4_N_PROC(fragmentParm, 3);
+	UBO_VEC4_N_PROC(fragmentParm, 4);
+	UBO_VEC4_N_PROC(fragmentParm, 5);
+UBO_FRAGMENT_PROC_END(screeneffect)
+
+
+UBO_VERTEX_PROC_BEGIN(screenprocess)
+	UBO_MAT4_PROC(modelViewProjectionMatrix);
+UBO_VERTEX_PROC_END(screenprocess)
+
+UBO_FRAGMENT_PROC_BEGIN(screenprocess)
+	UBO_VEC4_PROC(nonPowerOfTwo);
+	UBO_VEC4_N_PROC(fragmentParm, 0);
+	UBO_VEC4_N_PROC(fragmentParm, 1);
+	UBO_VEC4_N_PROC(fragmentParm, 2);
+	UBO_VEC4_N_PROC(fragmentParm, 3);
+UBO_FRAGMENT_PROC_END(screenprocess)
+
+#endif
+
 
 #undef UBO_VERTEX_PROC_BEGIN
 #undef UBO_FRAGMENT_PROC_BEGIN
