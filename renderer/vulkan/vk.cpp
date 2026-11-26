@@ -982,7 +982,7 @@ void VK_CreateSwapchain()
     Sys_Printf("Swapchain format: %s\n", VK_VkFormat_ToName(vk_context.swapchain.format));
     Sys_Printf("Swapchain color space: %s\n", VK_VkColorSpaceKHR_ToName(vk_context.swapchain.colorSpace));
     Sys_Printf("Swapchain transform: %s\n", VK_VkSurfaceTransformFlagBitsKHR_BitToName(createInfo.preTransform));
-    Sys_Printf("Aplha composite: %s\n", VK_VkCompositeAlphaFlagBitsKHR_BitToName(createInfo.compositeAlpha));
+    Sys_Printf("Swapchain Aplha composite: %s\n", VK_VkCompositeAlphaFlagBitsKHR_BitToName(createInfo.compositeAlpha));
 
     result = vkCreateSwapchainKHR(vk_context.device, &createInfo, VKCONTEXT_ALLOCATOR, &vk_context.swapchain.swapchain);
     HANDLE_VK_ERROR_EXIT(result, "vkCreateSwapchainKHR");

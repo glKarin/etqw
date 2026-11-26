@@ -1543,10 +1543,7 @@ void R_VK_ResetGlobalState()
 	vk_backend.currentDescriptorSet[LS_SAMPLER] = VK_NULL_HANDLE;
 	for(int i = 0; i < vk_backend.programs.num; i++)
 	{
-		vk_backend.programs.list[i]->descriptorSet[LS_UNIFORM] = VK_NULL_HANDLE;
-		vk_backend.programs.list[i]->descriptorSet[LS_SAMPLER] = VK_NULL_HANDLE;
-		VKZERO(vk_backend.programs.list[i]->uniformBuffer_vertex);
-		VKZERO(vk_backend.programs.list[i]->uniformBuffer_fragment);
+		R_VK_ResetShaderProgram(vk_backend.programs.list[i]);
 	}
 	R_VK_SetRenderPass(VK_GetCurrentRenderPass(), 0, 0);
 }
@@ -1634,15 +1631,24 @@ void R_VK_UpdateUniformBufferObject()
 	VKARRZERO(writeSamplerDescriptorSets);
 	int numWriteSamplerDescriptorSets = 0;
 
-	VkDescriptorSet samplerDescriptorSet = VK_NULL_HANDLE;
-	VkDescriptorSet uniformDescriptorSet = VK_NULL_HANDLE;
+	VkDescriptorImageInfo descriptorImageInfos[VKBINDING_MAX_TRXTURE_UNITS];
 
-	if (uboUpdateMask == 0)
+	VkDescriptorSet descriptorSets[LS_TOTAL];
+	int numDescriptorSets = 0;
+
+	VkDescriptorSet uniformDescriptorSet = VK_NULL_HANDLE;
+	VkDescriptorSet samplerDescriptorSet = VK_NULL_HANDLE;
+
+	const bool uniformNotSet = (vk_backend.currentProgram->ubo_vertex || vk_backend.currentProgram->ubo_fragment) && VK_NULL_HANDLE == vk_backend.currentProgram->descriptorSet[LS_UNIFORM];
+	const bool samplerNotSet = vk_backend.currentProgram->numTextureUnits > 0 && VK_NULL_HANDLE == vk_backend.currentProgram->descriptorSet[LS_SAMPLER];
+
+
+	if (uboUpdateMask == 0 && !uniformNotSet && !samplerNotSet) // if uniforms and textures are not changed
 	{
 		if (vk_backend.currentDescriptorSet[LS_UNIFORM] != vk_backend.currentProgram->descriptorSet[LS_UNIFORM]
-				|| vk_backend.currentDescriptorSet[LS_SAMPLER] != vk_backend.currentProgram->descriptorSet[LS_SAMPLER])
+				|| vk_backend.currentDescriptorSet[LS_SAMPLER] != vk_backend.currentProgram->descriptorSet[LS_SAMPLER]) // if current global descript set bindings are changed
 		{
-			if (VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet[LS_UNIFORM])
+			if (VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet[LS_UNIFORM]) // re-binding uniform descript set
 			{
 				if(vk_backend.currentProgram->ubo_vertex)
 				{
@@ -1654,31 +1660,34 @@ void R_VK_UpdateUniformBufferObject()
 					dynamicOffsets[numDynamicOffsets] = vk_backend.currentProgram->uniformBuffer_fragment.offset;
 					numDynamicOffsets++;
 				}
-				numWriteDescriptorSets++;
+				descriptorSets[numDescriptorSets++] = vk_backend.currentProgram->descriptorSet[LS_UNIFORM];
 			}
 
-			if (VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet[LS_SAMPLER])
+			if (VK_NULL_HANDLE != vk_backend.currentProgram->descriptorSet[LS_SAMPLER]) // re-binding sampler descript set
 			{
-				numWriteDescriptorSets++;
+				descriptorSets[numDescriptorSets++] = vk_backend.currentProgram->descriptorSet[LS_SAMPLER];
 			}
 
 			vk_backend.currentDescriptorSet[LS_UNIFORM] = vk_backend.currentProgram->descriptorSet[LS_UNIFORM];
 			vk_backend.currentDescriptorSet[LS_SAMPLER] = vk_backend.currentProgram->descriptorSet[LS_SAMPLER];
 
-			vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, numWriteDescriptorSets, vk_backend.currentProgram->descriptorSet, numDynamicOffsets, dynamicOffsets);
+			vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, numDescriptorSets, descriptorSets, numDynamicOffsets, dynamicOffsets);
 		}
 		return;
 	}
 
 	vk_backend.currentProgram->uboUpdate = false;
 
-	//vk_backend.currentProgram->descriptorSet = VK_NULL_HANDLE;
 
-	if(vk_backend.currentProgram->ubo_vertex)
+	const bool vertexUniformChanged = (uboUpdateMask & UTM_VERTEX) || uniformNotSet;
+	const bool fragmentUniformChanged = (uboUpdateMask & UTM_FRAGMENT) || uniformNotSet;
+
+	if(vertexUniformChanged || fragmentUniformChanged)
 	{
-		VKBufferMap_t vertexMap;
-		if(uboUpdateMask & UTM_VERTEX)
+		if(vk_backend.currentProgram->ubo_vertex && vertexUniformChanged)
 		{
+			VKBufferMap_t vertexMap;
+
 			// update UBO data
 			R_VK_WriteUniformBufferObject(vk_backend.currentProgram->ubo_vertex, vk_backend.currentProgram->uboSize_vertex, &vertexMap);
 
@@ -1688,36 +1697,15 @@ void R_VK_UpdateUniformBufferObject()
 				vk_backend.currentProgram->uniformBuffer_vertex = vertexMap;
 				if (VK_NULL_HANDLE == uniformDescriptorSet)
 					uniformDescriptorSet = R_VK_CreateUniformDescriptorSetForUpdate();
-
-				VKZERO(descriptorBufferInfo0);
-				descriptorBufferInfo0.buffer = vk_backend.currentProgram->uniformBuffer_vertex.buffer->buffer;
-				descriptorBufferInfo0.offset = 0;
-				descriptorBufferInfo0.range = vk_backend.currentProgram->uboSize_vertex;
-
-				writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets[numWriteDescriptorSets].dstSet = uniformDescriptorSet;
-				writeDescriptorSets[numWriteDescriptorSets].dstBinding = 0;
-				writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
-				writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-				writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
-				writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo0;
-				writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
-				writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
-
-				numWriteDescriptorSets++;
 			}
+			else
+				vk_backend.currentProgram->uniformBuffer_vertex.offset = vertexMap.offset;
 		}
 
-		dynamicOffsets[numDynamicOffsets] = vertexMap.offset;
-		numDynamicOffsets++;
-	}
-
-	if(vk_backend.currentProgram->ubo_fragment)
-	{
-		VKBufferMap_t fragmentMap;
-
-		if(uboUpdateMask & UTM_FRAGMENT)
+		if(vk_backend.currentProgram->ubo_fragment && fragmentUniformChanged)
 		{
+			VKBufferMap_t fragmentMap;
+
 			// update UBO data
 			R_VK_WriteUniformBufferObject(vk_backend.currentProgram->ubo_fragment, vk_backend.currentProgram->uboSize_fragment, &fragmentMap);
 
@@ -1727,32 +1715,65 @@ void R_VK_UpdateUniformBufferObject()
 				vk_backend.currentProgram->uniformBuffer_fragment = fragmentMap;
 				if (VK_NULL_HANDLE == uniformDescriptorSet)
 					uniformDescriptorSet = R_VK_CreateUniformDescriptorSetForUpdate();
-
-				VKZERO(descriptorBufferInfo1);
-				descriptorBufferInfo1.buffer = vk_backend.currentProgram->uniformBuffer_fragment.buffer->buffer;
-				descriptorBufferInfo1.offset = 0;
-				descriptorBufferInfo1.range = vk_backend.currentProgram->uboSize_fragment;
-
-				writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeDescriptorSets[numWriteDescriptorSets].dstSet = uniformDescriptorSet;
-				writeDescriptorSets[numWriteDescriptorSets].dstBinding = 1;
-				writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
-				writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-				writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
-				writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo1;
-				writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
-				writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
-				numWriteDescriptorSets++;
 			}
+			else
+				vk_backend.currentProgram->uniformBuffer_fragment.offset = fragmentMap.offset;
 		}
-
-		dynamicOffsets[numDynamicOffsets] = fragmentMap.offset;
-		numDynamicOffsets++;
 	}
 
-	VkDescriptorImageInfo descriptorImageInfos[VKBINDING_MAX_TRXTURE_UNITS];
-	if (vk_backend.currentProgram->numTextureUnits > 0)
+	if (VK_NULL_HANDLE != uniformDescriptorSet) // update all uniform bindings
 	{
+		if (vk_backend.currentProgram->ubo_vertex)
+		{
+			VKZERO(descriptorBufferInfo0);
+			descriptorBufferInfo0.buffer = vk_backend.currentProgram->uniformBuffer_vertex.buffer->buffer;
+			descriptorBufferInfo0.offset = 0;
+			descriptorBufferInfo0.range = vk_backend.currentProgram->uboSize_vertex;
+
+			writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSets[numWriteDescriptorSets].dstSet = uniformDescriptorSet;
+			writeDescriptorSets[numWriteDescriptorSets].dstBinding = 0;
+			writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
+			writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
+			writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo0;
+			writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
+			writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
+
+			numWriteDescriptorSets++;
+		}
+
+		if (vk_backend.currentProgram->ubo_fragment)
+		{
+			VKZERO(descriptorBufferInfo1);
+			descriptorBufferInfo1.buffer = vk_backend.currentProgram->uniformBuffer_fragment.buffer->buffer;
+			descriptorBufferInfo1.offset = 0;
+			descriptorBufferInfo1.range = vk_backend.currentProgram->uboSize_fragment;
+
+			writeDescriptorSets[numWriteDescriptorSets].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSets[numWriteDescriptorSets].dstSet = uniformDescriptorSet;
+			writeDescriptorSets[numWriteDescriptorSets].dstBinding = 1;
+			writeDescriptorSets[numWriteDescriptorSets].dstArrayElement = 0;
+			writeDescriptorSets[numWriteDescriptorSets].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+			writeDescriptorSets[numWriteDescriptorSets].descriptorCount = 1;
+			writeDescriptorSets[numWriteDescriptorSets].pBufferInfo = &descriptorBufferInfo1;
+			writeDescriptorSets[numWriteDescriptorSets].pImageInfo = NULL;
+			writeDescriptorSets[numWriteDescriptorSets].pTexelBufferView = NULL;
+
+			numWriteDescriptorSets++;
+		}
+	}
+	// update uniform offsets
+	if (vk_backend.currentProgram->ubo_vertex)
+		dynamicOffsets[numDynamicOffsets++] = vk_backend.currentProgram->uniformBuffer_vertex.offset;
+	if (vk_backend.currentProgram->ubo_fragment)
+		dynamicOffsets[numDynamicOffsets++] = vk_backend.currentProgram->uniformBuffer_fragment.offset;
+
+
+	if (vk_backend.currentProgram->numTextureUnits > 0 && ((uboUpdateMask >= UTM_IMAGE) || VK_NULL_HANDLE == vk_backend.currentProgram->descriptorSet[LS_SAMPLER]))
+	{
+		VKARRZERO(descriptorImageInfos);
+
 		if (VK_NULL_HANDLE == samplerDescriptorSet)
 			samplerDescriptorSet = R_VK_CreateSamplerDescriptorSetForUpdate();
 		for (int i = 0; i < vk_backend.currentProgram->numTextureUnits; i++)
@@ -1760,7 +1781,6 @@ void R_VK_UpdateUniformBufferObject()
 			//if (uboUpdateMask & (UTM_IMAGE << i))
 			if(vk_backend.currentProgram->textureTypes[i] != TUT_NONE)
 			{
-				VKZERO(descriptorImageInfos[i]);
 				VKImage_t *image = vk_backend.currentProgram->textures[i];
 				if (!image) // always binding one
 				 	image = vk_backend.currentProgram->textureTypes[i] == TUT_CUBEMAP ? globalImages->defaultCubeMapImage->vk_image : globalImages->defaultImage->vk_image;
@@ -1783,30 +1803,28 @@ void R_VK_UpdateUniformBufferObject()
 		}
 	}
 
-	if (uniformDescriptorSet)
+	if (uniformDescriptorSet) // update and cache new uniform descript set
 	{
 		vkUpdateDescriptorSets(vk_context.device, numWriteDescriptorSets, writeDescriptorSets, 0, NULL);
 		vk_backend.currentProgram->descriptorSet[LS_UNIFORM] = uniformDescriptorSet;
 	}
-	else
+	else // using old uniform descript set
 		uniformDescriptorSet = vk_backend.currentProgram->descriptorSet[LS_UNIFORM];
 
-	if (samplerDescriptorSet)
+	if (samplerDescriptorSet) // update and cache new sampler descript set to program
 	{
 		vkUpdateDescriptorSets(vk_context.device, numWriteSamplerDescriptorSets, writeSamplerDescriptorSets, 0, NULL);
 		vk_backend.currentProgram->descriptorSet[LS_SAMPLER] = samplerDescriptorSet;
 	}
-	else
+	else // using old sampler descript set
 		samplerDescriptorSet = vk_backend.currentProgram->descriptorSet[LS_SAMPLER];
 
-	VkDescriptorSet descriptorSets[LS_TOTAL];
-	int numDescriptorSets = 0;
-	if (VK_NULL_HANDLE != uniformDescriptorSet)
+	if (VK_NULL_HANDLE != uniformDescriptorSet) // check uniform descript set required to program
 	{
 		descriptorSets[numDescriptorSets] = uniformDescriptorSet;
 		numDescriptorSets++;
 	}
-	if (VK_NULL_HANDLE != samplerDescriptorSet)
+	if (VK_NULL_HANDLE != samplerDescriptorSet) // check sampler descript set required
 	{
 		descriptorSets[numDescriptorSets] = samplerDescriptorSet;
 		numDescriptorSets++;
@@ -1814,6 +1832,7 @@ void R_VK_UpdateUniformBufferObject()
 
 	vkCmdBindDescriptorSets(vk_context.currentFrameCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_backend.currentProgram->pipelineLayout->pipelineLayout, 0, numDescriptorSets, descriptorSets, numDynamicOffsets, dynamicOffsets);
 
+	// sync to global
 	vk_backend.currentDescriptorSet[LS_UNIFORM] = vk_backend.currentProgram->descriptorSet[LS_UNIFORM];
 	vk_backend.currentDescriptorSet[LS_SAMPLER] = vk_backend.currentProgram->descriptorSet[LS_SAMPLER];
 }

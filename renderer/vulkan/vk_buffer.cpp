@@ -57,38 +57,41 @@ static void R_VK_InitBufferBlock(VKBufferBlock_t *block, int type, int size) {
 	}
 	int bufSize = VKMEM_ALIGN(size, block->alignment);
 	Sys_Printf("Create buffer block size: %d -> %d(alignment: %d) %d - %d\n", size, bufSize, block->alignment, vk_context.frameIndex, type);
-	VKHandle_t handle = VK_AllocBuffer(&block->buffer);
+	VKBuffer_t *buffer = NULL;
+	VKHandle_t handle = VK_AllocBuffer(&buffer);
 	switch(type)
 	{
 		case BT_VERTEX:
-			VK_CreateVertexBuffer(block->buffer, bufSize, true, false);
+			VK_CreateVertexBuffer(buffer, bufSize, true, false);
 			break;
 		case BT_VERTEX_DST:
-			VK_CreateVertexBuffer(block->buffer, bufSize, false, false);
+			VK_CreateVertexBuffer(buffer, bufSize, false, false);
 			break;
 		case BT_INDEX:
-			VK_CreateIndexBuffer(block->buffer, bufSize, true, false);
+			VK_CreateIndexBuffer(buffer, bufSize, true, false);
 			break;
 		case BT_INDEX_DST:
-			VK_CreateIndexBuffer(block->buffer, bufSize, false, false);
+			VK_CreateIndexBuffer(buffer, bufSize, false, false);
 			break;
 		case BT_UNIFORM:
-			VK_CreateUniformBuffer(block->buffer, bufSize, true, false);
+			VK_CreateUniformBuffer(buffer, bufSize, true, false);
 			break;
 		case BT_UNIFORM_DST:
-			VK_CreateUniformBuffer(block->buffer, bufSize, false, false);
+			VK_CreateUniformBuffer(buffer, bufSize, false, false);
 			break;
 		case BT_TRANSFER:
-			VK_CreateTransferSrcBuffer(block->buffer, bufSize, true, false);
+			VK_CreateTransferSrcBuffer(buffer, bufSize, true, false);
 			break;
 		case BT_TRANSFER_DST:
-			VK_CreateTransferDstBuffer(block->buffer, bufSize, true, false);
+			VK_CreateTransferDstBuffer(buffer, bufSize, true, false);
 			break;
 		default:
 			Sys_Error("Unexpected buffer type: %d\n", type);
 			return;
 	}
-	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)block->buffer->buffer, "tempBuffer::buffer%d_%d", handle, type);
+	VKDEBUG_SET_NAME(VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer->buffer, "tempBuffer::buffer%d_%d", handle, type);
+	block->handle = handle;
+	block->buffer = buffer;
 	block->remain = block->buffer->size;
 	block->type = type;
 
@@ -116,6 +119,7 @@ static bool R_VK_AllocBufferBlock(VKBufferBlock_t *block, int size, VKBufferMap_
 	map->offset = offset;
 	map->size = size;
 	map->buffer = block->buffer;
+	map->handle = block->handle;
 	map->ptr = (char *)block->ptr + offset;
 	return true;
 }
@@ -136,12 +140,15 @@ static void R_VK_ResetBufferBlock(VKBufferBlock_t *block) {
 static void R_VK_FlushBufferBlock(VKBufferBlock_t *block) {
 	if(block->ptr && block->offset > 0)
 	{
+		VkDeviceSize size = VKMEM_ALIGN(block->offset, vk_context.physicalDeviceProperties.limits.nonCoherentAtomSize);
+		if (size > block->buffer->size)
+			size = VK_WHOLE_SIZE;
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
 		VmaMappedMemoryRange mappedMemoryRange;
 		VKZERO(mappedMemoryRange);
 		mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		mappedMemoryRange.offset = 0;
-		mappedMemoryRange.size = block->offset;
+		mappedMemoryRange.size = size;
 		mappedMemoryRange.allocation = block->buffer->vmaAllocation;
 		if (block->type == BT_TRANSFER_DST)
 			vmaInvalidateMappedMemoryRanges(vk_context.vmaAllocator, 1, &mappedMemoryRange);
@@ -152,7 +159,7 @@ static void R_VK_FlushBufferBlock(VKBufferBlock_t *block) {
 		VKZERO(mappedMemoryRange);
 		mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		mappedMemoryRange.offset = 0;
-		mappedMemoryRange.size = block->offset;
+		mappedMemoryRange.size = size;
 		mappedMemoryRange.memory = block->buffer->memory;
 		vkFlushMappedMemoryRanges(vk_context.device, 1, &mappedMemoryRange);
 #endif
@@ -169,7 +176,7 @@ static void R_VK_InitBufferQueue(VKBufferQueue_t *cache, int type, int size, int
 
 void R_VK_AllocBufferQueue(VKBufferQueue_t *cache, int size, VKBufferMap_t *map)
 {
-	VKBufferBlock_t *item = &cache->list[0];
+	VKBufferBlock_t *item = cache->list;
 	for (int i = 0; i < cache->num; i++, item++) {
 		if(R_VK_AllocBufferBlock(item, size, map))
 		{
@@ -198,14 +205,14 @@ void R_VK_AllocBufferQueue(VKBufferQueue_t *cache, int size, VKBufferMap_t *map)
 }
 
 static void R_VK_ResetBufferQueue(VKBufferQueue_t *cache) {
-	VKBufferBlock_t *item = &cache->list[0];
+	VKBufferBlock_t *item = cache->list;
 	for (int i = 0; i < cache->num; i++, item++) {
 		R_VK_ResetBufferBlock(item);
 	}
 }
 
 static void R_VK_FreeBufferQueue(VKBufferQueue_t *cache) {
-	VKBufferBlock_t *item = &cache->list[0];
+	VKBufferBlock_t *item = cache->list;
 	for (int i = 0; i < cache->num; i++, item++) {
 		R_VK_FreeBufferBlock(item);
 	}
@@ -217,7 +224,7 @@ static void R_VK_FreeBufferQueue(VKBufferQueue_t *cache) {
 static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 	int num = 0;
 	cache->usedMemory = 0;
-	VKBufferBlock_t *block = &cache->list[0];
+	VKBufferBlock_t *block = cache->list;
 	for (int i = 0; i < cache->num; i++, block++) {
 		if(block->ptr && block->offset > 0)
 		{
@@ -230,16 +237,20 @@ static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 		return false;
 
 	int numi = 0;
-	block = &cache->list[0];
+	block = cache->list;
 #ifdef AMD_VULKAN_MEMORY_ALLOCATOR_H
 	VmaMappedMemoryRange *mappedMemoryRanges = (VmaMappedMemoryRange *)VKMALLOCT(sizeof(*mappedMemoryRanges) * num, VKBufferQueue_t::VmaMappedMemoryRange);
 	VKPTRNZERO(mappedMemoryRanges, num);
 	for (int i = 0; i < cache->num; i++, block++) {
 		if(block->ptr && block->offset > 0)
 		{
+			VkDeviceSize size = VKMEM_ALIGN(block->offset, vk_context.physicalDeviceProperties.limits.nonCoherentAtomSize);
+			if (size > block->buffer->size)
+				size = VK_WHOLE_SIZE;
+
 			mappedMemoryRanges[numi].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			mappedMemoryRanges[numi].offset = 0;
-			mappedMemoryRanges[numi].size = block->offset;
+			mappedMemoryRanges[numi].size = size;
 			mappedMemoryRanges[numi].allocation = block->buffer->vmaAllocation;
 
 			numi++;
@@ -256,9 +267,13 @@ static bool R_VK_FlushBufferQueue(VKBufferQueue_t *cache) {
 	for (int i = 0; i < cache->num; i++, block++) {
 		if(block->ptr && block->offset > 0)
 		{
+			VkDeviceSize size = VKMEM_ALIGN(block->offset, vk_context.physicalDeviceProperties.limits.nonCoherentAtomSize);
+			if (size > block->buffer->size)
+				size = VK_WHOLE_SIZE;
+
 			mappedMemoryRanges[numi].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 			mappedMemoryRanges[numi].offset = 0;
-			mappedMemoryRanges[numi].size = block->offset;
+			mappedMemoryRanges[numi].size = size;
 			mappedMemoryRanges[numi].memory = block->buffer->memory;
 
 			numi++;

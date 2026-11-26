@@ -19,6 +19,7 @@ typedef enum VKUboTypeMask_e
 	UTM_VERTEX = BIT(0),
 	UTM_FRAGMENT = BIT(1),
 	UTM_IMAGE = BIT(2),
+	UTM_UNIFORM = (UTM_VERTEX | UTM_FRAGMENT),
 } VKUboTypeMask_t;
 
 /**
@@ -90,7 +91,7 @@ typedef struct VKBackEnd_s
 	VKGlobalUniformObject_t ubo; // 当前Uniform变量
 	uint32_t frameCount; // 帧计数
 	VKGlobalUniformObjectState_t uboState; // 当前Uniform缓存状态计数
-	VkDescriptorSet currentDescriptorSet[2]; // 当前绑定的描述符集
+	VkDescriptorSet currentDescriptorSet[2]; // 当前绑定的描述符集, 如果和当前着色器程序的相同, 则无需重新调用vkCmdBindDescriptorSets
 
 	VKLIST(VKHandle_t) purgeBuffers[NUM_INFLIGHT_FRAME]; // 延时删除缓冲区列表(实际删除时清空)
 	VKLIST(VKHandle_t) purgeImages[NUM_INFLIGHT_FRAME]; // 延时删除图像列表(实际删除时清空)

@@ -3,6 +3,10 @@
 
 #include "../tr_local.h"
 
+#ifdef strcmp
+#undef strcmp
+#endif
+
 
 void R_VK_InitGlobalUBO()
 {
@@ -63,6 +67,34 @@ void R_VK_InitGlobalUBO()
 	VKZERO(vk_backend.uboState);
 }
 
+int R_VK_GetGlobalUBOOffset(const char *name, int index)
+{
+#define UBO_DEF(x) \
+	if(strcmp(name, #x) == 0) { \
+		return VKGLOBAL_PARM_OFFSET(x); \
+	}
+#define UBO_N_DEF(x, n) \
+	if(strcmp(name, #x) == 0) { \
+		return VKGLOBAL_PARMS_OFFSET(x, index); \
+	}
+#define UBO_MAT4 UBO_DEF
+#define UBO_VEC4 UBO_DEF
+#define UBO_FLOAT UBO_DEF
+#define UBO_INT UBO_DEF
+#define UBO_BOOL UBO_DEF
+#define UBO_VEC2 UBO_DEF
+#define UBO_MAT4_N UBO_N_DEF
+#define UBO_VEC4_N UBO_N_DEF
+#define UBO_INT_N UBO_N_DEF
+#define UBO_BOOL_N UBO_N_DEF
+
+#include "ubo_prop_global.inc.h"
+#undef UBO_DEF
+#undef UBO_N_DEF
+
+	return -1;
+}
+
 
 #include "ubo_copy.inc.h"
 
@@ -71,3 +103,5 @@ void R_VK_InitGlobalUBO()
 #include "ubo_loc.inc.h"
 
 #include "ubo_check.inc.h"
+
+#include "ubo_locname.inc.h"

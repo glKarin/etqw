@@ -944,6 +944,14 @@ bool RB_VK_LoadShaderProgramFromProp(const GLSLShaderProp *prop)
 	return true;
 }
 
+void R_VK_ResetShaderProgram(VKShaderProgram_t *program)
+{
+	program->descriptorSet[LS_UNIFORM] = VK_NULL_HANDLE;
+	program->descriptorSet[LS_SAMPLER] = VK_NULL_HANDLE;
+	VKZERO(program->uniformBuffer_vertex);
+	VKZERO(program->uniformBuffer_fragment);
+}
+
 void R_VK_ListPipeline(const idCmdArgs &)
 {
 	common->Printf("Pipeline pool usage: %d/%d\n", vk_backend.programs.num, vk_backend.programs.size);

@@ -53,7 +53,7 @@ typedef struct VKShaderProgram_t
     // 如果数据未脏, 则使用旧的缓冲区
     VKBufferMap_t uniformBuffer_vertex; // 顶点着色器当前引用的Uniform缓冲区映射
     VKBufferMap_t uniformBuffer_fragment; // 片段着色器当前引用的Uniform缓冲区映射
-	VkDescriptorSet descriptorSet[LS_TOTAL]; // 上次绑定的描述符
+	VkDescriptorSet descriptorSet[LS_TOTAL]; // 上次绑定的描述符, 如果和当前全局的相同, 则无需重新调用vkCmdBindDescriptorSets
 
     VKMAP(VKPipeline_t, VKPipelineStateSet_t) pipelinePool; // 渲染管线布局创建的各个状态的渲染管线池
 } VKShaderProgram_t;
@@ -61,6 +61,7 @@ typedef struct VKShaderProgram_t
 void R_VK_FreeShaderProgram(VKShaderProgram_t *program);
 void R_VK_CreateVertexShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
 void R_VK_CreateFragmentShader(VkPipelineShaderStageCreateInfo *createInfo, VkShaderModule module);
+void R_VK_ResetShaderProgram(VKShaderProgram_t *program);
 void R_VK_ListPipeline(const idCmdArgs &);
 
 #endif //_VULKAN_VKSHADER_H

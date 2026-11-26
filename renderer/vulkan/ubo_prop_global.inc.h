@@ -1,5 +1,5 @@
-#if !defined(UBO_MAT4) || !defined(UBO_VEC4) || !defined(UBO_FLOAT) || !defined(UBO_INT) || !defined(UBO_BOOL) || !defined(UBO_VEC2)
-#error "you must define UBO_MAT4/UBO_VEC4/UBO_FLOAT/UBO_INT/UBO_BOOL/UBO_VEC2 before including this file"
+#if !defined(UBO_MAT4) || !defined(UBO_VEC4) || !defined(UBO_FLOAT) || !defined(UBO_INT) || !defined(UBO_BOOL) || !defined(UBO_VEC2) || !defined(UBO_VEC4_N) || !defined(UBO_MAT4_N) || !defined(UBO_INT_N) || !defined(UBO_BOOL_N)
+#error "you must define UBO_MAT4/UBO_VEC4/UBO_FLOAT/UBO_INT/UBO_BOOL/UBO_VEC2/UBO_VEC4_N/UBO_MAT4_N/UBO_INT_N/UBO_BOOL_N before including this file"
 #endif
 
     UBO_MAT4(modelViewProjectionMatrix);
@@ -34,17 +34,17 @@
     UBO_VEC4(texgenQ);
 
 #ifdef _SHADOW_MAPPING
-    UBO_MAT4(shadowMVPMatrix[6]);
+    UBO_MAT4_N(shadowMVPMatrix, 6);
     UBO_VEC4(globalLightOrigin);
 #endif
 
-    UBO_VEC4(uniformParm[8]);
-    UBO_VEC4(vertexParm[8]);
-    UBO_VEC4(fragmentParm[8]);
-    UBO_VEC4(megaTextureLevel[9]);
+    UBO_VEC4_N(uniformParm, 8);
+    UBO_VEC4_N(vertexParm, 8);
+    UBO_VEC4_N(fragmentParm, 8);
+    UBO_VEC4_N(megaTextureLevel, 9);
 
-    UBO_INT(iuniformParm[8]);
-    UBO_BOOL(buniformParm[8]);
+    UBO_INT_N(iuniformParm, 8);
+    UBO_BOOL_N(buniformParm, 8);
 
     UBO_VEC4(lightOrigin);
     UBO_VEC4(viewOrigin);
@@ -71,4 +71,8 @@
 #undef UBO_INT
 #undef UBO_BOOL
 #undef UBO_VEC2
+#undef UBO_VEC4_N
+#undef UBO_MAT4_N
+#undef UBO_INT_N
+#undef UBO_BOOL_N
 

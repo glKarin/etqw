@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#define VKOFFSET_OF(T, name) offsetof(T, name)
+#define VKOFFSET_N_OF(T, name, index) VKOFFSET_OF(T, name[index]) // index is immediate value
+#define VKOFFSET_VAR_N_OF(T, name, index) (VKOFFSET_OF(T, name) + sizeof(((T *)0)->name[0]) * (index)) // index ius variable
+
 /**
  * Global uniform variables
  */
@@ -15,6 +19,10 @@ typedef struct VKGlobalUniformObject_s
 #define UBO_INT(x) UBO_DEF(int, x)
 #define UBO_BOOL(x) UBO_DEF(bool32, x)
 #define UBO_VEC2(x) UBO_DEF(vec2, x)
+#define UBO_MAT4_N(x, n) UBO_MAT4(x)[n]
+#define UBO_VEC4_N(x, n) UBO_VEC4(x)[n]
+#define UBO_INT_N(x, n) UBO_INT(x)[n]
+#define UBO_BOOL_N(x, n) UBO_BOOL(x)[n]
 
 #include "ubo_prop_global.inc.h"
 #undef UBO_DEF
@@ -35,6 +43,10 @@ typedef struct VKGlobalUniformObjectState_s
 #define UBO_INT UBO_DEF
 #define UBO_BOOL UBO_DEF
 #define UBO_VEC2(x) ivec2 x
+#define UBO_MAT4_N(x, n) UBO_MAT4(x)[n]
+#define UBO_VEC4_N(x, n) UBO_VEC4(x)[n]
+#define UBO_INT_N(x, n) UBO_INT(x)[n]
+#define UBO_BOOL_N(x, n) UBO_BOOL(x)[n]
 
 #include "ubo_prop_global.inc.h"
 #undef UBO_DEF
@@ -60,6 +72,10 @@ typedef VKGlobalUniformObjectState_t VKGlobalUniformObjectLocation_t;
 #define UBO_INT UBO_DEF
 #define UBO_BOOL UBO_DEF
 #define UBO_VEC2 UBO_DEF
+#define UBO_MAT4_N(x, n) UBO_DEF(x)
+#define UBO_VEC4_N(x, n) UBO_DEF(x)
+#define UBO_INT_N(x, n) UBO_DEF(x)
+#define UBO_BOOL_N(x, n) UBO_DEF(x)
 
 #include "ubo_prop_global.inc.h"
 #undef UBO_DEF
@@ -73,6 +89,7 @@ typedef VKGlobalUniformObjectState_t VKGlobalUniformObjectLocation_t;
 
 
 void R_VK_InitGlobalUBO();
+int R_VK_GetGlobalUBOOffset(const char *name, int index);
 
 
 // Uniform structs of shaders
@@ -129,6 +146,18 @@ void R_VK_InitGlobalUBO();
 #define UBO1_CHECK_DEFINE(T) UBOX_CHECK_DEFINE(fragment, T)
 
 #include "ubo_check_func.inc.h"
+
+
+// Function of get uniform offset by name
+#define UBOX_LOC_NAME_NAME(stage, T) R_VK_GetUniformOffsetByName_##stage##_##T
+#define UBO0_LOC_NAME_NAME(T) UBOX_LOC_NAME_NAME(vertex, T)
+#define UBO1_LOC_NAME_NAME(T) UBOX_LOC_NAME_NAME(fragment, T)
+
+#define UBOX_LOC_NAME_DEFINE(stage, T) int UBOX_LOC_NAME_NAME(stage, T)(const char *name, int index)
+#define UBO0_LOC_NAME_DEFINE(T) UBOX_LOC_NAME_DEFINE(vertex, T)
+#define UBO1_LOC_NAME_DEFINE(T) UBOX_LOC_NAME_DEFINE(fragment, T)
+
+#include "ubo_locname_func.inc.h"
 
 
 #endif //_VULKAN_VKUBO_H

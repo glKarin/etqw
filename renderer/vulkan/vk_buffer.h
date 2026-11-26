@@ -46,6 +46,7 @@ typedef struct VKBufferMap_s
  */
 typedef struct VKBufferBlock_s {
     VKBuffer_t *buffer; // 缓冲区对象
+    VKHandle_t handle;
     void *ptr; // 映射地址
     int offset; // 当前偏移
     int remain; // 剩余大小

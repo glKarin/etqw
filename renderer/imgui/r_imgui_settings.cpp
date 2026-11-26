@@ -7,29 +7,29 @@ idCVar imgui_fontScale( "imgui_fontScale", "-1.0", CVAR_SYSTEM|CVAR_FLOAT|CVAR_A
 idCVar imgui_cursorScale( "imgui_cursorScale", "-1.0", CVAR_SYSTEM|CVAR_FLOAT|CVAR_ARCHIVE, "factor to scale ImGUI soft cursor by (-1: auto)" );
 idCVar imgui_scrollbarScale( "imgui_scrollbarScale", "-1.0", CVAR_SYSTEM|CVAR_FLOAT|CVAR_ARCHIVE, "factor to scale ImGUI scrollbar by (-1: auto)" );
 
-enum cvarFlag
+enum imguiComponentFlag
 {
-    IG_CVAR_COMPONENT_SPACE = BIT(0),
-    IG_CVAR_COMPONENT_CHECKBOX = BIT(1),
-    IG_CVAR_COMPONENT_COMBO = BIT(2),
-    IG_CVAR_COMPONENT_INPUT_FLOAT = BIT(3),
-    IG_CVAR_COMPONENT_INT_SLIDER = BIT(4),
-    IG_CVAR_COMPONENT_INPUT_INT = BIT(5),
-    IG_CVAR_COMPONENT_INPUT_VECTOR = BIT(6),
-    IG_CVAR_COMPONENT_INPUT = BIT(7),
-    IG_CVAR_COMPONENT_BUTTON = BIT(8),
-    IG_CVAR_COMPONENT_INPUT_VECTOR4 = BIT(9),
-    IG_CVAR_COMPONENT_INPUT_INT4 = BIT(10),
+    IGF_COMPONENT_SPACE = BIT(0),
+    IGF_COMPONENT_CHECKBOX = BIT(1),
+    IGF_COMPONENT_COMBO = BIT(2),
+    IGF_COMPONENT_INPUT_FLOAT = BIT(3),
+    IGF_COMPONENT_INT_SLIDER = BIT(4),
+    IGF_COMPONENT_INPUT_INT = BIT(5),
+    IGF_COMPONENT_INPUT_VECTOR = BIT(6),
+    IGF_COMPONENT_INPUT = BIT(7),
+    IGF_COMPONENT_BUTTON = BIT(8),
+    IGF_COMPONENT_INPUT_VECTOR4 = BIT(9),
+    IGF_COMPONENT_INPUT_INT4 = BIT(10),
 
-    IG_CVAR_GROUP_RENDERER = BIT(11),
-    IG_CVAR_GROUP_FRAMEWORK = BIT(12),
-    IG_CVAR_GROUP_GUI = BIT(13),
-    IG_CVAR_GROUP_GAME = BIT(14),
-    IG_CVAR_GROUP_OTHER = BIT(15),
+    IGF_GROUP_RENDERER = BIT(11),
+    IGF_GROUP_FRAMEWORK = BIT(12),
+    IGF_GROUP_GUI = BIT(13),
+    IGF_GROUP_GAME = BIT(14),
+    IGF_GROUP_OTHER = BIT(15),
 #ifdef _VULKAN
-    IG_CVAR_GROUP_VULKAN = BIT(16),
+    IGF_GROUP_VULKAN = BIT(16),
 #endif
-    //IG_CVAR_GROUP_ABOUT = BIT(16),
+    //IGF_GROUP_ABOUT = BIT(16),
 };
 
 typedef struct cvarSettingItem_s
@@ -103,7 +103,7 @@ void idImGuiSettings::AddOption(const char *name, const char *displayName, int f
 	bool isCmd = false;
 	if(name && name[0])
 	{
-		isCmd = flag & IG_CVAR_COMPONENT_BUTTON;
+		isCmd = flag & IGF_COMPONENT_BUTTON;
 		if(!isCmd)
 		{
 			cvar = cvarSystem->Find(name);
@@ -140,23 +140,23 @@ void idImGuiSettings::AddOption(const char *name, const char *displayName, int f
 	}
 
     const char *gname;
-    if(flag & IG_CVAR_GROUP_RENDERER) {
+    if(flag & IGF_GROUP_RENDERER) {
         gname = "Renderer";
     }
-    else if(flag & IG_CVAR_GROUP_FRAMEWORK) {
+    else if(flag & IGF_GROUP_FRAMEWORK) {
         gname = "Framework";
     }
-    else if(flag & IG_CVAR_GROUP_GUI) {
+    else if(flag & IGF_GROUP_GUI) {
         gname = "GUI";
     }
-    else if(flag & IG_CVAR_GROUP_GAME) {
+    else if(flag & IGF_GROUP_GAME) {
         gname = "Game";
     }
-    else if(flag & IG_CVAR_GROUP_OTHER) {
+    else if(flag & IGF_GROUP_OTHER) {
         gname = "Other";
     }
 #ifdef _VULKAN
-    else if(flag & IG_CVAR_GROUP_VULKAN) {
+    else if(flag & IGF_GROUP_VULKAN) {
         gname = "Vulkan";
     }
 #endif
@@ -237,48 +237,48 @@ void idImGuiSettings::AddOption(const char *name, const char *displayName, int f
         item.options.Append('\0');
     }
 
-    int comp = IG_CVAR_COMPONENT_SPACE;
+    int comp = IGF_COMPONENT_SPACE;
     if(cvar)
     {
-        if(item.flag & IG_CVAR_COMPONENT_CHECKBOX)
-            comp = IG_CVAR_COMPONENT_CHECKBOX;
-        else if(item.flag & IG_CVAR_COMPONENT_COMBO)
-            comp = IG_CVAR_COMPONENT_COMBO;
-        else if(item.flag & IG_CVAR_COMPONENT_INPUT_FLOAT)
-            comp = IG_CVAR_COMPONENT_INPUT_FLOAT;
-        else if(item.flag & IG_CVAR_COMPONENT_INT_SLIDER)
-            comp = IG_CVAR_COMPONENT_INT_SLIDER;
-        else if(item.flag & IG_CVAR_COMPONENT_INPUT_INT)
-            comp = IG_CVAR_COMPONENT_INPUT_INT;
-        else if(item.flag & IG_CVAR_COMPONENT_INPUT_VECTOR)
-            comp = IG_CVAR_COMPONENT_INPUT_VECTOR;
-        else if(item.flag & IG_CVAR_COMPONENT_INPUT_VECTOR4)
-            comp = IG_CVAR_COMPONENT_INPUT_VECTOR4;
-        else if(item.flag & IG_CVAR_COMPONENT_INPUT_INT4)
-            comp = IG_CVAR_COMPONENT_INPUT_INT4;
-        else if(item.flag & IG_CVAR_COMPONENT_INPUT)
-            comp = IG_CVAR_COMPONENT_INPUT;
+        if(item.flag & IGF_COMPONENT_CHECKBOX)
+            comp = IGF_COMPONENT_CHECKBOX;
+        else if(item.flag & IGF_COMPONENT_COMBO)
+            comp = IGF_COMPONENT_COMBO;
+        else if(item.flag & IGF_COMPONENT_INPUT_FLOAT)
+            comp = IGF_COMPONENT_INPUT_FLOAT;
+        else if(item.flag & IGF_COMPONENT_INT_SLIDER)
+            comp = IGF_COMPONENT_INT_SLIDER;
+        else if(item.flag & IGF_COMPONENT_INPUT_INT)
+            comp = IGF_COMPONENT_INPUT_INT;
+        else if(item.flag & IGF_COMPONENT_INPUT_VECTOR)
+            comp = IGF_COMPONENT_INPUT_VECTOR;
+        else if(item.flag & IGF_COMPONENT_INPUT_VECTOR4)
+            comp = IGF_COMPONENT_INPUT_VECTOR4;
+        else if(item.flag & IGF_COMPONENT_INPUT_INT4)
+            comp = IGF_COMPONENT_INPUT_INT4;
+        else if(item.flag & IGF_COMPONENT_INPUT)
+            comp = IGF_COMPONENT_INPUT;
         else
         {
             if(cvar->GetFlags() & CVAR_BOOL)
-                comp = IG_CVAR_COMPONENT_CHECKBOX;
+                comp = IGF_COMPONENT_CHECKBOX;
             else if(cvar->GetFlags() & CVAR_FLOAT)
-                comp = IG_CVAR_COMPONENT_INPUT_FLOAT;
+                comp = IGF_COMPONENT_INPUT_FLOAT;
             else if(cvar->GetFlags() & CVAR_INTEGER)
             {
                 if(item.options.Num() > 0)
-                    comp = IG_CVAR_COMPONENT_COMBO;
+                    comp = IGF_COMPONENT_COMBO;
                 else if(cvar->GetMaxValue() != cvar->GetMinValue())
-                    comp = IG_CVAR_COMPONENT_INT_SLIDER;
+                    comp = IGF_COMPONENT_INT_SLIDER;
                 else
-                    comp = IG_CVAR_COMPONENT_INPUT_INT;
+                    comp = IGF_COMPONENT_INPUT_INT;
             }
             else
-                comp = IG_CVAR_COMPONENT_INPUT;
+                comp = IGF_COMPONENT_INPUT;
         }
     }
 	else if(isCmd)
-		comp = IG_CVAR_COMPONENT_BUTTON;
+		comp = IGF_COMPONENT_BUTTON;
 
     item.component = comp;
 
@@ -720,37 +720,37 @@ void idImGuiSettings::Render(void)
 					bool disabled = item.cvar && (item.cvar->GetFlags() & (CVAR_INIT | CVAR_ROM));
 					ImGui::BeginDisabled(disabled);
                     switch (item.component) {
-                        case IG_CVAR_COMPONENT_CHECKBOX:
+                        case IGF_COMPONENT_CHECKBOX:
                             RenderCheckboxCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_COMBO:
+                        case IGF_COMPONENT_COMBO:
                             RenderComboCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INPUT_FLOAT:
+                        case IGF_COMPONENT_INPUT_FLOAT:
                             RenderFloatCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INT_SLIDER:
+                        case IGF_COMPONENT_INT_SLIDER:
                             RenderIntRangeCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INPUT_INT:
+                        case IGF_COMPONENT_INPUT_INT:
                             RenderIntCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INPUT_VECTOR:
+                        case IGF_COMPONENT_INPUT_VECTOR:
                             RenderVectorCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INPUT_VECTOR4:
+                        case IGF_COMPONENT_INPUT_VECTOR4:
                             RenderVector4CVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INPUT_INT4:
+                        case IGF_COMPONENT_INPUT_INT4:
                             RenderInt4CVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_INPUT:
+                        case IGF_COMPONENT_INPUT:
                             RenderInputCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_BUTTON:
+                        case IGF_COMPONENT_BUTTON:
                             RenderButtonCVar(item);
                             break;
-                        case IG_CVAR_COMPONENT_SPACE:
+                        case IGF_COMPONENT_SPACE:
                             RenderNullCVar(item);
                             break;
                         default:
@@ -817,31 +817,31 @@ ID_INLINE static void ImGui_RegisterDivide(int flag = 0)
 ID_INLINE static void ImGui_RegisterConsole(void)
 {
     // console
-    ImGui_RegisterLabel("Console", IG_CVAR_GROUP_FRAMEWORK);
-    ImGui_RegisterCvar("harm_com_consoleHistory", "Record console history", IG_CVAR_COMPONENT_COMBO, "0=Don't save;1=Save on exit;2=Save on every command");
+    ImGui_RegisterLabel("Console", IGF_GROUP_FRAMEWORK);
+    ImGui_RegisterCvar("harm_com_consoleHistory", "Record console history", IGF_COMPONENT_COMBO, "0=Don't save;1=Save on exit;2=Save on every command");
     ImGui_RegisterCvar("harm_con_float", "Float console");
-    ImGui_RegisterCvar("harm_con_floatGeometry", "Float console geometry", IG_CVAR_COMPONENT_INPUT_INT4);
+    ImGui_RegisterCvar("harm_con_floatGeometry", "Float console geometry", IGF_COMPONENT_INPUT_INT4);
     ImGui_RegisterCvar("harm_con_floatZoomStep", "Zoom step of float console");
     ImGui_RegisterCvar("harm_con_alwaysShow", "Always show console");
     ImGui_RegisterCvar("harm_con_noBackground", "Don't draw console background");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterDivide(IGF_GROUP_FRAMEWORK);
 }
 
 ID_INLINE static void ImGui_RegisterFileSystem(void)
 {
     // filesystem
-    ImGui_RegisterLabel("File System", IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterLabel("File System", IGF_GROUP_FRAMEWORK);
     ImGui_RegisterCvar("harm_fs_addon_extras", "Extras game addon resource path before add base game paths");
     ImGui_RegisterCvar("harm_fs_basepath_extras", "Extras base game paths(absolute system path)");
     ImGui_RegisterCvar("harm_fs_game_base_extras", "Extras game base name(extras fs_game_base)");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterDivide(IGF_GROUP_FRAMEWORK);
 }
 
 ID_INLINE static void ImGui_RegisterFramework(void)
 {
     // framework
-    ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_FRAMEWORK);
-    ImGui_RegisterCvar("harm_r_maxAllocStackMemory", "Control memory allocation on heap or stack", IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterLabel("Generic", IGF_GROUP_FRAMEWORK);
+    ImGui_RegisterCvar("harm_r_maxAllocStackMemory", "Control memory allocation on heap or stack", IGF_GROUP_FRAMEWORK);
     ImGui_RegisterCvar("com_disableAutoSaves", "Don't create Autosaves on new map");
 #ifdef _USE_SSE
     ImGui_RegisterCvar("harm_sys_useSSE", "Use MMX/SSE/SSE2 SIMD on 64-bits device");
@@ -849,7 +849,7 @@ ID_INLINE static void ImGui_RegisterFramework(void)
 #ifdef _ARM_SIMD_SSE2NEON
     ImGui_RegisterCvar("harm_sys_sse2neon", "Emulate MMX/SSE/SSE2 SIMD by sse2neon on arm32/arm64 device");
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_FRAMEWORK);
+    ImGui_RegisterDivide(IGF_GROUP_FRAMEWORK);
 
     // console
     ImGui_RegisterConsole();
@@ -861,8 +861,8 @@ ID_INLINE static void ImGui_RegisterFramework(void)
 ID_INLINE static void ImGui_RegisterLighting(void)
 {
     // lighting
-    ImGui_RegisterLabel("Lighting", IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCvar("harm_r_lightingModel", "Lighting model", IG_CVAR_COMPONENT_COMBO, "0=No light;1=Phong;2=Blinn-Phong;3=PBR;4=Ambient");
+    ImGui_RegisterLabel("Lighting", IGF_GROUP_RENDERER);
+    ImGui_RegisterCvar("harm_r_lightingModel", "Lighting model", IGF_COMPONENT_COMBO, "0=No light;1=Phong;2=Blinn-Phong;3=PBR;4=Ambient");
     ImGui_RegisterCvar("harm_r_specularExponent", "Specular exponent in Phong");
     ImGui_RegisterCvar("harm_r_specularExponentBlinnPhong", "Specular exponent in Blinn-Phong");
     ImGui_RegisterCvar("harm_r_specularExponentPBR", "Specular exponent in PBR");
@@ -877,27 +877,27 @@ ID_INLINE static void ImGui_RegisterLighting(void)
 #ifdef _NO_LIGHT
     ImGui_RegisterCvar("r_noLight", "No lighting");
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 
 #ifdef _SHADOW_MAPPING
 ID_INLINE static void ImGui_RegisterShadowMapping(void)
 {
-    ImGui_RegisterLabel("Shadow mapping", IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCvar("r_useShadowMapping", "Soft shadow mapping", IG_CVAR_COMPONENT_CHECKBOX);
+    ImGui_RegisterLabel("Shadow mapping", IGF_GROUP_RENDERER);
+    ImGui_RegisterCvar("r_useShadowMapping", "Soft shadow mapping", IGF_COMPONENT_CHECKBOX);
     ImGui_RegisterCvar("r_forceShadowMapsOnAlphaTestedSurfaces", "Shadow mapping on perforated surface");
     ImGui_RegisterCvar("harm_r_shadowMapAlpha", "Shadow mapping alpha");
     ImGui_RegisterCvar("harm_r_shadowMapCombine", "Combine local and global shadow mapping");
-    ImGui_RegisterCvar("r_shadowMapSplits", "Cascaded shadow mapping with parallel lights", IG_CVAR_COMPONENT_INT_SLIDER);
+    ImGui_RegisterCvar("r_shadowMapSplits", "Cascaded shadow mapping with parallel lights", IGF_COMPONENT_INT_SLIDER);
     ImGui_RegisterCvar("harm_r_shadowMapNonParallelLightUltra", "Non-parallel light allow ultra quality shadow mapping");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 #endif
 
 #ifdef _STENCIL_SHADOW_IMPROVE
 ID_INLINE static void ImGui_RegisterStencilShadow(void)
 {
-    ImGui_RegisterLabel("Stencil shadow", IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterLabel("Stencil shadow", IGF_GROUP_RENDERER);
     ImGui_RegisterCvar("harm_r_stencilShadowTranslucent", "Translucent stencil shadow");
     ImGui_RegisterCvar("harm_r_stencilShadowCombine", "Combine local and global stencil shadow");
     ImGui_RegisterCvar("harm_r_stencilShadowAlpha", "Stencil shadow alpha");
@@ -905,67 +905,67 @@ ID_INLINE static void ImGui_RegisterStencilShadow(void)
     ImGui_RegisterCvar("harm_r_stencilShadowSoft", "Soft stencil shadow");
     ImGui_RegisterCvar("harm_r_stencilShadowSoftBias", "Soft stencil shadow sampler BIAS");
     ImGui_RegisterCvar("harm_r_shadowCarmackInverse", "Use Carmack-inverse on stencil testing for shadow");
-    ImGui_RegisterCvar("harm_r_stencilShadowSoftCopyStencilBuffer", "Copy stencil buffer directly for soft stencil shadow", IG_CVAR_COMPONENT_COMBO, "0=Copy depth buffer and bind and renderer stencil buffer to texture directly;1=Copy stencil buffer to texture directly");
+    ImGui_RegisterCvar("harm_r_stencilShadowSoftCopyStencilBuffer", "Copy stencil buffer directly for soft stencil shadow", IGF_COMPONENT_COMBO, "0=Copy depth buffer and bind and renderer stencil buffer to texture directly;1=Copy stencil buffer to texture directly");
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 #endif
 
 ID_INLINE static void ImGui_RegisterImage(void)
 {
-    ImGui_RegisterLabel("Image", IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterLabel("Image", IGF_GROUP_RENDERER);
     ImGui_RegisterCvar("r_useETC1", "Use ETC1/RGBA4444 compression");
     ImGui_RegisterCvar("r_useETC1cache", "Cache compression textures");
 #ifdef _OPENGLES3
     ImGui_RegisterCvar("r_useETC2", "Use ETC2 compression instead of RGBA4444");
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 
 ID_INLINE static void ImGui_RegisterShader(void)
 {
-    ImGui_RegisterLabel("Shader", IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCvar("harm_r_useHighPrecision", "Use high precision float on GLSL shader", IG_CVAR_COMPONENT_CHECKBOX);
+    ImGui_RegisterLabel("Shader", IGF_GROUP_RENDERER);
+    ImGui_RegisterCvar("harm_r_useHighPrecision", "Use high precision float on GLSL shader", IGF_COMPONENT_CHECKBOX);
     ImGui_RegisterCvar("harm_r_shaderProgramDir", "External OpenGLES2 GLSL shader path");
 #ifdef GL_ES_VERSION_3_0
     ImGui_RegisterCvar("harm_r_shaderProgramES3Dir", "External OpenGLES3 GLSL shader path");
-    ImGui_RegisterCvar("harm_r_useGLSLShaderBinaryCache", "Use GLSL shader compiled binary cache", IG_CVAR_COMPONENT_COMBO, "0=Disable;1=Enable and check;2=Enable and uncheck");
+    ImGui_RegisterCvar("harm_r_useGLSLShaderBinaryCache", "Use GLSL shader compiled binary cache", IGF_COMPONENT_COMBO, "0=Disable;1=Enable and check;2=Enable and uncheck");
 #endif
-    ImGui_RegisterCvar("reloadGLSLprograms", "Reload loaded GLSL shaders", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCmd("exportGLSLShaderSource", "Export built-in GLSL shaders", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCmd("printGLSLShaderSource", "Print built-in GLSL shaders", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCmd("exportDevShaderSource", "Export built-in GLSL shaders for developer", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCmd("cleanExternalGLSLShaderSource", "Remove external GLSL shaders directory", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterCvar("reloadGLSLprograms", "Reload loaded GLSL shaders", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
+    ImGui_RegisterCmd("exportGLSLShaderSource", "Export built-in GLSL shaders", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
+    ImGui_RegisterCmd("printGLSLShaderSource", "Print built-in GLSL shaders", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
+    ImGui_RegisterCmd("exportDevShaderSource", "Export built-in GLSL shaders for developer", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
+    ImGui_RegisterCmd("cleanExternalGLSLShaderSource", "Remove external GLSL shaders directory", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
 #ifdef GL_ES_VERSION_3_0
-    ImGui_RegisterCmd("cleanGLSLShaderBinary", "Remove GLSL shader binaries directory", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterCmd("cleanGLSLShaderBinary", "Remove GLSL shader binaries directory", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 
 ID_INLINE static void ImGui_RegisterRendererSystem(void)
 {
-    ImGui_RegisterLabel("System", IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterLabel("System", IGF_GROUP_RENDERER);
 #if !defined(__ANDROID__)
-    ImGui_RegisterCvar("harm_r_openglVersion", "OpenGL version", IG_CVAR_COMPONENT_COMBO | IG_CVAR_GROUP_RENDERER, "GLES2=GLES 2.0;GLES3.0=GLES 3.0+;OpenGL_core=OpenGL desktop core;OpenGL_compatibility=OpenGL desktop compatibility");
+    ImGui_RegisterCvar("harm_r_openglVersion", "OpenGL version", IGF_COMPONENT_COMBO | IGF_GROUP_RENDERER, "GLES2=GLES 2.0;GLES3.0=GLES 3.0+;OpenGL_core=OpenGL desktop core;OpenGL_compatibility=OpenGL desktop compatibility");
 #ifdef _MULTITHREAD
     ImGui_RegisterCvar("r_multithread", "Enable multi-threading rendering");
-    ImGui_RegisterCmd("multithread", "Enable/disable multi-threading rendering", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterCmd("multithread", "Enable/disable multi-threading rendering", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
 #endif
 #endif
-    ImGui_RegisterCvar("harm_r_clearVertexBuffer", "Clear vertex buffer on every frame", IG_CVAR_COMPONENT_COMBO, "0=No clear(original);1=Only free memory;2=Free memory and delete VBO(same as 1 if multi-threading)");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterCvar("harm_r_clearVertexBuffer", "Clear vertex buffer on every frame", IGF_COMPONENT_COMBO, "0=No clear(original);1=Only free memory;2=Free memory and delete VBO(same as 1 if multi-threading)");
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 
 ID_INLINE static void ImGui_RegisterRendererOther(void)
 {
-    ImGui_RegisterLabel("Other", IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterCvar("r_screenshotFormat", "Screenshot image format", IG_CVAR_COMPONENT_COMBO, "0=TGA;1=BMP;2=PNG;3=JPG;4=DDS;5=EXP;6=HDR");
-    ImGui_RegisterCvar("r_screenshotJpgQuality", "Screenshot quality for JPG", IG_CVAR_COMPONENT_INT_SLIDER);
-    ImGui_RegisterCvar("r_screenshotPngCompression", "Screenshot compression level for PNG", IG_CVAR_COMPONENT_INT_SLIDER);
+    ImGui_RegisterLabel("Other", IGF_GROUP_RENDERER);
+    ImGui_RegisterCvar("r_screenshotFormat", "Screenshot image format", IGF_COMPONENT_COMBO, "0=TGA;1=BMP;2=PNG;3=JPG;4=DDS;5=EXP;6=HDR");
+    ImGui_RegisterCvar("r_screenshotJpgQuality", "Screenshot quality for JPG", IGF_COMPONENT_INT_SLIDER);
+    ImGui_RegisterCvar("r_screenshotPngCompression", "Screenshot compression level for PNG", IGF_COMPONENT_INT_SLIDER);
     ImGui_RegisterCvar("harm_r_debugOpenGL", "Enable OpenGL debug");
-    ImGui_RegisterCvar("harm_r_autoAspectRatio", "Setup view aspect ratio automatic", IG_CVAR_COMPONENT_COMBO, "0=Manual;1=Setup r_aspectRatio to -1;2=Setup r_aspectRatio to 0,1,2 by screen size");
-    ImGui_RegisterCmd("glConfig", "Print OpenGL config", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_RENDERER);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterCvar("harm_r_autoAspectRatio", "Setup view aspect ratio automatic", IGF_COMPONENT_COMBO, "0=Manual;1=Setup r_aspectRatio to -1;2=Setup r_aspectRatio to 0,1,2 by screen size");
+    ImGui_RegisterCmd("glConfig", "Print OpenGL config", IGF_COMPONENT_BUTTON | IGF_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 }
 
 ID_INLINE static void ImGui_RegisterRenderer(void)
@@ -981,19 +981,19 @@ ID_INLINE static void ImGui_RegisterRenderer(void)
     ImGui_RegisterStencilShadow();
 #endif
 
-    ImGui_RegisterLabel("Renderer", IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterLabel("Renderer", IGF_GROUP_RENDERER);
 #ifdef _D3BFG_CULLING
-    ImGui_RegisterCvar("harm_r_occlusionCulling", "DOOM3-BFG style occlusion culling", IG_CVAR_COMPONENT_CHECKBOX);
+    ImGui_RegisterCvar("harm_r_occlusionCulling", "DOOM3-BFG style occlusion culling", IGF_COMPONENT_CHECKBOX);
 #endif
-    ImGui_RegisterCvar("r_maxFps", "Max FPS", IG_CVAR_COMPONENT_INT_SLIDER);
-    ImGui_RegisterCvar("r_renderMode", "Retro postprocess", IG_CVAR_COMPONENT_COMBO, "0=Doom;1=CGA;2=CGA Highres;3=Commodore 64;4=Commodore 64 Highres;5=Amstrad CPC 6128;6=Amstrad CPC 6128 Highres;7=Sega Genesis;8=Sega Genesis Highres;9=Sony PSX");
+    ImGui_RegisterCvar("r_maxFps", "Max FPS", IGF_COMPONENT_INT_SLIDER);
+    ImGui_RegisterCvar("r_renderMode", "Retro postprocess", IGF_COMPONENT_COMBO, "0=Doom;1=CGA;2=CGA Highres;3=Commodore 64;4=Commodore 64 Highres;5=Amstrad CPC 6128;6=Amstrad CPC 6128 Highres;7=Sega Genesis;8=Sega Genesis Highres;9=Sony PSX");
 #ifdef _MULTITHREAD
     ImGui_RegisterCvar("harm_r_renderToolsMultithread", "Enable debug render on multithreading");
 #endif
 #ifdef _HUMANHEAD
     ImGui_RegisterCvar("harm_r_skipHHBeam", "Skip beam model render");
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_RENDERER);
+    ImGui_RegisterDivide(IGF_GROUP_RENDERER);
 
     ImGui_RegisterImage();
 
@@ -1007,22 +1007,22 @@ ID_INLINE static void ImGui_RegisterRenderer(void)
 ID_INLINE static void ImGui_RegisterGUI(void)
 {
     // GUI
-    ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_GUI);
-    ImGui_RegisterCvar("r_scaleMenusTo43", "4:3 aspect ratio GUI", IG_CVAR_GROUP_GUI | IG_CVAR_COMPONENT_COMBO, "0=Disable;1=Only main menu;2=All");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GUI);
+    ImGui_RegisterLabel("Generic", IGF_GROUP_GUI);
+    ImGui_RegisterCvar("r_scaleMenusTo43", "4:3 aspect ratio GUI", IGF_GROUP_GUI | IGF_COMPONENT_COMBO, "0=Disable;1=Only main menu;2=All");
+    ImGui_RegisterDivide(IGF_GROUP_GUI);
 
-    ImGui_RegisterLabel("Font", IG_CVAR_GROUP_GUI);
+    ImGui_RegisterLabel("Font", IGF_GROUP_GUI);
     ImGui_RegisterCvar("harm_gui_wideCharLang", "Wide-character language support");
     ImGui_RegisterCvar("harm_gui_useD3BFGFont", "Using DOOM3-BFG new fonts");
 #ifdef _RAVEN
-    ImGui_RegisterCvar("harm_gui_defaultFont", "Default GUI font", IG_CVAR_COMPONENT_COMBO, "chain;lowpixel;marine;profont;r_strogg;strogg");
+    ImGui_RegisterCvar("harm_gui_defaultFont", "Default GUI font", IGF_COMPONENT_COMBO, "chain;lowpixel;marine;profont;r_strogg;strogg");
 #endif
 #ifdef _HUMANHEAD
-    ImGui_RegisterCvar("harm_ui_translateAlienFont", "Translate alien font", IG_CVAR_COMPONENT_COMBO, "fonts;fonts/menu;");
+    ImGui_RegisterCvar("harm_ui_translateAlienFont", "Translate alien font", IGF_COMPONENT_COMBO, "fonts;fonts/menu;");
     ImGui_RegisterCvar("harm_ui_translateAlienFontDistance", "Translate alien GUI max distance");
     ImGui_RegisterCvar("harm_ui_subtitlesTextScale", "Subtitles text scale");
 #endif
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GUI);
+    ImGui_RegisterDivide(IGF_GROUP_GUI);
 }
 
 #ifdef _RAVEN
@@ -1030,89 +1030,89 @@ ID_INLINE static void ImGui_RegisterQuake4(void)
 {
     ImGui_RegisterCvar("harm_g_allowFireWhenFocusNPC", "Allow fire when focus NPC");
     ImGui_RegisterCvar("harm_g_mutePlayerFootStep", "Mute player footstep sound");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 
-    ImGui_RegisterLabel("Full-body awareness", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Full-body awareness", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_pm_fullBodyAwareness", "Enable full-body awareness");
-    ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IG_CVAR_COMPONENT_INPUT_VECTOR);
+    ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IGF_COMPONENT_INPUT_VECTOR);
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadJoint", "Head joint in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessFixed", "Don't attach view to head in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadVisible", "Hide head in full-body awareness");
     ImGui_RegisterCvar("harm_ui_showViewBody", "Show view body");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 
-    ImGui_RegisterLabel("Bot", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Bot", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_si_autoFillBots", "Fill bots automatic in MP game");
     ImGui_RegisterCvar("harm_g_autoGenAASFileInMPGame", "Generate bot AAS file in MP game");
     ImGui_RegisterCvar("harm_si_botLevel", "Bot difficult level");
     ImGui_RegisterCvar("harm_si_botWeapons", "Bot initial weapons");
     ImGui_RegisterCvar("harm_si_botAmmo", "Bot initial weapon ammo clips");
     ImGui_RegisterCvar("harm_g_botEnableBuiltinAssets", "Enable built-in bot assets");
-    ImGui_RegisterCmd("fillBots", "Fill bots to limit", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
-    ImGui_RegisterCmd("cleanBots", "Disconnect all bots", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterCmd("fillBots", "Fill bots to limit", IGF_COMPONENT_BUTTON | IGF_GROUP_GAME);
+    ImGui_RegisterCmd("cleanBots", "Disconnect all bots", IGF_COMPONENT_BUTTON | IGF_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 }
 #endif
 
 #ifdef _HUMANHEAD
 ID_INLINE static void ImGui_RegisterPrey(void)
 {
-    ImGui_RegisterLabel("Full-body awareness", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Full-body awareness", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_pm_fullBodyAwareness", "Enable full-body awareness");
-    ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IG_CVAR_COMPONENT_INPUT_VECTOR);
+    ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IGF_COMPONENT_INPUT_VECTOR);
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadJoint", "Head joint in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessFixed", "Don't attach view to head in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadVisible", "Hide head in full-body awareness");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 }
 #endif
 
 ID_INLINE static void ImGui_RegisterDoom3(void)
 {
     ImGui_RegisterCvar("harm_si_useCombatBboxInMPGame", "Players force use combat bbox in MP game");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 
-    ImGui_RegisterLabel("Full-body awareness", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Full-body awareness", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_pm_fullBodyAwareness", "Enable full-body awareness");
-    ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IG_CVAR_COMPONENT_INPUT_VECTOR);
+    ImGui_RegisterCvar("harm_pm_fullBodyAwarenessOffset", "View offset in full-body awareness", IGF_COMPONENT_INPUT_VECTOR);
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadJoint", "Head joint in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessFixed", "Don't attach view to head in full-body awareness");
     ImGui_RegisterCvar("harm_pm_fullBodyAwarenessHeadVisible", "Hide head in full-body awareness");
     ImGui_RegisterCvar("harm_ui_showViewBody", "Show view body");
 
-    ImGui_RegisterLabel("Flashlight", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Flashlight", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_ui_showViewLight", "Enable player flashlight");
     ImGui_RegisterCvar("harm_ui_viewLightShader", "player view flashlight material texture/entityDef name");
     ImGui_RegisterCvar("harm_ui_viewLightOnWeapon", "Player flashlight follow weapon");
-    ImGui_RegisterCvar("harm_ui_viewLightRadius", "Player flashlight radius", IG_CVAR_COMPONENT_INPUT_VECTOR);
-    ImGui_RegisterCvar("harm_ui_viewLightOffset", "Player flashlight offset", IG_CVAR_COMPONENT_INPUT_VECTOR);
-    ImGui_RegisterCvar("harm_ui_viewLightType", "Player flashlight type", IG_CVAR_COMPONENT_COMBO, "0=Spot light;1=Point light");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterCvar("harm_ui_viewLightRadius", "Player flashlight radius", IGF_COMPONENT_INPUT_VECTOR);
+    ImGui_RegisterCvar("harm_ui_viewLightOffset", "Player flashlight offset", IGF_COMPONENT_INPUT_VECTOR);
+    ImGui_RegisterCvar("harm_ui_viewLightType", "Player flashlight type", IGF_COMPONENT_COMBO, "0=Spot light;1=Point light");
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 
-    ImGui_RegisterLabel("Bot", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Bot", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_si_autoFillBots", "Fill bots automatic in MP game");
     ImGui_RegisterCvar("harm_g_autoGenAASFileInMPGame", "Generate bot AAS file in MP game");
     ImGui_RegisterCvar("harm_si_botLevel", "Bot difficult level");
     ImGui_RegisterCvar("harm_si_botWeapons", "Bot initial weapons");
     ImGui_RegisterCvar("harm_si_botAmmo", "Bot initial weapon ammo clips");
     ImGui_RegisterCvar("harm_g_botEnableBuiltinAssets", "Enable built-in bot assets");
-    ImGui_RegisterCmd("fillBots", "Fill bots to limit", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
-    ImGui_RegisterCmd("cleanBots", "Disconnect all bots", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterCmd("fillBots", "Fill bots to limit", IGF_COMPONENT_BUTTON | IGF_GROUP_GAME);
+    ImGui_RegisterCmd("cleanBots", "Disconnect all bots", IGF_COMPONENT_BUTTON | IGF_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 
-    ImGui_RegisterLabel("Rivensin Mod", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Rivensin Mod", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_pm_doubleJump", "Enable double-jump");
     ImGui_RegisterCvar("harm_pm_autoForceThirdPerson", "Third person view when start");
     ImGui_RegisterCvar("harm_pm_preferCrouchViewHeight", "Crouch view height in third person");
-    ImGui_RegisterDivide(IG_CVAR_GROUP_GAME);
+    ImGui_RegisterDivide(IGF_GROUP_GAME);
 }
 
 ID_INLINE static void ImGui_RegisterGame(void)
 {
     // game
-    ImGui_RegisterLabel("Generic", IG_CVAR_GROUP_GAME);
+    ImGui_RegisterLabel("Generic", IGF_GROUP_GAME);
     ImGui_RegisterCvar("harm_g_skipHitEffect", "Skip hit effect in game when starting engine");
-    ImGui_RegisterCmd("skipHitEffect", "Skip hit effect in game", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_GAME);
+    ImGui_RegisterCmd("skipHitEffect", "Skip hit effect in game", IGF_COMPONENT_BUTTON | IGF_GROUP_GAME);
 
 #ifdef _RAVEN
     ImGui_RegisterQuake4();
@@ -1126,69 +1126,69 @@ ID_INLINE static void ImGui_RegisterGame(void)
 ID_INLINE static void ImGui_RegisterOther(void)
 {
     // other
-    ImGui_RegisterLabel("ImGui", IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCvar("imgui_scale", "ImGui scale", IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCvar("imgui_fontScale", "ImGui font scale", IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCvar("imgui_cursorScale", "ImGui soft cursor scale", IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCvar("imgui_scrollbarScale", "ImGui scrollbar scale", IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCmd(IG_COMMAND_NAME " reset position", "Reset ImGui position", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCmd(IG_COMMAND_NAME " reset size", "Reset ImGui size", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterCmd(IG_COMMAND_NAME " close", "Close ImGui", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_OTHER);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_OTHER);
+    ImGui_RegisterLabel("ImGui", IGF_GROUP_OTHER);
+    ImGui_RegisterCvar("imgui_scale", "ImGui scale", IGF_GROUP_OTHER);
+    ImGui_RegisterCvar("imgui_fontScale", "ImGui font scale", IGF_GROUP_OTHER);
+    ImGui_RegisterCvar("imgui_cursorScale", "ImGui soft cursor scale", IGF_GROUP_OTHER);
+    ImGui_RegisterCvar("imgui_scrollbarScale", "ImGui scrollbar scale", IGF_GROUP_OTHER);
+    ImGui_RegisterCmd(IG_COMMAND_NAME " reset position", "Reset ImGui position", IGF_COMPONENT_BUTTON | IGF_GROUP_OTHER);
+    ImGui_RegisterCmd(IG_COMMAND_NAME " reset size", "Reset ImGui size", IGF_COMPONENT_BUTTON | IGF_GROUP_OTHER);
+    ImGui_RegisterCmd(IG_COMMAND_NAME " close", "Close ImGui", IGF_COMPONENT_BUTTON | IGF_GROUP_OTHER);
+    ImGui_RegisterDivide(IGF_GROUP_OTHER);
 }
 
 #ifdef _VULKAN
 ID_INLINE static void ImGui_RegisterVulkan(void)
 {
     // Vulkan
-    ImGui_RegisterLabel("Vulkan", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("harm_r_renderBackend", "Render backend", IG_CVAR_COMPONENT_COMBO | IG_CVAR_GROUP_VULKAN, RB_OPENGL ";" RB_VULKAN);
-    ImGui_RegisterCvar("r_vkUsePipelineCache", "Using pipeline cache", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkSetDebugInfo", "Setup object debug info", IG_CVAR_COMPONENT_COMBO | IG_CVAR_GROUP_VULKAN, "0=Disable;1=Enable;2=Enable and print");
-    ImGui_RegisterCvar("r_vkEnableValidationLayer", "Enable validation layer", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkUseGlobalUniform", "Using global uniform", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("harm_r_shaderProgramVKDir", "External Vulkan GLSL shader path", IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterLabel("Vulkan", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("harm_r_renderBackend", "Render backend", IGF_COMPONENT_COMBO | IGF_GROUP_VULKAN, RB_OPENGL ";" RB_VULKAN);
+    ImGui_RegisterCvar("r_vkUsePipelineCache", "Using pipeline cache", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkSetDebugInfo", "Setup object debug info", IGF_COMPONENT_COMBO | IGF_GROUP_VULKAN, "0=Disable;1=Enable;2=Enable and print");
+    ImGui_RegisterCvar("r_vkEnableValidationLayer", "Enable validation layer", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkUseGlobalUniform", "Using global uniform", IGF_GROUP_VULKAN);
+    ImGui_RegisterDivide(IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("harm_r_shaderProgramVKDir", "External Vulkan GLSL shader path", IGF_GROUP_VULKAN);
 
-    ImGui_RegisterLabel("Context", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextPipelineSize", "Global pipeline list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextPipelineGranularity", "Global pipeline list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextPipelineLayoutSize", "Global pipeline layout list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextPipelineLayoutGranularity", "Global pipeline layout list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextShaderSize", "Global shader list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextShaderGranularity", "Global shader list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextSamplerSize", "Global sampler list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextSamplerGranularity", "Global sampler list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextImageViewSize", "Global image view list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContexImageViewGranularity", "Global image view list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextImageSize", "Global image list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextImageGranularity", "Global image list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextBufferSize", "Global buffer list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkContextBufferGranularity", "Global buffer list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterLabel("Context", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineSize", "Global pipeline list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineGranularity", "Global pipeline list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineLayoutSize", "Global pipeline layout list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextPipelineLayoutGranularity", "Global pipeline layout list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextShaderSize", "Global shader list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextShaderGranularity", "Global shader list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextSamplerSize", "Global sampler list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextSamplerGranularity", "Global sampler list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextImageViewSize", "Global image view list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContexImageViewGranularity", "Global image view list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextImageSize", "Global image list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextImageGranularity", "Global image list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextBufferSize", "Global buffer list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkContextBufferGranularity", "Global buffer list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterDivide(IGF_GROUP_VULKAN);
 
-    ImGui_RegisterLabel("Backend", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendSamplerSize", "Sampler list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendSamplerGranularity", "Sampler list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendFreeBuffersSize", "Defer free buffers list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendFreeBuffersGranularity", "Defer free buffers list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendPurgeImagesSize", "Defer purge images list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendPurgeImagesGranularity", "Defer purge images list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendPipelineLayoutSize", "Pipeline layout list initialize size", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkBackendPipelineLayoutGranularity", "Pipeline layout list allocation granularity", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkQueryFrameCount", "Query count in frame", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCmd("vk_listPipelines", "List pipeline pool", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCmd("vk_listSamplers", "List sampler pool", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterLabel("Backend", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendSamplerSize", "Sampler list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendSamplerGranularity", "Sampler list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendFreeBuffersSize", "Defer free buffers list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendFreeBuffersGranularity", "Defer free buffers list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPurgeImagesSize", "Defer purge images list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPurgeImagesGranularity", "Defer purge images list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPipelineLayoutSize", "Pipeline layout list initialize size", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkBackendPipelineLayoutGranularity", "Pipeline layout list allocation granularity", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkQueryFrameCount", "Query count in frame", IGF_GROUP_VULKAN);
+    ImGui_RegisterCmd("vk_listPipelines", "List pipeline pool", IGF_COMPONENT_BUTTON | IGF_GROUP_VULKAN);
+    ImGui_RegisterCmd("vk_listSamplers", "List sampler pool", IGF_COMPONENT_BUTTON | IGF_GROUP_VULKAN);
+    ImGui_RegisterDivide(IGF_GROUP_VULKAN);
 
-    ImGui_RegisterLabel("Buffer", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkStagingWriteBufferBlockSize", "Staging write buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkStagingReadBufferBlockSize", "Staging read buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkUniformBufferBlockSize", "Uniform buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkVertexBufferBlockSize", "Vertex buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCvar("r_vkIndexBufferBlockSize", "Index buffer block size(Mb)", IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterCmd("vk_listBuffers", "List buffer state", IG_CVAR_COMPONENT_BUTTON | IG_CVAR_GROUP_VULKAN);
-    ImGui_RegisterDivide(IG_CVAR_GROUP_VULKAN);
+    ImGui_RegisterLabel("Buffer", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkStagingWriteBufferBlockSize", "Staging write buffer block size(Mb)", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkStagingReadBufferBlockSize", "Staging read buffer block size(Mb)", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkUniformBufferBlockSize", "Uniform buffer block size(Mb)", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkVertexBufferBlockSize", "Vertex buffer block size(Mb)", IGF_GROUP_VULKAN);
+    ImGui_RegisterCvar("r_vkIndexBufferBlockSize", "Index buffer block size(Mb)", IGF_GROUP_VULKAN);
+    ImGui_RegisterCmd("vk_listBuffers", "List buffer state", IGF_COMPONENT_BUTTON | IGF_GROUP_VULKAN);
+    ImGui_RegisterDivide(IGF_GROUP_VULKAN);
 }
 #endif
 

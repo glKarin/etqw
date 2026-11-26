@@ -13,6 +13,7 @@
 
 #define SHADER_UBO_PARM_OFFSET(name) offsetof(Type_t, name)
 #define SHADER_UBO_PARM_OFFSET_N(name, n) offsetof(Type_t, name##n)
+#define SHADER_UBO_PARMS_OFFSET(name, n) VKOFFSET_VAR_N_OF(Type_t, name, n)
 
 #define UBO_COPY_GLOBAL_TO_SHADER(name) R_VK_TransformUniform(SHADER_UBO_PARM_OFFSET(name), VKGLOBAL_PARM_OFFSET(name), ptr, sizeof(globalUBO.name))
 #define UBO_COPY_GLOBAL_TO_SHADER_N(name, n) R_VK_TransformUniform(SHADER_UBO_PARM_OFFSET_N(name, n), VKGLOBAL_PARMS_OFFSET(name, n), ptr, sizeof(globalUBO.name[n]))
